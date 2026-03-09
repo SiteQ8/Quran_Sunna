@@ -123,6 +123,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .dhikr-ar{font-family:var(--amiri);font-size:1.1rem;line-height:2.2;color:var(--text)}
 .dhikr-ref{font-size:0.68rem;color:var(--text3);margin-top:6px}
 .dhikr-count{display:inline-block;padding:3px 12px;border-radius:8px;background:var(--accent-dim);color:var(--accent);font-size:0.72rem;border:1px solid var(--accent);margin-top:6px;font-weight:600}
+.dhikr-counter-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;justify-content:center}
+.dhikr-counter-btn{width:42px;height:42px;border-radius:50%;border:2px solid var(--accent);background:var(--accent-dim);color:var(--accent);font-family:var(--amiri);font-size:1rem;cursor:pointer;transition:all .12s;touch-action:manipulation;-webkit-tap-highlight-color:transparent;display:flex;align-items:center;justify-content:center}
+.dhikr-counter-btn:active{transform:scale(0.9);background:var(--accent);color:#fff}
+.dhikr-counter-num{font-size:1.3rem;font-weight:700;color:var(--accent);min-width:40px;text-align:center;direction:ltr}
+.dhikr-counter-target{font-size:0.68rem;color:var(--text3)}
+.dhikr-counter-done{color:var(--green);font-weight:700}
+.dhikr-counter-reset{font-size:0.65rem;color:var(--text3);cursor:pointer;padding:4px 10px;border:1px solid var(--border);border-radius:6px;background:var(--bg3)}
 
 /* ═══ TASBEEH ═══ */
 .tasbeeh-center{text-align:center;padding:30px 0 20px}
@@ -380,6 +387,8 @@ async function loadPrayers(){
     }
 }
 
+function to12h(t24){const[h,m]=t24.split(':').map(Number);const ampm=h>=12?'م':'ص';const h12=h%12||12;return{str:h12+':'+String(m).padStart(2,'0'),ampm}}
+
 function renderPrayerList(){
     if(!prayerData)return;
     const now=new Date(),mins=now.getHours()*60+now.getMinutes();
@@ -390,12 +399,13 @@ function renderPrayerList(){
     }
     document.getElementById('prayer-list').innerHTML=prayerData.map((p,i)=>{
         const isActive=i===nextIdx;
+        const t=to12h(p.time);
         const ampm=parseInt(p.time)>=12?'م':'ص';
         return `<div class="prayer-row${isActive?' active':''}">
             <div class="prayer-row-right"><span class="prayer-icon">${p.icon}</span><span class="prayer-name">${p.ar}</span></div>
             <div style="display:flex;align-items:center;gap:8px">
                 <span class="prayer-ampm">${ampm}</span>
-                <span class="prayer-time-val">${p.time}</span>
+                <span class="prayer-time-val">${t.str}</span>
             </div>
         </div>`;
     }).join('');
@@ -404,8 +414,10 @@ function renderPrayerList(){
 function updateClock(){
     if(!prayerData)return;
     const now=new Date(),mins=now.getHours()*60+now.getMinutes(),secs=now.getSeconds();
-    const timeStr=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
-    document.getElementById('clock-now').textContent=timeStr;
+    // 12h current time
+    const h12=now.getHours()%12||12;
+    const ampm=now.getHours()>=12?'م':'ص';
+    document.getElementById('clock-now').textContent=h12+':'+String(now.getMinutes()).padStart(2,'0')+' '+ampm;
 
     let nextIdx=-1,prevIdx=-1;
     for(let i=0;i<prayerData.length;i++){
@@ -427,14 +439,29 @@ function updateClock(){
     const circumference=553;
     document.getElementById('clock-ring').style.strokeDashoffset=circumference*(1-progress);
 
-    // Elapsed time
-    const elapsedSecs=elapsed*60+secs;
-    const eh=Math.floor(elapsedSecs/3600),em=Math.floor((elapsedSecs%3600)/60),es=elapsedSecs%60;
-    document.getElementById('clock-elapsed').textContent=
-        String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0')+':'+String(es%60).padStart(2,'0');
+    // Smart mode: elapsed < 30min => show elapsed, else show remaining
+    const SWITCH_MINS=30;
+    const elLabel=document.getElementById('elapsed-label');
+    const elValue=document.getElementById('clock-elapsed');
 
-    document.getElementById('clock-prayer-name').textContent=prayerData[nextIdx].ar;
-    document.getElementById('clock-prayer-time').textContent=prayerData[nextIdx].time;
+    if(elapsed<=SWITCH_MINS){
+        // Show elapsed since last adhan
+        elLabel.textContent='مضى على أذان '+prayerData[prevIdx].ar;
+        const elapsedSecs=elapsed*60+secs;
+        const eh=Math.floor(elapsedSecs/3600),em=Math.floor((elapsedSecs%3600)/60),es=elapsedSecs%60;
+        elValue.textContent=String(eh).padStart(2,'0')+':'+String(em).padStart(2,'0')+':'+String(es).padStart(2,'0');
+    }else{
+        // Show remaining until next prayer
+        elLabel.textContent='متبقي على '+prayerData[nextIdx].ar;
+        const remaining=totalSpan-elapsed;
+        const remSecs=remaining*60+(60-secs);
+        const rh=Math.floor(remSecs/3600),rm=Math.floor((remSecs%3600)/60),rs=remSecs%60;
+        elValue.textContent=String(rh).padStart(2,'0')+':'+String(rm).padStart(2,'0')+':'+String(rs).padStart(2,'0');
+    }
+
+    const nt=to12h(prayerData[nextIdx].time);
+    document.getElementById('clock-prayer-name').textContent='القادمة: '+prayerData[nextIdx].ar;
+    document.getElementById('clock-prayer-time').textContent=nt.str+' '+nt.ampm;
 }
 
 // ═══ QURAN ═══
@@ -478,46 +505,112 @@ async function openSurah(num){
 function closeReader(){document.getElementById('reader').style.display='none';document.getElementById('surah-list').style.display='block'}
 function changeFontSize(d){fontSize=Math.max(16,Math.min(40,fontSize+d));document.querySelectorAll('.ayah-text').forEach(el=>el.style.fontSize=fontSize+'px')}
 
-// ═══ ADHKAR ═══
+// ═══ ADHKAR — EXPANDED WITH COUNTERS ═══
 const DK=[
+{cat:'prayer',catAr:'أذكار الصلاة',items:[
+{ar:'أَسْتَغْفِرُ اللَّهَ',ref:'مسلم',rep:3,c:'٣ مرات بعد السلام'},
+{ar:'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ',ref:'مسلم',rep:1,c:'مرة واحدة'},
+{ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'متفق عليه',rep:1,c:'مرة واحدة'},
+{ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ، اللَّهُمَّ لَا مَانِعَ لِمَا أَعْطَيْتَ وَلَا مُعْطِيَ لِمَا مَنَعْتَ وَلَا يَنْفَعُ ذَا الْجَدِّ مِنْكَ الْجَدُّ',ref:'متفق عليه',rep:1,c:'مرة واحدة'},
+{ar:'سُبْحَانَ اللَّهِ',ref:'مسلم',rep:33,c:'٣٣ مرة'},
+{ar:'الْحَمْدُ لِلَّهِ',ref:'مسلم',rep:33,c:'٣٣ مرة'},
+{ar:'اللَّهُ أَكْبَرُ',ref:'مسلم',rep:33,c:'٣٣ مرة'},
+{ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'مسلم — تمام المائة',rep:1,c:'مرة واحدة لتمام المائة'},
+{ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْجُبْنِ وَأَعُوذُ بِكَ مِنَ الْبُخْلِ وَأَعُوذُ بِكَ مِنْ أَنْ أُرَدَّ إِلَى أَرْذَلِ الْعُمُرِ وَأَعُوذُ بِكَ مِنْ فِتْنَةِ الدُّنْيَا وَعَذَابِ الْقَبْرِ',ref:'البخاري',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ',ref:'النسائي — آية الكرسي: من قرأها دبر كل صلاة لم يمنعه من دخول الجنة إلا الموت',rep:1,c:'مرة واحدة'},
+{ar:'قُلْ هُوَ اللَّهُ أَحَدٌ ۝ اللَّهُ الصَّمَدُ ۝ لَمْ يَلِدْ وَلَمْ يُولَدْ ۝ وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ',ref:'أبو داود — سورة الإخلاص',rep:1,c:'مرة واحدة'},
+{ar:'قُلْ أَعُوذُ بِرَبِّ الْفَلَقِ ۝ مِنْ شَرِّ مَا خَلَقَ ۝ وَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ ۝ وَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ ۝ وَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ',ref:'أبو داود — سورة الفلق',rep:1,c:'مرة واحدة'},
+{ar:'قُلْ أَعُوذُ بِرَبِّ النَّاسِ ۝ مَلِكِ النَّاسِ ۝ إِلَٰهِ النَّاسِ ۝ مِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ ۝ الَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ ۝ مِنَ الْجِنَّةِ وَالنَّاسِ',ref:'أبو داود — سورة الناس',rep:1,c:'مرة واحدة'},
+{ar:'رَبِّ اغْفِرْ لِي، رَبِّ اغْفِرْ لِي',ref:'أبو داود — بين السجدتين',rep:3,c:'بين السجدتين'},
+{ar:'سُبْحَانَ رَبِّيَ الْعَظِيمِ',ref:'مسلم — في الركوع',rep:3,c:'٣ مرات في الركوع'},
+{ar:'سُبْحَانَ رَبِّيَ الْأَعْلَى',ref:'مسلم — في السجود',rep:3,c:'٣ مرات في السجود'},
+{ar:'سَمِعَ اللَّهُ لِمَنْ حَمِدَهُ، رَبَّنَا وَلَكَ الْحَمْدُ',ref:'البخاري — عند الرفع من الركوع',rep:1,c:'عند الرفع من الركوع'},
+]},
 {cat:'morning',catAr:'أذكار الصباح',items:[
-{ar:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'حصن المسلم',c:'مرة واحدة'},
-{ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ',ref:'الترمذي',c:'مرة واحدة'},
-{ar:'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ',ref:'البخاري — سيد الاستغفار',c:'مرة واحدة'},
-{ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',ref:'مسلم',c:'١٠٠ مرة'},
-{ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'متفق عليه',c:'١٠ مرات'},
-{ar:'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',ref:'البخاري ومسلم',c:'١٠٠ مرة'},
+{ar:'أَصْبَحْنَا وَأَصْبَحَ الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'حصن المسلم',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُمَّ بِكَ أَصْبَحْنَا، وَبِكَ أَمْسَيْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ النُّشُورُ',ref:'الترمذي',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُمَّ أَنْتَ رَبِّي لَا إِلَهَ إِلَّا أَنْتَ، خَلَقْتَنِي وَأَنَا عَبْدُكَ، وَأَنَا عَلَى عَهْدِكَ وَوَعْدِكَ مَا اسْتَطَعْتُ، أَعُوذُ بِكَ مِنْ شَرِّ مَا صَنَعْتُ، أَبُوءُ لَكَ بِنِعْمَتِكَ عَلَيَّ، وَأَبُوءُ بِذَنْبِي فَاغْفِرْ لِي فَإِنَّهُ لَا يَغْفِرُ الذُّنُوبَ إِلَّا أَنْتَ',ref:'البخاري — سيد الاستغفار',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُمَّ إِنِّي أَصْبَحْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلَائِكَتَكَ وَجَمِيعَ خَلْقِكَ أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيكَ لَكَ وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',ref:'أبو داود — من قالها أعتق الله ربعه من النار',rep:4,c:'٤ مرات'},
+{ar:'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',ref:'مسلم — من قالها مائة مرة حطت خطاياه وإن كانت مثل زبد البحر',rep:100,c:'١٠٠ مرة'},
+{ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'متفق عليه — كانت حِرزاً من الشيطان',rep:10,c:'١٠ مرات'},
+{ar:'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',ref:'البخاري ومسلم — كنز من كنوز الجنة',rep:100,c:'١٠٠ مرة'},
+{ar:'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',ref:'متفق عليه',rep:100,c:'١٠٠ مرة'},
 ]},
 {cat:'evening',catAr:'أذكار المساء',items:[
-{ar:'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ',ref:'حصن المسلم',c:'مرة واحدة'},
-{ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ',ref:'الترمذي',c:'مرة واحدة'},
-{ar:'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ',ref:'مسلم',c:'٣ مرات'},
-{ar:'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ',ref:'أبو داود والترمذي',c:'٣ مرات'},
-]},
-{cat:'prayer',catAr:'أذكار بعد الصلاة',items:[
-{ar:'أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ، أَسْتَغْفِرُ اللَّهَ',ref:'مسلم',c:'٣ مرات'},
-{ar:'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ',ref:'مسلم',c:'مرة واحدة'},
-{ar:'سُبْحَانَ اللَّهِ (٣٣) الْحَمْدُ لِلَّهِ (٣٣) اللَّهُ أَكْبَرُ (٣٣)',ref:'مسلم',c:'بعد كل صلاة'},
-{ar:'آيَةُ الْكُرْسِيِّ — اللَّهُ لَا إِلَٰهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ',ref:'النسائي',c:'بعد كل صلاة'},
+{ar:'أَمْسَيْنَا وَأَمْسَى الْمُلْكُ لِلَّهِ، وَالْحَمْدُ لِلَّهِ، لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ',ref:'حصن المسلم',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُمَّ بِكَ أَمْسَيْنَا، وَبِكَ أَصْبَحْنَا، وَبِكَ نَحْيَا، وَبِكَ نَمُوتُ وَإِلَيْكَ الْمَصِيرُ',ref:'الترمذي',rep:1,c:'مرة واحدة'},
+{ar:'أَعُوذُ بِكَلِمَاتِ اللَّهِ التَّامَّاتِ مِنْ شَرِّ مَا خَلَقَ',ref:'مسلم',rep:3,c:'٣ مرات'},
+{ar:'بِسْمِ اللَّهِ الَّذِي لَا يَضُرُّ مَعَ اسْمِهِ شَيْءٌ فِي الْأَرْضِ وَلَا فِي السَّمَاءِ وَهُوَ السَّمِيعُ الْعَلِيمُ',ref:'أبو داود والترمذي',rep:3,c:'٣ مرات'},
+{ar:'اللَّهُمَّ إِنِّي أَمْسَيْتُ أُشْهِدُكَ وَأُشْهِدُ حَمَلَةَ عَرْشِكَ وَمَلَائِكَتَكَ وَجَمِيعَ خَلْقِكَ أَنَّكَ أَنْتَ اللَّهُ لَا إِلَهَ إِلَّا أَنْتَ وَحْدَكَ لَا شَرِيكَ لَكَ وَأَنَّ مُحَمَّدًا عَبْدُكَ وَرَسُولُكَ',ref:'أبو داود',rep:4,c:'٤ مرات'},
+{ar:'حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ',ref:'أبو داود',rep:7,c:'٧ مرات'},
 ]},
 {cat:'sleep',catAr:'أذكار النوم',items:[
-{ar:'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',ref:'البخاري',c:'مرة واحدة'},
-{ar:'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ',ref:'أبو داود',c:'مرة واحدة'},
-{ar:'سُبْحَانَ اللَّهِ (٣٣) الْحَمْدُ لِلَّهِ (٣٣) اللَّهُ أَكْبَرُ (٣٤)',ref:'متفق عليه',c:'عند النوم'},
+{ar:'بِاسْمِكَ اللَّهُمَّ أَمُوتُ وَأَحْيَا',ref:'البخاري',rep:1,c:'مرة واحدة'},
+{ar:'اللَّهُمَّ قِنِي عَذَابَكَ يَوْمَ تَبْعَثُ عِبَادَكَ',ref:'أبو داود',rep:1,c:'مرة واحدة'},
+{ar:'سُبْحَانَ اللَّهِ',ref:'متفق عليه — وصية النبي لفاطمة وعلي رضي الله عنهما',rep:33,c:'٣٣ مرة'},
+{ar:'الْحَمْدُ لِلَّهِ',ref:'متفق عليه',rep:33,c:'٣٣ مرة'},
+{ar:'اللَّهُ أَكْبَرُ',ref:'متفق عليه',rep:34,c:'٣٤ مرة'},
+{ar:'اللَّهُمَّ أَسْلَمْتُ نَفْسِي إِلَيْكَ وَوَجَّهْتُ وَجْهِي إِلَيْكَ وَفَوَّضْتُ أَمْرِي إِلَيْكَ وَأَلْجَأْتُ ظَهْرِي إِلَيْكَ رَغْبَةً وَرَهْبَةً إِلَيْكَ',ref:'متفق عليه',rep:1,c:'مرة واحدة'},
 ]},
 {cat:'dua',catAr:'أدعية مأثورة',items:[
-{ar:'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',ref:'البقرة: ٢٠١',c:''},
-{ar:'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي',ref:'طه: ٢٥-٢٦',c:''},
-{ar:'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى',ref:'مسلم',c:''},
-{ar:'لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ',ref:'الأنبياء: ٨٧',c:''},
-{ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ وَالْعَجْزِ وَالْكَسَلِ',ref:'البخاري',c:''},
-{ar:'حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ',ref:'التوبة: ١٢٩',c:'٧ مرات'},
+{ar:'رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ',ref:'البقرة: ٢٠١',rep:0,c:''},
+{ar:'رَبِّ اشْرَحْ لِي صَدْرِي وَيَسِّرْ لِي أَمْرِي',ref:'طه: ٢٥-٢٦',rep:0,c:''},
+{ar:'اللَّهُمَّ إِنِّي أَسْأَلُكَ الْهُدَى وَالتُّقَى وَالْعَفَافَ وَالْغِنَى',ref:'مسلم',rep:0,c:''},
+{ar:'لَا إِلَهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ',ref:'الأنبياء: ٨٧ — دعاء يونس عليه السلام',rep:0,c:''},
+{ar:'اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْهَمِّ وَالْحَزَنِ وَالْعَجْزِ وَالْكَسَلِ وَالْبُخْلِ وَالْجُبْنِ وَضَلَعِ الدَّيْنِ وَغَلَبَةِ الرِّجَالِ',ref:'البخاري',rep:0,c:''},
+{ar:'حَسْبِيَ اللَّهُ لَا إِلَهَ إِلَّا هُوَ عَلَيْهِ تَوَكَّلْتُ وَهُوَ رَبُّ الْعَرْشِ الْعَظِيمِ',ref:'التوبة: ١٢٩',rep:7,c:'٧ مرات صباحاً ومساءً'},
+{ar:'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ',ref:'متفق عليه — الصلاة على النبي ﷺ',rep:10,c:'١٠ مرات'},
 ]},
 ];
-let activeCat='morning';
+
+// Counter state per dhikr
+let dhikrCounters={};
+
+let activeCat='prayer';
 function renderCats(){document.getElementById('dhikr-cats').innerHTML=DK.map(c=>`<div class="dhikr-cat${c.cat===activeCat?' on':''}" onclick="setCat('${c.cat}')">${c.catAr}</div>`).join('')}
 function setCat(c){activeCat=c;renderCats();renderDhikr()}
-function renderDhikr(){const cat=DK.find(c=>c.cat===activeCat);if(!cat)return;document.getElementById('dhikr-list').innerHTML=cat.items.map(d=>`<div class="dhikr-card"><div class="dhikr-ar">${d.ar}</div><div class="dhikr-ref">${d.ref}</div>${d.c?`<div class="dhikr-count">${d.c}</div>`:''}</div>`).join('')}
+
+function renderDhikr(){
+    const cat=DK.find(c=>c.cat===activeCat);
+    if(!cat)return;
+    document.getElementById('dhikr-list').innerHTML=cat.items.map((d,i)=>{
+        const key=activeCat+'-'+i;
+        if(!dhikrCounters[key])dhikrCounters[key]=0;
+        const current=dhikrCounters[key];
+        const target=d.rep;
+        const done=target>0&&current>=target;
+        const showCounter=target>1; // show counter only if repeated more than once
+
+        let counterHtml='';
+        if(showCounter){
+            counterHtml=`<div class="dhikr-counter-wrap">
+                <button class="dhikr-counter-btn" onclick="dhikrInc('${key}',${target},${i})">+١</button>
+                <span class="dhikr-counter-num ${done?'dhikr-counter-done':''}" id="dkn-${key}">${current}</span>
+                <span class="dhikr-counter-target">/ ${target}</span>
+                <button class="dhikr-counter-reset" onclick="dhikrReset('${key}',${i})">إعادة</button>
+            </div>`;
+        }
+
+        return `<div class="dhikr-card" style="${done?'opacity:0.5':''}">
+            <div class="dhikr-ar">${d.ar}</div>
+            <div class="dhikr-ref">${d.ref}</div>
+            ${d.c?`<div class="dhikr-count">${d.c}</div>`:''}
+            ${counterHtml}
+        </div>`;
+    }).join('');
+}
+
+function dhikrInc(key,target,idx){
+    dhikrCounters[key]=(dhikrCounters[key]||0)+1;
+    if(navigator.vibrate)navigator.vibrate(15);
+    if(dhikrCounters[key]>=target&&navigator.vibrate)navigator.vibrate([80,30,80]);
+    renderDhikr();
+}
+
+function dhikrReset(key,idx){
+    dhikrCounters[key]=0;
+    renderDhikr();
+}
 
 // ═══ TASBEEH ═══
 const TP=[{ar:'سُبْحَانَ اللَّهِ',l:'سبحان الله'},{ar:'الْحَمْدُ لِلَّهِ',l:'الحمد لله'},{ar:'اللَّهُ أَكْبَرُ',l:'الله أكبر'},{ar:'لَا إِلَهَ إِلَّا اللَّهُ',l:'لا إله إلا الله'},{ar:'لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ',l:'الحوقلة'},{ar:'أَسْتَغْفِرُ اللَّهَ',l:'الاستغفار'}];
