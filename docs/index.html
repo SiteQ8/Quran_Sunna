@@ -271,7 +271,7 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
             تطبيق القرآن الكريم الشامل — صنع في الكويت 🇰🇼<br>
             القرآن الكريم كاملاً (١١٤ سورة — ٦,٢٣٦ آية)<br>
             أوقات الصلاة لدولة الكويت<br>
-            أذكار الصباح والمساء والصلاة والنوم<br>
+            أذكار الصباح والمساء وبعد الصلاة والنوم<br>
             أدعية مأثورة من القرآن والسنة<br>
             عدّاد التسبيح الرقمي
         </div>
@@ -507,7 +507,7 @@ function changeFontSize(d){fontSize=Math.max(16,Math.min(40,fontSize+d));documen
 
 // ═══ ADHKAR — EXPANDED WITH COUNTERS ═══
 const DK=[
-{cat:'prayer',catAr:'أذكار الصلاة',items:[
+{cat:'prayer',catAr:'أذكار بعد الصلاة',items:[
 {ar:'أَسْتَغْفِرُ اللَّهَ',ref:'مسلم',rep:3,c:'٣ مرات بعد السلام'},
 {ar:'اللَّهُمَّ أَنْتَ السَّلَامُ وَمِنْكَ السَّلَامُ تَبَارَكْتَ يَا ذَا الْجَلَالِ وَالْإِكْرَامِ',ref:'مسلم',rep:1,c:'مرة واحدة'},
 {ar:'لَا إِلَهَ إِلَّا اللَّهُ وَحْدَهُ لَا شَرِيكَ لَهُ، لَهُ الْمُلْكُ وَلَهُ الْحَمْدُ وَهُوَ عَلَى كُلِّ شَيْءٍ قَدِيرٌ',ref:'متفق عليه',rep:1,c:'مرة واحدة'},
@@ -566,7 +566,7 @@ const DK=[
 // Counter state per dhikr
 let dhikrCounters={};
 
-let activeCat='prayer';
+let activeCat='morning';
 function renderCats(){document.getElementById('dhikr-cats').innerHTML=DK.map(c=>`<div class="dhikr-cat${c.cat===activeCat?' on':''}" onclick="setCat('${c.cat}')">${c.catAr}</div>`).join('')}
 function setCat(c){activeCat=c;renderCats();renderDhikr()}
 
