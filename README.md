@@ -6,7 +6,6 @@
 
 [![Version](https://img.shields.io/badge/الإصدار-2.0-c9a84c?style=flat-square)]()
 [![License](https://img.shields.io/badge/الرخصة-MIT-c9a84c?style=flat-square)](LICENSE)
-[![Pages](https://img.shields.io/badge/صفحات-11-c9a84c?style=flat-square)]()
 
 [🔗 افتح التطبيق](https://siteq8.github.io/Quran)
 
