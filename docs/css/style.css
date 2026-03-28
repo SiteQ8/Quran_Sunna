@@ -73,3 +73,25 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 @keyframes fu{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.cd,.sui,.sni,.mi,.di,.gi,.az,.sn-pill{animation:fu .3s ease both}
 .spinner{width:26px;height:26px;border:3px solid var(--bd);border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;margin:0 auto 8px}@keyframes sp{to{transform:rotate(360deg)}}
 ::-webkit-scrollbar{width:0}
+
+/* ═══ QURAN PAGE LAYOUT ═══ */
+.quran-page{font-family:var(--nk);font-size:calc(var(--fs,100%) * 1.3 / 100 * 1rem);line-height:2.4;text-align:justify;padding:16px 14px;background:linear-gradient(180deg,#fefdf5,#fdf8e8);border:2px solid #e8dfc0;border-radius:16px;margin:10px 12px;box-shadow:inset 0 0 30px rgba(139,119,42,.06);color:#2d1810;direction:rtl}
+.ayn-mushaf{font-family:var(--nk);color:#8b6914;font-size:.85em;vertical-align:middle}
+.sui-done{background:linear-gradient(135deg,#f0fdf4,#ecfdf5)!important;border-right:3px solid var(--g)!important}
+.sun-done{background:var(--g)!important;color:#fff!important}
+
+/* ═══ FONT SIZE ═══ */
+:root{--fs:100%}
+
+/* ═══ KHATMA DUA OVERLAY ═══ */
+.khatma{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
+.khatma-card{background:linear-gradient(135deg,#fefdf5,#fdf8e8);border-radius:24px;padding:30px 24px;max-width:380px;width:90%;max-height:80vh;overflow-y:auto;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3);border:2px solid #e8dfc0}
+.khatma-card h2{font-family:var(--nk);font-size:1.3rem;color:#8b6914;margin-bottom:12px}
+.khatma-dua{font-family:var(--nk);font-size:1.1rem;line-height:2.2;color:#2d1810;text-align:center;margin:16px 0}
+
+/* ═══ SETTINGS CARD ═══ */
+.settings-card{background:var(--s);border-radius:14px;padding:16px;margin:8px 12px;box-shadow:var(--sh)}
+.settings-label{font-size:.82rem;font-weight:700;color:var(--g);margin-bottom:8px}
+.settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)}
+.settings-row:last-child{border:none}
+.fs-slider{width:100%;margin:8px 0;accent-color:var(--g);height:6px}

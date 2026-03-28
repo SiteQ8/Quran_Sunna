@@ -53,6 +53,7 @@
 <!-- ═══ القرآن ═══ -->
 <div class="pg" id="pg-quran">
 <div class="pg-title"><h2>القرآن الكريم</h2><p>١١٤ سورة · ٦٢٣٦ آية · اضغط لقراءة أي سورة</p></div>
+<div id="qprog"></div>
 <input class="qsr" id="qs" placeholder="🔍 ابحث بالاسم أو الرقم..." type="text">
 <div class="sul" id="sl"></div>
 <div id="av" style="display:none"></div>
@@ -140,22 +141,69 @@
 <div class="mi" onclick="nav('ruqyah')"><div class="mic" style="background:#fef3e2">🛡️</div><div class="mit"><div class="min">الرقية الشرعية</div><div class="mid">آيات وأحاديث الرقية من الكتاب والسنة</div></div></div>
 <div class="mi" onclick="nav('dua')"><div class="mic" style="background:#fce4ec">🤲</div><div class="mit"><div class="min">الأدعية المأثورة</div><div class="mid">أدعية قرآنية ونبوية لمختلف المناسبات</div></div></div>
 <div class="mi" onclick="nav('hadith')"><div class="mic" style="background:#e8f0fe">📜</div><div class="mit"><div class="min">الأربعون النووية</div><div class="mid">أحاديث جامعة لأصول الدين</div></div></div>
+<div class="mi" onclick="nav('settings')"><div class="mic" style="background:#e3f2fd">⚙️</div><div class="mit"><div class="min">الإعدادات</div><div class="mid">حجم الخط والتخصيصات</div></div></div>
 <div class="mi"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">سُنّتي v2.0 — صنع في الكويت 🇰🇼 — Ali AlEnezi · @SiteQ8</div></div></div>
 <div class="ft">سُنّتي v2.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
 </div>
 
+
+<!-- ═══ الإعدادات ═══ -->
+<div class="pg" id="pg-settings">
+<div class="pg-title"><h2>⚙️ الإعدادات</h2><p>تخصيص التطبيق حسب رغبتك</p></div>
+<div class="settings-card">
+<div class="settings-label">📏 حجم الخط</div>
+<div style="display:flex;align-items:center;gap:10px">
+<span style="font-size:.7rem;color:var(--t3)">صغير</span>
+<input type="range" id="fsr" class="fs-slider" min="70" max="150" step="5" value="100" oninput="setFS(parseInt(this.value))">
+<span style="font-size:.7rem;color:var(--t3)">كبير</span>
+</div>
+<div style="text-align:center;font-size:.72rem;color:var(--g);font-weight:700;margin-top:4px" id="fsv">100%</div>
+<div style="font-family:var(--nk);font-size:calc(var(--fs) * 1.1 / 100 * 1rem);line-height:2;text-align:center;padding:12px;margin-top:8px;background:#fefdf5;border-radius:10px;color:#2d1810">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+</div>
+
+<div class="settings-card">
+<div class="settings-label">📊 تقدم القرآن</div>
+<div id="qprog2"></div>
+<button onclick="if(confirm('هل تريد مسح التقدم؟')){localStorage.removeItem('sunnati_quran_progress');renderProgressBar();alert('تم المسح')}" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t3);margin-top:8px">🗑️ مسح التقدم</button>
+</div>
+
+<div class="settings-card">
+<div class="settings-label">📍 الموقع والقبلة</div>
+<div style="font-size:.82rem;color:var(--t2);padding:4px 0" id="loc2">جاري تحديد الموقع...</div>
+<button onclick="rqL();document.getElementById('loc2').textContent=document.getElementById('loc').textContent" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);margin-top:6px">🔄 تحديث الموقع</button>
+</div>
+</div>
+
 <!-- ═══ التنقل ═══ -->
 <div class="nav">
-<div class="nv on" data-p="home"><span class="ni">🏠</span><span class="nl">الرئيسية</span></div>
+<div class="nv on" data-p="home"><span class="ni">🕌</span><span class="nl">الرئيسية</span></div>
 <div class="nv" data-p="quran"><span class="ni">📖</span><span class="nl">القرآن</span></div>
 <div class="nv" data-p="azkar"><span class="ni">📿</span><span class="nl">الأذكار</span></div>
-<div class="nv" data-p="sunnah"><span class="ni">⭐</span><span class="nl">السنن</span></div>
-<div class="nv" data-p="more"><span class="ni">⚙️</span><span class="nl">المزيد</span></div>
+<div class="nv" data-p="sunnah"><span class="ni">☀️</span><span class="nl">السنن</span></div>
+<div class="nv" data-p="more"><span class="ni">📋</span><span class="nl">المزيد</span></div>
 </div>
 
 <script src="data/surahs.js"></script>
 <script src="data/azkar.js"></script>
 <script src="data/content.js"></script>
 <script src="js/app.js"></script>
+
+<!-- دعاء ختمة القرآن -->
+<div class="khatma" id="khatma" onclick="hideKhatma()">
+<div class="khatma-card" onclick="event.stopPropagation()">
+<div style="font-size:2.5rem;margin-bottom:8px">🌟</div>
+<h2>دعاء ختمة القرآن</h2>
+<div style="font-size:.72rem;color:#8b6914;margin-bottom:12px">مبارك عليك ختمة القرآن الكريم</div>
+<div class="khatma-dua">
+اللَّهُمَّ ارْحَمْنِي بالقُرْآنِ وَاجْعَلهُ لِي إِمَاماً وَنُوراً وَهُدًى وَرَحْمَةً<br><br>
+اللَّهُمَّ ذَكِّرْنِي مِنْهُ مَا نَسِيتُ وَعَلِّمْنِي مِنْهُ مَا جَهِلْتُ وَارْزُقْنِي تِلاَوَتَهُ آنَاءَ اللَّيْلِ وَأَطْرَافَ النَّهَارِ<br><br>
+اللَّهُمَّ اجْعَلْهُ حُجَّةً لِي وَلاَ تَجْعَلْهُ حُجَّةً عَلَيَّ<br><br>
+اللَّهُمَّ اجْعَلْهُ لِي شَافِعاً وَمُشَفَّعاً يَوْمَ القِيَامَةِ<br><br>
+اللَّهُمَّ زَيِّنِّي بِالقُرْآنِ وَأَكْرِمْنِي بِهِ<br><br>
+سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ
+</div>
+<button onclick="hideKhatma()" style="padding:12px 30px;border-radius:14px;background:var(--g);color:#fff;border:none;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--am);margin-top:10px">آمين — إغلاق</button>
+</div>
+</div>
 </body>
 </html>

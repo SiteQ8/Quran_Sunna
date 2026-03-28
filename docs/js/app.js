@@ -1,3 +1,16 @@
+
+// ═══ SETTINGS ═══
+var fontSize = parseInt(localStorage.getItem('sunnati_fontSize') || '100');
+function setFS(v){fontSize=v;localStorage.setItem('sunnati_fontSize',v);document.documentElement.style.setProperty('--fs',v+'%');document.getElementById('fsv').textContent=v+'%';document.getElementById('fsr').value=v}
+document.documentElement.style.setProperty('--fs',fontSize+'%');
+
+// ═══ QURAN PROGRESS ═══
+function getProgress(){try{return JSON.parse(localStorage.getItem('sunnati_quran_progress')||'{}')}catch(e){return {}}}
+function saveProgress(surahNum){var p=getProgress();p.lastSurah=surahNum;p.lastDate=new Date().toISOString();p.completed=p.completed||[];if(p.completed.indexOf(surahNum)===-1)p.completed.push(surahNum);localStorage.setItem('sunnati_quran_progress',JSON.stringify(p));renderProgressBar()}
+function renderProgressBar(){var p=getProgress();var done=p.completed?p.completed.length:0;var pct=Math.round(done/114*100);var el=document.getElementById('qprog');if(el)el.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:0 12px 10px"><div style="flex:1;height:6px;background:var(--s);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--g),#34d399);border-radius:3px"></div></div><span style="font-size:.6rem;color:var(--t3)">'+done+'/114 ('+pct+'%)</span></div>'}
+function showKhatma(){var el=document.getElementById('khatma');if(el){el.style.display='flex';setTimeout(function(){el.style.opacity='1'},10)}}
+function hideKhatma(){var el=document.getElementById('khatma');if(el){el.style.opacity='0';setTimeout(function(){el.style.display='none'},300)}}
+
 // ═══ NAV ═══
 function nav(p){document.querySelectorAll('.pg').forEach(function(x){x.classList.remove('on')});document.querySelectorAll('.nv').forEach(function(x){x.classList.remove('on')});var pg=document.getElementById('pg-'+p);if(pg)pg.classList.add('on');var ni=document.querySelector('[data-p="'+p+'"]');if(ni)ni.classList.add('on');window.scrollTo(0,0)}
 document.querySelectorAll('.nv').forEach(function(n){n.addEventListener('click',function(){nav(this.dataset.p)})});
@@ -43,7 +56,7 @@ rqL();
 (function(){var d=new Date().getDate(),s=Math.floor(d*114/31)+1,a=Math.floor(d*7/31)+1;fetch('https://api.alquran.cloud/v1/ayah/'+s+':'+a).then(function(r){return r.json()}).then(function(d){if(d.data){document.getElementById('ayd').textContent=d.data.text;document.getElementById('ayr').textContent=d.data.surah.name+' \u2014 \u0627\u0644\u0622\u064A\u0629 '+d.data.numberInSurah}}).catch(function(){document.getElementById('ayd').textContent='\u0627\u0644\u0652\u062D\u064E\u0645\u0652\u062F\u064F \u0644\u0650\u0644\u0651\u064E\u0647\u0650 \u0631\u064E\u0628\u0651\u0650 \u0627\u0644\u0652\u0639\u064E\u0627\u0644\u064E\u0645\u0650\u064A\u0646\u064E'})})();
 
 // ═══ QURAN ═══
-function rS(f){f=(f||'').trim();var h='';SURAHS.forEach(function(s){if(f&&s.ar.indexOf(f)===-1&&s.en.toLowerCase().indexOf(f.toLowerCase())===-1&&String(s.n).indexOf(f)===-1)return;h+='<div class="sui" onclick="oS('+s.n+')"><div class="sun">'+s.n+'</div><div class="suinf"><div class="suar">'+s.ar+'</div><div class="suen">'+s.en+'</div></div><div class="sum">'+s.ay+' \u0622\u064A\u0629 \u00B7 '+s.tp+'</div></div>'});document.getElementById('sl').innerHTML=h}
+function rS(f){f=(f||'').trim();var p=getProgress();var h='';SURAHS.forEach(function(s){if(f&&s.ar.indexOf(f)===-1&&s.en.toLowerCase().indexOf(f.toLowerCase())===-1&&String(s.n).indexOf(f)===-1)return;var done=p.completed&&p.completed.indexOf(s.n)!==-1;var isLast=p.lastSurah===s.n;h+='<div class="sui'+(done?' sui-done':'')+'" onclick="oS('+s.n+')"><div class="sun'+(done?' sun-done':'')+'">'+s.n+'</div><div class="suinf"><div class="suar">'+s.ar+(isLast?' <span style="font-size:.5rem;background:#e8f5ee;color:var(--g);padding:1px 5px;border-radius:4px">\u0622\u062E\u0631 \u0642\u0631\u0627\u0621\u0629</span>':'')+'</div><div class="suen">'+s.en+'</div></div><div class="sum">'+s.ay+' \u0622\u064A\u0629 \u00B7 '+s.tp+(done?' \u2705':'')+'</div></div>'});document.getElementById('sl').innerHTML=h;renderProgressBar()}
 rS();document.getElementById('qs').addEventListener('input',function(){rS(this.value)});
 
 // Open surah — BISMILLAH FIX
@@ -53,17 +66,22 @@ fetch('https://api.alquran.cloud/v1/surah/'+n).then(function(r){return r.json()}
 if(!d.data||!d.data.ayahs)return;var ayahs=d.data.ayahs;
 var t='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u062F\u0629</div><div class="avh"><h2>'+s.ar+'</h2><p>'+s.en+' \u00B7 '+s.ay+' \u0622\u064A\u0629</p></div>';
 if(n!==1&&n!==9)t+='<div class="bsm">\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0640\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650</div>';
-t+='<div class="ayt">';
+t+='<div class="quran-page">';
 ayahs.forEach(function(a,i){
 var txt=a.text;
-// BISMILLAH FIX: strip from ayah 1 for surahs 2-114 (not 1, not 9)
 if(i===0&&n!==1&&n!==9){
   txt=txt.replace(/^[^\s]*\u0628\u0650\u0633[^\s]*\s+[^\s]*\u0644\u0644\u0651\u064E[^\s]*\s+[^\s]*\u062D\u0652\u0645[^\s]*\s+[^\s]*\u062D\u0650[\u06CC\u064A]\u0645\u0650\s*/,'');
   if(!txt.trim())txt=a.text;
 }
-txt=txt.trim();if(txt)t+=txt+' <span class="ayn">'+a.numberInSurah+'</span> '});
-t+='</div>';av.innerHTML=t
+txt=txt.trim();if(txt)t+=txt+' <span class="ayn-mushaf">\u06DD'+toAr(a.numberInSurah)+' </span> '});
+t+='</div>';
+// Save progress button
+t+='<div style="text-align:center;padding:16px 12px"><button onclick="saveProgress('+n+')" style="padding:10px 24px;border-radius:12px;background:var(--g);color:#fff;border:none;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--am)">\u2714 \u062D\u0641\u0638 \u0627\u0644\u062A\u0642\u062F\u0645</button></div>';
+// Khatma dua if surah 114
+if(n===114)t+='<div style="text-align:center;padding:20px"><button onclick="showKhatma()" style="padding:12px 30px;border-radius:14px;background:linear-gradient(135deg,#f59e0b,#eab308);color:#fff;border:none;font-size:.95rem;font-weight:800;cursor:pointer;font-family:var(--am);box-shadow:0 4px 16px rgba(245,158,11,.3)">\u{1F31F} \u062F\u0639\u0627\u0621 \u062E\u062A\u0645\u0629 \u0627\u0644\u0642\u0631\u0622\u0646</button></div>';
+av.innerHTML=t
 }).catch(function(){av.innerHTML='<div class="avb" onclick="cS()">\u2190</div><div style="text-align:center;padding:30px;color:var(--t3)">\u26A0\uFE0F \u062A\u0639\u0630\u0631 \u0627\u0644\u062A\u062D\u0645\u064A\u0644</div>'})}
+function toAr(n){return String(n).replace(/[0-9]/g,function(d){return '\u0660\u0661\u0662\u0663\u0664\u0665\u0666\u0667\u0668\u0669'[d]})}
 function cS(){document.getElementById('sl').style.display='';document.getElementById('qs').style.display='';document.getElementById('av').style.display='none'}
 
 // ═══ AZKAR ═══
@@ -102,7 +120,13 @@ rSn();
 function tbT(){var el=document.getElementById('tc');el.textContent=parseInt(el.textContent)+1;if(navigator.vibrate)navigator.vibrate(8)}
 function tbS(b,l){document.querySelectorAll('.tbpi').forEach(function(p){p.classList.remove('on')});b.classList.add('on');document.getElementById('tl').textContent=l;document.getElementById('tc').textContent='0'}
 
-// ═══ QIBLA ═══
-var qA=(function(){var mL=21.4225*Math.PI/180,mN=39.8262*Math.PI/180,uL=uLat*Math.PI/180,uN=uLng*Math.PI/180;return(Math.atan2(Math.sin(mN-uN),Math.cos(uL)*Math.tan(mL)-Math.sin(uL)*Math.cos(mN-uN))*180/Math.PI+360)%360})();
-document.getElementById('qd').textContent=Math.round(qA)+'\u00B0';
-if(window.DeviceOrientationEvent){window.addEventListener('deviceorientation',function(e){if(e.alpha!==null)document.getElementById('qr').style.transform='rotate('+(-(e.alpha-qA))+'deg)'})}
+// ═══ QIBLA (location-based) ═══
+function calcQibla(){var mL=21.4225*Math.PI/180,mN=39.8262*Math.PI/180,uL=uLat*Math.PI/180,uN=uLng*Math.PI/180;var qA=(Math.atan2(Math.sin(mN-uN),Math.cos(uL)*Math.tan(mL)-Math.sin(uL)*Math.cos(mN-uN))*180/Math.PI+360)%360;document.getElementById('qd').textContent=Math.round(qA)+'\u00B0';
+if(window.DeviceOrientationEvent){window.removeEventListener('deviceorientation',window._qH);window._qH=function(e){if(e.alpha!==null){var h=e.alpha;if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;document.getElementById('qr').style.transform='rotate('+(-(h-qA))+'deg)'}};window.addEventListener('deviceorientation',window._qH)}
+return qA}
+var qA=calcQibla();
+// Recalc after location update
+var _origRqL=rqL;rqL=function(){_origRqL();setTimeout(function(){qA=calcQibla()},2000)}
+
+// Init progress
+setTimeout(function(){renderProgressBar();rS()},500);
