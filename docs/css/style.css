@@ -75,13 +75,13 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 ::-webkit-scrollbar{width:0}
 
 /* ═══ QURAN PAGE LAYOUT ═══ */
-.quran-page{font-family:var(--nk);font-size:calc(var(--fs,100%) * 1.3 / 100 * 1rem);line-height:2.4;text-align:justify;padding:16px 14px;background:linear-gradient(180deg,#fefdf5,#fdf8e8);border:2px solid #e8dfc0;border-radius:16px;margin:10px 12px;box-shadow:inset 0 0 30px rgba(139,119,42,.06);color:#2d1810;direction:rtl}
+.quran-page{font-family:var(--nk);font-size:calc(var(--fs, 1) * 1.3rem);line-height:2.4;text-align:justify;padding:16px 14px;background:linear-gradient(180deg,#fefdf5,#fdf8e8);border:2px solid #e8dfc0;border-radius:16px;margin:10px 12px;box-shadow:inset 0 0 30px rgba(139,119,42,.06);color:#2d1810;direction:rtl}
 .ayn-mushaf{font-family:var(--nk);color:#8b6914;font-size:.85em;vertical-align:middle}
 .sui-done{background:linear-gradient(135deg,#f0fdf4,#ecfdf5)!important;border-right:3px solid var(--g)!important}
 .sun-done{background:var(--g)!important;color:#fff!important}
 
 /* ═══ FONT SIZE ═══ */
-:root{--fs:100%}
+:root{--fs:1}
 
 /* ═══ KHATMA DUA OVERLAY ═══ */
 .khatma{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;opacity:0;transition:opacity .3s}
@@ -95,3 +95,8 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 .settings-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--bd)}
 .settings-row:last-child{border:none}
 .fs-slider{width:100%;margin:8px 0;accent-color:var(--g);height:6px}
+
+/* Font size applied to all content */
+.di-t{font-size:calc(var(--fs, 1) * 1rem)}
+.ayt{font-size:calc(var(--fs, 1) * 1.15rem)}
+.cd{font-size:calc(var(--fs, 1) * 0.95rem)}
