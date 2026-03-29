@@ -116,13 +116,18 @@
 <div class="tbn" id="tc">0</div>
 <div class="tbl" id="tl">سبحان الله</div>
 <button class="tbb" onclick="tbT()">اضغط</button>
-<div class="tbp">
+<div class="tbp" id="tb-pool">
 <div class="tbpi on" onclick="tbS(this,'سبحان الله')">سبحان الله</div>
 <div class="tbpi" onclick="tbS(this,'الحمد لله')">الحمد لله</div>
 <div class="tbpi" onclick="tbS(this,'الله أكبر')">الله أكبر</div>
 <div class="tbpi" onclick="tbS(this,'لا إله إلا الله')">لا إله إلا الله</div>
 <div class="tbpi" onclick="tbS(this,'أستغفر الله')">أستغفر الله</div>
+<div class="tbpi" onclick="tbS(this,'لا حول ولا قوة إلا بالله')">لا حول ولا قوة إلا بالله</div>
+<div class="tbpi" onclick="tbS(this,'سبحان الله وبحمده')">سبحان الله وبحمده</div>
+<div class="tbpi" onclick="tbS(this,'سبحان الله العظيم')">سبحان الله العظيم</div>
+<div class="tbpi" onclick="tbS(this,'اللهم صلّ على محمد')">اللهم صلّ على محمد</div>
 </div>
+<button class="tbr" style="background:var(--gl);color:var(--g);border:1px solid var(--g);margin-top:8px" onclick="tbAdd()">+ إضافة ذكر مخصص</button>
 <button class="tbr" onclick="document.getElementById('tc').textContent='0'">↻ إعادة</button>
 </div>
 </div>
@@ -131,9 +136,9 @@
 <div class="pg" id="pg-qibla">
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px"><span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span><span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">اتجاه القبلة</span><span></span></div>
 <div class="qbw"><div class="qbc"><div class="qbr" id="qr"><div class="qbn">N</div><div class="qba">🕋</div></div></div><div class="qbd" id="qd">---°</div><div style="font-size:.78rem;color:var(--t2);margin-top:4px">اتجاه القبلة من موقعك</div>
-<button id="qibla-perm" style="display:none;margin-top:10px;padding:10px 20px;border-radius:12px;background:var(--g);color:#fff;border:none;font-size:.82rem;cursor:pointer;font-family:var(--am)">🧭 تفعيل البوصلة</button>
-<button onclick="navigator.geolocation&&navigator.geolocation.getCurrentPosition(function(p){uLat=p.coords.latitude;uLng=p.coords.longitude;calcQibla();document.getElementById('qloc').textContent=uLat.toFixed(2)+', '+uLng.toFixed(2)},function(){},{enableHighAccuracy:true})" style="margin-top:8px;padding:8px 16px;border-radius:10px;background:var(--bd);color:var(--t2);border:none;font-size:.72rem;cursor:pointer;font-family:var(--am)">📍 تحديث الموقع</button>
-<div id="qloc" style="font-size:.6rem;color:var(--t3);margin-top:4px"></div></div>
+<button id="qibla-perm" style="display:none;margin-top:10px;padding:12px 24px;border-radius:14px;background:var(--g);color:#fff;border:none;font-size:.88rem;cursor:pointer;font-family:var(--am);box-shadow:var(--sh)">🧭 تفعيل البوصلة</button>
+<button id="qloc-btn" onclick="refreshQiblaLocation()" style="margin-top:8px;padding:10px 20px;border-radius:12px;background:var(--bd);color:var(--t2);border:none;font-size:.78rem;cursor:pointer;font-family:var(--am)">📍 تحديث الموقع</button>
+<div id="qloc" style="font-size:.65rem;color:var(--t3);margin-top:6px"></div></div>
 </div>
 
 <!-- ═══ المزيد ═══ -->
