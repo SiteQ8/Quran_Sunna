@@ -130,7 +130,10 @@
 <!-- ═══ القبلة ═══ -->
 <div class="pg" id="pg-qibla">
 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px"><span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span><span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">اتجاه القبلة</span><span></span></div>
-<div class="qbw"><div class="qbc"><div class="qbr" id="qr"><div class="qbn">N</div><div class="qba">🕋</div></div></div><div class="qbd" id="qd">---°</div><div style="font-size:.78rem;color:var(--t2);margin-top:4px">اتجاه القبلة من موقعك</div></div>
+<div class="qbw"><div class="qbc"><div class="qbr" id="qr"><div class="qbn">N</div><div class="qba">🕋</div></div></div><div class="qbd" id="qd">---°</div><div style="font-size:.78rem;color:var(--t2);margin-top:4px">اتجاه القبلة من موقعك</div>
+<button id="qibla-perm" style="display:none;margin-top:10px;padding:10px 20px;border-radius:12px;background:var(--g);color:#fff;border:none;font-size:.82rem;cursor:pointer;font-family:var(--am)">🧭 تفعيل البوصلة</button>
+<button onclick="navigator.geolocation&&navigator.geolocation.getCurrentPosition(function(p){uLat=p.coords.latitude;uLng=p.coords.longitude;calcQibla();document.getElementById('qloc').textContent=uLat.toFixed(2)+', '+uLng.toFixed(2)},function(){},{enableHighAccuracy:true})" style="margin-top:8px;padding:8px 16px;border-radius:10px;background:var(--bd);color:var(--t2);border:none;font-size:.72rem;cursor:pointer;font-family:var(--am)">📍 تحديث الموقع</button>
+<div id="qloc" style="font-size:.6rem;color:var(--t3);margin-top:4px"></div></div>
 </div>
 
 <!-- ═══ المزيد ═══ -->
@@ -141,11 +144,27 @@
 <div class="mi" onclick="nav('ruqyah')"><div class="mic" style="background:#fef3e2">🛡️</div><div class="mit"><div class="min">الرقية الشرعية</div><div class="mid">آيات وأحاديث الرقية من الكتاب والسنة</div></div></div>
 <div class="mi" onclick="nav('dua')"><div class="mic" style="background:#fce4ec">🤲</div><div class="mit"><div class="min">الأدعية المأثورة</div><div class="mid">أدعية قرآنية ونبوية لمختلف المناسبات</div></div></div>
 <div class="mi" onclick="nav('hadith')"><div class="mic" style="background:#e8f0fe">📜</div><div class="mit"><div class="min">الأربعون النووية</div><div class="mid">أحاديث جامعة لأصول الدين</div></div></div>
+<div class="mi" onclick="nav('radio');setTimeout(renderRadioList,100)"><div class="mic" style="background:#fce4ec">📻</div><div class="mit"><div class="min">إذاعة القرآن الكريم</div><div class="mid">بث مباشر من إذاعات دول الخليج</div></div></div>
 <div class="mi" onclick="nav('settings')"><div class="mic" style="background:#e3f2fd">⚙️</div><div class="mit"><div class="min">الإعدادات</div><div class="mid">حجم الخط والتخصيصات</div></div></div>
 <div class="mi"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">سُنّتي v2.0 — صنع في الكويت 🇰🇼 — Ali AlEnezi · @SiteQ8</div></div></div>
 <div class="ft">سُنّتي v2.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
 </div>
 
+
+
+<!-- ═══ إذاعة القرآن ═══ -->
+<div class="pg" id="pg-radio">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📻 إذاعة القرآن الكريم</span>
+<span></span>
+</div>
+<div style="padding:0 12px 8px;font-size:.72rem;color:var(--t3);text-align:center">اضغط على أي محطة للاستماع المباشر</div>
+<div id="radio-list" style="padding:0 12px"></div>
+<div style="text-align:center;padding:16px">
+<button onclick="stopRadio()" style="padding:10px 24px;border-radius:12px;background:var(--bd);color:var(--t2);border:none;font-size:.78rem;cursor:pointer;font-family:var(--am)">⏹ إيقاف البث</button>
+</div>
+</div>
 
 <!-- ═══ الإعدادات ═══ -->
 <div class="pg" id="pg-settings">
@@ -158,7 +177,7 @@
 <span style="font-size:.7rem;color:var(--t3)">كبير</span>
 </div>
 <div style="text-align:center;font-size:.72rem;color:var(--g);font-weight:700;margin-top:4px" id="fsv">100%</div>
-<div style="font-family:var(--nk);font-size:calc(var(--fs) * 1.1 / 100 * 1rem);line-height:2;text-align:center;padding:12px;margin-top:8px;background:#fefdf5;border-radius:10px;color:#2d1810">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+<div id="fs-preview" style="font-family:var(--nk);font-size:1.1rem;line-height:2;text-align:center;padding:12px;margin-top:8px;background:#fefdf5;border-radius:10px;color:#2d1810">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
 </div>
 
 <div class="settings-card">
@@ -207,11 +226,14 @@
 </div>
 
 <script>
-// Init settings values on load
 document.addEventListener('DOMContentLoaded',function(){
   var fs=parseInt(localStorage.getItem('sunnati_fontSize')||'100');
   var el=document.getElementById('fsr');if(el)el.value=fs;
   var lbl=document.getElementById('fsv');if(lbl)lbl.textContent=fs+'%';
+  var prev=document.getElementById('fs-preview');
+  if(prev)prev.style.fontSize=(fs/100*1.1)+'rem';
+  // Apply --fs to root
+  document.documentElement.style.setProperty('--fs',String(fs/100));
 });
 </script>
 </body>

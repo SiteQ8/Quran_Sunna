@@ -2,7 +2,19 @@
 // ═══ SETTINGS ═══
 var fontSize = parseInt(localStorage.getItem('sunnati_fontSize') || '100');
 var fsMult = fontSize / 100;
-function setFS(v){fontSize=v;fsMult=v/100;localStorage.setItem('sunnati_fontSize',v);document.documentElement.style.setProperty('--fs',String(fsMult));document.getElementById('fsv').textContent=v+'%';document.getElementById('fsr').value=v}
+function setFS(v){
+  fontSize=v;fsMult=v/100;localStorage.setItem('sunnati_fontSize',v);
+  document.documentElement.style.setProperty('--fs',String(fsMult));
+  // Apply directly to key elements for maximum compatibility
+  document.querySelectorAll('.quran-page,.ayt,.di-t,.cd,.khatma-dua').forEach(function(el){
+    var base=parseFloat(getComputedStyle(el).fontSize)||16;
+    // Don't recalc - just set the variable and let CSS handle it
+  });
+  var prev=document.getElementById('fs-preview');
+  if(prev)prev.style.fontSize=(fsMult*1.1)+'rem';
+  document.getElementById('fsv').textContent=v+'%';
+  document.getElementById('fsr').value=v;
+}
 document.documentElement.style.setProperty('--fs',String(fontSize/100));
 
 // ═══ QURAN PROGRESS ═══
@@ -23,7 +35,21 @@ var PC={Fajr:'#4a82c9',Sunrise:'#d68f2e',Dhuhr:'#d94f6b',Asr:'#7c52b5',Maghrib:'
 var uLat=29.3759,uLng=47.9774;
 
 // Current time sunnah
-function gP(){var h=new Date().getHours();if(h<5)return 'isha';if(h<7)return 'fajr';if(h<11)return 'duha';if(h<14)return 'dhuhr';if(h<16)return 'asr';if(h<18)return 'maghrib';return 'isha'}
+function gP(){
+  var now=new Date(),nm=now.getHours()*60+now.getMinutes();
+  if(!prayers||!prayers.length) return _gPFallback();
+  var fajr=prayers[0],sunrise=prayers[1],dhuhr=prayers[2],asr=prayers[3],maghrib=prayers[4],isha=prayers[5];
+  var fM=fajr.h*60+fajr.m, srM=sunrise.h*60+sunrise.m, dhM=dhuhr.h*60+dhuhr.m;
+  var asM=asr.h*60+asr.m, mgM=maghrib.h*60+maghrib.m, isM=isha.h*60+isha.m;
+  if(nm<fM) return 'isha';
+  if(nm<srM) return 'fajr';
+  if(nm<dhM) return 'duha';
+  if(nm<asM) return 'dhuhr';
+  if(nm<mgM) return 'asr';
+  if(nm<isM) return 'maghrib';
+  return 'isha';
+}
+function _gPFallback(){var h=new Date().getHours();if(h<5)return 'isha';if(h<7)return 'fajr';if(h<11)return 'duha';if(h<14)return 'dhuhr';if(h<16)return 'asr';if(h<18)return 'maghrib';return 'isha'}
 function rCS(){
   var p=gP(),d=CURRENT_SUNNAH[p];
   var lbl=document.getElementById('sp-lbl');
@@ -48,7 +74,7 @@ rCS();
 function rqL(){if(navigator.geolocation){navigator.geolocation.getCurrentPosition(function(p){uLat=p.coords.latitude;uLng=p.coords.longitude;document.getElementById('loc').textContent='\u{1F4CD} '+uLat.toFixed(2)+', '+uLng.toFixed(2);fetch('https://api.aladhan.com/v1/timings?latitude='+uLat+'&longitude='+uLng+'&method=9').then(function(r){return r.json()}).then(function(d){pP(d.data)}).catch(function(){fP()})},function(){fP()},{enableHighAccuracy:true,timeout:8000})}else fP()}
 function fP(){document.getElementById('loc').textContent='\u{1F4CD} الكويت';fetch('https://api.aladhan.com/v1/timingsByCity?city=Kuwait&country=Kuwait&method=9').then(function(r){return r.json()}).then(function(d){pP(d.data)}).catch(function(){pPM({Fajr:'04:02',Sunrise:'05:22',Dhuhr:'11:52',Asr:'15:18',Maghrib:'18:22',Isha:'19:42'})})}
 function pP(d){var t=d.timings,h=d.date.hijri;document.getElementById('hd').textContent=h.day+' '+h.month.ar+' '+h.year+' \u0647\u0640';if(d.meta&&d.meta.timezone){var z=d.meta.timezone.split('/');document.getElementById('loc').textContent='\u{1F4CD} '+z[z.length-1].replace(/_/g,' ')}pPM(t)}
-function pPM(t){prayers=[];PN.forEach(function(n){var p=(t[n]||'00:00').split(':');prayers.push({n:n,ar:PA[n],h:parseInt(p[0]),m:parseInt(p[1]),ts:t[n],c:PC[n]})});rP();uC()}
+function pPM(t){prayers=[];PN.forEach(function(n){var p=(t[n]||'00:00').split(':');prayers.push({n:n,ar:PA[n],h:parseInt(p[0]),m:parseInt(p[1]),ts:t[n],c:PC[n]})});rP();uC();rCS()}
 function rP(){var now=new Date(),nm=now.getHours()*60+now.getMinutes(),ai=-1;for(var i=prayers.length-1;i>=0;i--){if(nm>=prayers[i].h*60+prayers[i].m){ai=i;break}}var h='';prayers.forEach(function(p,i){h+='<div class="pr'+(i===ai?' act':'')+'"><div class="prl"><div class="pd" style="background:'+p.c+'"></div><span class="pn">'+p.ar+'</span></div><span class="pt">'+p.ts+'</span></div>'});document.getElementById('pls').innerHTML=h}
 function uC(){var n=new Date(),h=n.getHours(),m=n.getMinutes(),nm=h*60+m,np=null;for(var i=0;i<prayers.length;i++){if(prayers[i].h*60+prayers[i].m>nm){np=prayers[i];break}}if(!np&&prayers.length)np=prayers[0];if(np){document.getElementById('nn').textContent=np.ar;document.getElementById('nt').textContent=np.ts}setTimeout(uC,30000)}
 rqL();
@@ -122,12 +148,71 @@ function tbT(){var el=document.getElementById('tc');el.textContent=parseInt(el.t
 function tbS(b,l){document.querySelectorAll('.tbpi').forEach(function(p){p.classList.remove('on')});b.classList.add('on');document.getElementById('tl').textContent=l;document.getElementById('tc').textContent='0'}
 
 // ═══ QIBLA (location-based) ═══
-function calcQibla(){var mL=21.4225*Math.PI/180,mN=39.8262*Math.PI/180,uL=uLat*Math.PI/180,uN=uLng*Math.PI/180;var qA=(Math.atan2(Math.sin(mN-uN),Math.cos(uL)*Math.tan(mL)-Math.sin(uL)*Math.cos(mN-uN))*180/Math.PI+360)%360;document.getElementById('qd').textContent=Math.round(qA)+'\u00B0';
-if(window.DeviceOrientationEvent){window.removeEventListener('deviceorientation',window._qH);window._qH=function(e){if(e.alpha!==null){var h=e.alpha;if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;document.getElementById('qr').style.transform='rotate('+(-(h-qA))+'deg)'}};window.addEventListener('deviceorientation',window._qH)}
-return qA}
+function calcQibla(){
+  var mL=21.4225*Math.PI/180,mN=39.8262*Math.PI/180;
+  var uL=uLat*Math.PI/180,uN=uLng*Math.PI/180;
+  var qA=(Math.atan2(Math.sin(mN-uN),Math.cos(uL)*Math.tan(mL)-Math.sin(uL)*Math.cos(mN-uN))*180/Math.PI+360)%360;
+  var el=document.getElementById('qd');
+  if(el)el.textContent=Math.round(qA)+'\u00B0';
+  // Compass heading
+  function startCompass(){
+    window._qH=function(e){
+      var h=e.alpha;
+      if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;
+      if(h!==null&&h!==undefined){
+        var rot=qA-h;
+        var rEl=document.getElementById('qr');
+        if(rEl)rEl.style.transform='rotate('+rot+'deg)';
+      }
+    };
+    window.addEventListener('deviceorientation',window._qH);
+  }
+  // iOS 13+ needs permission
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
+    var btn=document.getElementById('qibla-perm');
+    if(btn){btn.style.display='block';btn.onclick=function(){
+      DeviceOrientationEvent.requestPermission().then(function(r){if(r==='granted'){startCompass();btn.style.display='none'}}).catch(console.error)}}
+  }else if(window.DeviceOrientationEvent){startCompass()}
+  return qA;
+}
 var qA=calcQibla();
-// Recalc after location update
+// Recalc after location update  
 var _origRqL=rqL;rqL=function(){_origRqL();setTimeout(function(){qA=calcQibla()},2000)}
 
 // Init progress
 setTimeout(function(){renderProgressBar();rS()},500);
+
+// ═══ QURAN RADIO ═══
+var RADIO_STATIONS=[
+{name:'إذاعة القرآن الكريم — الكويت',url:'https://stream.radiojar.com/4wqre23g3k8uv',flag:'🇰🇼'},
+{name:'إذاعة القرآن الكريم — السعودية',url:'https://stream.radiojar.com/8s5u5tpdp58uv',flag:'🇸🇦'},
+{name:'إذاعة القرآن — الإمارات',url:'https://stream.radiojar.com/rdufnkp3bnduv',flag:'🇦🇪'},
+{name:'إذاعة القرآن — قطر',url:'https://stream.radiojar.com/bz6064daq58uv',flag:'🇶🇦'},
+{name:'إذاعة القرآن — البحرين',url:'https://stream.radiojar.com/6nk1cegwyw8uv',flag:'🇧🇭'},
+{name:'القرآن الكريم — مشاري العفاسي',url:'https://stream.radiojar.com/4wqre23g3k8uv',flag:'🎙️'},
+{name:'إذاعة القرآن — عبدالرحمن السديس',url:'https://backup.qurango.net/radio/abdulbasit',flag:'🕌'},
+{name:'إذاعة القرآن — عبدالباسط عبدالصمد',url:'https://backup.qurango.net/radio/abdulbasit',flag:'🎧'}
+];
+var radioAudio=null;var radioPlaying=-1;
+function playRadio(idx){
+  if(radioPlaying===idx){stopRadio();return}
+  stopRadio();
+  radioAudio=new Audio(RADIO_STATIONS[idx].url);
+  radioAudio.play().catch(function(){});
+  radioPlaying=idx;
+  renderRadioList();
+}
+function stopRadio(){
+  if(radioAudio){radioAudio.pause();radioAudio.src='';radioAudio=null}
+  radioPlaying=-1;
+  renderRadioList();
+}
+function renderRadioList(){
+  var el=document.getElementById('radio-list');if(!el)return;
+  var h='';
+  RADIO_STATIONS.forEach(function(s,i){
+    var playing=radioPlaying===i;
+    h+='<div onclick="playRadio('+i+')" style="display:flex;align-items:center;gap:10px;padding:12px;background:'+(playing?'var(--g)10':'var(--s)')+';border-radius:12px;margin-bottom:6px;cursor:pointer;border:1px solid '+(playing?'var(--g)':'var(--bd)')+'"><span style="font-size:1.3rem">'+s.flag+'</span><div style="flex:1"><div style="font-family:var(--am);font-size:.82rem;font-weight:700;color:'+(playing?'var(--g)':'var(--tx)')+'">'+s.name+'</div></div><div style="width:32px;height:32px;border-radius:50%;background:'+(playing?'var(--g)':'var(--bd)')+';display:flex;align-items:center;justify-content:center;font-size:.9rem;color:#fff">'+(playing?'⏸':'▶')+'</div></div>';
+  });
+  el.innerHTML=h;
+}
