@@ -35,13 +35,13 @@
 <div class="g3">
 <div class="gi" onclick="nav('quran')"><div class="gi-tp" style="background:var(--a1)"></div><span class="gi-ic">📖</span><div class="gi-nm">القرآن</div><div class="gi-sb">١١٤ سورة</div></div>
 <div class="gi" onclick="nav('azkar')"><div class="gi-tp" style="background:var(--a5)"></div><span class="gi-ic">📿</span><div class="gi-nm">الأذكار</div><div class="gi-sb">١٦ قسم</div></div>
-<div class="gi" onclick="nav('sunnah')"><div class="gi-tp" style="background:var(--a3)"></div><span class="gi-ic">⭐</span><div class="gi-nm">السنن</div><div class="gi-sb">تتبع يومي</div></div>
-<div class="gi" onclick="nav('tasbih')"><div class="gi-tp" style="background:var(--a4)"></div><span class="gi-ic">📿</span><div class="gi-nm">المسبحة</div><div class="gi-sb">عداد ذكر</div></div>
+<div class="gi" onclick="nav('sunnah')"><div class="gi-tp" style="background:var(--a3)"></div><span class="gi-ic">☀️</span><div class="gi-nm">السنن</div><div class="gi-sb">تتبع يومي</div></div>
+<div class="gi" onclick="nav('tasbih')"><div class="gi-tp" style="background:var(--a4)"></div><span class="gi-ic">🔢</span><div class="gi-nm">المسبحة</div><div class="gi-sb">عداد ذكر</div></div>
 <div class="gi" onclick="nav('hadith')"><div class="gi-tp" style="background:var(--a2)"></div><span class="gi-ic">📜</span><div class="gi-nm">الأحاديث</div><div class="gi-sb">أربعون نووية</div></div>
 <div class="gi" onclick="nav('ruqyah')"><div class="gi-tp" style="background:var(--a6)"></div><span class="gi-ic">🛡️</span><div class="gi-nm">الرقية</div><div class="gi-sb">آيات وأذكار</div></div>
-<div class="gi" onclick="nav('dua')"><div class="gi-tp" style="background:var(--a2)"></div><span class="gi-ic">🤲</span><div class="gi-nm">الأدعية</div><div class="gi-sb">مأثورة</div></div>
-<div class="gi" onclick="nav('qibla')"><div class="gi-tp" style="background:var(--a6)"></div><span class="gi-ic">🧭</span><div class="gi-nm">القبلة</div><div class="gi-sb">بوصلة</div></div>
-<div class="gi" onclick="nav('more')"><div class="gi-tp" style="background:var(--t3)"></div><span class="gi-ic">⚙️</span><div class="gi-nm">المزيد</div><div class="gi-sb">إعدادات</div></div>
+<div class="gi" onclick="nav('dua')"><div class="gi-tp" style="background:#e91e63"></div><span class="gi-ic">🤲</span><div class="gi-nm">الأدعية</div><div class="gi-sb">مأثورة</div></div>
+<div class="gi" onclick="nav('qibla')"><div class="gi-tp" style="background:#00bcd4"></div><span class="gi-ic">🧭</span><div class="gi-nm">القبلة</div><div class="gi-sb">بوصلة</div></div>
+<div class="gi" onclick="nav('more')"><div class="gi-tp" style="background:#607d8b"></div><span class="gi-ic">📋</span><div class="gi-nm">المزيد</div><div class="gi-sb">إعدادات</div></div>
 </div>
 
 <div class="sec"><h3><i style="background:#fce4ec">📖</i>آية اليوم</h3>
@@ -137,7 +137,7 @@
 <div class="pg" id="pg-more">
 <div class="pg-title"><h2>المزيد</h2><p>أدوات ومميزات إضافية</p></div>
 <div class="mi" onclick="nav('qibla')"><div class="mic" style="background:#e8f5ee">🧭</div><div class="mit"><div class="min">اتجاه القبلة</div><div class="mid">بوصلة GPS لتحديد اتجاه القبلة</div></div></div>
-<div class="mi" onclick="nav('tasbih')"><div class="mic" style="background:#e8f5ee">📿</div><div class="mit"><div class="min">المسبحة الإلكترونية</div><div class="mid">عداد التسبيح مع اهتزاز</div></div></div>
+<div class="mi" onclick="nav('tasbih')"><div class="mic" style="background:#e0f2fe">🔢</div><div class="mit"><div class="min">المسبحة الإلكترونية</div><div class="mid">عداد التسبيح مع اهتزاز</div></div></div>
 <div class="mi" onclick="nav('ruqyah')"><div class="mic" style="background:#fef3e2">🛡️</div><div class="mit"><div class="min">الرقية الشرعية</div><div class="mid">آيات وأحاديث الرقية من الكتاب والسنة</div></div></div>
 <div class="mi" onclick="nav('dua')"><div class="mic" style="background:#fce4ec">🤲</div><div class="mit"><div class="min">الأدعية المأثورة</div><div class="mid">أدعية قرآنية ونبوية لمختلف المناسبات</div></div></div>
 <div class="mi" onclick="nav('hadith')"><div class="mic" style="background:#e8f0fe">📜</div><div class="mit"><div class="min">الأربعون النووية</div><div class="mid">أحاديث جامعة لأصول الدين</div></div></div>
@@ -154,7 +154,7 @@
 <div class="settings-label">📏 حجم الخط</div>
 <div style="display:flex;align-items:center;gap:10px">
 <span style="font-size:.7rem;color:var(--t3)">صغير</span>
-<input type="range" id="fsr" class="fs-slider" min="70" max="150" step="5" value="100" oninput="setFS(parseInt(this.value))">
+<input type="range" id="fsr" class="fs-slider" min="70" max="150" step="5" oninput="setFS(parseInt(this.value))">
 <span style="font-size:.7rem;color:var(--t3)">كبير</span>
 </div>
 <div style="text-align:center;font-size:.72rem;color:var(--g);font-weight:700;margin-top:4px" id="fsv">100%</div>
@@ -205,5 +205,14 @@
 <button onclick="hideKhatma()" style="padding:12px 30px;border-radius:14px;background:var(--g);color:#fff;border:none;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--am);margin-top:10px">آمين — إغلاق</button>
 </div>
 </div>
+
+<script>
+// Init settings values on load
+document.addEventListener('DOMContentLoaded',function(){
+  var fs=parseInt(localStorage.getItem('sunnati_fontSize')||'100');
+  var el=document.getElementById('fsr');if(el)el.value=fs;
+  var lbl=document.getElementById('fsv');if(lbl)lbl.textContent=fs+'%';
+});
+</script>
 </body>
 </html>

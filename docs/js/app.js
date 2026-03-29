@@ -1,14 +1,15 @@
 
 // ═══ SETTINGS ═══
 var fontSize = parseInt(localStorage.getItem('sunnati_fontSize') || '100');
-function setFS(v){fontSize=v;localStorage.setItem('sunnati_fontSize',v);document.documentElement.style.setProperty('--fs',v+'%');document.getElementById('fsv').textContent=v+'%';document.getElementById('fsr').value=v}
-document.documentElement.style.setProperty('--fs',fontSize+'%');
+var fsMult = fontSize / 100;
+function setFS(v){fontSize=v;fsMult=v/100;localStorage.setItem('sunnati_fontSize',v);document.documentElement.style.setProperty('--fs',String(fsMult));document.getElementById('fsv').textContent=v+'%';document.getElementById('fsr').value=v}
+document.documentElement.style.setProperty('--fs',String(fontSize/100));
 
 // ═══ QURAN PROGRESS ═══
 function getProgress(){try{return JSON.parse(localStorage.getItem('sunnati_quran_progress')||'{}')}catch(e){return {}}}
 function saveProgress(surahNum){var p=getProgress();p.lastSurah=surahNum;p.lastDate=new Date().toISOString();p.completed=p.completed||[];if(p.completed.indexOf(surahNum)===-1)p.completed.push(surahNum);localStorage.setItem('sunnati_quran_progress',JSON.stringify(p));renderProgressBar()}
 function renderProgressBar(){var p=getProgress();var done=p.completed?p.completed.length:0;var pct=Math.round(done/114*100);var el=document.getElementById('qprog');if(el)el.innerHTML='<div style="display:flex;align-items:center;gap:8px;padding:0 12px 10px"><div style="flex:1;height:6px;background:var(--s);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:linear-gradient(90deg,var(--g),#34d399);border-radius:3px"></div></div><span style="font-size:.6rem;color:var(--t3)">'+done+'/114 ('+pct+'%)</span></div>'}
-function showKhatma(){var el=document.getElementById('khatma');if(el){el.style.display='flex';setTimeout(function(){el.style.opacity='1'},10)}}
+function showKhatma(){var el=document.getElementById('khatma');if(el){el.style.display='flex';el.style.alignItems='center';el.style.justifyContent='center';setTimeout(function(){el.style.opacity='1'},50)}}
 function hideKhatma(){var el=document.getElementById('khatma');if(el){el.style.opacity='0';setTimeout(function(){el.style.display='none'},300)}}
 
 // ═══ NAV ═══
