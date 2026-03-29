@@ -97,6 +97,8 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 .fs-slider{width:100%;margin:8px 0;accent-color:var(--g);height:6px}
 
 /* Font size applied to all content */
-.di-t{font-size:calc(var(--fs, 1) * 1rem)}
-.ayt{font-size:calc(var(--fs, 1) * 1.15rem)}
+.di-t{font-size:calc(var(--fs, 1) * 1rem);line-height:2}
+.ayt{font-size:calc(var(--fs, 1) * 1.15rem);line-height:2.2}
 .cd{font-size:calc(var(--fs, 1) * 0.95rem)}
+.sni .sn-t{font-size:calc(var(--fs, 1) * 0.78rem)}
+.di-r{font-size:calc(var(--fs, 1) * 0.6rem)}
