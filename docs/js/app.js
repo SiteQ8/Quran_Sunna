@@ -117,6 +117,9 @@ av.innerHTML='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u0
 fetch('https://api.alquran.cloud/v1/surah/'+n).then(function(r){return r.json()}).then(function(d){
 if(!d.data||!d.data.ayahs)return;var ayahs=d.data.ayahs;
 var t='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u062F\u0629</div><div class="avh"><h2>'+s.ar+'</h2><p>'+s.en+' \u00B7 '+s.ay+' \u0622\u064A\u0629</p></div>';
+// Audio + Virtue
+t+='<div style="display:flex;gap:6px;padding:6px 12px;justify-content:center"><button onclick="playQuranAudio('+n+')" style="padding:6px 14px;border-radius:8px;background:var(--g);color:#fff;border:none;font-size:.72rem;cursor:pointer;font-family:var(--am)">🎧 \u0627\u0633\u062A\u0645\u0639</button></div>';
+if(SURAH_VIRTUES[n])t+='<div style="background:var(--gl);border-radius:10px;padding:10px;margin:4px 12px 8px;font-size:.68rem;color:var(--g);text-align:center;border:1px solid var(--bd)">\u2728 '+SURAH_VIRTUES[n]+'</div>';
 if(n!==1&&n!==9)t+='<div class="bsm">\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0640\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650</div>';
 t+='<div class="quran-page">';
 ayahs.forEach(function(a,i){
@@ -270,3 +273,186 @@ function renderRadioList(){
   });
   el.innerHTML=h;
 }
+
+// ═══════════════════════════════════════════════════════
+// NEW FEATURES — v3.0 UPGRADE
+// ═══════════════════════════════════════════════════════
+
+// ═══ 1. SLEEP TIMER ═══
+var sleepTimer=null;var sleepRemaining=0;
+function startSleep(mins){
+  clearInterval(sleepTimer);
+  sleepRemaining=mins*60;
+  document.getElementById('sleep-display').style.display='block';
+  updateSleepDisplay();
+  sleepTimer=setInterval(function(){
+    sleepRemaining--;
+    updateSleepDisplay();
+    if(sleepRemaining<=0){
+      clearInterval(sleepTimer);sleepTimer=null;
+      if(radioAudio){radioAudio.pause();radioAudio.src='';radioAudio=null;radioPlaying=-1}
+      document.querySelectorAll('audio').forEach(function(a){a.pause()});
+      document.getElementById('sleep-display').style.display='none';
+      alert('⏰ انتهى مؤقت النوم');
+    }
+  },1000);
+}
+function cancelSleep(){clearInterval(sleepTimer);sleepTimer=null;sleepRemaining=0;var el=document.getElementById('sleep-display');if(el)el.style.display='none'}
+function updateSleepDisplay(){var m=Math.floor(sleepRemaining/60),s=sleepRemaining%60;var el=document.getElementById('sleep-time');if(el)el.textContent=m+':'+(s<10?'0':'')+s}
+
+// ═══ 2. QURAN AUDIO PLAYER ═══
+var quranAudio=null;var quranPlaying=false;
+var RECITERS=[
+  {id:'ar.alafasy',name:'مشاري العفاسي',flag:'🇰🇼'},
+  {id:'ar.abdulbasitmurattal',name:'عبدالباسط عبدالصمد — مرتل',flag:'🎧'},
+  {id:'ar.abdurrahmaansudais',name:'عبدالرحمن السديس',flag:'🕌'},
+  {id:'ar.saaboreen',name:'نبيل الرفاعي',flag:'🎙️'},
+  {id:'ar.husary',name:'محمود خليل الحصري',flag:'📖'},
+  {id:'ar.minshawi',name:'محمد صديق المنشاوي',flag:'🌙'}
+];
+var currentReciter=0;
+function playQuranAudio(surahNum){
+  var r=RECITERS[currentReciter];
+  var url='https://cdn.islamic.network/quran/audio-surah/128/'+r.id+'/'+surahNum+'.mp3';
+  if(quranAudio){quranAudio.pause();quranAudio=null}
+  quranAudio=new Audio(url);
+  quranAudio.play().catch(function(){});
+  quranPlaying=true;
+  var el=document.getElementById('quran-player');
+  if(el)el.style.display='block';
+  var s=SURAHS.find(function(x){return x.n===surahNum});
+  var pn=document.getElementById('qp-name');if(pn)pn.textContent=s?s.ar:'';
+  var pr=document.getElementById('qp-reciter');if(pr)pr.textContent=r.name;
+  quranAudio.onended=function(){quranPlaying=false;var pe=document.getElementById('qp-btn');if(pe)pe.textContent='▶'};
+}
+function toggleQuranAudio(){
+  if(!quranAudio)return;
+  if(quranAudio.paused){quranAudio.play();document.getElementById('qp-btn').textContent='⏸'}
+  else{quranAudio.pause();document.getElementById('qp-btn').textContent='▶'}
+}
+function stopQuranAudio(){if(quranAudio){quranAudio.pause();quranAudio.src='';quranAudio=null;quranPlaying=false}var el=document.getElementById('quran-player');if(el)el.style.display='none'}
+
+// ═══ 3. PRAYER COUNTDOWN TIMER ═══
+function updateCountdown(){
+  if(!prayers||!prayers.length)return;
+  var now=new Date(),nm=now.getHours()*60+now.getMinutes();
+  var np=null;
+  for(var i=0;i<prayers.length;i++){if(prayers[i].h*60+prayers[i].m>nm){np=prayers[i];break}}
+  if(!np)np=prayers[0];
+  var diff=(np.h*60+np.m)-nm;
+  if(diff<0)diff+=24*60;
+  var h=Math.floor(diff/60),m=diff%60;
+  var el=document.getElementById('countdown');
+  if(el)el.textContent=(h>0?h+' س ':'')+ m+' د';
+  setTimeout(updateCountdown,30000);
+}
+
+// ═══ 4. DAILY WIRD (الورد اليومي) ═══
+function getWird(){try{return JSON.parse(localStorage.getItem('sunnati_wird')||'{}')}catch(e){return {}}}
+function saveWird(key){
+  var w=getWird();var td=new Date().toDateString();
+  if(!w[td])w[td]={};
+  w[td][key]=true;
+  localStorage.setItem('sunnati_wird',JSON.stringify(w));
+  renderWird();
+}
+function renderWird(){
+  var el=document.getElementById('wird-list');if(!el)return;
+  var w=getWird();var td=new Date().toDateString();var today=w[td]||{};
+  var items=[
+    {k:'morning',i:'🌅',n:'أذكار الصباح'},
+    {k:'evening',i:'🌆',n:'أذكار المساء'},
+    {k:'quran',i:'📖',n:'قراءة القرآن'},
+    {k:'fajr_s',i:'🕌',n:'سنة الفجر'},
+    {k:'dhuhr_s',i:'☀️',n:'سنة الظهر'},
+    {k:'asr_s',i:'🌤️',n:'سنة العصر'},
+    {k:'maghrib_s',i:'🌅',n:'سنة المغرب'},
+    {k:'isha_s',i:'🌙',n:'سنة العشاء'},
+    {k:'duha',i:'☀️',n:'صلاة الضحى'},
+    {k:'witr',i:'🤲',n:'صلاة الوتر'},
+    {k:'salawat',i:'💚',n:'الصلاة على النبي ﷺ'},
+    {k:'sadaqa',i:'💰',n:'صدقة اليوم'}
+  ];
+  var done=0;
+  var h='';
+  items.forEach(function(it){
+    var isDone=today[it.k];
+    if(isDone)done++;
+    h+='<div class="wird-item'+(isDone?' wird-done':'')+'" onclick="saveWird(\''+it.k+'\')"><span class="wird-ico">'+it.i+'</span><span class="wird-name">'+it.n+'</span><span class="wird-check">'+(isDone?'✅':'○')+'</span></div>';
+  });
+  el.innerHTML=h;
+  var pct=Math.round(done/items.length*100);
+  var bar=document.getElementById('wird-bar');if(bar)bar.style.width=pct+'%';
+  var lbl=document.getElementById('wird-pct');if(lbl)lbl.textContent=done+'/'+items.length+' ('+pct+'%)';
+}
+
+// ═══ 5. SURAH VIRTUES (فضائل السور) ═══
+var SURAH_VIRTUES={
+  1:'أم الكتاب وأعظم سورة في القرآن — لا صلاة لمن لم يقرأ بها',
+  2:'سنام القرآن — تطرد الشيطان من البيت ٣ أيام',
+  3:'تأتي يوم القيامة كغمامتين أو غيايتين تحاجان عن صاحبهما',
+  18:'من قرأها يوم الجمعة أضاء له من النور ما بين الجمعتين',
+  32:'كان النبي ﷺ لا ينام حتى يقرأ الم تنزيل السجدة وتبارك',
+  36:'قلب القرآن — من قرأها ابتغاء وجه الله غُفر له',
+  55:'عروس القرآن',
+  56:'من قرأها كل ليلة لم تصبه فاقة أبداً',
+  67:'المانعة من عذاب القبر — ثلاثون آية شفعت لصاحبها',
+  112:'تعدل ثلث القرآن',
+  113:'المعوذتان — أمر النبي ﷺ بهما في كل صباح ومساء',
+  114:'المعوذتان — أمر النبي ﷺ بهما في كل صباح ومساء'
+};
+
+// ═══ 6. BLESSED DAYS CALENDAR ═══
+var BLESSED_DAYS=[
+  {name:'يوم عرفة',hijri:'9 ذو الحجة',desc:'صيامه يكفّر سنة ماضية وسنة قادمة'},
+  {name:'يوم عاشوراء',hijri:'10 محرم',desc:'صيامه يكفّر سنة ماضية'},
+  {name:'ليلة القدر',hijri:'27 رمضان',desc:'خير من ألف شهر'},
+  {name:'أيام البيض',hijri:'13-15 من كل شهر',desc:'صيامها كصيام الدهر'},
+  {name:'يوم الاثنين والخميس',hijri:'كل أسبوع',desc:'تُعرض الأعمال فيهما'},
+  {name:'العشر من ذي الحجة',hijri:'1-10 ذو الحجة',desc:'أفضل أيام الدنيا'},
+  {name:'الست من شوال',hijri:'1-6 شوال',desc:'كصيام الدهر مع رمضان'}
+];
+
+// ═══ 7. NIYYAH TRACKER (تجديد النية) ═══
+function getNiyyah(){try{return JSON.parse(localStorage.getItem('sunnati_niyyah')||'[]')}catch(e){return []}}
+function addNiyyah(text,cat){
+  var list=getNiyyah();
+  list.push({text:text,cat:cat,date:new Date().toISOString(),done:false});
+  localStorage.setItem('sunnati_niyyah',JSON.stringify(list));
+  renderNiyyah();
+}
+function toggleNiyyah(idx){
+  var list=getNiyyah();
+  if(list[idx])list[idx].done=!list[idx].done;
+  localStorage.setItem('sunnati_niyyah',JSON.stringify(list));
+  renderNiyyah();
+}
+function renderNiyyah(){
+  var el=document.getElementById('niyyah-list');if(!el)return;
+  var list=getNiyyah();
+  if(!list.length){el.innerHTML='<div style="text-align:center;padding:30px;color:var(--t3)">لا توجد نوايا بعد — أضف نيتك الأولى</div>';return}
+  var cats={'worship':'🕌 عبادة','knowledge':'📚 علم','family':'👨‍👩‍👧 أسرة','health':'💪 صحة','charity':'💰 صدقة','other':'💡 أخرى'};
+  var h='';
+  list.forEach(function(n,i){
+    h+='<div class="niyyah-card'+(n.done?' niyyah-done':'')+'" onclick="toggleNiyyah('+i+')"><div class="niyyah-cat">'+(cats[n.cat]||'💡')+'</div><div class="niyyah-text">'+n.text+'</div><div class="niyyah-check">'+(n.done?'✅':'○')+'</div></div>';
+  });
+  el.innerHTML=h;
+}
+
+// ═══ 8. PROPHET'S DAY SCHEDULE ═══
+var PROPHET_DAY=[
+  {time:'قبل الفجر',items:['قيام الليل والتهجد','السحور والاستغفار بالأسحار','دعاء: اللهم اجعلني من التوابين']},
+  {time:'الفجر',items:['سنة الفجر ركعتان','أذكار الصباح','الجلوس في المسجد حتى الشروق']},
+  {time:'الضحى',items:['صلاة الضحى ركعتان إلى ثمان','الذهاب للعمل والتكسب الحلال','ذكر الله في الطريق']},
+  {time:'الظهر',items:['٤ ركعات قبل الظهر و٢ بعدها','الإكثار من الصلاة على النبي ﷺ','القيلولة بعد الظهر']},
+  {time:'العصر',items:['الذكر والاستغفار','صلاة العصر في أول وقتها','تلاوة القرآن']},
+  {time:'المغرب',items:['الإفطار على تمر إن كان صائماً','ركعتين بعد المغرب','أذكار المساء']},
+  {time:'العشاء',items:['صلاة العشاء في جماعة','سنة العشاء ركعتان','صلاة الوتر — ختام اليوم']}
+];
+
+// ═══ INIT NEW FEATURES ═══
+setTimeout(function(){
+  updateCountdown();
+  renderWird();
+  renderNiyyah();
+},1000);
