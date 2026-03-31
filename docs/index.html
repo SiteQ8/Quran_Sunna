@@ -11,6 +11,12 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div class="sleep-bar" id="sleep-display" style="display:none">
+<span>😴 مؤقت النوم</span>
+<span id="sleep-time">00:00</span>
+<button onclick="cancelSleep()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:2px 8px;border-radius:4px;font-size:.6rem;cursor:pointer">إلغاء</button>
+</div>
+
 
 <!-- ═══ الرئيسية ═══ -->
 <div class="pg on" id="pg-home">
@@ -47,7 +53,7 @@
 <div class="sec"><h3><i style="background:#fce4ec">📖</i>آية اليوم</h3>
 <p>تدبّر آية من كتاب الله عز وجل</p></div>
 <div class="cd"><div class="cd-br" style="background:var(--a3)"></div><div id="ayd" style="font-family:var(--q);font-size:1.1rem;line-height:2.1;text-align:center">...</div><div id="ayr" style="font-size:.6rem;color:var(--t3);text-align:center;margin-top:6px"></div></div>
-<div class="ft">سُنّتي v2.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
+<div class="ft">سُنّتي v3.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
 </div>
 
 <!-- ═══ القرآن ═══ -->
@@ -150,9 +156,13 @@
 <div class="mi" onclick="nav('dua')"><div class="mic" style="background:#fce4ec">🤲</div><div class="mit"><div class="min">الأدعية المأثورة</div><div class="mid">أدعية قرآنية ونبوية لمختلف المناسبات</div></div></div>
 <div class="mi" onclick="nav('hadith')"><div class="mic" style="background:#e8f0fe">📜</div><div class="mit"><div class="min">الأربعون النووية</div><div class="mid">أحاديث جامعة لأصول الدين</div></div></div>
 <div class="mi" onclick="nav('radio');setTimeout(renderRadioList,100)"><div class="mic" style="background:#fce4ec">📻</div><div class="mit"><div class="min">إذاعة القرآن الكريم</div><div class="mid">بث مباشر من إذاعات دول الخليج</div></div></div>
+<div class="mi" onclick="nav('wird');setTimeout(renderWird,100)"><div class="mic" style="background:#e8f5ee">📊</div><div class="mit"><div class="min">الورد اليومي</div><div class="mid">تتبع ١٢ عبادة يومية — أذكار ونوافل وقرآن</div></div></div>
+<div class="mi" onclick="nav('prophetday');setTimeout(function(){var el=document.getElementById('pday-list');if(el){var h='';PROPHET_DAY.forEach(function(p){h+='<div class=\'pday-section\'><div class=\'pday-time\'>'+p.time+'</div>';p.items.forEach(function(it){h+='<div class=\'pday-item\'>'+it+'</div>'});h+='</div>'});el.innerHTML=h}},100)"><div class="mic" style="background:#f3e8fe">🕌</div><div class="mit"><div class="min">يوم النبي ﷺ</div><div class="mid">جدول يومي مبني على السنة النبوية</div></div></div>
+<div class="mi" onclick="nav('niyyah');setTimeout(renderNiyyah,100)"><div class="mic" style="background:#fff3e0">🎯</div><div class="mit"><div class="min">تجديد النية</div><div class="mid">ضع نوايا روحية وتابع تقدمك</div></div></div>
+<div class="mi" onclick="nav('blesseddays');setTimeout(function(){var el=document.getElementById('bdays-list');if(el){var h='';BLESSED_DAYS.forEach(function(d){h+='<div class=\'bday-card\'><div class=\'bday-name\'>'+d.name+'</div><div class=\'bday-hijri\'>'+d.hijri+'</div><div class=\'bday-desc\'>'+d.desc+'</div></div>'});el.innerHTML=h}},100)"><div class="mic" style="background:#fce4ec">📅</div><div class="mit"><div class="min">الأيام المباركة</div><div class="mid">أيام الصيام والعبادة المستحبة</div></div></div>
 <div class="mi" onclick="nav('settings')"><div class="mic" style="background:#e3f2fd">⚙️</div><div class="mit"><div class="min">الإعدادات</div><div class="mid">حجم الخط والتخصيصات</div></div></div>
-<div class="mi"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">سُنّتي v2.0 — صنع في الكويت 🇰🇼 — Ali AlEnezi · @SiteQ8</div></div></div>
-<div class="ft">سُنّتي v2.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
+<div class="mi"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">سُنّتي v3.0 — صنع في الكويت 🇰🇼 — Ali AlEnezi · @SiteQ8</div></div></div>
+<div class="ft">سُنّتي v3.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
 </div>
 
 
@@ -167,6 +177,15 @@
 <div style="padding:0 12px 8px;font-size:.72rem;color:var(--t3);text-align:center">اضغط على أي محطة للاستماع المباشر</div>
 <div id="radio-list" style="padding:0 12px"></div>
 <div style="text-align:center;padding:16px">
+<div style="text-align:center;padding:8px 12px;margin-bottom:8px">
+<div style="font-size:.72rem;color:var(--t3);margin-bottom:6px">😴 مؤقت النوم</div>
+<div style="display:flex;gap:6px;justify-content:center">
+<button onclick="startSleep(15)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">١٥ د</button>
+<button onclick="startSleep(30)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">٣٠ د</button>
+<button onclick="startSleep(60)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">ساعة</button>
+<button onclick="startSleep(120)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">ساعتين</button>
+</div>
+</div>
 <button onclick="stopRadio()" style="padding:10px 24px;border-radius:12px;background:var(--bd);color:var(--t2);border:none;font-size:.78rem;cursor:pointer;font-family:var(--am)">⏹ إيقاف البث</button>
 </div>
 </div>
@@ -196,6 +215,74 @@
 <div style="font-size:.82rem;color:var(--t2);padding:4px 0" id="loc2">جاري تحديد الموقع...</div>
 <button onclick="rqL();document.getElementById('loc2').textContent=document.getElementById('loc').textContent" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);margin-top:6px">🔄 تحديث الموقع</button>
 </div>
+</div>
+
+
+<!-- ═══ الورد اليومي ═══ -->
+<div class="pg" id="pg-wird">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📊 الورد اليومي</span>
+<span></span>
+</div>
+<div style="padding:0 12px 6px">
+<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+<div style="flex:1;height:8px;background:var(--s);border-radius:4px;overflow:hidden"><div id="wird-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--g),#34d399);border-radius:4px;transition:width .3s"></div></div>
+<span id="wird-pct" style="font-size:.6rem;color:var(--t3)">0/12</span>
+</div>
+<div style="font-size:.65rem;color:var(--t3);text-align:center;margin-bottom:8px">اضغط على أي عنصر لتسجيل إنجازه اليوم ✅</div>
+</div>
+<div id="wird-list" style="padding:0 12px"></div>
+</div>
+
+<!-- ═══ يوم النبي ═══ -->
+<div class="pg" id="pg-prophetday">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">🕌 يوم النبي ﷺ</span>
+<span></span>
+</div>
+<div style="padding:0 4px 80px" id="pday-list"></div>
+</div>
+
+<!-- ═══ تجديد النية ═══ -->
+<div class="pg" id="pg-niyyah">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">🎯 تجديد النية</span>
+<span></span>
+</div>
+<div style="padding:0 12px">
+<div style="background:var(--gl);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--bd)">
+<input id="niyyah-input" type="text" placeholder="اكتب نيتك..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--bd);font-family:var(--am);font-size:.82rem;margin-bottom:8px">
+<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
+<button onclick="document.getElementById('niyyah-cat').value='worship'" class="tbpi" style="font-size:.6rem">🕌 عبادة</button>
+<button onclick="document.getElementById('niyyah-cat').value='knowledge'" class="tbpi" style="font-size:.6rem">📚 علم</button>
+<button onclick="document.getElementById('niyyah-cat').value='family'" class="tbpi" style="font-size:.6rem">👨‍👩‍👧 أسرة</button>
+<button onclick="document.getElementById('niyyah-cat').value='health'" class="tbpi" style="font-size:.6rem">💪 صحة</button>
+<button onclick="document.getElementById('niyyah-cat').value='charity'" class="tbpi" style="font-size:.6rem">💰 صدقة</button>
+</div>
+<input id="niyyah-cat" type="hidden" value="worship">
+<button onclick="var t=document.getElementById('niyyah-input').value;if(t.trim()){addNiyyah(t,document.getElementById('niyyah-cat').value);document.getElementById('niyyah-input').value=''}" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--am)">+ إضافة نية</button>
+</div>
+</div>
+<div id="niyyah-list" style="padding:0 12px"></div>
+</div>
+
+<!-- ═══ الأيام المباركة ═══ -->
+<div class="pg" id="pg-blesseddays">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📅 الأيام المباركة</span>
+<span></span>
+</div>
+<div id="bdays-list" style="padding:0 12px 80px"></div>
+</div>
+
+<div class="qp-bar" id="quran-player" style="display:none">
+<button id="qp-btn" onclick="toggleQuranAudio()">⏸</button>
+<div class="qp-info"><div class="qp-name" id="qp-name"></div><div class="qp-reciter" id="qp-reciter"></div></div>
+<button onclick="stopQuranAudio()">⏹</button>
 </div>
 
 <!-- ═══ التنقل ═══ -->

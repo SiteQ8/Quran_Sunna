@@ -102,3 +102,44 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 .cd{font-size:calc(var(--fs, 1) * 0.95rem)}
 .sni .sn-t{font-size:calc(var(--fs, 1) * 0.78rem)}
 .di-r{font-size:calc(var(--fs, 1) * 0.6rem)}
+
+/* ═══ QURAN AUDIO PLAYER ═══ */
+.qp-bar{position:fixed;bottom:60px;left:0;right:0;max-width:var(--max);margin:0 auto;background:var(--g);color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:90;box-shadow:0 -4px 16px rgba(0,0,0,.15)}
+.qp-bar .qp-info{flex:1;min-width:0}
+.qp-bar .qp-name{font-size:.82rem;font-weight:700}
+.qp-bar .qp-reciter{font-size:.6rem;opacity:.7}
+.qp-bar button{background:rgba(255,255,255,.2);border:none;color:#fff;width:32px;height:32px;border-radius:50%;font-size:1rem;cursor:pointer}
+
+/* ═══ SLEEP TIMER ═══ */
+.sleep-bar{position:fixed;top:0;left:0;right:0;max-width:var(--max);margin:0 auto;background:linear-gradient(90deg,#1e3a5f,#2d5a87);color:#fff;padding:6px 14px;display:flex;align-items:center;justify-content:space-between;z-index:95;font-size:.72rem}
+
+/* ═══ WIRD ═══ */
+.wird-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--s);border-radius:10px;margin-bottom:4px;cursor:pointer;border:1px solid var(--bd);transition:all .15s}
+.wird-item:active{transform:scale(.98)}
+.wird-done{background:#e8f5ee!important;border-color:var(--g)!important}
+.wird-ico{font-size:1.1rem;width:28px;text-align:center}
+.wird-name{flex:1;font-size:.78rem;font-weight:600}
+.wird-check{font-size:.8rem}
+
+/* ═══ NIYYAH ═══ */
+.niyyah-card{display:flex;align-items:center;gap:10px;padding:12px;background:var(--s);border-radius:10px;margin-bottom:4px;cursor:pointer;border:1px solid var(--bd)}
+.niyyah-done{opacity:.5;text-decoration:line-through}
+.niyyah-cat{font-size:.65rem;color:var(--t3);white-space:nowrap}
+.niyyah-text{flex:1;font-size:.78rem;font-weight:600}
+.niyyah-check{font-size:.8rem}
+
+/* ═══ PROPHET DAY ═══ */
+.pday-section{background:var(--s);border-radius:12px;padding:14px;margin:0 12px 8px;border:1px solid var(--bd)}
+.pday-time{font-size:.82rem;font-weight:700;color:var(--g);margin-bottom:6px}
+.pday-item{font-size:.72rem;color:var(--t2);padding:3px 0;line-height:1.6}
+.pday-item::before{content:'• ';color:var(--g)}
+
+/* ═══ BLESSED DAYS ═══ */
+.bday-card{background:linear-gradient(135deg,var(--gl),#fef3e2);border-radius:12px;padding:14px;margin-bottom:6px;border:1px solid var(--bd)}
+.bday-name{font-size:.88rem;font-weight:700;color:var(--g)}
+.bday-hijri{font-size:.65rem;color:var(--t3);margin-top:2px}
+.bday-desc{font-size:.72rem;color:var(--t2);margin-top:4px;font-style:italic}
+
+/* ═══ RECITER SELECTOR ═══ */
+.reciter-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:3px;cursor:pointer;font-size:.75rem;border:1px solid var(--bd);background:var(--s)}
+.reciter-item.on{background:var(--gl);border-color:var(--g);color:var(--g);font-weight:700}
