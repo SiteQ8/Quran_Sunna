@@ -116,9 +116,12 @@ function oS(n){document.getElementById('sl').style.display='none';document.getEl
 av.innerHTML='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u062F\u0629</div><div class="avh"><h2>'+s.ar+'</h2><p>'+s.en+' \u00B7 '+s.ay+' \u0622\u064A\u0629</p></div><div style="text-align:center;padding:20px;color:var(--t3)"><div class="spinner"></div>\u062C\u0627\u0631\u064A \u0627\u0644\u062A\u062D\u0645\u064A\u0644...</div>';
 fetch('https://api.alquran.cloud/v1/surah/'+n).then(function(r){return r.json()}).then(function(d){
 if(!d.data||!d.data.ayahs)return;var ayahs=d.data.ayahs;
-var t='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u062F\u0629</div><div class="avh"><h2>'+s.ar+'</h2><p>'+s.en+' \u00B7 '+s.ay+' \u0622\u064A\u0629</p></div>';
+var prog=getProgress();
+var t='<div class="avb" onclick="cS()">\u2190 \u0627\u0644\u0639\u0648\u062F\u0629</div><div class="avh"><h2>'+s.ar+'</h2>';
 // Audio + Virtue
-t+='<div style="display:flex;gap:6px;padding:6px 12px;justify-content:center"><button onclick="playQuranAudio('+n+')" style="padding:6px 14px;border-radius:8px;background:var(--g);color:#fff;border:none;font-size:.72rem;cursor:pointer;font-family:var(--am)">🎧 \u0627\u0633\u062A\u0645\u0639</button></div>';
+t+='<div style="display:flex;gap:6px;padding:6px 12px;justify-content:center;flex-wrap:wrap;align-items:center"><button onclick="playQuranAudio('+n+')" style="padding:6px 14px;border-radius:8px;background:var(--g);color:#fff;border:none;font-size:.72rem;cursor:pointer;font-family:var(--am)">🎧 \u0627\u0633\u062A\u0645\u0639</button><select onchange="currentReciter=parseInt(this.value);playQuranAudio('+n+')" style="padding:5px 8px;border-radius:8px;border:1px solid var(--bd);font-size:.62rem;font-family:var(--am);background:var(--s);max-width:160px">';
+RECITERS.forEach(function(r,i){t+='<option value="'+i+'"'+(i===currentReciter?' selected':'')+'>'+r.flag+' '+r.name+'</option>'});
+t+='</select></div>';
 if(SURAH_VIRTUES[n])t+='<div style="background:var(--gl);border-radius:10px;padding:10px;margin:4px 12px 8px;font-size:.68rem;color:var(--g);text-align:center;border:1px solid var(--bd)">\u2728 '+SURAH_VIRTUES[n]+'</div>';
 if(n!==1&&n!==9)t+='<div class="bsm">\u0628\u0650\u0633\u0652\u0645\u0650 \u0627\u0644\u0644\u0651\u064E\u0647\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0652\u0645\u064E\u0640\u0670\u0646\u0650 \u0627\u0644\u0631\u0651\u064E\u062D\u0650\u064A\u0645\u0650</div>';
 t+='<div class="quran-page">';
@@ -128,7 +131,9 @@ if(i===0&&n!==1&&n!==9){
   txt=txt.replace(/^[^\s]*\u0628\u0650\u0633[^\s]*\s+[^\s]*\u0644\u0644\u0651\u064E[^\s]*\s+[^\s]*\u062D\u0652\u0645[^\s]*\s+[^\s]*\u062D\u0650[\u06CC\u064A]\u0645\u0650\s*/,'');
   if(!txt.trim())txt=a.text;
 }
-txt=txt.trim();if(txt)t+=txt+' <span class="ayn-mushaf" onclick="event.stopPropagation();saveProgress('+n+','+a.numberInSurah+');this.style.color=\'#10b981\'" title="\u062D\u0641\u0638 \u0627\u0644\u0622\u064A\u0629">\u06DD'+toAr(a.numberInSurah)+' </span> '});
+txt=txt.trim();if(txt){
+var ayahRead=prog.ayahs&&prog.ayahs[n]&&prog.ayahs[n].indexOf(a.numberInSurah)!==-1;
+t+=txt+' <span class="ayn-mushaf" style="'+(ayahRead?'color:#10b981;font-weight:900':'')+'" onclick="event.stopPropagation();saveProgress('+n+','+a.numberInSurah+');this.style.color=\'#10b981\';this.style.fontWeight=\'900\'" title="\u062D\u0641\u0638 \u0627\u0644\u0622\u064A\u0629">\u06DD'+toAr(a.numberInSurah)+' </span> '}});
 t+='</div>';
 // Save progress button
 t+='<div style="text-align:center;padding:16px 12px"><button onclick="saveProgress('+n+')" style="padding:10px 24px;border-radius:12px;background:var(--g);color:#fff;border:none;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--am)">\u2714 \u062D\u0641\u0638 \u0627\u0644\u0633\u0648\u0631\u0629 \u0643\u0627\u0645\u0644\u0629</button></div>';
@@ -303,12 +308,21 @@ function updateSleepDisplay(){var m=Math.floor(sleepRemaining/60),s=sleepRemaini
 // ═══ 2. QURAN AUDIO PLAYER ═══
 var quranAudio=null;var quranPlaying=false;
 var RECITERS=[
-  {id:'ar.alafasy',name:'مشاري العفاسي',flag:'🇰🇼'},
-  {id:'ar.abdulbasitmurattal',name:'عبدالباسط عبدالصمد — مرتل',flag:'🎧'},
-  {id:'ar.abdurrahmaansudais',name:'عبدالرحمن السديس',flag:'🕌'},
-  {id:'ar.saaboreen',name:'نبيل الرفاعي',flag:'🎙️'},
-  {id:'ar.husary',name:'محمود خليل الحصري',flag:'📖'},
-  {id:'ar.minshawi',name:'محمد صديق المنشاوي',flag:'🌙'}
+  {id:'ar.alafasy',name:'مشاري العفاسي',flag:'🇰🇼',country:'الكويت'},
+  {id:'ar.abdulbasitmurattal',name:'عبدالباسط عبدالصمد — مرتل',flag:'🇪🇬',country:'مصر'},
+  {id:'ar.abdurrahmaansudais',name:'عبدالرحمن السديس',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.husary',name:'محمود خليل الحصري',flag:'🇪🇬',country:'مصر'},
+  {id:'ar.minshawi',name:'محمد صديق المنشاوي',flag:'🇪🇬',country:'مصر'},
+  {id:'ar.maaboreen',name:'ماهر المعيقلي',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.parhizgar',name:'شيرزاد عبدالرحمن طاهر',flag:'🇮🇶',country:'العراق'},
+  {id:'ar.ibrahimakhbar',name:'إبراهيم الأخضر',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.muhammadjibreel',name:'محمد جبريل',flag:'🇪🇬',country:'مصر'},
+  {id:'ar.muhammadayyoub',name:'محمد أيوب',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.saaboreen',name:'نبيل الرفاعي',flag:'🇰🇼',country:'الكويت'},
+  {id:'ar.shaatree',name:'أبو بكر الشاطري',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.ahmedajamy',name:'أحمد العجمي',flag:'🇰🇼',country:'الكويت'},
+  {id:'ar.haboreen',name:'هاني الرفاعي',flag:'🇸🇦',country:'السعودية'},
+  {id:'ar.yaboreen',name:'ياسر الدوسري',flag:'🇸🇦',country:'السعودية'}
 ];
 var currentReciter=0;
 function playQuranAudio(surahNum){
@@ -456,3 +470,68 @@ setTimeout(function(){
   renderWird();
   renderNiyyah();
 },1000);
+
+// ═══ GUIDED TOUR ═══
+function showTour(){
+  if(localStorage.getItem('sunnati_tour_done'))return;
+  var steps=[
+    {title:'\u{1F30D} \u0645\u0631\u062D\u0628\u0627\u064B \u0628\u0643 \u0641\u064A \u0633\u064F\u0646\u0651\u062A\u064A',text:'\u062A\u0637\u0628\u064A\u0642 \u0625\u0633\u0644\u0627\u0645\u064A \u0634\u0627\u0645\u0644 \u2014 \u0627\u0644\u0642\u0631\u0622\u0646 \u0648\u0627\u0644\u0623\u0630\u0643\u0627\u0631 \u0648\u0627\u0644\u0633\u0646\u0646 \u0648\u0623\u0643\u062B\u0631'},
+    {title:'\u{1F4D6} \u0627\u0644\u0642\u0631\u0622\u0646 \u0627\u0644\u0643\u0631\u064A\u0645',text:'\u0627\u0642\u0631\u0623 \u0623\u064A \u0633\u0648\u0631\u0629 \u0628\u062A\u0635\u0645\u064A\u0645 \u0645\u0635\u062D\u0641\u064A \u2014 \u0627\u0633\u062A\u0645\u0639 \u0644\u0640\u0661\u0665 \u0642\u0627\u0631\u0626 \u2014 \u0627\u062D\u0641\u0638 \u062A\u0642\u062F\u0645\u0643 \u0622\u064A\u0629 \u0628\u0622\u064A\u0629'},
+    {title:'\u{1F4FF} \u0627\u0644\u0623\u0630\u0643\u0627\u0631 \u0648\u0627\u0644\u0623\u062F\u0639\u064A\u0629',text:'\u0661\u0666 \u0642\u0633\u0645 \u0645\u0639 \u0639\u062F\u0627\u062F \u2014 \u0623\u0630\u0643\u0627\u0631 \u0627\u0644\u0635\u0628\u0627\u062D \u0648\u0627\u0644\u0645\u0633\u0627\u0621 \u2014 \u0627\u0644\u0631\u0642\u064A\u0629 \u0627\u0644\u0634\u0631\u0639\u064A\u0629'},
+    {title:'\u2600\uFE0F \u0627\u0644\u0633\u0646\u0646 \u0627\u0644\u064A\u0648\u0645\u064A\u0629',text:'\u0633\u0646\u0646 \u0645\u0648\u0642\u0648\u062A\u0629 \u062D\u0633\u0628 \u0648\u0642\u062A \u0627\u0644\u0635\u0644\u0627\u0629 \u0627\u0644\u062D\u0642\u064A\u0642\u064A \u2014 \u0633\u062C\u0651\u0644 \u0625\u0646\u062C\u0627\u0632\u0643'},
+    {title:'\u{1F4FB} \u0625\u0630\u0627\u0639\u0629 \u0627\u0644\u0642\u0631\u0622\u0646',text:'\u0661\u0660 \u0645\u062D\u0637\u0627\u062A \u0628\u062B \u0645\u0628\u0627\u0634\u0631 \u2014 \u0645\u0639 \u0645\u0624\u0642\u062A \u0627\u0644\u0646\u0648\u0645'},
+    {title:'\u{1F3AF} \u0627\u0644\u0648\u0631\u062F \u0627\u0644\u064A\u0648\u0645\u064A',text:'\u062A\u062A\u0628\u0639 \u0661\u0662 \u0639\u0628\u0627\u062F\u0629 \u064A\u0648\u0645\u064A\u0629 \u2014 \u062A\u062C\u062F\u064A\u062F \u0627\u0644\u0646\u064A\u0629 \u2014 \u064A\u0648\u0645 \u0627\u0644\u0646\u0628\u064A \uFDFA'}
+  ];
+  var idx=0;
+  function show(){
+    var s=steps[idx];
+    var overlay=document.getElementById('tour-overlay');
+    if(!overlay){
+      overlay=document.createElement('div');overlay.id='tour-overlay';
+      overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px';
+      document.body.appendChild(overlay);
+    }
+    overlay.innerHTML='<div style="background:#fff;border-radius:24px;padding:30px 24px;max-width:340px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.3)">'
+      +'<div style="font-size:2.5rem;margin-bottom:12px">'+s.title.split(' ')[0]+'</div>'
+      +'<div style="font-family:var(--am);font-size:1.1rem;font-weight:800;color:var(--g);margin-bottom:8px">'+s.title+'</div>'
+      +'<div style="font-family:var(--am);font-size:.82rem;color:var(--t2);line-height:1.8;margin-bottom:20px">'+s.text+'</div>'
+      +'<div style="display:flex;gap:4px;justify-content:center;margin-bottom:14px">'+steps.map(function(_,i){return '<div style="width:8px;height:8px;border-radius:50%;background:'+(i===idx?'var(--g)':'var(--bd)')+'"></div>'}).join('')+'</div>'
+      +'<div style="display:flex;gap:8px;justify-content:center">'
+      +(idx>0?'<button onclick="tourPrev()" style="padding:8px 20px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am)">\u2192 \u0627\u0644\u0633\u0627\u0628\u0642</button>':'')
+      +'<button onclick="tourNext()" style="padding:8px 20px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);font-weight:700">'+(idx<steps.length-1?'\u0627\u0644\u062A\u0627\u0644\u064A \u2190':'\u{1F389} \u0627\u0628\u062F\u0623 \u0627\u0644\u0627\u0633\u062A\u062E\u062F\u0627\u0645')+'</button>'
+      +'</div></div>';
+  }
+  window.tourNext=function(){idx++;if(idx>=steps.length){localStorage.setItem('sunnati_tour_done','1');var o=document.getElementById('tour-overlay');if(o)o.remove()}else show()};
+  window.tourPrev=function(){if(idx>0){idx--;show()}};
+  show();
+}
+setTimeout(showTour,500);
+
+// ═══ SHARE ═══
+function shareText(text){
+  if(navigator.share){navigator.share({text:text}).catch(function(){})}
+  else{navigator.clipboard.writeText(text).then(function(){alert('\u062A\u0645 \u0627\u0644\u0646\u0633\u062E!')}).catch(function(){})}
+}
+
+// ═══ STREAK (تتبع الالتزام) ═══
+function getStreak(){
+  try{var s=JSON.parse(localStorage.getItem('sunnati_streak')||'{}');return s}catch(e){return {}}
+}
+function updateStreak(){
+  var s=getStreak();var today=new Date().toDateString();
+  if(s.lastDay===today)return;
+  var yesterday=new Date(Date.now()-86400000).toDateString();
+  if(s.lastDay===yesterday){s.count=(s.count||0)+1}
+  else if(s.lastDay!==today){s.count=1}
+  s.lastDay=today;s.best=Math.max(s.best||0,s.count);
+  localStorage.setItem('sunnati_streak',JSON.stringify(s));
+  var el=document.getElementById('streak-count');
+  if(el)el.textContent=s.count||0;
+  var bel=document.getElementById('streak-best');
+  if(bel)bel.textContent=s.best||0;
+  var hel=document.getElementById('streak-home');
+  if(hel)hel.textContent=s.count||0;
+  var hbel=document.getElementById('streak-best-home');
+  if(hbel)hbel.textContent=s.best||0;
+}
+setTimeout(updateStreak,2000);
