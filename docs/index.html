@@ -30,6 +30,16 @@
 
 <div class="sec"><h3><i style="background:var(--gl)">☀️</i><span id="sn-title">سنن الوقت الحالي</span></h3>
 <p id="sp-lbl">السنن المستحبة في هذا الوقت</p></div>
+<div style="display:flex;gap:8px;padding:0 12px 8px">
+<div style="flex:1;background:var(--gl);border-radius:10px;padding:8px;text-align:center;border:1px solid var(--bd)">
+<div style="font-size:1.2rem;font-weight:900;color:var(--g)" id="streak-home">0</div>
+<div style="font-size:.5rem;color:var(--t3)">🔥 أيام متتالية</div>
+</div>
+<div style="flex:1;background:var(--s);border-radius:10px;padding:8px;text-align:center;border:1px solid var(--bd)">
+<div style="font-size:1.2rem;font-weight:900;color:var(--a5)" id="streak-best-home">0</div>
+<div style="font-size:.5rem;color:var(--t3)">🏆 أفضل سلسلة</div>
+</div>
+</div>
 <div id="csn"></div>
 
 <div class="sec"><h3><i style="background:#fef3e2">🕌</i>أوقات الصلاة</h3>
@@ -53,7 +63,7 @@
 <div class="sec"><h3><i style="background:#fce4ec">📖</i>آية اليوم</h3>
 <p>تدبّر آية من كتاب الله عز وجل</p></div>
 <div class="cd"><div class="cd-br" style="background:var(--a3)"></div><div id="ayd" style="font-family:var(--q);font-size:1.1rem;line-height:2.1;text-align:center">...</div><div id="ayr" style="font-size:.6rem;color:var(--t3);text-align:center;margin-top:6px"></div></div>
-<div class="ft">سُنّتي v3.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
+<div class="ft">سُنّتي v4.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
 </div>
 
 <!-- ═══ القرآن ═══ -->
@@ -161,8 +171,8 @@
 <div class="mi" onclick="nav('niyyah');setTimeout(renderNiyyah,100)"><div class="mic" style="background:#fff3e0">🎯</div><div class="mit"><div class="min">تجديد النية</div><div class="mid">ضع نوايا روحية وتابع تقدمك</div></div></div>
 <div class="mi" onclick="nav('blesseddays');setTimeout(function(){var el=document.getElementById('bdays-list');if(el){var h='';BLESSED_DAYS.forEach(function(d){h+='<div class=\'bday-card\'><div class=\'bday-name\'>'+d.name+'</div><div class=\'bday-hijri\'>'+d.hijri+'</div><div class=\'bday-desc\'>'+d.desc+'</div></div>'});el.innerHTML=h}},100)"><div class="mic" style="background:#fce4ec">📅</div><div class="mit"><div class="min">الأيام المباركة</div><div class="mid">أيام الصيام والعبادة المستحبة</div></div></div>
 <div class="mi" onclick="nav('settings')"><div class="mic" style="background:#e3f2fd">⚙️</div><div class="mit"><div class="min">الإعدادات</div><div class="mid">حجم الخط والتخصيصات</div></div></div>
-<div class="mi"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">سُنّتي v3.0 — صنع في الكويت 🇰🇼 — Ali AlEnezi · @SiteQ8</div></div></div>
-<div class="ft">سُنّتي v3.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
+<div class="mi" onclick="nav('about');setTimeout(updateStreak,200)"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">المطور · صدقة جارية · الإصدار القادم</div></div></div>
+<div class="ft">سُنّتي v4.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
 </div>
 
 
@@ -212,6 +222,7 @@
 
 <div class="settings-card">
 <div class="settings-label">📍 الموقع والقبلة</div>
+<button onclick="localStorage.removeItem('sunnati_tour_done');showTour()" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t2);margin-bottom:12px">🎓 إعادة الجولة التعريفية</button>
 <div style="font-size:.82rem;color:var(--t2);padding:4px 0" id="loc2">جاري تحديد الموقع...</div>
 <button onclick="rqL();document.getElementById('loc2').textContent=document.getElementById('loc').textContent" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);margin-top:6px">🔄 تحديث الموقع</button>
 </div>
@@ -283,6 +294,101 @@
 <button id="qp-btn" onclick="toggleQuranAudio()">⏸</button>
 <div class="qp-info"><div class="qp-name" id="qp-name"></div><div class="qp-reciter" id="qp-reciter"></div></div>
 <button onclick="stopQuranAudio()">⏹</button>
+</div>
+
+
+<!-- ═══ عن التطبيق ═══ -->
+<div class="pg" id="pg-about">
+<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
+<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">ℹ️ عن التطبيق</span>
+<span></span>
+</div>
+
+<!-- Dedication -->
+<div style="background:linear-gradient(135deg,#fefdf5,#fdf8e8);border:2px solid #e8dfc0;border-radius:20px;padding:24px 20px;margin:0 12px 12px;text-align:center">
+<div style="font-size:2.5rem;margin-bottom:8px">🤲</div>
+<div style="font-family:var(--nk);font-size:1.1rem;color:#8b6914;font-weight:700;margin-bottom:6px">هذا العمل صدقة جارية عن والدي ووالدتي</div>
+<div style="font-family:var(--nk);font-size:.82rem;color:#a0844a;line-height:1.8">اللهم اغفر لهما وارحمهما كما ربياني صغيراً<br>اللهم اجعل هذا العمل في ميزان حسناتهم</div>
+</div>
+
+<!-- App Info -->
+<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+<div style="width:56px;height:56px;border-radius:16px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>
+<div><div style="font-family:var(--am);font-size:1.1rem;font-weight:800;color:var(--g)">سُنّتي</div><div style="font-size:.65rem;color:var(--t3)">Sunnati v3.0 — Islamic Companion App</div></div>
+</div>
+<div style="font-size:.78rem;color:var(--t2);line-height:1.8">
+تطبيق إسلامي شامل يهدف لمساعدة المسلم في حياته اليومية من خلال القرآن الكريم والأذكار والسنن النبوية والأدعية المأثورة.
+<br><br>
+جميع المحتويات مستمدة من مراجع إسلامية موثوقة — القرآن الكريم، صحيح البخاري ومسلم، حصن المسلم، والأربعون النووية.
+</div>
+</div>
+
+<!-- Features List -->
+<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
+<div style="font-size:.88rem;font-weight:700;color:var(--g);margin-bottom:10px">✨ المميزات</div>
+<div style="font-size:.72rem;color:var(--t2);line-height:2">
+📖 القرآن الكريم — ١١٤ سورة مع ١٥ قارئ<br>
+📿 أذكار الصباح والمساء مع عداد<br>
+☀️ السنن اليومية الموقوتة<br>
+🤲 الأدعية المأثورة من القرآن والسنة<br>
+🛡️ الرقية الشرعية<br>
+📜 الأربعون النووية<br>
+🔢 المسبحة الإلكترونية<br>
+🧭 اتجاه القبلة بالبوصلة<br>
+📻 إذاعة القرآن — ١٠ محطات<br>
+📊 الورد اليومي — ١٢ عبادة<br>
+🕌 يوم النبي ﷺ<br>
+🎯 تجديد النية<br>
+📅 الأيام المباركة<br>
+😴 مؤقت النوم<br>
+🎧 مشغل القرآن الصوتي<br>
+📏 التحكم بحجم الخط
+</div>
+</div>
+
+<!-- Developer -->
+<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
+<div style="font-size:.88rem;font-weight:700;color:var(--g);margin-bottom:10px">👨‍💻 المطور</div>
+<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+<div style="width:48px;height:48px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div>
+<div>
+<div style="font-size:.95rem;font-weight:700">Ali AlEnezi — علي العنزي</div>
+<div style="font-size:.65rem;color:var(--t3)">Security Architecture Principal · NBK Group 🇰🇼</div>
+</div>
+</div>
+<div style="font-size:.72rem;color:var(--t2);line-height:1.8">
+📧 Site@hotmail.com<br>
+🌐 <a href="https://3li.info" target="_blank" style="color:var(--g)">3li.info</a><br>
+💻 <a href="https://github.com/SiteQ8" target="_blank" style="color:var(--g)">github.com/SiteQ8</a>
+</div>
+</div>
+
+<!-- Coming Soon -->
+<div style="background:linear-gradient(135deg,var(--g),#34d399);border-radius:16px;padding:18px;margin:0 12px 12px;color:#fff;text-align:center">
+<div style="font-size:1.5rem;margin-bottom:6px">📱</div>
+<div style="font-size:.95rem;font-weight:800;margin-bottom:4px">قريباً على App Store و Google Play</div>
+<div style="font-size:.68rem;opacity:.8">تطبيق سُنّتي سيتوفر على أجهزة iPhone و Android<br>مع ميزات إضافية — إشعارات، ويدجات، وضع بدون إنترنت</div>
+</div>
+
+<!-- Streak -->
+<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd);display:flex;gap:12px">
+<div style="flex:1;text-align:center">
+<div style="font-size:1.8rem;font-weight:900;color:var(--g)" id="streak-count">0</div>
+<div style="font-size:.6rem;color:var(--t3)">🔥 أيام متتالية</div>
+</div>
+<div style="width:1px;background:var(--bd)"></div>
+<div style="flex:1;text-align:center">
+<div style="font-size:1.8rem;font-weight:900;color:var(--a5)" id="streak-best">0</div>
+<div style="font-size:.6rem;color:var(--t3)">🏆 أفضل سلسلة</div>
+</div>
+</div>
+
+<div style="text-align:center;padding:12px;font-size:.55rem;color:var(--t3)">
+سُنّتي v4.0 · صنع بـ ❤️ في الكويت 🇰🇼<br>
+صدقة جارية عن والدي ووالدتي · رحمهم الله
+</div>
 </div>
 
 <!-- ═══ التنقل ═══ -->
