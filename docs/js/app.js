@@ -194,49 +194,57 @@ function tbS(b,l){document.querySelectorAll('.tbpi').forEach(function(p){p.class
 
 // ═══ QIBLA (location-based) ═══
 function calcQibla(){
-  var mL=21.4225*Math.PI/180,mN=39.8262*Math.PI/180;
-  var uL=uLat*Math.PI/180,uN=uLng*Math.PI/180;
-  var qA=(Math.atan2(Math.sin(mN-uN),Math.cos(uL)*Math.tan(mL)-Math.sin(uL)*Math.cos(mN-uN))*180/Math.PI+360)%360;
+  var mLat=21.4225,mLng=39.8262;
+  var lat1=uLat*Math.PI/180,lat2=mLat*Math.PI/180;
+  var dLng=(mLng-uLng)*Math.PI/180;
+  var y=Math.sin(dLng)*Math.cos(lat2);
+  var x=Math.cos(lat1)*Math.sin(lat2)-Math.sin(lat1)*Math.cos(lat2)*Math.cos(dLng);
+  var angle=(Math.atan2(y,x)*180/Math.PI+360)%360;
+  window._qiblaAngle=angle;
   var el=document.getElementById('qd');
-  if(el)el.textContent=Math.round(qA)+'\u00B0 '+(qA>180?'\u2190':'\u2192');
+  if(el)el.textContent=Math.round(angle)+'\u00B0';
   var loc=document.getElementById('qloc');
   if(loc)loc.textContent='\u{1F4CD} '+uLat.toFixed(4)+', '+uLng.toFixed(4);
-  window._qiblaAngle=qA;
-  return qA;
+  // Set compass needle direction (static when no device orientation)
+  var rEl=document.getElementById('qr');
+  if(rEl)rEl.style.transform='rotate('+angle+'deg)';
+  return angle;
 }
-function initCompass(){
-  function handler(e){
+function initQiblaCompass(){
+  function onOrientation(e){
     var heading=e.alpha;
     if(typeof e.webkitCompassHeading==='number')heading=e.webkitCompassHeading;
     if(heading===null||heading===undefined)return;
-    var qA=window._qiblaAngle||calcQibla();
-    var rot=qA-heading;
+    var qA=window._qiblaAngle||0;
+    var needle=qA-heading;
     var rEl=document.getElementById('qr');
-    if(rEl)rEl.style.transform='rotate('+rot+'deg)';
+    if(rEl)rEl.style.transform='rotate('+needle+'deg)';
   }
+  // iOS 13+ permission
   if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){
     var btn=document.getElementById('qibla-perm');
     if(btn){btn.style.display='block';btn.onclick=function(){
       DeviceOrientationEvent.requestPermission().then(function(r){
-        if(r==='granted'){window.addEventListener('deviceorientationabsolute',handler,true);window.addEventListener('deviceorientation',handler);btn.textContent='\u2705 \u062A\u0645 \u0627\u0644\u062A\u0641\u0639\u064A\u0644';btn.disabled=true}
-      }).catch(function(e){alert('\u062A\u0639\u0630\u0631 \u0627\u0644\u0648\u0635\u0648\u0644 \u0644\u0644\u0628\u0648\u0635\u0644\u0629')})}}
+        if(r==='granted'){window.addEventListener('deviceorientation',onOrientation);btn.style.display='none'}
+      }).catch(function(){})
+    }}
   }else{
-    window.addEventListener('deviceorientationabsolute',handler,true);
-    window.addEventListener('deviceorientation',handler);
+    window.addEventListener('deviceorientation',onOrientation);
   }
 }
 function refreshQiblaLocation(){
-  if(!navigator.geolocation)return;
   var btn=document.getElementById('qloc-btn');
   if(btn)btn.textContent='\u23F3 \u062C\u0627\u0631\u064A...';
-  navigator.geolocation.getCurrentPosition(function(p){
-    uLat=p.coords.latitude;uLng=p.coords.longitude;
-    calcQibla();
-    if(btn)btn.textContent='\u2705 \u062A\u0645 \u0627\u0644\u062A\u062D\u062F\u064A\u062B';
-    setTimeout(function(){if(btn)btn.textContent='\u{1F4CD} \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0648\u0642\u0639'},2000);
-  },function(){if(btn)btn.textContent='\u274C \u062A\u0639\u0630\u0631'},{enableHighAccuracy:true,timeout:10000});
+  if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(function(p){
+      uLat=p.coords.latitude;uLng=p.coords.longitude;
+      calcQibla();
+      if(btn)btn.textContent='\u2705 \u062A\u0645';
+      setTimeout(function(){if(btn)btn.textContent='\u{1F4CD} \u062A\u062D\u062F\u064A\u062B \u0627\u0644\u0645\u0648\u0642\u0639'},2000);
+    },function(){if(btn)btn.textContent='\u274C \u062A\u0639\u0630\u0631'},{enableHighAccuracy:true,timeout:10000});
+  }
 }
-var qA=calcQibla();initCompass();
+var qA=calcQibla();setTimeout(initQiblaCompass,1000);
 var _origRqL=rqL;rqL=function(){_origRqL();setTimeout(function(){qA=calcQibla()},2000)}
 
 // Init progress
@@ -513,25 +521,73 @@ function shareText(text){
   else{navigator.clipboard.writeText(text).then(function(){alert('\u062A\u0645 \u0627\u0644\u0646\u0633\u062E!')}).catch(function(){})}
 }
 
-// ═══ STREAK (تتبع الالتزام) ═══
-function getStreak(){
-  try{var s=JSON.parse(localStorage.getItem('sunnati_streak')||'{}');return s}catch(e){return {}}
+
+
+// ═══ CITY SEARCH FOR PRAYER TIMES ═══
+var GULF_CITIES=[
+  {n:'\u0627\u0644\u0643\u0648\u064A\u062A',en:'Kuwait',c:'Kuwait'},
+  {n:'\u0627\u0644\u0631\u064A\u0627\u0636',en:'Riyadh',c:'Saudi Arabia'},
+  {n:'\u062C\u062F\u0629',en:'Jeddah',c:'Saudi Arabia'},
+  {n:'\u0645\u0643\u0629',en:'Makkah',c:'Saudi Arabia'},
+  {n:'\u0627\u0644\u0645\u062F\u064A\u0646\u0629',en:'Madinah',c:'Saudi Arabia'},
+  {n:'\u0627\u0644\u062F\u0645\u0627\u0645',en:'Dammam',c:'Saudi Arabia'},
+  {n:'\u062F\u0628\u064A',en:'Dubai',c:'UAE'},
+  {n:'\u0623\u0628\u0648\u0638\u0628\u064A',en:'Abu Dhabi',c:'UAE'},
+  {n:'\u0627\u0644\u0634\u0627\u0631\u0642\u0629',en:'Sharjah',c:'UAE'},
+  {n:'\u0627\u0644\u062F\u0648\u062D\u0629',en:'Doha',c:'Qatar'},
+  {n:'\u0627\u0644\u0645\u0646\u0627\u0645\u0629',en:'Manama',c:'Bahrain'},
+  {n:'\u0645\u0633\u0642\u0637',en:'Muscat',c:'Oman'},
+  {n:'\u0627\u0644\u0642\u0627\u0647\u0631\u0629',en:'Cairo',c:'Egypt'},
+  {n:'\u0639\u0645\u0651\u0627\u0646',en:'Amman',c:'Jordan'},
+  {n:'\u0628\u063A\u062F\u0627\u062F',en:'Baghdad',c:'Iraq'},
+  {n:'\u0628\u064A\u0631\u0648\u062A',en:'Beirut',c:'Lebanon'},
+  {n:'\u0644\u0646\u062F\u0646',en:'London',c:'UK'},
+  {n:'\u0625\u0633\u0637\u0646\u0628\u0648\u0644',en:'Istanbul',c:'Turkey'}
+];
+function searchCity(city){
+  document.getElementById('loc').textContent='\u23F3 '+city+'...';
+  fetch('https://api.aladhan.com/v1/timingsByCity?city='+encodeURIComponent(city)+'&country=&method=9')
+    .then(function(r){return r.json()})
+    .then(function(d){if(d.data){pP(d.data);document.getElementById('loc').textContent='\u{1F4CD} '+city;calcQibla()}})
+    .catch(function(){document.getElementById('loc').textContent='\u274C \u062A\u0639\u0630\u0631'});
 }
-function updateStreak(){
-  var s=getStreak();var today=new Date().toDateString();
-  if(s.lastDay===today)return;
-  var yesterday=new Date(Date.now()-86400000).toDateString();
-  if(s.lastDay===yesterday){s.count=(s.count||0)+1}
-  else if(s.lastDay!==today){s.count=1}
-  s.lastDay=today;s.best=Math.max(s.best||0,s.count);
-  localStorage.setItem('sunnati_streak',JSON.stringify(s));
-  var el=document.getElementById('streak-count');
-  if(el)el.textContent=s.count||0;
-  var bel=document.getElementById('streak-best');
-  if(bel)bel.textContent=s.best||0;
-  var hel=document.getElementById('streak-home');
-  if(hel)hel.textContent=s.count||0;
-  var hbel=document.getElementById('streak-best-home');
-  if(hbel)hbel.textContent=s.best||0;
+function renderCitySearch(){
+  var el=document.getElementById('city-list');if(!el)return;
+  var h='';GULF_CITIES.forEach(function(c){
+    h+='<div onclick="searchCity(\''+c.en+'\')" style="display:inline-flex;align-items:center;gap:4px;padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);margin:2px;cursor:pointer;font-size:.68rem;font-family:var(--am)">'+c.n+'</div>';
+  });
+  el.innerHTML=h;
 }
-setTimeout(updateStreak,2000);
+
+// ═══ HIJRI DATE ADJUSTMENT ═══
+var hijriAdj=parseInt(localStorage.getItem('sunnati_hijri_adj')||'0');
+function adjustHijri(delta){
+  hijriAdj+=delta;localStorage.setItem('sunnati_hijri_adj',String(hijriAdj));
+  // Re-fetch with adjustment
+  var adj=hijriAdj;
+  fetch('https://api.aladhan.com/v1/timings?latitude='+uLat+'&longitude='+uLng+'&method=9&adjustment='+adj)
+    .then(function(r){return r.json()})
+    .then(function(d){if(d.data&&d.data.date&&d.data.date.hijri){var h=d.data.date.hijri;document.getElementById('hd').textContent=h.day+' '+h.month.ar+' '+h.year+' \u0647\u0640'}})
+    .catch(function(){});
+  document.getElementById('hijri-adj-val').textContent=(hijriAdj>0?'+':'')+hijriAdj;
+}
+
+// ═══ DARK MODE ═══
+function toggleDark(){
+  var isDark=document.body.classList.toggle('dark-mode');
+  localStorage.setItem('sunnati_dark',isDark?'1':'0');
+  var btn=document.getElementById('dark-btn');
+  if(btn)btn.textContent=isDark?'\u2600\uFE0F \u0641\u0627\u062A\u062D':'\u{1F319} \u062F\u0627\u0643\u0646';
+}
+if(localStorage.getItem('sunnati_dark')==='1'){document.body.classList.add('dark-mode')}
+
+// ═══ SEERAH QUOTES ═══
+var SEERAH_QUOTES=[
+  '\u0642\u0627\u0644 \u0627\u0644\u0646\u0628\u064A \uFDFA: \u00AB\u0625\u0646\u0645\u0627 \u0628\u064F\u0639\u0650\u062B\u0652\u062A\u064F \u0644\u0623\u064F\u062A\u0645\u0651\u0650\u0645\u064E \u0645\u0643\u0627\u0631\u0650\u0645\u064E \u0627\u0644\u0623\u062E\u0644\u0627\u0642\u00BB',
+  '\u0643\u0627\u0646 \u0627\u0644\u0646\u0628\u064A \uFDFA \u0623\u062D\u0633\u0646 \u0627\u0644\u0646\u0627\u0633 \u062E\u064F\u0644\u064F\u0642\u0627\u064B \u2014 \u0635\u062D\u064A\u062D \u0645\u0633\u0644\u0645',
+  '\u0643\u0627\u0646 \u0627\u0644\u0646\u0628\u064A \uFDFA \u064A\u062E\u0635\u0641 \u0646\u0639\u0644\u0647 \u0648\u064A\u0631\u0642\u0639 \u062B\u0648\u0628\u0647 \u0648\u064A\u062E\u062F\u0645 \u0641\u064A \u0645\u0647\u0646\u0629 \u0623\u0647\u0644\u0647',
+  '\u0642\u0627\u0644 \uFDFA: \u00AB\u062A\u0628\u0633\u0651\u064F\u0645\u0643 \u0641\u064A \u0648\u062C\u0647 \u0623\u062E\u064A\u0643 \u0635\u062F\u0642\u0629\u00BB',
+  '\u0642\u0627\u0644 \uFDFA: \u00AB\u0623\u062D\u0628\u0651 \u0627\u0644\u0623\u0639\u0645\u0627\u0644 \u0625\u0644\u0649 \u0627\u0644\u0644\u0647 \u0623\u062F\u0648\u0645\u0647\u0627 \u0648\u0625\u0646 \u0642\u0644\u0651\u00BB',
+  '\u0643\u0627\u0646 \uFDFA \u0625\u0630\u0627 \u062F\u062E\u0644 \u0628\u064A\u062A\u0647 \u0628\u062F\u0623 \u0628\u0627\u0644\u0633\u0648\u0627\u0643'
+];
+function getDailySeerah(){var d=new Date().getDate();return SEERAH_QUOTES[d%SEERAH_QUOTES.length]}
