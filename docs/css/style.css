@@ -143,3 +143,13 @@ body::before{content:'';position:fixed;inset:0;opacity:.008;background-image:url
 /* ═══ RECITER SELECTOR ═══ */
 .reciter-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;margin-bottom:3px;cursor:pointer;font-size:.75rem;border:1px solid var(--bd);background:var(--s)}
 .reciter-item.on{background:var(--gl);border-color:var(--g);color:var(--g);font-weight:700}
+
+/* ═══ DARK MODE ═══ */
+body.dark-mode{--bg:#0a0e14;--s:#141a22;--tx:#e2e8f0;--t2:#94a3b8;--t3:#64748b;--bd:#1e2a3a;--gl:#0d2818;--sh:0 2px 8px rgba(0,0,0,.3)}
+body.dark-mode .hero{background:linear-gradient(135deg,#0d1f12,#1a3a1f)!important}
+body.dark-mode .quran-page{background:linear-gradient(180deg,#1a1a10,#141410)!important;color:#d4c9a8!important;border-color:#3a3520!important}
+body.dark-mode .sui{background:var(--s)!important}
+body.dark-mode .pr{background:var(--s)!important}
+body.dark-mode .card,.dark-mode .di,.dark-mode .pday-section,.dark-mode .niyyah-card,.dark-mode .wird-item{background:var(--s)!important;border-color:var(--bd)!important}
+body.dark-mode .bday-card{background:linear-gradient(135deg,#1a2a14,#1a1a10)!important;border-color:#2a3a20!important}
+body.dark-mode input,body.dark-mode select{background:var(--s)!important;color:var(--tx)!important;border-color:var(--bd)!important}

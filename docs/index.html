@@ -24,21 +24,21 @@
 <div class="hero-sm">بِسْمِ اللهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
 <div class="hero-t">سُنّتي</div>
 <div class="hero-h">وَمَا يَزَالُ عَبْدِي يَتَقَرَّبُ إِلَيَّ بِالنَّوَافِلِ حَتَّى أُحِبَّهُ</div>
-<div class="hero-btm"><div class="hero-dt" id="hd">—</div><div class="hero-loc" id="loc">📍 ...</div></div>
+<div class="hero-btm"><div style="display:flex;align-items:center;gap:6px">
+<button onclick="adjustHijri(-1)" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;font-size:.7rem">−</button>
+<div class="hero-dt" id="hd">—</div>
+<button onclick="adjustHijri(1)" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;font-size:.7rem">+</button>
+<span id="hijri-adj-val" style="font-size:.45rem;color:rgba(255,255,255,.4)"></span>
+</div><div class="hero-loc" id="loc">📍 ...</div></div>
 </div>
 <div class="npx"><div><div class="npx-l">الصلاة القادمة</div><div class="npx-n" id="nn">—</div></div><div class="npx-t" id="nt">--:--</div></div>
 
 <div class="sec"><h3><i style="background:var(--gl)">☀️</i><span id="sn-title">سنن الوقت الحالي</span></h3>
 <p id="sp-lbl">السنن المستحبة في هذا الوقت</p></div>
-<div style="display:flex;gap:8px;padding:0 12px 8px">
-<div style="flex:1;background:var(--gl);border-radius:10px;padding:8px;text-align:center;border:1px solid var(--bd)">
-<div style="font-size:1.2rem;font-weight:900;color:var(--g)" id="streak-home">0</div>
-<div style="font-size:.5rem;color:var(--t3)">🔥 أيام متتالية</div>
-</div>
-<div style="flex:1;background:var(--s);border-radius:10px;padding:8px;text-align:center;border:1px solid var(--bd)">
-<div style="font-size:1.2rem;font-weight:900;color:var(--a5)" id="streak-best-home">0</div>
-<div style="font-size:.5rem;color:var(--t3)">🏆 أفضل سلسلة</div>
-</div>
+
+<div style="background:linear-gradient(135deg,#fefdf5,#fdf8e8);border-radius:12px;padding:12px;margin:0 12px 8px;border:1px solid #e8dfc0">
+<div style="font-size:.6rem;color:#8b6914;font-weight:700;margin-bottom:4px">📜 من السيرة النبوية</div>
+<div id="seerah-quote" style="font-family:var(--nk);font-size:.78rem;color:#5a4a2a;line-height:1.8"></div>
 </div>
 <div id="csn"></div>
 
@@ -64,6 +64,7 @@
 <p>تدبّر آية من كتاب الله عز وجل</p></div>
 <div class="cd"><div class="cd-br" style="background:var(--a3)"></div><div id="ayd" style="font-family:var(--q);font-size:1.1rem;line-height:2.1;text-align:center">...</div><div id="ayr" style="font-size:.6rem;color:var(--t3);text-align:center;margin-top:6px"></div></div>
 <div class="ft">سُنّتي v4.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
+<div id="city-list" style="padding:4px 8px 8px;display:flex;flex-wrap:wrap;gap:2px;justify-content:center"></div>
 </div>
 
 <!-- ═══ القرآن ═══ -->
@@ -222,6 +223,11 @@
 
 <div class="settings-card">
 <div class="settings-label">📍 الموقع والقبلة</div>
+<div class="settings-card">
+<div class="settings-label">🌙 الوضع الداكن</div>
+<button id="dark-btn" onclick="toggleDark()" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t2)">🌙 داكن</button>
+</div>
+
 <button onclick="localStorage.removeItem('sunnati_tour_done');showTour()" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t2);margin-bottom:12px">🎓 إعادة الجولة التعريفية</button>
 <div style="font-size:.82rem;color:var(--t2);padding:4px 0" id="loc2">جاري تحديد الموقع...</div>
 <button onclick="rqL();document.getElementById('loc2').textContent=document.getElementById('loc').textContent" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);margin-top:6px">🔄 تحديث الموقع</button>
@@ -373,17 +379,7 @@
 </div>
 
 <!-- Streak -->
-<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd);display:flex;gap:12px">
-<div style="flex:1;text-align:center">
-<div style="font-size:1.8rem;font-weight:900;color:var(--g)" id="streak-count">0</div>
-<div style="font-size:.6rem;color:var(--t3)">🔥 أيام متتالية</div>
-</div>
-<div style="width:1px;background:var(--bd)"></div>
-<div style="flex:1;text-align:center">
-<div style="font-size:1.8rem;font-weight:900;color:var(--a5)" id="streak-best">0</div>
-<div style="font-size:.6rem;color:var(--t3)">🏆 أفضل سلسلة</div>
-</div>
-</div>
+
 
 <div style="text-align:center;padding:12px;font-size:.55rem;color:var(--t3)">
 سُنّتي v4.0 · صنع بـ ❤️ في الكويت 🇰🇼<br>
@@ -425,6 +421,9 @@
 
 <script>
 document.addEventListener('DOMContentLoaded',function(){
+  if(localStorage.getItem('sunnati_dark')==='1'){document.body.classList.add('dark-mode');var db=document.getElementById('dark-btn');if(db)db.textContent='☀️ فاتح'}
+  var sq=document.getElementById('seerah-quote');if(sq&&typeof getDailySeerah==='function')sq.textContent=getDailySeerah();
+  if(typeof renderCitySearch==='function')setTimeout(renderCitySearch,800);
   var fs=parseInt(localStorage.getItem('sunnati_fontSize')||'100');
   var el=document.getElementById('fsr');if(el)el.value=fs;
   var lbl=document.getElementById('fsv');if(lbl)lbl.textContent=fs+'%';
