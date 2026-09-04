@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v5.9.0';
+var VERSION = 'sunnati-v6.0.0';
 
 var SHELL = [
   './',
@@ -37,7 +37,24 @@ var SHELL = [
   './icons/icon-152.png',
   './icons/icon-256.png',
   './icons/icon-384.png',
-  './icons/maskable-192.png'
+  './icons/maskable-192.png',
+  './css/fonts.css',
+  './fonts/amiri-400-arabic.woff2',
+  './fonts/amiri-400-latin.woff2',
+  './fonts/amiri-700-arabic.woff2',
+  './fonts/amiri-700-latin.woff2',
+  './fonts/amiri-quran-400-arabic.woff2',
+  './fonts/amiri-quran-400-latin.woff2',
+  './fonts/plex-arabic-300-arabic.woff2',
+  './fonts/plex-arabic-300-latin.woff2',
+  './fonts/plex-arabic-400-arabic.woff2',
+  './fonts/plex-arabic-400-latin.woff2',
+  './fonts/plex-arabic-500-arabic.woff2',
+  './fonts/plex-arabic-500-latin.woff2',
+  './fonts/plex-arabic-600-arabic.woff2',
+  './fonts/plex-arabic-600-latin.woff2',
+  './fonts/plex-arabic-700-arabic.woff2',
+  './fonts/plex-arabic-700-latin.woff2'
 ];
 
 /* Big and unchanging, so reading them from the cache is always right. */

@@ -18,8 +18,8 @@
   "maskableIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": { "path": "./android.keystore", "alias": "sunnati" },
-  "appVersionName": "5.8.0",
-  "appVersionCode": 58,
+  "appVersionName": "6.0.0",
+  "appVersionCode": 60,
   "shortcuts": [
     { "name": "المصحف", "shortName": "المصحف", "url": "/Quran_Sunna/#quran", "chosenIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-192.png" },
     { "name": "أذكار الصباح", "shortName": "الأذكار", "url": "/Quran_Sunna/#azkar", "chosenIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-192.png" },
@@ -35,5 +35,5 @@
   "isMetaQuest": false,
   "fullScopeUrl": "https://siteq8.github.io/Quran_Sunna/",
   "minSdkVersion": 23,
-  "appVersion": "5.8.0"
+  "appVersion": "6.0.0"
 }
