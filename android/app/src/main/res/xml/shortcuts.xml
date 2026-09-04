@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut android:shortcutId="quran"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcutQuran">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://siteq8.github.io/Quran_Sunna/#quran"
+            android:targetPackage="io.github.siteq8.sunnati"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
+    </shortcut>
+    <shortcut android:shortcutId="azkar"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcutAzkar">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://siteq8.github.io/Quran_Sunna/#azkar"
+            android:targetPackage="io.github.siteq8.sunnati"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
+    </shortcut>
+    <shortcut android:shortcutId="qibla"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcutQibla">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://siteq8.github.io/Quran_Sunna/#qibla"
+            android:targetPackage="io.github.siteq8.sunnati"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
+    </shortcut>
+    <shortcut android:shortcutId="timetable"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcutTimetable">
+        <intent android:action="android.intent.action.VIEW"
+            android:data="https://siteq8.github.io/Quran_Sunna/#timetable"
+            android:targetPackage="io.github.siteq8.sunnati"
+            android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
+    </shortcut>
+</shortcuts>
