@@ -1653,7 +1653,7 @@ test('the arc empties the way the page is read', () => {
 test('the sunnah groups fold, each with its own tally', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
-  const groups = [...doc.querySelectorAll('.fold')];
+  const groups = [...doc.querySelectorAll('#tracker-list .fold')];
   assert.ok(groups.length >= 5, 'the deeds should be grouped, found ' + groups.length);
   groups.forEach(function (g) {
     const tally = g.querySelector('.fold-tally');
@@ -1667,23 +1667,26 @@ test('the sunnah groups fold, each with its own tally', () => {
 test('a group shuts when its head is pressed and stays shut', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
-  const head = doc.querySelectorAll('.fold-head')[1];
+  const head = doc.querySelectorAll('#tracker-list .fold-head')[1];
   click(win, head);
-  assert.strictEqual(doc.querySelectorAll('.fold:not(.is-open)').length, 1);
+  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold:not(.is-open)').length, 1);
   assert.strictEqual(head.getAttribute('aria-expanded'), 'false');
 
-  click(win, doc.querySelector('.fold.is-open .check'));
-  assert.strictEqual(doc.querySelectorAll('.fold:not(.is-open)').length, 1,
+  click(win, doc.querySelector('#tracker-list .fold.is-open .check'));
+  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold:not(.is-open)').length, 1,
     'ticking a deed must not fling every group back open');
 });
 
 test('the tally follows what has been ticked', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
-  const before = doc.querySelector('.fold-tally').textContent;
-  click(win, doc.querySelector('.fold .check'));
-  assert.notStrictEqual(doc.querySelector('.fold-tally').textContent, before);
-  assert.ok(doc.querySelector('.fold-tally').textContent.indexOf('١') === 0);
+  /* Scoped to the tracker, since the home view now carries a folding group of
+     its own and its tally sits earlier in the page. */
+  const before = doc.querySelector('#tracker-list .fold-tally').textContent;
+  click(win, doc.querySelector('#tracker-list .fold .check'));
+  const after = doc.querySelector('#tracker-list .fold-tally').textContent;
+  assert.notStrictEqual(after, before);
+  assert.strictEqual(after.indexOf('١'), 0);
 });
 
 /* ---------------- the qibla ---------------- */
@@ -1931,4 +1934,112 @@ test('nothing in the page reaches out to another site for something it needs', (
     .filter((u) => !/github\.com/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
+});
+
+/* ---------------- the home card folds too ---------------- */
+
+test('the sunnah card on the home view folds with its own tally', () => {
+  const { win, doc } = boot();
+  const fold = doc.getElementById('now-fold');
+  assert.ok(fold, 'the home sunnah card should be a folding group');
+  assert.ok(fold.classList.contains('is-open'), 'it starts open');
+  const tally = doc.getElementById('now-tally');
+  assert.match(tally.textContent, /^[٠-٩]+ من [٠-٩]+$/, 'got ' + tally.textContent);
+
+  click(win, fold.querySelector('.fold-head'));
+  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'));
+  assert.strictEqual(fold.querySelector('.fold-head').getAttribute('aria-expanded'), 'false');
+
+  win.App.render.home();
+  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'),
+    'it should stay shut when the home view is drawn again');
+});
+
+test('the tally on the home card follows what is ticked', () => {
+  const { win, doc } = boot();
+  const before = doc.getElementById('now-tally').textContent;
+  click(win, doc.querySelector('#now-list .check'));
+  assert.notStrictEqual(doc.getElementById('now-tally').textContent, before);
+  assert.strictEqual(doc.getElementById('now-tally').textContent.indexOf('١'), 0);
+});
+
+/* ---------------- where the times come from ---------------- */
+
+test('the times line names the place and the reckoning without stuttering', () => {
+  const { win, doc } = boot();
+  const line = doc.getElementById('place-line');
+  const where = line.querySelector('.place-where').textContent.trim();
+  const how = line.querySelector('.place-how').textContent.trim();
+  assert.strictEqual(where, 'الكويت');
+  assert.ok(how.indexOf('تقويم') === 0, 'got ' + how);
+  assert.ok(how.indexOf('وزارة الأوقاف') !== -1,
+    'a method should name the body that issues it, got ' + how);
+  /* محسوبة للكويت بطريقة الكويت said the same word twice and named no authority */
+  assert.notStrictEqual(how.replace('تقويم ', ''), where, 'the two must not read as the same word');
+  assert.strictEqual(line.getAttribute('data-go'), 'settings', 'and it should lead to the settings');
+});
+
+test('no calculation method is named after a bare country', () => {
+  const { win } = boot();
+  const bare = ['الكويت', 'قطر', 'المغرب', 'الإمارات', 'سنغافورة', 'تركيا'];
+  Object.keys(win.PrayerEngine.METHODS).forEach(function (key) {
+    const name = win.PrayerEngine.METHODS[key].name;
+    assert.ok(bare.indexOf(name) === -1,
+      key + ' is named ' + name + ', which tells a reader nothing about who issues it');
+    assert.ok(name.length > 5, key + ' needs a fuller name');
+  });
+});
+
+/* ---------------- the azkar ---------------- */
+
+test('every dhikr carries its text, its source and how many times', () => {
+  const { win } = boot();
+  const db = win.AZKAR_DB;
+  assert.ok(Object.keys(db).length >= 20, 'expected a full set of sections');
+  Object.keys(db).forEach(function (key) {
+    const section = db[key];
+    assert.ok(section.title && section.title.length > 3, key + ' needs a title');
+    assert.ok(section.items.length > 0, key + ' is empty');
+    section.items.forEach(function (item, i) {
+      assert.ok(item.t && item.t.length > 3, key + '[' + i + '] has no text');
+      assert.ok(item.c >= 1, key + '[' + i + '] needs a count');
+      /* the ninety nine names carry their number rather than a chain */
+      if (key !== 'names') {
+        assert.ok(item.r && item.r.length > 2,
+          key + '[' + i + '] is not attributed: ' + item.t.slice(0, 30));
+      }
+    });
+  });
+});
+
+test('the sections added carry sound attributions', () => {
+  const { win } = boot();
+  const db = win.AZKAR_DB;
+  ['adhan', 'istighfar', 'sick', 'hardship', 'funeral', 'market'].forEach(function (key) {
+    assert.ok(db[key], 'missing section ' + key);
+    assert.ok(db[key].items.length >= 2, key + ' is too thin');
+    db[key].items.forEach(function (item) {
+      assert.match(item.r, /البخاري|مسلم|أبو داود|الترمذي|النسائي|ابن ماجه|أحمد|ابن حبان|الدارمي|الحاكم/,
+        'a dhikr must name where it is recorded, got: ' + item.r);
+    });
+  });
+});
+
+test('no dhikr is repeated inside its own section', () => {
+  const { win } = boot();
+  Object.keys(win.AZKAR_DB).forEach(function (key) {
+    const texts = win.AZKAR_DB[key].items.map(function (i) { return i.t; });
+    assert.strictEqual(new Set(texts).size, texts.length, key + ' repeats a dhikr');
+  });
+});
+
+test('the azkar grid shows every section it holds', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  const tiles = doc.querySelectorAll('#azkar-groups [data-azkar]');
+  assert.strictEqual(tiles.length, Object.keys(win.AZKAR_DB).length);
+  click(win, doc.querySelector('[data-azkar="istighfar"]'));
+  assert.ok(doc.getElementById('azkar-list-title').textContent.indexOf('الاستغفار') !== -1);
+  assert.strictEqual(doc.querySelectorAll('#azkar-items .dhikr').length,
+    win.AZKAR_DB.istighfar.items.length);
 });
