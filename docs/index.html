@@ -99,6 +99,21 @@
     </div>
 
     <div class="arc-wrap">
+      <svg class="mihrab" viewBox="0 0 240 152" aria-hidden="true">
+        <defs>
+          <linearGradient id="niche" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="currentColor" stop-opacity=".14"/>
+            <stop offset=".75" stop-color="currentColor" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <path class="mihrab-fill" d="M6 152V140a114 114 0 0 1 228 0v12Z" fill="url(#niche)"/>
+        <path class="mihrab-line" d="M6 152V140a114 114 0 0 1 228 0v12"/>
+        <path class="mihrab-line mihrab-inner" d="M20 152V140a100 100 0 0 1 200 0v12"/>
+        <g class="mihrab-star" transform="translate(120 22)">
+          <rect x="-11" y="-11" width="22" height="22" rx="3"/>
+          <rect x="-11" y="-11" width="22" height="22" rx="3" transform="rotate(45)"/>
+        </g>
+      </svg>
       <svg class="arc" viewBox="0 0 240 152" role="img" aria-labelledby="arc-desc">
         <title id="arc-desc">تقدم الوقت بين الصلاتين</title>
         <path class="arc-track" id="arc-track" d="M220 140a100 100 0 0 0 -200 0"/>
@@ -141,7 +156,7 @@
     <div class="heat" id="home-heat" style="margin-top:14px"></div>
   </div>
 
-  <h2 class="section-title">الأقسام</h2>
+  <h2 class="section-title has-band">الأقسام</h2>
   <div class="grid" id="home-tiles"></div>
 
   <div class="card" style="margin-top:16px">
@@ -197,7 +212,7 @@
     <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
   </div>
   <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
-  <div class="surah-head">
+  <div class="surah-head surah-frame">
     <h2 id="reader-title">…</h2>
     <p id="reader-meta"></p>
   </div>

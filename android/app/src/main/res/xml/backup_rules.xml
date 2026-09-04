@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Everything a person records lives in the browser store, which the system
+     carries with the rest of the app data. -->
+<full-backup-content>
+    <include domain="sharedpref" path="."/>
+</full-backup-content>

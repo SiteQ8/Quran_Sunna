@@ -2220,3 +2220,110 @@ test('the day the table shows agrees with the clock on the home screen', () => {
   const table = [...row.querySelectorAll('td')].map((e) => e.textContent);
   assert.deepStrictEqual(table, home, 'the same day cannot have two sets of times');
 });
+
+/* ---------------- ornament ---------------- */
+
+test('the niche frames the countdown rather than swallowing it', () => {
+  const { doc } = boot();
+  const arch = doc.querySelector('.mihrab');
+  assert.ok(arch, 'the home screen should carry the niche');
+  assert.strictEqual(arch.getAttribute('viewBox'), '0 0 240 152',
+    'it should be drawn over the same square as the arc');
+  assert.strictEqual(arch.getAttribute('aria-hidden'), 'true', 'ornament is not read aloud');
+  assert.ok(arch.querySelector('.mihrab-star'), 'the crown carries the eight fold star');
+  assert.strictEqual(doc.querySelectorAll('.mihrab-line').length, 2, 'an outer and an inner line');
+});
+
+test('an ayah closes with a rosette, as a printed mushaf does', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.ayah-num \{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the ayah marker needs a style');
+  assert.ok(rule[1].indexOf('background-image') !== -1, 'it should be drawn, not a plain ring');
+  assert.ok(rule[1].indexOf('svg') !== -1, 'and drawn as a vector so it stays sharp');
+});
+
+test('the surah name sits inside a cartouche', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="36"]'));
+  const frame = doc.querySelector('.surah-frame');
+  assert.ok(frame, 'the reader should frame the name');
+  assert.ok(frame.textContent.indexOf('يس') !== -1);
+});
+
+test('the pattern under the app is actually visible', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /body::before \{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the pattern layer needs a rule');
+  const opacity = parseFloat(/opacity:\s*([\d.]+)/.exec(rule[1])[1]);
+  assert.ok(opacity >= 0.2, 'a pattern nobody can see is not a pattern, found ' + opacity);
+  assert.ok(rule[1].indexOf('svg') !== -1, 'and it should be a vector that tiles');
+});
+
+/* ---------------- the android wrapper ---------------- */
+
+test('the android project is complete enough to build', () => {
+  const root = path.join(__dirname, '..', 'android');
+  assert.ok(fs.existsSync(root), 'the wrapper source should live in the repository');
+  ['settings.gradle', 'build.gradle', 'gradle.properties', 'README.md',
+   'app/build.gradle', 'app/src/main/AndroidManifest.xml',
+   'app/src/main/res/values/strings.xml', 'app/src/main/res/values/colors.xml',
+   'app/src/main/res/values-night/colors.xml', 'app/src/main/res/xml/shortcuts.xml',
+   'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml'].forEach(function (rel) {
+    assert.ok(fs.existsSync(path.join(root, rel)), 'missing ' + rel);
+  });
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (density) {
+    assert.ok(fs.existsSync(path.join(root, 'app/src/main/res/mipmap-' + density, 'ic_launcher.png')),
+      'no launcher icon at ' + density);
+    assert.ok(fs.existsSync(path.join(root, 'app/src/main/res/mipmap-' + density, 'ic_launcher_foreground.png')),
+      'no adaptive layer at ' + density);
+  });
+});
+
+test('the wrapper opens the same address the site is published at', () => {
+  const root = path.join(__dirname, '..', 'android');
+  const strings = fs.readFileSync(path.join(root, 'app/src/main/res/values/strings.xml'), 'utf8');
+  const manifest = fs.readFileSync(path.join(root, 'app/src/main/AndroidManifest.xml'), 'utf8');
+  const site = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+
+  assert.ok(strings.indexOf('https://siteq8.github.io/Quran_Sunna/') !== -1,
+    'the wrapper should open the published address');
+  assert.ok(manifest.indexOf('android:host="siteq8.github.io"') !== -1,
+    'and claim links to it');
+  assert.ok(manifest.indexOf('autoVerify="true"') !== -1,
+    'so a link opens the app rather than a browser');
+  assert.strictEqual(site.orientation, 'portrait');
+  assert.ok(manifest.indexOf('android:screenOrientation="portrait"') !== -1,
+    'the wrapper and the web manifest should agree about orientation');
+});
+
+test('the wrapper asks for nothing it does not need', () => {
+  const manifest = fs.readFileSync(
+    path.join(__dirname, '..', 'android', 'app/src/main/AndroidManifest.xml'), 'utf8');
+  const asked = [...manifest.matchAll(/uses-permission android:name="android\.permission\.([A-Z_]+)"/g)]
+    .map((m) => m[1]);
+  assert.deepStrictEqual(asked.sort(), ['INTERNET', 'POST_NOTIFICATIONS'],
+    'an app that stores nothing off the device needs no more than these');
+  /* the compass and the location are asked for by the page, so neither may be
+     required to install */
+  [...manifest.matchAll(/uses-feature[^>]*required="(\w+)"/g)].forEach(function (m) {
+    assert.strictEqual(m[1], 'false', 'no hardware should be required to install');
+  });
+});
+
+test('nothing that must stay private is committed', () => {
+  const ignore = fs.readFileSync(path.join(__dirname, '..', 'android', '.gitignore'), 'utf8');
+  ['keystore.properties', '*.keystore', '*.jks', 'local.properties'].forEach(function (line) {
+    assert.ok(ignore.indexOf(line) !== -1, 'the wrapper must not carry ' + line);
+  });
+  const root = path.join(__dirname, '..', 'android');
+  const walk = function (dir) {
+    return fs.readdirSync(dir, { withFileTypes: true }).reduce(function (all, e) {
+      const full = path.join(dir, e.name);
+      return all.concat(e.isDirectory() ? walk(full) : [full]);
+    }, []);
+  };
+  walk(root).forEach(function (file) {
+    assert.ok(!/\.(keystore|jks)$/.test(file), 'a signing key was committed: ' + file);
+  });
+});
