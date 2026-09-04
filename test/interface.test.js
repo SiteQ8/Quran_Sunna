@@ -906,7 +906,10 @@ test('the friday card ticks are kept apart from the weekday ones', () => {
   assert.ok(box, 'the home view lists the sunnah of this window');
   const id = box.getAttribute('data-check');
   assert.match(id, /^now:[a-z]+:\d+$/);
-  if (new Date().getDay() === 5) {
+  /* الجمعة runs from dawn to sunset, so the card carries its sunan through the
+     daytime windows and hands back to the ordinary ones after المغرب. */
+  const daytime = ['duha', 'dhuhr', 'asr'].indexOf(win.App.clockState().windowKey) !== -1;
+  if (new Date().getDay() === 5 && daytime) {
     assert.ok(id.indexOf('now:friday:') === 0, 'friday ticks carry their own key, got ' + id);
     assert.ok(doc.getElementById('now-title').textContent.indexOf('الجمعة') !== -1);
   }
@@ -2326,4 +2329,173 @@ test('nothing that must stay private is committed', () => {
   walk(root).forEach(function (file) {
     assert.ok(!/\.(keystore|jks)$/.test(file), 'a signing key was committed: ' + file);
   });
+});
+
+/* ---------------- reciting along ---------------- */
+
+function reciteHarness(win) {
+  const asked = [];
+  let live = null;
+  win.Audio = function () {
+    const a = {
+      src: '', paused: false, onended: null,
+      play() { asked.push(this.src); live = this; return Promise.resolve(); },
+      pause() { this.paused = true; }
+    };
+    return a;
+  };
+  return { asked: asked, end: function () { if (live && live.onended) live.onended(); } };
+}
+
+test('the reader recites verse by verse and marks where it has reached', () => {
+  const { win, doc } = boot();
+  const audio = reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+
+  click(win, doc.getElementById('reader-play'));
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 1, 'one verse is marked');
+  assert.strictEqual(doc.querySelector('.ayah.is-reciting').getAttribute('data-a'), '1');
+  assert.ok(doc.getElementById('player').classList.contains('is-open'));
+  assert.ok(doc.getElementById('player-title').textContent.indexOf('آية 1') !== -1,
+    'got ' + doc.getElementById('player-title').textContent);
+  assert.strictEqual(audio.asked.length, 1, 'one file per verse, not one for the surah');
+
+  audio.end();
+  assert.strictEqual(doc.querySelector('.ayah.is-reciting').getAttribute('data-a'), '2',
+    'the mark should follow the reciter');
+  assert.strictEqual(audio.asked.length, 2);
+});
+
+test('the recitation ends cleanly at the last verse', () => {
+  const { win, doc } = boot();
+  const audio = reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+
+  for (let i = 0; i < 4; i++) audio.end();
+  assert.strictEqual(win.App.state.recite, null, 'it should stop, not run past the surah');
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 0, 'and leave no mark behind');
+  assert.ok(!doc.getElementById('player').classList.contains('is-open'));
+  assert.strictEqual(audio.asked.length, 4, 'al ikhlas is four verses');
+});
+
+test('the player steps a verse at a time in both directions', () => {
+  const { win, doc } = boot();
+  reciteHarness(win);
+  win.App.state.surah = 2;
+  win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+
+  const at = function () { return +doc.querySelector('.ayah.is-reciting').getAttribute('data-a'); };
+  assert.strictEqual(at(), 1);
+  click(win, doc.getElementById('player-next'));
+  click(win, doc.getElementById('player-next'));
+  assert.strictEqual(at(), 3);
+  click(win, doc.getElementById('player-prev'));
+  assert.strictEqual(at(), 2);
+  /* it must not walk off the front of the surah */
+  click(win, doc.getElementById('player-prev'));
+  click(win, doc.getElementById('player-prev'));
+  assert.strictEqual(at(), 1);
+});
+
+test('stopping ends the walk, not only the sound', () => {
+  const { win, doc } = boot();
+  reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+  assert.ok(win.App.state.recite);
+
+  click(win, doc.getElementById('player-stop'));
+  assert.strictEqual(win.App.state.recite, null);
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 0);
+});
+
+test('a verse can be read on from, out of the sheet', () => {
+  const { win, doc } = boot();
+  const audio = reciteHarness(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="18"]'));
+  click(win, doc.querySelector('[data-ayah="18:60"]'));
+  assert.ok(doc.querySelector('[data-act="recite"]'), 'the sheet should offer to read on');
+
+  click(win, doc.querySelector('[data-act="recite"]'));
+  assert.ok(win.App.state.recite, 'it should start reciting');
+  assert.strictEqual(win.App.state.recite.a, 60, 'from the verse in hand, not from the top');
+  assert.strictEqual(doc.querySelector('.ayah.is-reciting').getAttribute('data-a'), '60');
+  assert.ok(!doc.getElementById('sheet').classList.contains('is-open'), 'the sheet gets out of the way');
+  assert.strictEqual(audio.asked.length, 1);
+});
+
+test('drawing the reader again keeps the mark where the reciter is', () => {
+  const { win, doc } = boot();
+  reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+  click(win, doc.getElementById('player-next'));
+
+  win.App.render.reader();
+  assert.strictEqual(doc.querySelector('.ayah.is-reciting').getAttribute('data-a'), '2',
+    'a redraw must not lose the place');
+});
+
+test('the screen is kept awake while reciting and let go after', () => {
+  const { win, doc } = boot();
+  reciteHarness(win);
+  let held = 0, released = 0;
+  win.navigator.wakeLock = {
+    request: function () { held++; return Promise.resolve({ release: function () { released++; } }); }
+  };
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+  assert.strictEqual(held, 1, 'a reciter should not have the screen go dark on them');
+
+  return new Promise(function (done) {
+    setTimeout(function () {
+      click(win, doc.getElementById('player-stop'));
+      assert.strictEqual(released, 1, 'and the lock is given back when it stops');
+      done();
+    }, 30);
+  });
+});
+
+test('the two ways of reciting keep out of each other', () => {
+  const { win, doc } = boot();
+  const audio = reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+
+  /* a repeat run and a walk through the surah are separate things, and each
+     must drive its own playback rather than silently taking over the other */
+  win.App.repeat.start(1, 2, 2, false);
+  assert.ok(win.App.state.repeat, 'the repeat run should be under way');
+  assert.strictEqual(win.App.state.recite, null, 'and it is not the walk');
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 1);
+  assert.ok(audio.asked.length >= 1, 'the repeat run should play something');
+  win.App.repeat.stop();
+
+  const before = audio.asked.length;
+  click(win, doc.getElementById('reader-play'));
+  assert.ok(win.App.state.recite, 'the walk should be under way');
+  assert.strictEqual(win.App.state.repeat, null, 'and it is not the repeat run');
+  assert.ok(audio.asked.length > before, 'the walk should play something too');
+});
+
+test('no two functions in the controller share a name', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const code = app.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const names = [...code.matchAll(/^\s*function ([A-Za-z_$][\w$]*)\s*\(/gm)].map((m) => m[1]);
+  const seen = {}, twice = [];
+  names.forEach(function (n) {
+    if (seen[n]) { if (twice.indexOf(n) === -1) twice.push(n); }
+    seen[n] = true;
+  });
+  assert.deepStrictEqual(twice, [],
+    'a second declaration replaces the first without a word, and whatever called ' +
+    'the first stops working: ' + twice.join(', '));
 });

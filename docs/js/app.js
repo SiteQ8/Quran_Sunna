@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.3.0';
+  var VERSION = '6.4.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -62,6 +62,7 @@
     installOffer: null,
     updateOffered: false,
     qibla: null,
+    recite: null,
     dailyAyah: null
   };
 
@@ -529,12 +530,13 @@
 
   function currentWindowKey() { return clockState().windowKey; }
 
-  /* On Friday the stretch from mid morning to the khutbah belongs to the
-     jumuah, so the card offers the sunan of the day rather than those of the
-     duha and the dhuhr it replaces. */
+  /* The sunan of الجمعة belong to the whole of the day, from the ghusl before
+     morning to the hour of answer in العصر, so the card carries them through
+     those windows. الفجر keeps its own emphasised rakahs, and after المغرب the
+     night already belongs to the next day. */
   function windowSunnah(key, date) {
-    if (isFriday(date) && (key === 'duha' || key === 'dhuhr') &&
-      typeof FRIDAY_SUNNAH !== 'undefined') {
+    var daytime = key === 'duha' || key === 'dhuhr' || key === 'asr';
+    if (isFriday(date) && daytime && typeof FRIDAY_SUNNAH !== 'undefined') {
       return { key: 'friday', block: FRIDAY_SUNNAH };
     }
     if (typeof CURRENT_SUNNAH === 'undefined') return null;
@@ -855,6 +857,7 @@
 
     body.className = 'reader-body';
     body.innerHTML = '<div class="ayah-block">' + html + '</div>';
+    if (state.recite && state.recite.s === n) markReciting(state.recite.a);
     var last = Store.get('lastRead');
     rememberPlace(n, last && last.s === n ? last.a : 1);
   }
@@ -962,6 +965,7 @@
       '" style="margin-top:8px">' + icon('refresh') + 'كرّر للحفظ</button>' +
       '<div class="btn-row" style="margin-top:8px">' +
       '<button class="btn btn-ghost" data-act="listen" data-ref="' + s + ':' + a + '">' + icon('play') + 'استماع</button>' +
+      '<button class="btn btn-ghost" data-act="recite" data-ref="' + s + ':' + a + '">' + icon('play') + 'اقرأ من هنا</button>' +
       '<button class="btn btn-ghost" data-act="tafsir" data-ref="' + s + ':' + a + '">' + icon('info') + 'تفسير</button>' +
       '</div>' +
       '<div id="tafsir-slot" style="margin-top:12px"></div>';
@@ -1040,6 +1044,67 @@
     if (player) player.classList.remove('is-open');
   }
 
+  /* ---------------- reciting along ---------------- */
+
+  /* A recitation walks the verses one at a time, so the page can mark the verse
+     being read and carry it into view. A single long file for a whole surah
+     cannot say where in the text it has reached. */
+  function reciteFrom(s, a, to) {
+    if (!Mushaf.ready()) { toast('نص المصحف لم يكتمل تحميله بعد'); return; }
+    var count = Mushaf.surah(s).length;
+    state.recite = {
+      s: s,
+      a: Math.max(1, Math.min(count, a || 1)),
+      to: Math.max(1, Math.min(count, to || count))
+    };
+    keepAwake();
+    reciteVerse();
+  }
+
+  /* Named apart from the repeat run, which owns reciteCurrent, since two
+     declarations of one name leave only the last and the other feature dies
+     without a sound. */
+  function reciteVerse() {
+    var r = state.recite;
+    if (!r) return;
+    if (r.a > r.to) {
+      var done = surahMeta(r.s);
+      stopRecite();
+      toast('تمت تلاوة ' + (done ? 'سورة ' + done.ar : 'الورد'));
+      return;
+    }
+    markReciting(r.a);
+    var meta = surahMeta(r.s);
+    playAudio(
+      'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' +
+        Mushaf.globalIndex(r.s, r.a) + '.mp3',
+      'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(r.a),
+      reciterName()
+    );
+    if (state.audio) {
+      state.audio.onended = function () {
+        if (!state.recite) return;
+        state.recite.a++;
+        reciteVerse();
+      };
+    }
+  }
+
+  function stepRecite(by) {
+    if (!state.recite) return;
+    var count = Mushaf.surah(state.recite.s).length;
+    state.recite.a = Math.max(1, Math.min(count, state.recite.a + by));
+    if (state.recite.a > state.recite.to) state.recite.to = count;
+    reciteVerse();
+  }
+
+  function stopRecite() {
+    state.recite = null;
+    releaseAwake();
+    $$('.ayah').forEach(function (el) { el.classList.remove('is-reciting'); });
+    stopAudio();
+  }
+
   function playVerse(s, a) {
     var index = Mushaf.globalIndex(s, a);
     var meta = surahMeta(s);
@@ -1051,12 +1116,7 @@
   }
 
   function playSurah(n) {
-    var meta = surahMeta(n);
-    playAudio(
-      'https://cdn.islamic.network/quran/audio-surah/128/' + reciterId() + '/' + n + '.mp3',
-      'سورة ' + (meta ? meta.ar : ''),
-      reciterName()
-    );
+    reciteFrom(n, state.ayah || 1);
   }
 
   /* ---------------- search ---------------- */
@@ -2064,6 +2124,12 @@
       var parts = ref.split(':');
       playVerse(+parts[0], +parts[1]);
     },
+    recite: function (ref) {
+      var parts = ref.split(':');
+      closeSheet();
+      openReader(+parts[0], +parts[1]);
+      reciteFrom(+parts[0], +parts[1]);
+    },
     tafsir: function (ref) {
       var parts = ref.split(':');
       loadTafsir(+parts[0], +parts[1]);
@@ -2307,7 +2373,9 @@
     bind('sheet-close', 'click', closeSheet);
     bind('sheet', 'click', function (e) { if (e.target && e.target.id === 'sheet') closeSheet(); });
 
-    bind('player-stop', 'click', stopAudio);
+    bind('player-stop', 'click', stopRecite);
+    bind('player-prev', 'click', function () { stepRecite(-1); });
+    bind('player-next', 'click', function () { stepRecite(1); });
     bind('player-toggle', 'click', function () {
       if (!state.audio) return;
       if (state.audio.paused) { state.audio.play(); } else { state.audio.pause(); }
