@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.5.1';
+  var VERSION = '6.6.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -964,7 +964,7 @@
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
-        esc(text) + sajda + '<span class="ayah-num">' + ar(a) + '</span></span> ';
+        esc(text) + sajda + '\u2060<span class="ayah-num">' + ar(a) + '</span></span> ';
     }).join('');
 
     body.className = 'reader-body';

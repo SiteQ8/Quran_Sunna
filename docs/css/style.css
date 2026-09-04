@@ -168,7 +168,12 @@ button { background: none; border: none; cursor: pointer; }
 .view.is-open { display: block; animation: view-in .22s ease both; }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
-.view-head { margin-bottom: var(--s4); }
+.view-head {
+  margin: 0 calc(var(--s2) * -1) var(--s4);
+  padding: var(--s3) var(--s3) var(--s3);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--raised) 82%, transparent);
+}
 .view-head h1 { font-size: var(--step-3); font-weight: 700; letter-spacing: -.01em; }
 .view-head p { color: var(--ink-2); font-size: var(--step--1); margin-top: 2px; }
 
@@ -266,6 +271,17 @@ button { background: none; border: none; cursor: pointer; }
   padding: 3px 10px; border-radius: 999px;
   background: var(--sunken); color: var(--ink-3);
 }
+
+/* The reading under the compass, on its own ground. */
+.compass-panel {
+  margin: var(--s3) calc(var(--s2) * -1) 0; padding: var(--s3);
+  border-radius: var(--r-md); text-align: center;
+  background: color-mix(in srgb, var(--raised) 88%, transparent);
+}
+
+/* A line of small print that has to stand on the pattern gets a ground. */
+.pill { display: table; margin-inline: auto; padding: 4px 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--raised) 85%, transparent); }
 
 /* ---------- ornament ---------- */
 
@@ -421,7 +437,12 @@ button { background: none; border: none; cursor: pointer; }
 .card-head h2 .icon { color: var(--accent); }
 .card-more { font-size: var(--step--1); color: var(--accent-ink); font-weight: 600; }
 
-.section-title { font-size: var(--step--1); color: var(--ink-3); font-weight: 600; margin: var(--s5) 0 var(--s2); }
+.section-title {
+  font-size: var(--step--1); color: var(--ink-2); font-weight: 700; margin: var(--s5) 0 var(--s2);
+  display: inline-block; padding: 4px 12px; border-radius: 999px;
+  background: color-mix(in srgb, var(--raised) 85%, transparent);
+}
+.section-title.has-band { display: flex; }
 
 /* A thumb is about eleven millimetres across, which is far wider than some of
    these controls are drawn. Rather than fatten every chip and switch and spoil
@@ -443,7 +464,10 @@ button { background: none; border: none; cursor: pointer; }
 }
 .btn:active { transform: scale(.97); }
 .btn-primary { background: var(--accent-solid); color: var(--on-accent); }
-.btn-ghost { background: none; border: 1px solid var(--line); color: var(--ink-2); }
+.btn-ghost {
+  background: color-mix(in srgb, var(--raised) 78%, transparent);
+  border: 1px solid var(--line); color: var(--ink-2);
+}
 .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: var(--s2); flex-wrap: wrap; }
@@ -534,6 +558,13 @@ button { background: none; border: none; cursor: pointer; }
 
 /* ---------- revealed text ---------- */
 
+/* The words of the mushaf are read off clean paper, as in a printed one, and the
+   ornament belongs to the margin around the page rather than under the letters. */
+.reader-body {
+  background: var(--raised); border-radius: var(--r-md); box-shadow: var(--shadow);
+  padding: var(--s4) var(--s4) var(--s5);
+  border: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+}
 .ayah-block {
   font-family: var(--quran);
   font-size: calc(1.32rem * var(--quran-scale));
@@ -556,6 +587,7 @@ button { background: none; border: none; cursor: pointer; }
   border-radius: 6px;
 }
 
+.ayah { white-space: normal; }
 .ayah-num {
   display: inline-grid; place-items: center; width: 1.9em; height: 1.9em;
   margin-inline: .18em; vertical-align: -.35em;
@@ -649,7 +681,12 @@ button { background: none; border: none; cursor: pointer; }
 
 /* ---------- counter ---------- */
 
-.counter { text-align: center; padding: var(--s5) 0; }
+.counter {
+  text-align: center; padding: var(--s5) var(--s3);
+  margin: 0 calc(var(--s2) * -1); border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--raised) 88%, transparent);
+  box-shadow: var(--shadow);
+}
 .counter-value { font-size: 4.6rem; font-weight: 200; color: var(--accent); direction: ltr; line-height: 1; font-variant-numeric: tabular-nums; }
 .counter-target { font-size: var(--step--1); color: var(--ink-3); }
 .counter-phrase { font-family: var(--naskh); font-size: var(--step-2); margin: var(--s3) 0 var(--s5); }

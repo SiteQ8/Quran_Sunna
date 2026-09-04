@@ -2676,3 +2676,37 @@ test('the star lattice reads as ornament, not as graph paper', () => {
   assert.ok(+star[2] <= 0.25 && +star[2] >= 0.15,
     'a line pattern belongs between faint and loud, found ' + star[2]);
 });
+
+/* ---------------- nothing to read sits on the lattice ---------------- */
+
+test('the mushaf is read off clean paper, with the ornament in the margin', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.reader-body \{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the page of the mushaf needs a rule');
+  assert.match(rule[1], /background:\s*var\(--raised\)/, 'the words of the mushaf must sit on solid paper');
+  assert.match(rule[1], /border:.*--gold/, 'framed with a hairline as a printed page is');
+});
+
+test('every page header, the counter and the compass reading stand on a ground', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  ['.view-head', '.counter', '.compass-panel', '.btn-ghost', '.section-title', '.pill'].forEach(function (sel) {
+    const rule = new RegExp(sel.replace('.', '\\.') + ' \\{([^}]*)\\}').exec(css);
+    assert.ok(rule, sel + ' needs a rule');
+    assert.match(rule[1], /background:\s*color-mix\(in srgb, var\(--raised\)\s*(\d+)%/,
+      sel + ' would otherwise sit on the pattern');
+    const share = parseInt(/var\(--raised\)\s*(\d+)%/.exec(rule[1])[1], 10);
+    assert.ok(share >= 70, sel + ' must be solid enough to read on, found ' + share + '%');
+  });
+});
+
+test('a verse number stays on the line of the word it closes', () => {
+  const { win, doc } = boot();
+  win.App.state.surah = 1;
+  win.App.go('reader');
+  const verse = doc.querySelector('.ayah[data-a="7"]');
+  const html = verse.innerHTML;
+  const at = html.indexOf('<span class="ayah-num">');
+  assert.ok(at > 0);
+  assert.strictEqual(html.charCodeAt(at - 1), 0x2060,
+    'a word joiner binds the number to the last word, or it can fall onto a line of its own');
+});
