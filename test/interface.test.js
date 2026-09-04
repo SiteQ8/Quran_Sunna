@@ -85,7 +85,7 @@ function litTab(doc) { return doc.querySelector('.tab[aria-current="page"]').get
 test('the page boots and lands on the home view', () => {
   const { win, doc } = boot();
   assert.strictEqual(typeof win.App, 'object');
-  assert.strictEqual(win.App.version, '5.0.0');
+  assert.strictEqual(win.App.version, '5.1.0');
   assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
   assert.strictEqual(litTab(doc), 'home');
   assert.strictEqual(doc.querySelectorAll('.view.is-open').length, 1);
@@ -428,6 +428,17 @@ test('resetting a section clears only that section', () => {
 
 /* ---------------- the tracker ---------------- */
 
+test('a middle dot never sits beside an arabic numeral', () => {
+  const { win, doc } = boot();
+  /* The arabic zero is itself a dot, so a separator shaped like one reads as
+     a stray digit. */
+  ['home', 'quran', 'search', 'calendar', 'settings'].forEach(function (view) {
+    win.App.go(view);
+    const text = doc.getElementById('v-' + view).textContent;
+    assert.ok(!/[٠-٩]\s*·|·\s*[٠-٩]/.test(text), view + ' puts a middle dot next to a numeral');
+  });
+});
+
 test('the sunnah tracker records ticks and updates the meter', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
@@ -754,6 +765,50 @@ test('no latin digit reaches the screen on the home view', () => {
   });
 });
 
+test('the mushaf actually arrives over the network on its own', async () => {
+  /* Boots with nothing injected and a fetch that behaves like a real one,
+     handing back a Response rather than the parsed payload. This is the path a
+     phone takes, and injecting the text in the other tests hides it. */
+  let asked = null;
+  const { win, doc } = boot({
+    withMushaf: false,
+    fetch: (url) => {
+      asked = String(url);
+      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(mushafPayload) });
+    }
+  });
+
+  assert.ok(doc.querySelector('#daily-ayah .skeleton'), 'a placeholder stands in while it loads');
+  await new Promise((r) => setTimeout(r, 60));
+
+  assert.strictEqual(asked, 'data/mushaf.json', 'the loader should ask for the text');
+  assert.strictEqual(win.Mushaf.ready(), true, 'the text should be loaded by now');
+  assert.ok(!doc.querySelector('#daily-ayah .skeleton'), 'the verse of the day should have filled in');
+  assert.ok(doc.getElementById('daily-ayah').textContent.trim().length > 5);
+
+  assert.strictEqual(win.Mushaf.totalVerses(), 6236);
+
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  assert.strictEqual(doc.querySelectorAll('#reader-body .ayah').length, 4,
+    'the reader should hold verses once the text has arrived');
+  click(win, tab(doc, 'quran'));
+  click(win, doc.querySelector('[data-surah="36"]'));
+  assert.strictEqual(doc.querySelectorAll('#reader-body .ayah').length, 83);
+  assert.strictEqual(doc.querySelectorAll('#reader-body .skeleton').length, 0);
+});
+
+test('a failed download leaves the rest of the app usable', async () => {
+  const { win, doc } = boot({ withMushaf: false, fetch: () => Promise.reject(new Error('offline')) });
+  await new Promise((r) => setTimeout(r, 60));
+  assert.strictEqual(win.Mushaf.ready(), false);
+  assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
+  assert.match(doc.getElementById('arc-count').textContent, /^\d{2}:\d{2}:\d{2}$/,
+    'the clock keeps running without the mushaf');
+  win.App.go('azkar');
+  assert.ok(doc.querySelectorAll('#azkar-groups [data-azkar]').length >= 10);
+});
+
 test('the page works before the mushaf finishes loading', () => {
   const { win, doc } = boot({ withMushaf: false });
   assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
@@ -790,3 +845,92 @@ test('the service worker caches every file the shell needs', () => {
     assert.ok(sw.indexOf(rel) !== -1, 'the worker never caches ' + rel);
   });
 });
+
+/* ---------------- friday ---------------- */
+
+test('the midday prayer is called the jumuah on friday and the dhuhr otherwise', () => {
+  const { win } = boot();
+  const name = win.App.helpers.prayerName;
+  const friday = new Date(2026, 8, 4);
+  const thursday = new Date(2026, 8, 3);
+  const saturday = new Date(2026, 8, 5);
+
+  assert.strictEqual(friday.getDay(), 5, 'the fixture really is a friday');
+  assert.strictEqual(name('dhuhr', friday), 'الجمعة');
+  assert.strictEqual(name('dhuhr', thursday), 'الظهر');
+  assert.strictEqual(name('dhuhr', saturday), 'الظهر');
+  assert.strictEqual(name('asr', friday), 'العصر', 'only the midday prayer changes name');
+  assert.strictEqual(name('fajr', friday), 'الفجر');
+});
+
+test('the clock and the marks carry the friday name on a friday', () => {
+  const { win, doc } = boot();
+  const today = new Date();
+  const wanted = today.getDay() === 5 ? 'الجمعة' : 'الظهر';
+  const midday = win.App.clockState(today).marks.filter((m) => m.key === 'dhuhr')[0];
+  assert.strictEqual(midday.ar, wanted);
+
+  const names = [...doc.querySelectorAll('#windows .window-name')].map((e) => e.textContent);
+  assert.ok(names.indexOf(wanted) !== -1, 'the marks should read ' + wanted + ', got ' + names.join(' '));
+  assert.strictEqual(names.indexOf(today.getDay() === 5 ? 'الظهر' : 'الجمعة'), -1,
+    'the other name must not appear');
+});
+
+test('friday replaces the duha and dhuhr sunnah with the sunan of the day', () => {
+  const { win } = boot();
+  const pick = win.App.helpers.windowSunnah;
+  const friday = new Date(2026, 8, 4);
+  const thursday = new Date(2026, 8, 3);
+
+  assert.strictEqual(pick('duha', friday).key, 'friday');
+  assert.strictEqual(pick('dhuhr', friday).key, 'friday');
+  assert.strictEqual(pick('duha', friday).block.l, 'سنن الجمعة');
+  assert.ok(pick('duha', friday).block.items.join(' ').indexOf('الكهف') !== -1,
+    'the sunan of the day should mention surat al kahf');
+
+  assert.strictEqual(pick('duha', thursday).key, 'duha');
+  assert.strictEqual(pick('duha', thursday).block.l, 'سنن الضحى');
+  assert.strictEqual(pick('fajr', friday).key, 'fajr', 'the fajr window is untouched on friday');
+  assert.strictEqual(pick('maghrib', friday).key, 'maghrib');
+});
+
+test('the friday card ticks are kept apart from the weekday ones', () => {
+  const { win, doc } = boot();
+  const box = doc.querySelector('#now-list [data-check]');
+  assert.ok(box, 'the home view lists the sunnah of this window');
+  const id = box.getAttribute('data-check');
+  assert.match(id, /^now:[a-z]+:\d+$/);
+  if (new Date().getDay() === 5) {
+    assert.ok(id.indexOf('now:friday:') === 0, 'friday ticks carry their own key, got ' + id);
+    assert.ok(doc.getElementById('now-title').textContent.indexOf('الجمعة') !== -1);
+  }
+});
+
+test('a full day of ticks never reads more done than there is to do', () => {
+  const { win, doc } = boot();
+  const total = win.App.helpers.totalSunnahCount();
+  assert.ok(total > 40, 'the total counts the window sunnah too, got ' + total);
+
+  win.App.go('tracker');
+  doc.querySelectorAll('#tracker-list [data-check]').forEach(function (b) {
+    b.dispatchEvent(new win.Event('click', { bubbles: true }));
+  });
+  win.App.go('home');
+  doc.querySelectorAll('#now-list [data-check]').forEach(function (b) {
+    b.dispatchEvent(new win.Event('click', { bubbles: true }));
+  });
+
+  const done = win.Store.completion(new Date(), total);
+  assert.ok(done.done <= done.total, done.done + ' done out of ' + done.total);
+  assert.ok(done.percent <= 100, 'the meter must not run past full, got ' + done.percent);
+});
+
+test('the compass turns its needle and leaves north alone', () => {
+  const { win, doc } = boot();
+  win.App.go('qibla');
+  const needle = doc.getElementById('qibla-needle');
+  assert.match(needle.getAttribute('transform'), /^rotate\(-?\d+(\.\d+)? 100 100\)$/);
+  assert.ok(!doc.getElementById('compass-rose').style.transform,
+    'rotating the whole rose would swing north away from north');
+});
+

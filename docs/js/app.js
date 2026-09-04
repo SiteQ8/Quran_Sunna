@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '5.0.0';
+  var VERSION = '5.1.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -20,6 +20,16 @@
     { key: 'maghrib', ar: 'المغرب' },
     { key: 'isha', ar: 'العشاء' }
   ];
+
+  /* The midday prayer keeps its slot all week, but on Friday it is the
+     jumuah, so the screen should call it by the name people are waiting for. */
+  function isFriday(date) { return (date || new Date()).getDay() === 5; }
+
+  function prayerName(key, date) {
+    if (key === 'dhuhr' && isFriday(date)) return 'الجمعة';
+    for (var i = 0; i < PRAYERS.length; i++) if (PRAYERS[i].key === key) return PRAYERS[i].ar;
+    return key;
+  }
 
   /* Which slice of the day we are in decides the accent colour. */
   var WINDOWS = ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -71,6 +81,13 @@
   }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
+
+  /* The lam of ownership swallows the alef of the article, so الكويت becomes
+     للكويت rather than لـالكويت. */
+  function withLam(name) {
+    var text = String(name || '');
+    return 'ل' + (text.indexOf('ال') === 0 ? text.slice(1) : text);
+  }
 
   function clockText(minutes) { return PrayerEngine.format(minutes); }
 
@@ -289,7 +306,9 @@
   function clockState(date) {
     var t = state.times || refreshTimes();
     var now = nowMinutes(date);
-    var marks = PRAYERS.map(function (p) { return { key: p.key, ar: p.ar, at: t[p.key] }; });
+    var marks = PRAYERS.map(function (p) {
+      return { key: p.key, ar: prayerName(p.key, date), at: t[p.key] };
+    });
 
     var nextIndex = -1;
     for (var i = 0; i < marks.length; i++) {
@@ -299,14 +318,14 @@
     var next, prev, remaining, span;
     if (nextIndex === -1) {
       var tomorrow = computeTimes(new Date((date || new Date()).getTime() + 86400000));
-      next = { key: 'fajr', ar: 'الفجر', at: tomorrow.fajr };
+      next = { key: 'fajr', ar: prayerName('fajr'), at: tomorrow.fajr };
       prev = marks[marks.length - 1];
       remaining = (1440 - now) + tomorrow.fajr;
       span = (1440 - prev.at) + tomorrow.fajr;
     } else {
       next = marks[nextIndex];
       prev = nextIndex === 0
-        ? { key: 'isha', ar: 'العشاء', at: t.isha - 1440 }
+        ? { key: 'isha', ar: prayerName('isha'), at: t.isha - 1440 }
         : marks[nextIndex - 1];
       remaining = next.at - now;
       span = next.at - prev.at;
@@ -389,7 +408,7 @@
     var h = Hijri.toHijri(now, adjust);
     if ($('hijri-date')) $('hijri-date').textContent = Hijri.format(h);
     if ($('greg-date')) {
-      $('greg-date').textContent = h.weekday + ' · ' +
+      $('greg-date').textContent = h.weekday + '، ' +
         ar(now.getDate()) + '/' + ar(now.getMonth() + 1) + '/' + ar(now.getFullYear());
     }
   }
@@ -405,12 +424,25 @@
 
   function currentWindowKey() { return clockState().windowKey; }
 
+  /* On Friday the stretch from mid morning to the khutbah belongs to the
+     jumuah, so the card offers the sunan of the day rather than those of the
+     duha and the dhuhr it replaces. */
+  function windowSunnah(key, date) {
+    if (isFriday(date) && (key === 'duha' || key === 'dhuhr') &&
+      typeof FRIDAY_SUNNAH !== 'undefined') {
+      return { key: 'friday', block: FRIDAY_SUNNAH };
+    }
+    if (typeof CURRENT_SUNNAH === 'undefined') return null;
+    return { key: key, block: CURRENT_SUNNAH[key] || CURRENT_SUNNAH.dhuhr };
+  }
+
   function renderNowSunnah() {
     var host = $('now-list');
-    if (!host || typeof CURRENT_SUNNAH === 'undefined') return;
-    var key = currentWindowKey();
-    var block = CURRENT_SUNNAH[key] || CURRENT_SUNNAH.dhuhr;
-    if (!block) { host.innerHTML = ''; return; }
+    if (!host) return;
+    var pick = windowSunnah(currentWindowKey());
+    if (!pick || !pick.block) { host.innerHTML = ''; return; }
+    var key = pick.key;
+    var block = pick.block;
     if ($('now-title')) $('now-title').textContent = block.l;
     var record = Store.day();
     host.innerHTML = '<p class="setting-note" style="margin-bottom:12px">' + esc(block.sub) + '</p>' +
@@ -423,11 +455,21 @@
       }).join('');
   }
 
-  function totalSunnahCount() {
+  /* Everything a person can tick today, so the meter can never read more done
+     than there is to do. The windows the jumuah replaces drop out on Friday. */
+  function totalSunnahCount(date) {
     var total = 0;
     if (typeof WIRD_ITEMS !== 'undefined') total += WIRD_ITEMS.length;
     if (typeof SUNNAH_TRACKER !== 'undefined') {
       SUNNAH_TRACKER.forEach(function (group) { total += group.i.length; });
+    }
+    if (typeof CURRENT_SUNNAH !== 'undefined') {
+      var friday = isFriday(date);
+      WINDOWS.forEach(function (key) {
+        if (friday && (key === 'duha' || key === 'dhuhr')) return;
+        if (CURRENT_SUNNAH[key]) total += CURRENT_SUNNAH[key].items.length;
+      });
+      if (friday && typeof FRIDAY_SUNNAH !== 'undefined') total += FRIDAY_SUNNAH.items.length;
     }
     return total;
   }
@@ -491,7 +533,7 @@
     host.textContent = Mushaf.ayah(pos.s, pos.a);
     var meta = surahMeta(pos.s);
     if ($('daily-ayah-ref')) {
-      $('daily-ayah-ref').textContent = 'سورة ' + (meta ? meta.ar : '') + ' · آية ' + ar(pos.a);
+      $('daily-ayah-ref').textContent = 'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a);
     }
   }
 
@@ -519,7 +561,8 @@
     renderUpcoming();
     var p = place();
     if ($('place-line')) {
-      $('place-line').textContent = 'المواقيت محسوبة لـ' + p.n + ' بطريقة ' + methodName(Store.get('method'));
+      $('place-line').textContent = 'المواقيت محسوبة ' + withLam(p.n) +
+        ' بطريقة ' + methodName(Store.get('method'));
     }
   }
 
@@ -532,7 +575,7 @@
       '<span class="row-body"><span class="row-title">' + esc(meta.ar) +
       (done ? ' ' + icon('check') : '') + '</span>' +
       '<span class="row-note">' + esc(meta.en) + '</span></span>' +
-      '<span class="row-meta">' + esc(meta.tp) + ' · ' + ar(meta.ay) + ' آية</span></button>';
+      '<span class="row-meta">' + esc(meta.tp) + '، ' + ar(meta.ay) + ' آية</span></button>';
   }
 
   function juzRow(n) {
@@ -621,7 +664,7 @@
     if ($('reader-meta')) {
       var virtue = typeof SURAH_VIRTUES !== 'undefined' ? SURAH_VIRTUES[n] : null;
       $('reader-meta').textContent = meta
-        ? meta.tp + ' · ' + ar(meta.ay) + ' آية · الجزء ' + ar(Mushaf.ready() ? Mushaf.juzOf(n, 1) : 1) + (virtue ? ' · ' + virtue : '')
+        ? meta.tp + '، ' + ar(meta.ay) + ' آية، الجزء ' + ar(Mushaf.ready() ? Mushaf.juzOf(n, 1) : 1) + (virtue ? '، ' + virtue : '')
         : '';
     }
 
@@ -651,8 +694,8 @@
     var meta = surahMeta(s);
     var saved = Store.isBookmarked(s, a);
     var html = '<p class="ayah-block" style="text-align:center;margin-bottom:6px">' + esc(text) + '</p>' +
-      '<p class="source">سورة ' + esc(meta ? meta.ar : '') + ' · آية ' + ar(a) +
-      ' · الجزء ' + ar(Mushaf.juzOf(s, a)) + ' · صفحة ' + ar(Mushaf.pageOf(s, a)) + '</p>' +
+      '<p class="source">سورة ' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) +
+      '، الجزء ' + ar(Mushaf.juzOf(s, a)) + '، صفحة ' + ar(Mushaf.pageOf(s, a)) + '</p>' +
       '<div class="btn-row" style="margin-top:14px">' +
       '<button class="btn ' + (saved ? 'btn-primary' : 'btn-ghost') + '" data-act="bookmark" data-ref="' + s + ':' + a + '">' +
       icon('bookmark') + (saved ? 'محفوظة' : 'احفظ') + '</button>' +
@@ -725,7 +768,7 @@
     var meta = surahMeta(s);
     playAudio(
       'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + index + '.mp3',
-      'سورة ' + (meta ? meta.ar : '') + ' · آية ' + ar(a),
+      'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a),
       reciterName()
     );
   }
@@ -741,28 +784,9 @@
 
   /* ---------------- search ---------------- */
 
-  /* Walks the pointed text one character at a time, folding as it goes, so the
-     span that produced the match can be wrapped without touching the original
-     letters. Tried against both folds because either one may hold the match. */
-  function spanOf(text, needle, fold) {
-    var plainNeedle = fold(needle);
-    if (!plainNeedle) return null;
-    var at = fold(text).indexOf(plainNeedle);
-    if (at === -1) return null;
-    var kept = 0, start = -1;
-    for (var i = 0; i < text.length; i++) {
-      var piece = fold(text[i]);
-      if (!piece.length) continue;
-      if (kept === at) start = i;
-      kept += piece.length;
-      if (start !== -1 && kept >= at + plainNeedle.length) return { start: start, end: i + 1 };
-    }
-    return null;
-  }
-
   function highlight(text, needle) {
     if (!needle) return esc(text);
-    var span = spanOf(text, needle, Mushaf.normalize) || spanOf(text, needle, Mushaf.expand);
+    var span = Mushaf.spanFor(text, needle);
     if (!span) return esc(text);
     return esc(text.slice(0, span.start)) + '<mark>' + esc(text.slice(span.start, span.end)) +
       '</mark>' + esc(text.slice(span.end));
@@ -794,7 +818,7 @@
     host.innerHTML = hits.map(function (hit) {
       var meta = surahMeta(hit.s);
       return '<button class="search-hit" data-hit="' + hit.s + ':' + hit.a + '">' +
-        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + ' · آية ' + ar(hit.a) + '</span>' +
+        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(hit.a) + '</span>' +
         highlight(hit.text, needle) + '</button>';
     }).join('');
   }
@@ -813,7 +837,7 @@
       var meta = surahMeta(b.s);
       var text = Mushaf.ready() ? Mushaf.ayah(b.s, b.a) : '';
       return '<button class="search-hit" data-hit="' + b.s + ':' + b.a + '">' +
-        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + ' · آية ' + ar(b.a) + '</span>' +
+        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(b.a) + '</span>' +
         esc(text) + '</button>';
     }).join('') +
       '<button class="btn btn-ghost btn-block" data-act="clear-bookmarks" style="margin-top:14px">' +
@@ -1072,10 +1096,12 @@
         (state.heading === null ? '، فوجّه أعلى الجهاز نحو الشمال' : '');
     }
 
-    var rose = $('compass-rose');
-    if (rose) {
+    /* Only the needle turns. The face carries the north mark, so rotating the
+       whole rose would swing north away from north. */
+    var needle = $('qibla-needle');
+    if (needle) {
       var turn = state.heading === null ? bearing : bearing - state.heading;
-      rose.style.transform = 'rotate(' + turn + 'deg)';
+      needle.setAttribute('transform', 'rotate(' + turn.toFixed(2) + ' 100 100)');
     }
 
     var enable = $('qibla-enable');
@@ -1127,7 +1153,7 @@
     if ($('tasbih-phrase')) $('tasbih-phrase').textContent = current.t;
     if ($('tasbih-target')) {
       $('tasbih-target').textContent = 'الهدف ' + ar(current.target) +
-        (state.tasbih.count >= current.target ? ' · بلغت الهدف' : '');
+        (state.tasbih.count >= current.target ? '، بلغت الهدف' : '');
     }
     if ($('tasbih-phrases')) {
       $('tasbih-phrases').innerHTML = list.map(function (p, i) {
@@ -1204,7 +1230,7 @@
     host.innerHTML = HADITHS.map(function (h) {
       return '<div class="card"><div class="card-head"><h2>الحديث ' + ar(h.n) + '</h2></div>' +
         '<p class="naskh" style="font-size:1.02rem;line-height:2.1">' + esc(h.t) + '</p>' +
-        '<p class="source">' + esc(h.s) + ' · ' + esc(h.r) + '</p></div>';
+        '<p class="source">' + esc(h.s) + '، ' + esc(h.r) + '</p></div>';
     }).join('');
   }
 
@@ -1236,7 +1262,7 @@
     var adjust = Store.get('hijriAdjust');
     var now = new Date();
     var h = Hijri.toHijri(now, adjust);
-    $('calendar-today').textContent = Hijri.format(h) + ' · ' + h.weekday;
+    $('calendar-today').textContent = Hijri.format(h) + '، ' + h.weekday;
 
     var today = Hijri.occasions(now, adjust);
     var host = $('calendar-occasions');
@@ -1256,7 +1282,7 @@
         return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
           '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
           '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + ar(o.days) + ' يوماً') +
-          ' · ' + ar(o.hijriYear) + ' هـ</span></span></div>';
+          '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
       }).join('');
     }
   }
@@ -1284,7 +1310,7 @@
     var p = place();
 
     if ($('settings-place')) {
-      $('settings-place').textContent = p.n + ' · ' +
+      $('settings-place').textContent = p.n + '، ' +
         ar(p.lat.toFixed(2)) + '، ' + ar(p.lng.toFixed(2));
     }
 
@@ -1310,7 +1336,7 @@
     if ($('settings-font')) $('settings-font').value = String(s.fontScale);
 
     fillSelect($('settings-reciter'), (typeof RECITERS !== 'undefined' ? RECITERS : []).map(function (r, i) {
-      return { value: String(i), label: r.name + ' · ' + r.country };
+      return { value: String(i), label: r.name + '، ' + r.country };
     }), String(s.reciter));
 
     setSwitch($('settings-notify'), !!s.notify);
@@ -1646,9 +1672,19 @@
     }
   }
 
+  /* The module wants a fetcher that hands back the parsed payload, so passing
+     fetch itself would deliver a Response and the text would never arrive. */
+  function fetchJson(url) {
+    return window.fetch(url).then(function (r) {
+      if (!r.ok) throw new Error('mushaf request failed with ' + r.status);
+      return r.json();
+    });
+  }
+
   function loadMushaf() {
     if (Mushaf.ready()) { afterMushaf(); return; }
-    Mushaf.load(window.fetch ? window.fetch.bind(window) : null)
+    if (!window.fetch) { toast('المتصفح لا يتيح تحميل نص المصحف'); return; }
+    Mushaf.load(fetchJson)
       .then(afterMushaf)
       .catch(function () { toast('تعذّر تحميل نص المصحف'); });
   }
@@ -1695,7 +1731,11 @@
     setPlace: setPlace,
     render: RENDERERS,
     actions: ACTIONS,
-    helpers: { ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash, tabOwner: tabOwner }
+    helpers: {
+      ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
+      tabOwner: tabOwner, prayerName: prayerName, windowSunnah: windowSunnah, withLam: withLam,
+      isFriday: isFriday, totalSunnahCount: totalSunnahCount
+    }
   };
 
   if (document.readyState === 'loading') {

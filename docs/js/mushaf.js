@@ -9,42 +9,90 @@
   var expanded = null;
   var index = null;
 
-  var DIACRITICS = /[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g;
-
-  /* Every mark except the three small letters that stand in for a whole sound. */
-  var MARKS_ONLY = /[\u0610-\u061A\u064B-\u065F\u06D6-\u06E4\u06E7-\u06ED\u0640]/g;
-
-  function fold(text) {
-    return text
-      .replace(/[\u0622\u0623\u0625\u0671\u0672\u0673]/g, '\u0627')
-      .replace(/\u0624/g, '\u0648')
-      .replace(/\u0621/g, '')
-      .replace(/[\u0626\u0649]/g, '\u064A')
-      .replace(/\u0629/g, '\u0647')
-      .replace(/\s+/g, ' ')
-      .trim();
+  function isMark(code) {
+    return (code >= 0x0610 && code <= 0x061A) ||
+      (code >= 0x064B && code <= 0x065F) ||
+      (code >= 0x06D6 && code <= 0x06ED) ||
+      code === 0x0640;
   }
 
-  /* Folds a verse down to bare letters so a search without vowel marks still hits.
-     The small letters go away here, which is the spelling most people type for a
-     word like الرحمن. */
+  /* Folds a verse down to bare letters and records, for every letter kept, the
+     position it came from. Search needs the fold and highlighting needs the
+     positions, so producing both in one walk stops them drifting apart, which
+     is what makes a highlight land on the wrong word.
+
+     When wide is true the three small letters that stand for a whole sound are
+     written out, because the Uthmani script hides a long vowel inside a mark,
+     so الصابرين is carried as الصٰبرين and الصلاة as الصلوٰة. */
+  function foldMap(text, wide) {
+    var src = String(text === null || text === undefined ? '' : text);
+    var out = [];
+    var from = [];
+    var i, code, piece, k;
+
+    for (i = 0; i < src.length; i++) {
+      code = src.charCodeAt(i);
+
+      if (code === 0x0670) {
+        if (!wide) piece = '';
+        else if (out.length && out[out.length - 1] === '\u0648') {
+          /* A waw carrying the dagger alef reads as one alef. */
+          out.pop(); from.pop();
+          piece = '\u0627';
+        } else piece = '\u0627';
+      } else if (code === 0x06E5) piece = wide ? '\u0648' : '';
+      else if (code === 0x06E6) piece = wide ? '\u064A' : '';
+      else if (isMark(code)) piece = '';
+      else if (code === 0x0622 || code === 0x0623 || code === 0x0625 ||
+        (code >= 0x0671 && code <= 0x0673)) piece = '\u0627';
+      else if (code === 0x0624) piece = '\u0648';
+      else if (code === 0x0621) piece = '';
+      else if (code === 0x0626 || code === 0x0649) piece = '\u064A';
+      else if (code === 0x0629) piece = '\u0647';
+      else if (/\s/.test(src[i])) {
+        piece = (out.length && out[out.length - 1] !== ' ') ? ' ' : '';
+      } else piece = src[i];
+
+      for (k = 0; k < piece.length; k++) { out.push(piece[k]); from.push(i); }
+    }
+
+    while (out.length && out[out.length - 1] === ' ') { out.pop(); from.pop(); }
+    var head = 0;
+    while (head < out.length && out[head] === ' ') head++;
+    if (head) { out = out.slice(head); from = from.slice(head); }
+
+    return { plain: out.join(''), from: from };
+  }
+
+  /* The fold most people type. The small letters go away here, which is the
+     spelling of a word like الرحمن. */
   function normalize(text) {
-    if (!text) return '';
-    return fold(String(text).replace(DIACRITICS, ''));
+    return foldMap(text, false).plain;
   }
 
-  /* The same fold, except the dagger alef and the small waw and yeh are written
-     out in full. The Uthmani script hides a long vowel inside a mark, so الصابرين
-     is carried as الصٰبرين and الصلاة as الصلوٰة, and a reader who types either
-     spelling deserves the same verse. */
+  /* The same fold with the small letters written out, so a reader who types
+     الصابرين reaches the same verses as one who types الصبرين. */
   function expand(text) {
-    if (!text) return '';
-    return fold(String(text)
-      .replace(MARKS_ONLY, '')
-      .replace(/\u0648\u0670/g, '\u0627')
-      .replace(/\u0670/g, '\u0627')
-      .replace(/\u06E5/g, '\u0648')
-      .replace(/\u06E6/g, '\u064A'));
+    return foldMap(text, true).plain;
+  }
+
+  /* Where the query sits inside the pointed text, tried against both folds.
+     Returns positions into the original verse, so a caller can wrap the match
+     without disturbing a single letter or mark. */
+  function spanFor(text, query) {
+    var needle = normalize(query);
+    if (!needle) return null;
+    var folds = [false, true];
+    for (var f = 0; f < folds.length; f++) {
+      var fold = foldMap(text, folds[f]);
+      var at = fold.plain.indexOf(needle);
+      if (at === -1) continue;
+      var start = fold.from[at];
+      var last = fold.from[at + needle.length - 1];
+      if (start === undefined || last === undefined) continue;
+      return { start: start, end: last + 1, wide: folds[f] };
+    }
+    return null;
   }
 
   function buildIndex() {
@@ -235,6 +283,7 @@
   var api = {
     normalize: normalize,
     expand: expand,
+    spanFor: spanFor,
     init: init,
     load: load,
     ready: ready,

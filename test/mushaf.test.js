@@ -177,3 +177,37 @@ test('a hit reports which fold matched it', () => {
   assert.strictEqual(tight[0].wide, false);
   assert.ok(tight[0].plain.indexOf('الرحمن') !== -1);
 });
+
+test('a match maps back onto the exact letters of the pointed verse', () => {
+  const cases = [
+    [2, 153, 'الصابرين'],
+    [2, 155, 'الصابرين'],
+    [2, 177, 'الصابرين'],
+    [3, 17, 'الصابرين'],
+    [1, 2, 'الحمد'],
+    [2, 255, 'الحي القيوم']
+  ];
+  cases.forEach(function (c) {
+    const text = M.ayah(c[0], c[1]);
+    const span = M.spanFor(text, c[2]);
+    assert.ok(span, 'no span for ' + c[2] + ' in ' + c[0] + ':' + c[1]);
+    const cut = text.slice(span.start, span.end);
+    const want = M.normalize(c[2]);
+    assert.ok(M.normalize(cut) === want || M.expand(cut) === want,
+      'the wrapped letters should fold to the query, got ' + cut);
+  });
+});
+
+test('the span survives spaces and multi word queries', () => {
+  const text = M.ayah(1, 2);
+  const span = M.spanFor(text, 'رب العالمين');
+  assert.ok(span, 'a two word query should map');
+  const cut = text.slice(span.start, span.end);
+  assert.ok(cut.indexOf(' ') !== -1, 'the span should run across the space');
+  assert.strictEqual(M.expand(cut), 'رب العالمين');
+});
+
+test('a query that is not there maps to nothing', () => {
+  assert.strictEqual(M.spanFor(M.ayah(1, 1), 'الصابرين'), null);
+  assert.strictEqual(M.spanFor('نص', ''), null);
+});

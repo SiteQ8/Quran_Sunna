@@ -1,7 +1,7 @@
 /* سُنّتي service worker
    يخزّن هيكل التطبيق ونص المصحف عند أول زيارة، فيعمل بعدها بلا إنترنت. */
 
-var VERSION = 'sunnati-v5.0.0';
+var VERSION = 'sunnati-v5.1.0';
 var SHELL = [
   './',
   './index.html',
