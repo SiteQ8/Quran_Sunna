@@ -21,6 +21,7 @@
     lng: null,
     city: '',
     tzOffset: null,
+    zone: null,
     notify: false,
     reciter: 0,
     tafsir: 'ar.muyassar',

@@ -1046,3 +1046,274 @@ test('opening a page before the text arrives says so rather than failing', () =>
   }
   assert.ok(doc.getElementById('v-khatma').classList.contains('is-open'));
 });
+
+/* ---------------- the app as an app ---------------- */
+
+test('every view has an address the browser can hold', () => {
+  const { win, doc } = boot();
+  const h = win.App.helpers;
+  win.App.go('qibla');
+  assert.strictEqual(win.location.hash, '#qibla');
+  assert.strictEqual(h.addressOf('qibla'), '#qibla');
+
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="36"]'));
+  assert.strictEqual(win.location.hash, '#reader/36', 'a surah names itself in the address');
+
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-azkar="evening"]'));
+  assert.strictEqual(win.location.hash, '#azkar/evening');
+});
+
+test('an address opens the view it names', () => {
+  const { win } = boot();
+  const read = win.App.helpers.readAddress;
+  assert.strictEqual(read('#qibla').name, 'qibla');
+  assert.strictEqual(read('#reader/18').name, 'reader');
+  assert.strictEqual(read('#reader/18').surah, 18);
+  assert.strictEqual(read('#azkar/morning').name, 'azkar-list');
+  assert.strictEqual(read('#azkar/morning').azkar, 'morning');
+  assert.strictEqual(read('#nonsense'), null, 'an unknown address is refused');
+  assert.strictEqual(read(''), null);
+  assert.strictEqual(read('#reader/999').surah, 114, 'a surah beyond the mushaf is pulled back');
+  assert.strictEqual(read('#reader/0').surah, 1);
+});
+
+test('the shortcuts in the manifest point at addresses that exist', () => {
+  const { doc } = boot();
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  assert.ok(manifest.shortcuts.length >= 4, 'a phone should offer several ways in');
+  manifest.shortcuts.forEach(function (item) {
+    const hash = item.url.replace('./', '');
+    assert.ok(hash.indexOf('#') === 0, item.url + ' should be an address');
+    const name = hash.slice(1).split('/')[0];
+    const view = name === 'azkar' && hash.indexOf('/') !== -1 ? 'azkar-list' : name;
+    assert.ok(doc.getElementById('v-' + view), 'no view behind the shortcut ' + item.url);
+  });
+});
+
+test('the manifest describes an installable app', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  ['name', 'short_name', 'start_url', 'scope', 'display', 'icons', 'theme_color', 'id'].forEach(function (key) {
+    assert.ok(manifest[key], 'the manifest needs ' + key);
+  });
+  assert.strictEqual(manifest.dir, 'rtl');
+  assert.strictEqual(manifest.lang, 'ar');
+  const sizes = manifest.icons.map((i) => i.sizes);
+  assert.ok(sizes.indexOf('192x192') !== -1 && sizes.indexOf('512x512') !== -1);
+  assert.ok(manifest.icons.some((i) => i.purpose === 'maskable'), 'android wants a maskable icon');
+  manifest.icons.forEach(function (i) {
+    assert.ok(fs.existsSync(path.join(DOCS, i.src)), 'missing icon ' + i.src);
+  });
+});
+
+test('the offer to install is kept until it is used', () => {
+  const { win, doc } = boot();
+  let prompted = false;
+  const offer = {
+    preventDefault() {},
+    prompt() { prompted = true; },
+    userChoice: Promise.resolve({ outcome: 'accepted' })
+  };
+  const event = new win.Event('beforeinstallprompt');
+  Object.assign(event, offer);
+  win.dispatchEvent(event);
+
+  assert.ok(win.App.state.installOffer, 'the offer should be held, not thrown away');
+  assert.ok(!doc.getElementById('banner').hidden, 'and the reader told about it once');
+  win.App.go('settings');
+  assert.ok(!doc.getElementById('settings-install').hidden, 'settings should offer it too');
+
+  click(win, doc.getElementById('settings-install'));
+  assert.ok(prompted, 'pressing install should ask the browser');
+});
+
+test('the offer is only volunteered once', () => {
+  const { win, doc } = boot();
+  function fire() {
+    const e = new win.Event('beforeinstallprompt');
+    Object.assign(e, { preventDefault() {}, prompt() {}, userChoice: Promise.resolve({}) });
+    win.dispatchEvent(e);
+  }
+  fire();
+  click(win, doc.getElementById('banner-close'));
+  assert.ok(doc.getElementById('banner').hidden);
+  fire();
+  assert.ok(doc.getElementById('banner').hidden, 'a reader who dismissed it is not asked again');
+});
+
+test('losing the network says what still works', () => {
+  const { win, doc } = boot();
+  win.dispatchEvent(new win.Event('offline'));
+  const text = doc.getElementById('banner-text').textContent;
+  assert.ok(!doc.getElementById('banner').hidden);
+  assert.ok(text.indexOf('المصحف') !== -1, 'it should reassure rather than alarm, got ' + text);
+  win.dispatchEvent(new win.Event('online'));
+  assert.ok(doc.getElementById('banner').hidden);
+});
+
+test('the worker hands over only when the page asks', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'take-over'") !== -1, 'the worker should listen for the handover');
+  assert.ok(!/install[\s\S]{0,400}skipWaiting/.test(sw),
+    'a worker that seizes control on install would reload the page under the reader');
+});
+
+/* ---------------- memorising ---------------- */
+
+function fakeAudio(win) {
+  const played = [];
+  win.Audio = function () {
+    const a = { play: () => Promise.resolve(), pause() { this.paused = true; }, paused: false, onended: null };
+    Object.defineProperty(a, 'src', {
+      set(v) { played.push(v); this._src = v; },
+      get() { return this._src; }
+    });
+    win.__lastAudio = a;
+    return a;
+  };
+  return played;
+}
+
+test('repeating a run of verses recites each one in turn', () => {
+  const { win, doc } = boot();
+  const played = fakeAudio(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+
+  win.App.repeat.start(1, 3, 2, false);
+  assert.ok(win.App.state.repeat, 'a run should be under way');
+  assert.strictEqual(win.App.state.repeat.at, 1);
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 1);
+  assert.ok(doc.querySelector('.ayah[data-a="1"]').classList.contains('is-reciting'));
+
+  win.App.repeat.next();
+  assert.strictEqual(win.App.state.repeat.at, 2);
+  assert.ok(doc.querySelector('.ayah[data-a="2"]').classList.contains('is-reciting'));
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 1, 'only one verse at a time');
+
+  win.App.repeat.next();
+  assert.strictEqual(win.App.state.repeat.at, 3);
+  win.App.repeat.next();
+  assert.strictEqual(win.App.state.repeat.round, 2, 'the run starts over');
+  assert.strictEqual(win.App.state.repeat.at, 1);
+
+  assert.ok(played.length >= 4, 'each verse should have been asked for');
+  assert.ok(played[0].indexOf('.mp3') !== -1);
+});
+
+test('a finished run clears itself up', () => {
+  const { win, doc } = boot();
+  fakeAudio(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  win.App.repeat.start(1, 2, 1, true);
+  assert.ok(doc.getElementById('reader-body').classList.contains('is-hidden'));
+
+  win.App.repeat.next();
+  win.App.repeat.next();
+  assert.strictEqual(win.App.state.repeat, null, 'the run should end after its last round');
+  assert.strictEqual(doc.querySelectorAll('.ayah.is-reciting').length, 0);
+  assert.ok(!doc.getElementById('reader-body').classList.contains('is-hidden'),
+    'the text comes back when the run ends');
+  assert.ok(!doc.getElementById('player').classList.contains('is-open'));
+});
+
+test('leaving the reader stops the recitation', () => {
+  const { win, doc } = boot();
+  fakeAudio(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  win.App.repeat.start(1, 4, 5, false);
+  assert.ok(win.App.state.repeat);
+  win.App.go('home');
+  assert.strictEqual(win.App.state.repeat, null, 'a run must not recite into another view');
+});
+
+test('the sheet offers a run and starts one from its choices', () => {
+  const { win, doc } = boot();
+  fakeAudio(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  click(win, doc.querySelector('[data-ayah="112:1"]'));
+  const button = doc.querySelector('[data-act="memorise"]');
+  assert.ok(button, 'the verse sheet should offer to repeat');
+
+  click(win, button);
+  assert.ok(doc.getElementById('rep-from'), 'the run is set up in the sheet');
+  doc.getElementById('rep-from').value = '2';
+  doc.getElementById('rep-to').value = '4';
+  doc.getElementById('rep-times').value = '5';
+  click(win, doc.querySelector('[data-act="repeat-start"]'));
+
+  const run = win.App.state.repeat;
+  assert.strictEqual(run.from, 2);
+  assert.strictEqual(run.to, 4);
+  assert.strictEqual(run.times, 5);
+  assert.ok(!doc.getElementById('sheet').classList.contains('is-open'), 'the sheet gets out of the way');
+});
+
+test('a run asked for backwards is put right rather than refused', () => {
+  const { win, doc } = boot();
+  fakeAudio(win);
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  click(win, doc.querySelector('[data-ayah="112:3"]'));
+  click(win, doc.querySelector('[data-act="memorise"]'));
+  doc.getElementById('rep-from').value = '3';
+  doc.getElementById('rep-to').value = '1';
+  click(win, doc.querySelector('[data-act="repeat-start"]'));
+  const run = win.App.state.repeat;
+  assert.strictEqual(run.from, 3);
+  assert.strictEqual(run.to, 3, 'an end before the start is pulled up to it');
+});
+
+test('the reader shows how far through the surah you are', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="2"]'));
+  const fill = doc.getElementById('read-progress-fill');
+  assert.ok(fill, 'the reader needs a progress rail');
+  assert.strictEqual(parseFloat(fill.style.width), 0, 'it starts empty at the top of a surah');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.read-progress\s*\{[^}]*position:\s*sticky/, 'the rail should stay in view');
+});
+
+/* ---------------- clocks that move ---------------- */
+
+test('every city in the list names a real timezone', () => {
+  const { win } = boot();
+  assert.ok(win.CITIES.length >= 25);
+  win.CITIES.forEach(function (c) {
+    assert.ok(c.z, c.n + ' has no zone, so its times cannot follow a clock change');
+    assert.strictEqual(typeof win.PrayerEngine.zoneOffset(c.z, new Date()), 'number',
+      c.n + ' names a zone the browser does not know: ' + c.z);
+  });
+});
+
+test('choosing a city that moves its clocks keeps its times right', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const london = win.CITIES.findIndex(function (c) { return c.n === 'لندن'; });
+  assert.ok(london !== -1);
+  const select = doc.getElementById('settings-city');
+  select.value = String(london);
+  fire(win, select, 'change');
+  assert.strictEqual(win.Store.get('zone'), 'Europe/London', 'the zone is kept, not only the number');
+
+  const summer = win.App.computeTimes(new Date('2026-06-21T12:00:00'));
+  const winter = win.App.computeTimes(new Date('2026-12-21T12:00:00'));
+  /* London runs an hour ahead in summer, so noon moves later on the clock even
+     though the sun has not. A stored zero would have shown both the same. */
+  assert.ok(summer.dhuhr > winter.dhuhr + 40,
+    'summer noon should sit about an hour later on the clock, got ' +
+    win.PrayerEngine.format(summer.dhuhr) + ' and ' + win.PrayerEngine.format(winter.dhuhr));
+});
+
+test('a place with no zone still works from its stored number', () => {
+  const { win } = boot();
+  win.App.setPlace({ n: 'مكان بلا منطقة', lat: 29.3759, lng: 47.9774, tz: 3 }, false);
+  const t = win.App.computeTimes(new Date('2026-09-04T12:00:00'));
+  assert.ok(!isNaN(t.dhuhr) && t.dhuhr > 0, 'the times must still come out');
+  assert.match(win.PrayerEngine.format(t.dhuhr), /^\d{2}:\d{2}$/);
+});

@@ -154,3 +154,89 @@ test('times stay ordered through a full year in Kuwait', () => {
     assert.ok(t.maghrib < t.isha, 'maghrib before isha on day ' + day);
   }
 });
+
+/* ---------------- clocks that move ---------------- */
+
+test('a zone reports the offset it is actually on for the day', () => {
+  const june = new Date('2026-06-21T12:00:00Z');
+  const december = new Date('2026-12-21T12:00:00Z');
+  const pairs = [
+    ['Europe/London', 1, 0], ['Europe/Paris', 2, 1],
+    ['America/New_York', -4, -5], ['Australia/Sydney', 10, 11],
+    ['Asia/Kuwait', 3, 3], ['Asia/Dubai', 4, 4]
+  ];
+  pairs.forEach(function (p) {
+    assert.strictEqual(PE.zoneOffset(p[0], june), p[1], p[0] + ' in june');
+    assert.strictEqual(PE.zoneOffset(p[0], december), p[2], p[0] + ' in december');
+  });
+});
+
+test('an unknown or missing zone says so rather than guessing', () => {
+  assert.strictEqual(PE.zoneOffset('Not/AZone', new Date()), null);
+  assert.strictEqual(PE.zoneOffset(null, new Date()), null);
+  assert.strictEqual(PE.zoneOffset('', new Date()), null);
+});
+
+test('a stored offset would put iftar an hour late in ramadan', () => {
+  /* Morocco keeps one hour ahead all year and steps back for ramadan, so a
+     number saved once is wrong for the whole month. This is the case that
+     made the zone lookup necessary. */
+  const inRamadan = new Date('2026-03-10T12:00:00Z');
+  const live = PE.zoneOffset('Africa/Casablanca', inRamadan);
+  assert.strictEqual(live, 0, 'morocco steps back to GMT for ramadan');
+
+  const rabat = new PE.Calculator({ lat: 34.0209, lng: -6.8416, method: 'Morocco' });
+  const correct = rabat.timesFor(new Date('2026-03-10T12:00:00'), live);
+  const stale = rabat.timesFor(new Date('2026-03-10T12:00:00'), 1);
+  assert.strictEqual(stale.maghrib - correct.maghrib, 60, 'the stored number is a full hour out');
+
+  const ordinary = new Date('2026-06-21T12:00:00Z');
+  assert.strictEqual(PE.zoneOffset('Africa/Casablanca', ordinary), 1, 'and one hour ahead the rest of the year');
+});
+
+test('a method carries the minute adjustments its authority publishes', () => {
+  const turkey = new PE.Calculator({ lat: 41.0082, lng: 28.9784, method: 'Turkey' });
+  assert.deepStrictEqual(turkey.offsets, { sunrise: -7, dhuhr: 5, asr: 4, maghrib: 7 });
+
+  const dubai = new PE.Calculator({ lat: 25.2048, lng: 55.2708, method: 'Dubai' });
+  assert.deepStrictEqual(dubai.offsets, { dhuhr: 3, maghrib: 3 });
+
+  const morocco = new PE.Calculator({ lat: 34.0209, lng: -6.8416, method: 'Morocco' });
+  assert.deepStrictEqual(morocco.offsets, { dhuhr: 5, maghrib: 5 });
+
+  const kuwait = new PE.Calculator({ lat: 29.3759, lng: 47.9774, method: 'Kuwait' });
+  assert.deepStrictEqual(kuwait.offsets, {}, 'a method without adjustments gets none');
+});
+
+test('the published adjustments actually move the times', () => {
+  const plain = new PE.Calculator({ lat: 41.0082, lng: 28.9784, method: 'MWL' });
+  const diyanet = new PE.Calculator({ lat: 41.0082, lng: 28.9784, method: 'Turkey' });
+  const a = plain.timesFor(new Date('2026-09-04T12:00:00'), 3);
+  const b = diyanet.timesFor(new Date('2026-09-04T12:00:00'), 3);
+  /* both use eighteen and seventeen degrees, so only the adjustments differ */
+  assert.strictEqual(b.sunrise - a.sunrise, -7);
+  assert.strictEqual(b.dhuhr - a.dhuhr, 5);
+  assert.strictEqual(b.maghrib - a.maghrib, 7);
+  assert.strictEqual(b.fajr - a.fajr, 0);
+});
+
+test('a caller can adjust on top of what the method already carries', () => {
+  const c = new PE.Calculator({ lat: 41.0082, lng: 28.9784, method: 'Turkey', offsets: { dhuhr: 2, fajr: -1 } });
+  assert.strictEqual(c.offsets.dhuhr, 7, 'the two add together');
+  assert.strictEqual(c.offsets.fajr, -1);
+  assert.strictEqual(c.offsets.maghrib, 7, 'and the rest are left alone');
+});
+
+test('the far north keeps its prayers in order whichever rule is chosen', () => {
+  const solstice = new Date('2026-06-21T12:00:00');
+  ['angleBased', 'nightMiddle', 'oneSeventh'].forEach(function (rule) {
+    const t = new PE.Calculator({ lat: 51.5074, lng: -0.1278, method: 'MWL', highLat: rule })
+      .timesFor(solstice, 1);
+    ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (k) {
+      assert.ok(!isNaN(t[k]), rule + ' left ' + k + ' undefined');
+    });
+    assert.ok(t.fajr < t.sunrise, rule + ' put fajr after sunrise');
+    assert.ok(t.sunrise < t.dhuhr && t.dhuhr < t.asr && t.asr < t.maghrib,
+      rule + ' put the day out of order');
+  });
+});

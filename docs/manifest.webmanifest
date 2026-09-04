@@ -10,16 +10,105 @@
   "orientation": "portrait",
   "background_color": "#f6f4ee",
   "theme_color": "#1e6f47",
-  "categories": ["lifestyle", "education", "books"],
+  "categories": [
+    "lifestyle",
+    "education",
+    "books"
+  ],
   "icons": [
-    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ],
   "shortcuts": [
-    { "name": "القرآن", "url": "./#quran", "description": "افتح المصحف" },
-    { "name": "الأذكار", "url": "./#azkar", "description": "أذكار الصباح والمساء" },
-    { "name": "القبلة", "url": "./#qibla", "description": "اتجاه القبلة" }
-  ]
+    {
+      "name": "أذكار الصباح",
+      "short_name": "الصباح",
+      "url": "./#azkar/morning",
+      "description": "افتح أذكار الصباح مباشرة",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "أذكار المساء",
+      "short_name": "المساء",
+      "url": "./#azkar/evening",
+      "description": "افتح أذكار المساء مباشرة",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "المصحف",
+      "short_name": "المصحف",
+      "url": "./#quran",
+      "description": "تصفح السور والأجزاء",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "القبلة",
+      "short_name": "القبلة",
+      "url": "./#qibla",
+      "description": "اتجاه الكعبة من موقعك",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "المسبحة",
+      "short_name": "المسبحة",
+      "url": "./#tasbih",
+      "description": "عدّاد التسبيح",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ],
+  "id": "/Quran_Sunna/",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "launch_handler": {
+    "client_mode": "navigate-existing"
+  },
+  "prefer_related_applications": false
 }

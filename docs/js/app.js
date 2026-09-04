@@ -8,7 +8,7 @@
   'use strict';
 
   var VERSION = '5.1.0';
-  var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, method: 'Kuwait' };
+  var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
 
@@ -57,6 +57,9 @@
     sleepEndsAt: 0,
     notified: {},
     heading: null,
+    repeat: null,
+    wakeLock: null,
+    installOffer: null,
     qibla: null,
     dailyAyah: null
   };
@@ -208,7 +211,28 @@
     return OWNED_BY[name] || 'more';
   }
 
-  function go(name) {
+  /* Every view has an address. That makes the phone back button walk back
+     through the app instead of leaving it, and it lets the shortcuts on the
+     home screen open a view directly. */
+  function addressOf(name) {
+    if (name === 'reader') return '#reader/' + state.surah;
+    if (name === 'azkar-list') return '#azkar/' + (state.azkarKey || 'morning');
+    return '#' + name;
+  }
+
+  function readAddress(hash) {
+    var raw = String(hash || '').replace(/^#/, '');
+    if (!raw) return null;
+    var parts = raw.split('/');
+    var name = parts[0];
+    if (name === 'reader') {
+      return { name: 'reader', surah: Math.max(1, Math.min(114, parseInt(parts[1], 10) || 1)) };
+    }
+    if (name === 'azkar' && parts[1]) return { name: 'azkar-list', azkar: parts[1] };
+    return $('v-' + name) ? { name: name } : null;
+  }
+
+  function go(name, silent) {
     var target = $('v-' + name);
     if (!target) return;
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
@@ -222,8 +246,27 @@
     });
 
     closeSheet();
+    if (name !== 'reader' && state.repeat) stopRepeat();
     if (window.scrollTo) window.scrollTo(0, 0);
     if (RENDERERS[name]) RENDERERS[name]();
+    updateReadProgress();
+
+    if (!silent) pushAddress(name);
+  }
+
+  function pushAddress(name) {
+    if (!window.history || !window.history.pushState) return;
+    var next = addressOf(name);
+    if (window.location.hash === next) return;
+    try { window.history.pushState({ view: name }, '', next); } catch (e) { /* file:// refuses */ }
+  }
+
+  function followAddress() {
+    var route = readAddress(window.location.hash);
+    if (!route) { go('home', true); return; }
+    if (route.surah) state.surah = route.surah;
+    if (route.azkar && AZKAR_DB[route.azkar]) state.azkarKey = route.azkar;
+    go(route.name, true);
   }
 
   /* ---------------- place and prayer times ---------------- */
@@ -232,7 +275,10 @@
     if (state.place) return state.place;
     var s = Store.settings();
     if (typeof s.lat === 'number' && typeof s.lng === 'number') {
-      state.place = { n: s.city || 'موقعك', lat: s.lat, lng: s.lng, tz: s.tzOffset, method: s.method };
+      state.place = {
+        n: s.city || 'موقعك', lat: s.lat, lng: s.lng,
+        tz: s.tzOffset, z: s.zone, method: s.method
+      };
     } else {
       state.place = DEFAULT_PLACE;
     }
@@ -249,10 +295,20 @@
     });
   }
 
-  function computeTimes(date) {
+  /* A stored number is only right for half the year in a country that moves
+     its clocks, so the zone is asked for the offset on the day being shown and
+     the stored number is only a fallback. */
+  function offsetFor(date) {
     var p = place();
-    var tz = typeof p.tz === 'number' ? p.tz : undefined;
-    return calculator().timesFor(date || new Date(), tz);
+    var live = PrayerEngine.zoneOffset(p.z, date);
+    if (typeof live === 'number') return live;
+    if (typeof p.tz === 'number') return p.tz;
+    return undefined;
+  }
+
+  function computeTimes(date) {
+    var when = date || new Date();
+    return calculator().timesFor(when, offsetFor(when));
   }
 
   function refreshTimes() {
@@ -270,7 +326,8 @@
     if (remember) {
       Store.setMany({
         lat: next.lat, lng: next.lng, city: next.n,
-        tzOffset: typeof next.tz === 'number' ? next.tz : null
+        tzOffset: typeof next.tz === 'number' ? next.tz : null,
+        zone: next.z || null
       });
       if (next.method) Store.set('method', next.method);
     }
@@ -289,7 +346,12 @@
     toast('جارٍ تحديد موقعك');
     window.navigator.geolocation.getCurrentPosition(function (pos) {
       var tz = -new Date().getTimezoneOffset() / 60;
-      setPlace({ n: 'موقعك الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude, tz: tz }, true);
+      var zone = null;
+      try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
+      setPlace({
+        n: 'موقعك الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude,
+        tz: tz, z: zone
+      }, true);
       toast('ضُبطت المواقيت على موقعك');
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
@@ -662,6 +724,23 @@
     if (ayah) scrollToAyah(ayah);
   }
 
+  /* Coming back to a view that carries a name, such as a surah or a section of
+     azkar, needs the name in hand before the address is written. */
+  function openAzkar(key) {
+    if (!AZKAR_DB[key]) return;
+    state.azkarKey = key;
+    go('azkar-list');
+  }
+
+  function updateReadProgress() {
+    var fill = $('read-progress-fill');
+    if (!fill || state.view !== 'reader') return;
+    var doc = document.documentElement;
+    var span = doc.scrollHeight - doc.clientHeight;
+    var seen = span > 0 ? Math.min(1, Math.max(0, (window.pageYOffset || doc.scrollTop || 0) / span)) : 0;
+    fill.style.width = (seen * 100).toFixed(1) + '%';
+  }
+
   function scrollToAyah(a) {
     var el = document.querySelector('.ayah[data-a="' + a + '"]');
     if (!el) return;
@@ -704,9 +783,92 @@
         esc(text) + sajda + '<span class="ayah-num">' + ar(a) + '</span></span> ';
     }).join('');
 
+    body.className = 'reader-body';
     body.innerHTML = '<div class="ayah-block">' + html + '</div>';
     var last = Store.get('lastRead');
     rememberPlace(n, last && last.s === n ? last.a : 1);
+  }
+
+  /* ---------------- memorising ---------------- */
+
+  /* Repeats a run of verses aloud a chosen number of times, marking the one
+     being recited, with the option to dim the text so the tongue leads and the
+     eye only checks. */
+  function startRepeat(from, to, times, hide) {
+    if (!Mushaf.ready()) { toast('نص المصحف لم يكتمل تحميله بعد'); return; }
+    state.repeat = {
+      surah: state.surah, from: from, to: to,
+      times: times, round: 1, at: from, hide: !!hide
+    };
+    closeSheet();
+    go('reader');
+    if (hide) { var body = $('reader-body'); if (body) body.classList.add('is-hidden'); }
+    keepAwake();
+    reciteCurrent();
+  }
+
+  function stopRepeat() {
+    state.repeat = null;
+    stopAudio();
+    var body = $('reader-body');
+    if (body) body.classList.remove('is-hidden');
+    $$('.ayah').forEach(function (el) { el.classList.remove('is-reciting'); });
+    releaseAwake();
+  }
+
+  function markReciting(a) {
+    $$('.ayah').forEach(function (el) { el.classList.remove('is-reciting'); });
+    var el = document.querySelector('.ayah[data-a="' + a + '"]');
+    if (el) {
+      el.classList.add('is-reciting');
+      if (el.scrollIntoView) el.scrollIntoView({ block: 'center' });
+    }
+  }
+
+  function reciteCurrent() {
+    var r = state.repeat;
+    if (!r) return;
+    markReciting(r.at);
+    var meta = surahMeta(r.surah);
+    playAudio(
+      'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + Mushaf.globalIndex(r.surah, r.at) + '.mp3',
+      'آية ' + ar(r.at) + ' من ' + (meta ? meta.ar : ''),
+      'الجولة ' + ar(r.round) + ' من ' + ar(r.times)
+    );
+    if (state.audio) state.audio.onended = nextInRepeat;
+  }
+
+  function nextInRepeat() {
+    var r = state.repeat;
+    if (!r) return;
+    if (r.at < r.to) { r.at++; reciteCurrent(); return; }
+    if (r.round < r.times) { r.round++; r.at = r.from; reciteCurrent(); return; }
+    toast('أتممت ' + ar(r.times) + ' جولات على ' + ar(r.to - r.from + 1) + ' آيات');
+    stopRepeat();
+  }
+
+  function repeatSheet(s, a) {
+    var meta = surahMeta(s);
+    var count = meta ? meta.ay : 1;
+    function options(selected, upto, from) {
+      var out = '';
+      for (var i = from || 1; i <= upto; i++) {
+        out += '<option value="' + i + '"' + (i === selected ? ' selected' : '') + '>' + ar(i) + '</option>';
+      }
+      return out;
+    }
+    openSheet('كرّر للحفظ', 
+      '<p class="setting-note">اختر مدى الآيات وعدد الجولات، ويمكنك إخفاء النص لتسترجعه من حفظك.</p>' +
+      '<div class="repeat-row"><label for="rep-from">من آية</label>' +
+      '<select id="rep-from">' + options(a, count) + '</select></div>' +
+      '<div class="repeat-row"><label for="rep-to">إلى آية</label>' +
+      '<select id="rep-to">' + options(Math.min(count, a + 2), count) + '</select></div>' +
+      '<div class="repeat-row"><label for="rep-times">عدد الجولات</label>' +
+      '<select id="rep-times">' + options(3, 20) + '</select></div>' +
+      '<div class="repeat-row"><label for="rep-hide">إخفاء النص</label>' +
+      '<input type="checkbox" id="rep-hide"></div>' +
+      '<button class="btn btn-primary btn-block" data-act="repeat-start" style="margin-top:12px">' +
+      icon('play') + 'ابدأ</button>');
   }
 
   function verseSheet(s, a) {
@@ -726,6 +888,8 @@
       '<button class="btn btn-ghost" data-act="copy" data-ref="' + s + ':' + a + '">' + icon('text') + 'نسخ</button>' +
       '<button class="btn btn-ghost" data-page="' + Mushaf.pageOf(s, a) + '">' + icon('book') + 'أول الصفحة</button>' +
       '</div>' +
+      '<button class="btn btn-ghost btn-block" data-act="memorise" data-ref="' + s + ':' + a +
+      '" style="margin-top:8px">' + icon('refresh') + 'كرّر للحفظ</button>' +
       '<div class="btn-row" style="margin-top:8px">' +
       '<button class="btn btn-ghost" data-act="listen" data-ref="' + s + ':' + a + '">' + icon('play') + 'استماع</button>' +
       '<button class="btn btn-ghost" data-act="tafsir" data-ref="' + s + ':' + a + '">' + icon('info') + 'تفسير</button>' +
@@ -780,8 +944,26 @@
     if (play && play.catch) play.catch(function () { toast('تعذّر التشغيل، فتأكد من الاتصال'); });
   }
 
+  function keepAwake() {
+    if (state.wakeLock || !window.navigator || !window.navigator.wakeLock) return;
+    try {
+      Promise.resolve(window.navigator.wakeLock.request('screen')).then(function (lock) {
+        state.wakeLock = lock;
+      }).catch(function () { /* the browser may refuse, which is fine */ });
+    } catch (e) { /* older browsers have no lock at all */ }
+  }
+
+  function releaseAwake() {
+    if (!state.wakeLock) return;
+    try { state.wakeLock.release(); } catch (e) { /* already gone */ }
+    state.wakeLock = null;
+  }
+
   function stopAudio() {
-    if (state.audio) { try { state.audio.pause(); } catch (e) { /* already stopped */ } }
+    if (state.audio) {
+      state.audio.onended = null;
+      try { state.audio.pause(); } catch (e) { /* already stopped */ }
+    }
     state.audio = null;
     state.playing = null;
     var player = $('player');
@@ -956,12 +1138,6 @@
         '<span class="tile-name">' + esc(row.def.title) + '</span>' +
         '<span class="tile-note">' + ar(p.done) + ' من ' + ar(row.def.items.length) + '</span></button>';
     }).join('');
-  }
-
-  function openAzkar(key) {
-    if (!AZKAR_DB[key]) return;
-    state.azkarKey = key;
-    go('azkar-list');
   }
 
   function renderAzkarList() {
@@ -1370,6 +1546,10 @@
     setSwitch($('settings-vibrate'), !!s.vibrate);
     applyFont();
 
+    var installRow = $('settings-install');
+    if (installRow) {
+      installRow.hidden = !state.installOffer || standalone();
+    }
     if ($('offline-state')) {
       $('offline-state').textContent = Mushaf.ready()
         ? 'نص المصحف محمّل في جهازك، فالقراءة تعمل بلا إنترنت'
@@ -1382,7 +1562,7 @@
     if (typeof CITIES === 'undefined') return;
     var c = CITIES[index];
     if (!c) return;
-    setPlace({ n: c.n, lat: c.lat, lng: c.lng, tz: c.tz, method: c.method }, true);
+    setPlace({ n: c.n, lat: c.lat, lng: c.lng, tz: c.tz, z: c.z, method: c.method }, true);
     toast('ضُبطت المواقيت على ' + c.n);
   }
 
@@ -1509,6 +1689,16 @@
       copyText(Mushaf.ayah(sNum, aNum) + '\n\nسورة ' + (meta ? meta.ar : '') + '، آية ' + ar(aNum))
         .then(function () { toast('نُسخت الآية'); }, function () { toast('تعذّر النسخ'); });
     },
+    memorise: function (ref) {
+      var parts = ref.split(':');
+      repeatSheet(+parts[0], +parts[1]);
+    },
+    'repeat-start': function () {
+      var from = +$('rep-from').value;
+      var to = Math.max(from, +$('rep-to').value);
+      var times = +$('rep-times').value;
+      startRepeat(from, to, times, $('rep-hide').checked);
+    },
     'clear-bookmarks': function () {
       Store.clearBookmarks();
       renderBookmarks();
@@ -1602,6 +1792,13 @@
   function wire() {
     document.addEventListener('click', onClick);
 
+    window.addEventListener('scroll', updateReadProgress, { passive: true });
+
+    window.addEventListener('popstate', function () {
+      if ($('sheet') && $('sheet').classList.contains('is-open')) { closeSheet(); return; }
+      followAddress();
+    });
+
     bind('hijri-up', 'click', function () { nudgeHijri(1); });
     bind('hijri-down', 'click', function () { nudgeHijri(-1); });
     bind('ayah-share', 'click', function () {
@@ -1691,7 +1888,9 @@
     bind('data-file', 'change', function (e) { importBackup(e.target.files && e.target.files[0]); });
     bind('data-clear', 'click', clearEverything);
     bind('offline-cache', 'click', cacheEverything);
+    bind('settings-install', 'click', install);
 
+    bind('banner-close', 'click', hideBanner);
     bind('sheet-close', 'click', closeSheet);
     bind('sheet', 'click', function (e) { if (e.target && e.target.id === 'sheet') closeSheet(); });
 
@@ -1734,10 +1933,111 @@
     }
   }
 
+  /* ---------------- the app as an app ---------------- */
+
+  function showBanner(text, actionLabel, action) {
+    var banner = $('banner');
+    if (!banner) return;
+    $('banner-text').textContent = text;
+    var act = $('banner-act');
+    if (actionLabel) {
+      act.hidden = false;
+      act.textContent = actionLabel;
+      act.onclick = function () { hideBanner(); action(); };
+    } else {
+      act.hidden = true;
+      act.onclick = null;
+    }
+    banner.hidden = false;
+  }
+
+  function hideBanner() {
+    var banner = $('banner');
+    if (banner) banner.hidden = true;
+  }
+
+  /* The browser offers to install once, and only once, so the offer is kept
+     until the reader is ready for it rather than thrown away. */
+  function watchInstall() {
+    window.addEventListener('beforeinstallprompt', function (event) {
+      if (event.preventDefault) event.preventDefault();
+      state.installOffer = event;
+      renderSettings();
+      if (!Store.get('installAsked')) {
+        Store.set('installAsked', true);
+        showBanner('ثبّت سُنّتي على جهازك ليعمل بلا إنترنت', 'تثبيت', install);
+      }
+    });
+    window.addEventListener('appinstalled', function () {
+      state.installOffer = null;
+      hideBanner();
+      renderSettings();
+      toast('تم التثبيت، فتجده الآن مع تطبيقاتك');
+    });
+  }
+
+  function install() {
+    var offer = state.installOffer;
+    if (!offer) { toast('التثبيت يجري من قائمة المتصفح'); return; }
+    offer.prompt();
+    Promise.resolve(offer.userChoice).then(function (choice) {
+      state.installOffer = null;
+      renderSettings();
+      if (choice && choice.outcome === 'accepted') toast('جارٍ التثبيت');
+    }).catch(function () { state.installOffer = null; });
+  }
+
+  function standalone() {
+    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) return true;
+    return !!window.navigator.standalone;
+  }
+
+  function watchNetwork() {
+    window.addEventListener('offline', function () {
+      showBanner('لا اتصال الآن، والمصحف والأذكار والمواقيت تعمل كما هي');
+    });
+    window.addEventListener('online', hideBanner);
+    if (window.navigator.onLine === false) {
+      showBanner('لا اتصال الآن، والمصحف والأذكار والمواقيت تعمل كما هي');
+    }
+  }
+
+  /* A worker that has installed but is waiting would otherwise sit unused until
+     every tab closed, so the reader is told and can take it now. */
+  function watchUpdate(registration) {
+    if (!registration) return;
+    function offer(worker) {
+      if (!worker) return;
+      worker.addEventListener('statechange', function () {
+        if (worker.state === 'installed' && window.navigator.serviceWorker.controller) {
+          showBanner('وصل تحديث للتطبيق', 'حدّث الآن', function () {
+            worker.postMessage({ type: 'take-over' });
+          });
+        }
+      });
+    }
+    if (registration.waiting && window.navigator.serviceWorker.controller) {
+      showBanner('وصل تحديث للتطبيق', 'حدّث الآن', function () {
+        registration.waiting.postMessage({ type: 'take-over' });
+      });
+    }
+    registration.addEventListener('updatefound', function () { offer(registration.installing); });
+  }
+
   function registerWorker() {
     if (!window.navigator || !window.navigator.serviceWorker) return;
     if (window.location.protocol === 'file:') return;
-    window.navigator.serviceWorker.register('sw.js').catch(function () { /* offline install is optional */ });
+
+    var reloading = false;
+    window.navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (reloading) return;
+      reloading = true;
+      window.location.reload();
+    });
+
+    window.navigator.serviceWorker.register('sw.js')
+      .then(watchUpdate)
+      .catch(function () { /* offline install is optional */ });
   }
 
   function boot() {
@@ -1749,9 +2049,11 @@
     computeQibla();
     refreshTimes();
     wire();
-    go('home');
+    followAddress();
     renderSettings();
     watchHeading();
+    watchInstall();
+    watchNetwork();
     window.setInterval(tick, 1000);
     window.setInterval(renderSleepNote, 30000);
     loadMushaf();
@@ -1771,8 +2073,11 @@
     helpers: {
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, windowSunnah: windowSunnah, withLam: withLam,
-      isFriday: isFriday, totalSunnahCount: totalSunnahCount
-    }
+      isFriday: isFriday, totalSunnahCount: totalSunnahCount,
+      addressOf: addressOf, readAddress: readAddress, standalone: standalone
+    },
+    repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },
+    banner: { show: showBanner, hide: hideBanner }
   };
 
   if (document.readyState === 'loading') {
