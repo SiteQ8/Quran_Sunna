@@ -115,3 +115,16 @@ test('days between ignores the clock and counts calendar days', () => {
   assert.strictEqual(H.daysBetween(a, b), 1);
   assert.strictEqual(H.daysBetween(a, a), 0);
 });
+
+test('the day of the week belongs to the date, not to the adjustment', () => {
+  const friday = new Date(2026, 8, 4);
+  assert.strictEqual(friday.getDay(), 5, 'the fixture is a friday');
+  const names = [-2, -1, 0, 1, 2].map(function (a) { return H.toHijri(friday, a).weekday; });
+  assert.deepStrictEqual(new Set(names).size, 1, 'the weekday moved: ' + names.join(', '));
+  assert.strictEqual(names[0], 'الجمعة');
+
+  /* the month day is what the adjustment is for, and it does move */
+  const days = [-1, 0, 1].map(function (a) { return H.toHijri(friday, a).d; });
+  assert.strictEqual(days[1] - days[0], 1);
+  assert.strictEqual(days[2] - days[1], 1);
+});

@@ -103,7 +103,7 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
-  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--banner-room, 0px));
   -webkit-font-smoothing: antialiased;
 }
 
@@ -316,7 +316,9 @@ button { background: none; border: none; cursor: pointer; }
 }
 .check-box .icon { width: 14px; height: 14px; stroke-width: 3; }
 .check.is-done .check-box { background: var(--accent); border-color: var(--accent); color: #fff; }
-.check.is-done .check-label { color: var(--ink-3); text-decoration: line-through; }
+/* A line drawn through arabic cuts across the letters that join, so a done
+   deed is marked by its tick and a quieter colour instead. */
+.check.is-done .check-label { color: var(--ink-3); }
 .check-label { flex: 1; font-size: var(--step-0); }
 /* The note is a second line under the deed, not a continuation of it. Without
    this it reads as صلاة الفجر في وقتهامن صلى الصبح, two sentences run together. */
@@ -426,7 +428,7 @@ button { background: none; border: none; cursor: pointer; }
 .repeat-row select { flex: none; min-width: 96px; }
 .reader-body.is-hidden .ayah { color: transparent; text-shadow: 0 0 12px var(--ink-3); }
 .reader-body.is-hidden .ayah.is-reciting,
-.reader-body.is-hidden .ayah-num { color: var(--ink-1); text-shadow: none; }
+.reader-body.is-hidden .ayah-num { color: var(--ink); text-shadow: none; }
 
 /* ---------- banner ---------- */
 
@@ -434,7 +436,7 @@ button { background: none; border: none; cursor: pointer; }
   position: fixed; inset-inline: var(--s3); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s3));
   z-index: 60; display: flex; align-items: center; gap: var(--s2);
   padding: var(--s2) var(--s3); border-radius: var(--r-sm);
-  background: var(--ink-1); color: var(--bg); box-shadow: var(--shadow-lift);
+  background: var(--ink); color: var(--raised); box-shadow: var(--shadow-lift);
   animation: banner-rise .24s ease-out;
 }
 .banner-text { flex: 1; font-size: var(--step--1); line-height: 1.5; }

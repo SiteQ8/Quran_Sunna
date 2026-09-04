@@ -96,7 +96,9 @@
     return 'ل' + (text.indexOf('ال') === 0 ? text.slice(1) : text);
   }
 
-  function clockText(minutes) { return PrayerEngine.format(minutes); }
+  /* Every other number in the app is written in arabic numerals, so a clock in
+     latin ones beside ٢٢ ربيع الأول reads as a leftover from another screen. */
+  function clockText(minutes) { return ar(PrayerEngine.format(minutes)); }
 
   function buzz(ms) {
     if (!Store.get('vibrate')) return;
@@ -420,7 +422,7 @@
     var mins = Math.floor((total % 3600) / 60);
     var secs = total % 60;
 
-    $('arc-count').textContent = pad(hrs) + ':' + pad(mins) + ':' + pad(secs);
+    $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
     $('arc-name').textContent = c.next.ar;
     $('arc-at').textContent = clockText(c.next.at);
     if ($('arc-label')) $('arc-label').textContent = 'يبقى على';
@@ -1959,11 +1961,18 @@
       act.onclick = null;
     }
     banner.hidden = false;
+    /* It floats above the tab bar, so the page is told to leave room or the
+       last row of whatever list is open sits underneath it. */
+    window.setTimeout(function () {
+      var height = banner.getBoundingClientRect().height;
+      document.documentElement.style.setProperty('--banner-room', Math.round(height + 12) + 'px');
+    }, 0);
   }
 
   function hideBanner() {
     var banner = $('banner');
     if (banner) banner.hidden = true;
+    document.documentElement.style.setProperty('--banner-room', '0px');
   }
 
   /* The browser offers to install once, and only once, so the offer is kept

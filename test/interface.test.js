@@ -121,9 +121,9 @@ test('every icon the interface draws exists in the sprite', () => {
 test('the prayer clock fills in and counts down', () => {
   const { doc } = boot();
   const countdown = doc.getElementById('arc-count').textContent;
-  assert.match(countdown, /^\d{2}:\d{2}:\d{2}$/, 'countdown should read as a clock, got ' + countdown);
+  assert.match(countdown, /^[٠-٩]{2}:[٠-٩]{2}:[٠-٩]{2}$/, 'countdown should read as a clock, got ' + countdown);
   assert.notStrictEqual(doc.getElementById('arc-name').textContent, '…');
-  assert.match(doc.getElementById('arc-at').textContent, /^\d{2}:\d{2}$/);
+  assert.match(doc.getElementById('arc-at').textContent, /^[٠-٩]{2}:[٠-٩]{2}$/);
 });
 
 test('the arc fill and dot track the progress of the window', () => {
@@ -140,7 +140,7 @@ test('all six daily marks render with times', () => {
   const windows = doc.querySelectorAll('#windows .window');
   assert.strictEqual(windows.length, 6);
   windows.forEach(function (w) {
-    assert.match(w.querySelector('.window-time').textContent, /^\d{2}:\d{2}$/);
+    assert.match(w.querySelector('.window-time').textContent, /^[٠-٩]{2}:[٠-٩]{2}$/);
   });
   assert.strictEqual(doc.querySelectorAll('#windows .is-now').length, 1, 'exactly one window is current');
 });
@@ -803,7 +803,7 @@ test('a failed download leaves the rest of the app usable', async () => {
   await new Promise((r) => setTimeout(r, 60));
   assert.strictEqual(win.Mushaf.ready(), false);
   assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
-  assert.match(doc.getElementById('arc-count').textContent, /^\d{2}:\d{2}:\d{2}$/,
+  assert.match(doc.getElementById('arc-count').textContent, /^[٠-٩]{2}:[٠-٩]{2}:[٠-٩]{2}$/,
     'the clock keeps running without the mushaf');
   win.App.go('azkar');
   assert.ok(doc.querySelectorAll('#azkar-groups [data-azkar]').length >= 10);
@@ -1388,4 +1388,84 @@ test('the text size slider is drawn rather than left to the browser', () => {
   assert.match(css, /\.slider::-moz-range-track/);
   assert.ok(!/\.slider\s*\{[^}]*accent-color/.test(css),
     'accent-color alone leaves the track almost black in the light theme');
+});
+
+/* ---------------- what the eye actually sees ---------------- */
+
+test('nudging the hijri day never moves the day of the week', () => {
+  const { win, doc } = boot();
+  const weekday = doc.getElementById('greg-date').textContent.split('،')[0];
+  const gregorian = doc.getElementById('greg-date').textContent.split('،')[1];
+
+  [1, 1, -1, -1, -1, 1].forEach(function (step) {
+    click(win, doc.getElementById(step > 0 ? 'hijri-up' : 'hijri-down'));
+    const line = doc.getElementById('greg-date').textContent;
+    assert.strictEqual(line.split('،')[0], weekday,
+      'the weekday moved to ' + line.split('،')[0] + ' while the date stayed ' + line.split('،')[1]);
+    assert.strictEqual(line.split('،')[1], gregorian, 'the gregorian date must not move either');
+  });
+});
+
+test('the header and the prayer strip agree about the day', () => {
+  const { win, doc } = boot();
+  click(win, doc.getElementById('hijri-down'));
+  const weekday = doc.getElementById('greg-date').textContent.split('،')[0].trim();
+  const noon = [...doc.querySelectorAll('#windows .window')][2].querySelector('.window-name').textContent;
+  if (weekday === 'الجمعة') {
+    assert.strictEqual(noon, 'الجمعة', 'the strip should say الجمعة when the header does');
+  } else {
+    assert.strictEqual(noon, 'الظهر', 'the strip should say الظهر on any other day');
+  }
+});
+
+test('the stylesheet asks for no colour it never defined', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const defined = new Set([...css.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]));
+  [...app.matchAll(/setProperty\('(--[a-z0-9-]+)'/g)].forEach((m) => defined.add(m[1]));
+  const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]));
+  const missing = [...used].filter((t) => !defined.has(t));
+  assert.deepStrictEqual(missing, [],
+    'these resolve to nothing, so whatever they colour is left unpainted: ' + missing.join(', '));
+});
+
+test('the install banner is painted, not left see through', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.banner\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the banner needs a rule');
+  assert.match(rule[1], /background:\s*var\(--(ink|sunken|raised)\)/,
+    'without a background it sits on top of the list and both are read at once');
+});
+
+test('the clock keeps the same numerals as the rest of the screen', () => {
+  const { doc } = boot();
+  const shown = [
+    doc.getElementById('arc-count').textContent,
+    doc.getElementById('arc-at').textContent,
+    doc.getElementById('hijri-date').textContent,
+    doc.getElementById('greg-date').textContent
+  ].concat([...doc.querySelectorAll('.window-time')].map((e) => e.textContent));
+  shown.forEach(function (text) {
+    assert.ok(!/[0-9]/.test(text), 'latin digits reached the screen in: ' + text);
+    assert.ok(/[٠-٩]/.test(text), 'expected arabic digits in: ' + text);
+  });
+});
+
+test('a done deed is marked by its tick, not by a line through the arabic', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.check\.is-done \.check-label\s*\{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'a done deed needs a style of its own');
+  assert.ok(!/line-through/.test(rule[1]),
+    'a line drawn through arabic cuts across the letters that join');
+  assert.match(rule[1], /color:/, 'it should still read as done');
+});
+
+test('the floating banner makes room rather than covering the last row', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.match(css, /padding-bottom:[^;]*--banner-room/,
+    'the page must leave room for a banner that floats over it');
+  assert.match(app, /setProperty\('--banner-room'/,
+    'and the room must be set from the height the banner actually takes');
+  assert.ok(/--banner-room', '0px'/.test(app), 'and given back when it closes');
 });

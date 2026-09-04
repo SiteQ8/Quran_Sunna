@@ -64,8 +64,11 @@
       out = fallbackConvert(shifted);
     }
     out.monthName = MONTHS[out.m - 1] || '';
-    out.weekday = WEEKDAYS[shifted.getDay()];
-    out.weekdayIndex = shifted.getDay();
+    /* Nudging the hijri day aligns the lunar month with the sighting in your
+       town, so it must move the month day and nothing else. The day of the week
+       belongs to the real date, and Friday stays Friday whatever the offset. */
+    out.weekday = WEEKDAYS[date.getDay()];
+    out.weekdayIndex = date.getDay();
     return out;
   }
 
