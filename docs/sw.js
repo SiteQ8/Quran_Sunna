@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v5.7.0';
+var VERSION = 'sunnati-v5.8.0';
 
 var SHELL = [
   './',
@@ -29,7 +29,15 @@ var SHELL = [
   './icons/icon-192.png',
   './icons/icon-512.png',
   './icons/maskable-512.png',
-  './icons/icon-180.png'
+  './icons/icon-180.png',
+  './icons/icon-72.png',
+  './icons/icon-96.png',
+  './icons/icon-128.png',
+  './icons/icon-144.png',
+  './icons/icon-152.png',
+  './icons/icon-256.png',
+  './icons/icon-384.png',
+  './icons/maskable-192.png'
 ];
 
 /* Big and unchanging, so reading them from the cache is always right. */

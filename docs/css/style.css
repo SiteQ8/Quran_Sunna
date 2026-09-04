@@ -65,6 +65,7 @@
   --s5: 24px;
   --s6: 32px;
 
+  --r-md: 20px;
   --r-sm: 10px;
   --r: 16px;
   --r-lg: 22px;
@@ -130,11 +131,14 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  opacity: .5;
-  background-image: url("data:image/svg+xml,%3Csvg width='64' height='64' viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M32 2 62 32 32 62 2 32Z' fill='none' stroke='%231e6f47' stroke-width='.6' opacity='.05'/%3E%3Cpath d='M32 14 50 32 32 50 14 32Z' fill='none' stroke='%23b08833' stroke-width='.5' opacity='.05'/%3E%3C/svg%3E");
+  opacity: .13;
+  /* A seamless eight fold lattice, the star and cross that runs through
+     mosque tilework, laid very faintly under the whole app. */
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2780%27%20height%3D%2780%27%20viewBox%3D%270%200%2080%2080%27%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%25231e6f47%27%20stroke-width%3D%271%27%3E%3Crect%20x%3D%2727%27%20y%3D%2727%27%20width%3D%2726%27%20height%3D%2726%27%2F%3E%3Crect%20x%3D%2727%27%20y%3D%2727%27%20width%3D%2726%27%20height%3D%2726%27%20transform%3D%27rotate%2845%2040%2040%29%27%2F%3E%3Crect%20x%3D%27-13%27%20y%3D%27-13%27%20width%3D%2726%27%20height%3D%2726%27%2F%3E%3Crect%20x%3D%27-13%27%20y%3D%27-13%27%20width%3D%2726%27%20height%3D%2726%27%20transform%3D%27rotate%2845%200%200%29%27%2F%3E%3Crect%20x%3D%2767%27%20y%3D%27-13%27%20width%3D%2726%27%20height%3D%2726%27%2F%3E%3Crect%20x%3D%2767%27%20y%3D%27-13%27%20width%3D%2726%27%20height%3D%2726%27%20transform%3D%27rotate%2845%2080%200%29%27%2F%3E%3Crect%20x%3D%27-13%27%20y%3D%2767%27%20width%3D%2726%27%20height%3D%2726%27%2F%3E%3Crect%20x%3D%27-13%27%20y%3D%2767%27%20width%3D%2726%27%20height%3D%2726%27%20transform%3D%27rotate%2845%200%2080%29%27%2F%3E%3Crect%20x%3D%2767%27%20y%3D%2767%27%20width%3D%2726%27%20height%3D%2726%27%2F%3E%3Crect%20x%3D%2767%27%20y%3D%2767%27%20width%3D%2726%27%20height%3D%2726%27%20transform%3D%27rotate%2845%2080%2080%29%27%2F%3E%3C%2Fg%3E%3Cg%20fill%3D%27none%27%20stroke%3D%27%2523b08833%27%20stroke-width%3D%27.7%27%3E%3Cpath%20d%3D%27M40%200v80M0%2040h80%27%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E");
+  background-size: 80px 80px;
 }
 
-[data-theme='dark'] body::before { opacity: .35; }
+[data-theme='dark'] body::before { opacity: .09; }
 
 ::selection { background: var(--accent-wash); }
 
@@ -237,6 +241,28 @@ button { background: none; border: none; cursor: pointer; }
    time they prayed, so the colour is muted rather than the whole box faded. */
 .window.is-past .window-name, .window.is-past .window-time { color: var(--ink-3); }
 .window.is-past .window-time { font-weight: 500; }
+
+/* ---------- folding groups ---------- */
+
+.fold {
+  background: var(--raised); border-radius: var(--r-md); box-shadow: var(--shadow);
+  margin-bottom: var(--s3); overflow: hidden;
+}
+.fold-head {
+  width: 100%; display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s4); min-height: 56px; text-align: right;
+}
+.fold-head .icon { color: var(--accent-ink); flex: none; }
+.fold-title { flex: 1; font-size: var(--step-0); font-weight: 700; }
+.fold-tally {
+  flex: none; font-size: var(--step--1); color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.fold-tally.is-full { color: var(--accent-ink); font-weight: 600; }
+.fold-arrow { flex: none; color: var(--ink-3); transition: transform .2s ease; }
+.fold.is-open .fold-arrow { transform: rotate(180deg); }
+.fold-body { display: none; padding: 0 var(--s4) var(--s4); }
+.fold.is-open .fold-body { display: block; }
 
 /* ---------- cards ---------- */
 
@@ -504,7 +530,11 @@ button { background: none; border: none; cursor: pointer; }
   position: absolute; inset: 0; border-radius: 50%; background: var(--raised);
   border: 1px solid var(--line); box-shadow: var(--shadow-lift);
 }
-.compass-rose { position: absolute; inset: 0; transition: transform .2s linear; }
+/* When the top of the phone comes within five degrees of the qibla the face
+   answers, so a person knows without reading a number. */
+.compass-face.is-aligned { box-shadow: 0 0 0 3px var(--accent-solid), var(--shadow-lift); }
+.compass-rose { transition: transform .18s ease-out;
+   position: absolute; inset: 0; transition: transform .2s linear; }
 .compass-read { text-align: center; font-size: var(--step-3); font-weight: 300; direction: ltr; font-variant-numeric: tabular-nums; }
 
 /* ---------- misc ---------- */
