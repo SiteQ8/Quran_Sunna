@@ -198,7 +198,7 @@ button { background: none; border: none; cursor: pointer; }
 .arc-fill { stroke: var(--accent); stroke-width: 6; fill: none; stroke-linecap: round; transition: stroke-dashoffset 1s linear; }
 .arc-dot { fill: var(--raised); stroke: var(--accent); stroke-width: 3; }
 
-.arc-center { position: absolute; inset: 26% 0 auto 0; text-align: center; }
+.arc-center { position: absolute; inset: 34% 0 auto 0; text-align: center; }
 .arc-label { font-size: var(--step--1); color: var(--ink-2); }
 .arc-name { font-size: var(--step-2); font-weight: 700; color: var(--accent); margin-top: -2px; }
 .arc-count {
