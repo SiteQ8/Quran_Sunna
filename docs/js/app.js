@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.7.0';
+  var VERSION = '6.7.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -100,7 +100,13 @@
 
   /* Arabic counts one, two, a few and many differently, so 3 يوماً reads as a
      mistake where 3 أيام is right. */
-  function days(n) { return count(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً'); }
+  function daysOf(n) { return count(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً'); }
+  function ayat(n) { return count(n, 'آية واحدة', 'آيتان', 'آيات', 'آية'); }
+  function pages(n) { return count(n, 'صفحة واحدة', 'صفحتان', 'صفحات', 'صفحة'); }
+  function minutesOf(n) { return count(n, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة'); }
+  function entries(n) { return count(n, 'مدخلة واحدة', 'مدخلتان', 'مدخلات', 'مدخلة'); }
+  function tasbihat(n) { return count(n, 'تسبيحة واحدة', 'تسبيحتان', 'تسبيحات', 'تسبيحة'); }
+  function rounds(n) { return count(n, 'جولة واحدة', 'جولتان', 'جولات', 'جولة'); }
 
   /* The four forms arabic counts by: one, two, three to ten, and above. */
   function count(n, one, two, few, many) {
@@ -571,9 +577,11 @@
     var secs = total % 60;
 
     $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
-    $('arc-name').textContent = c.next.ar;
+    $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar : 'أذان ' + c.next.ar;
     $('arc-at').textContent = clockText(c.next.at);
-    if ($('arc-label')) $('arc-label').textContent = 'يبقى على';
+    /* باقٍ على أذان العصر is how it is said. The sunrise has no adhan, so it
+       is named on its own. */
+    if ($('arc-label')) $('arc-label').textContent = 'باقٍ على';
 
     /* Two dashes rather than one offset, so the drawn run is plainly the first
        part of the path and no reasoning about which way an offset shifts is
@@ -643,7 +651,7 @@
     renderDate();
     renderCalendar();
     renderHome();
-    toast(next === 0 ? 'التاريخ على الحساب الأصلي' : 'التاريخ معدّل ' + ar(Math.abs(next)) + (next > 0 ? ' يوماً للأمام' : ' يوماً للخلف'));
+    toast(next === 0 ? 'التاريخ على الحساب الأصلي' : 'التاريخ معدّل ' + daysOf(Math.abs(next)) + (next > 0 ? ' للأمام' : ' للخلف'));
   }
 
   function currentWindowKey() { return clockState().windowKey; }
@@ -740,7 +748,7 @@
     if ($('streak-line')) {
       var s = Store.streak(new Date());
       $('streak-line').textContent = s.current > 0
-        ? days(s.current) + ' متتابعة'
+        ? daysOf(s.current) + ' متتابعة'
         : 'لم تبدأ اليوم بعد';
     }
     renderHeat($('home-heat'), 30);
@@ -787,7 +795,7 @@
     host.innerHTML = list.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + days(o.days)) + '</span></span></div>';
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) + '</span></span></div>';
     }).join('');
   }
 
@@ -820,14 +828,14 @@
        reader who opens an arabic mushaf should not meet a latin word in it.
        The page it opens at is more use to them anyway. */
     var note = Mushaf.ready()
-      ? 'تبدأ صفحة ' + ar(Mushaf.pageOf(meta.n, 1))
-      : ar(meta.ay) + ' آية';
+      ? 'تبدأ في صفحة ' + ar(Mushaf.pageOf(meta.n, 1))
+      : ayat(meta.ay);
     return '<button class="row" data-surah="' + meta.n + '">' +
       '<span class="row-mark">' + ar(meta.n) + '</span>' +
       '<span class="row-body"><span class="row-title">' + esc(meta.ar) +
       (done ? ' ' + icon('check') : '') + '</span>' +
       '<span class="row-note">' + esc(note) + '</span></span>' +
-      '<span class="row-meta">' + esc(meta.tp) + '، ' + ar(meta.ay) + ' آية</span></button>';
+      '<span class="row-meta">' + esc(meta.tp) + '، ' + ayat(meta.ay) + '</span></button>';
   }
 
   function juzRow(n) {
@@ -952,7 +960,7 @@
           '، صفحة ' + ar(Mushaf.pageOf(n, state.ayah || 1))
         : '';
       $('reader-meta').textContent = meta
-        ? meta.tp + '، ' + ar(meta.ay) + ' آية' + where + (virtue ? '، ' + virtue : '')
+        ? meta.tp + '، ' + ayat(meta.ay) + where + (virtue ? '، ' + virtue : '')
         : '';
     }
 
@@ -1034,13 +1042,13 @@
     if (!r) return;
     if (r.at < r.to) { r.at++; reciteCurrent(); return; }
     if (r.round < r.times) { r.round++; r.at = r.from; reciteCurrent(); return; }
-    toast('أتممت ' + ar(r.times) + ' جولات على ' + ar(r.to - r.from + 1) + ' آيات');
+    toast('أتممت ' + rounds(r.times) + ' على ' + ayat(r.to - r.from + 1));
     stopRepeat();
   }
 
   function repeatSheet(s, a) {
     var meta = surahMeta(s);
-    var count = meta ? meta.ay : 1;
+    var total = meta ? meta.ay : 1;
     function options(selected, upto, from) {
       var out = '';
       for (var i = from || 1; i <= upto; i++) {
@@ -1051,9 +1059,9 @@
     openSheet('كرّر للحفظ', 
       '<p class="setting-note">اختر مدى الآيات وعدد الجولات، ويمكنك إخفاء النص لتسترجعه من حفظك.</p>' +
       '<div class="repeat-row"><label for="rep-from">من آية</label>' +
-      '<select id="rep-from">' + options(a, count) + '</select></div>' +
+      '<select id="rep-from">' + options(a, total) + '</select></div>' +
       '<div class="repeat-row"><label for="rep-to">إلى آية</label>' +
-      '<select id="rep-to">' + options(Math.min(count, a + 2), count) + '</select></div>' +
+      '<select id="rep-to">' + options(Math.min(total, a + 2), total) + '</select></div>' +
       '<div class="repeat-row"><label for="rep-times">عدد الجولات</label>' +
       '<select id="rep-times">' + options(3, 20) + '</select></div>' +
       '<div class="repeat-row"><label for="rep-hide">إخفاء النص</label>' +
@@ -1169,11 +1177,11 @@
      cannot say where in the text it has reached. */
   function reciteFrom(s, a, to) {
     if (!Mushaf.ready()) { toast('نص المصحف لم يكتمل تحميله بعد'); return; }
-    var count = Mushaf.surah(s).length;
+    var total = Mushaf.surah(s).length;
     state.recite = {
       s: s,
-      a: Math.max(1, Math.min(count, a || 1)),
-      to: Math.max(1, Math.min(count, to || count))
+      a: Math.max(1, Math.min(total, a || 1)),
+      to: Math.max(1, Math.min(total, to || total))
     };
     keepAwake();
     reciteVerse();
@@ -1210,9 +1218,9 @@
 
   function stepRecite(by) {
     if (!state.recite) return;
-    var count = Mushaf.surah(state.recite.s).length;
-    state.recite.a = Math.max(1, Math.min(count, state.recite.a + by));
-    if (state.recite.a > state.recite.to) state.recite.to = count;
+    var total = Mushaf.surah(state.recite.s).length;
+    state.recite.a = Math.max(1, Math.min(total, state.recite.a + by));
+    if (state.recite.a > state.recite.to) state.recite.to = total;
     reciteVerse();
   }
 
@@ -1275,9 +1283,9 @@
   function renderTextHits(host, hits, needle) {
     if (!hits.length) { host.innerHTML = empty('لا نتيجة في هذا المجال'); return; }
     host.innerHTML = hits.map(function (hit) {
-      var go = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"' :
+      var target = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"' :
         ' data-go="' + esc(hit.key) + '"';
-      return '<button class="search-hit"' + go + '>' +
+      return '<button class="search-hit"' + target + '>' +
         '<span class="search-hit-ref">' + esc(hit.where) + '</span>' +
         highlight(hit.text, needle) + '</button>';
     }).join('');
@@ -1324,7 +1332,7 @@
     var total = Mushaf.countMatches(needle);
     if ($('search-count')) {
       $('search-count').textContent = total
-        ? 'وردت في ' + ar(total) + ' آية، وهذه أول ' + ar(hits.length)
+        ? 'وردت في ' + ayat(total) + '، وهذه أول ' + ar(hits.length)
         : 'لا نتيجة';
     }
     if (!hits.length) { host.innerHTML = empty('لم نجد هذه الكلمة في المصحف'); return; }
@@ -1375,14 +1383,14 @@
 
     chips.innerHTML = KHATMA_CHOICES.map(function (d) {
       return '<button class="chip' + (d === days ? ' is-on' : '') + '" data-khatma="' + d + '">' +
-        ar(d) + ' يوماً</button>';
+        daysOf(d) + '</button>';
     }).join('');
 
     var plan = Mushaf.khatmaPlan(days, 1);
     var perDay = Math.ceil(TOTAL_PAGES / days);
     if ($('khatma-rate')) {
-      $('khatma-rate').textContent = 'نحو ' + ar(perDay) + ' صفحة كل يوم، أي قرابة ' +
-        ar(Math.max(1, Math.round(perDay * 1.6))) + ' دقيقة من التلاوة';
+      $('khatma-rate').textContent = 'نحو ' + pages(perDay) + ' كل يوم، أي قرابة ' +
+        minutesOf(Math.max(1, Math.round(perDay * 1.6))) + ' من التلاوة';
     }
 
     var status = Mushaf.khatmaStatus(plan, khatmaElapsedDays(), Store.progress().pagesRead);
@@ -1391,13 +1399,13 @@
 
     var aheadLine;
     if (status.finished) aheadLine = 'أتممت الختمة، فتقبل الله منك';
-    else if (status.ahead > 0) aheadLine = 'أنت متقدم بـ' + ar(status.ahead) + ' صفحة';
-    else if (status.ahead < 0) aheadLine = 'عليك ' + ar(Math.abs(status.ahead)) + ' صفحة لتلحق بخطتك';
+    else if (status.ahead > 0) aheadLine = 'أنت متقدم ' + pages(status.ahead);
+    else if (status.ahead < 0) aheadLine = 'عليك ' + pages(Math.abs(status.ahead)) + ' لتلحق بخطتك';
     else aheadLine = 'أنت في الموعد تماماً';
 
     var today = status.today || { from: null, to: null, pages: 0 };
     host.innerHTML =
-      '<div class="meter-head"><span><b>' + ar(status.read) + '</b> من ' + ar(TOTAL_PAGES) + ' صفحة</span>' +
+      '<div class="meter-head"><span>قرأت <b>' + ar(status.read) + '</b> من ' + ar(TOTAL_PAGES) + ' صفحة</span>' +
       '<span class="badge">' + ar(status.percent) + '%</span></div>' +
       '<div class="meter"><span style="width:' + status.percent + '%"></span></div>' +
       '<p class="setting-note" style="margin-top:12px">' + esc(aheadLine) + '</p>' +
@@ -1516,7 +1524,7 @@
     if ($('tracker-streak')) {
       var s = Store.streak(new Date());
       $('tracker-streak').textContent = s.longest > 0
-        ? 'أطول تتابع ' + days(s.longest)
+        ? 'أطول تتابع ' + daysOf(s.longest)
         : 'لا تتابع بعد';
     }
     renderHeat($('tracker-heat'), 30);
@@ -1744,7 +1752,7 @@
       }).join('');
     }
     if ($('tasbih-total')) {
-      $('tasbih-total').textContent = 'مجموع اليوم ' + ar(Store.day().tasbih || 0) + ' تسبيحة';
+      $('tasbih-total').textContent = 'مجموع اليوم ' + tasbihat(Store.day().tasbih || 0);
     }
   }
 
@@ -1776,7 +1784,7 @@
     var chips = $('sleep-timer');
     if (chips) {
       chips.innerHTML = SLEEP_CHOICES.map(function (m) {
-        return '<button class="chip" data-sleep="' + m + '">' + ar(m) + ' دقيقة</button>';
+        return '<button class="chip" data-sleep="' + m + '">' + minutesOf(m) + '</button>';
       }).join('') + '<button class="chip" data-sleep="0">إلغاء</button>';
     }
     renderSleepNote();
@@ -1787,7 +1795,7 @@
     if (!note) return;
     if (!state.sleepTimer) { note.textContent = 'المؤقت متوقف'; return; }
     var left = Math.max(0, Math.round((state.sleepEndsAt - Date.now()) / 60000));
-    note.textContent = 'سيتوقف البث بعد ' + ar(left) + ' دقيقة';
+    note.textContent = 'سيتوقف البث بعد ' + minutesOf(left);
   }
 
   function setSleep(minutes) {
@@ -1801,7 +1809,7 @@
       toast('توقف البث');
     }, minutes * 60000);
     renderSleepNote();
-    toast('سيتوقف البث بعد ' + ar(minutes) + ' دقيقة');
+    toast('سيتوقف البث بعد ' + minutesOf(minutes));
   }
 
   /* ---------------- reference lists ---------------- */
@@ -1959,7 +1967,7 @@
     list.innerHTML = upcoming.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + days(o.days)) +
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
     }).join('');
   }
@@ -2216,7 +2224,7 @@
       refreshTimes();
       renderSettings();
       renderHome();
-      toast('استُعيدت ' + ar(result.count) + ' مدخلة');
+      toast('استُعيدت ' + entries(result.count));
     };
     reader.readAsText(file);
   }
@@ -2230,7 +2238,7 @@
     refreshTimes();
     renderSettings();
     renderHome();
-    toast('حُذفت ' + ar(removed) + ' مدخلة');
+    toast('حُذفت ' + entries(removed));
   }
 
   /* The last resort for a device holding an old copy: throw away every cache,

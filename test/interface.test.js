@@ -1393,7 +1393,7 @@ test('the surah list shows no latin word yet still answers to one', () => {
   const list = doc.getElementById('surah-list');
   const latin = (list.textContent.match(/[A-Za-z]{2,}/g) || []);
   assert.deepStrictEqual(latin, [], 'an arabic mushaf should hold no latin name');
-  assert.ok(list.textContent.indexOf('تبدأ صفحة') !== -1, 'the note names the page instead');
+  assert.ok(list.textContent.indexOf('تبدأ في صفحة') !== -1, 'the note names the page instead');
 
   const field = doc.getElementById('surah-filter');
   field.value = 'Kahf';
@@ -2785,4 +2785,65 @@ test('the first screen fonts are fetched before the stylesheet asks for them', (
   const preloads = [...html.matchAll(/rel="preload" href="(fonts\/[^"]+)" as="font"/g)].map((m) => m[1]);
   assert.ok(preloads.length >= 2, 'the faces the first paint needs should be preloaded');
   preloads.forEach(function (f) { assert.ok(fs.existsSync(path.join(DOCS, f)), 'missing ' + f); });
+});
+
+/* ---------------- said the way it is said ---------------- */
+
+test('the countdown says باقٍ على أذان العصر, as it is actually said', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(doc.getElementById('arc-label').textContent, 'باقٍ على');
+  const name = doc.getElementById('arc-name').textContent;
+  const next = win.App.clockState().next;
+  if (next.key === 'sunrise') {
+    assert.strictEqual(name, 'الشروق', 'the sunrise has no adhan');
+  } else {
+    assert.strictEqual(name, 'أذان ' + next.ar, 'got ' + name);
+  }
+});
+
+test('every counted noun takes the form arabic gives it', () => {
+  const { win } = boot();
+  const c = win.App.helpers.count;
+  /* one, two, three to ten, above ten */
+  assert.strictEqual(c(1, 'آية واحدة', 'آيتان', 'آيات', 'آية'), 'آية واحدة');
+  assert.strictEqual(c(2, 'آية واحدة', 'آيتان', 'آيات', 'آية'), 'آيتان');
+  assert.strictEqual(c(7, 'آية واحدة', 'آيتان', 'آيات', 'آية'), '7 آيات');
+  assert.strictEqual(c(286, 'آية واحدة', 'آيتان', 'آيات', 'آية'), '286 آية');
+});
+
+test('the surah list counts verses correctly for short and long surahs', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  const rows = [...doc.querySelectorAll('#surah-list [data-surah]')];
+  const kawthar = rows.filter((r) => r.getAttribute('data-surah') === '108')[0];
+  assert.ok(kawthar.textContent.indexOf('3 آيات') !== -1, 'three verses, got ' + kawthar.textContent);
+  const fatiha = rows[0];
+  assert.ok(fatiha.textContent.indexOf('7 آيات') !== -1, 'seven verses, got ' + fatiha.textContent);
+  const baqara = rows[1];
+  assert.ok(baqara.textContent.indexOf('286 آية') !== -1, 'above ten, got ' + baqara.textContent);
+  assert.ok(!/\d آية\b/.test(kawthar.textContent), 'no 3 آية anywhere');
+});
+
+test('no phrase asks the reader to عد, which is also to count', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  [html, app].forEach(function (text) {
+    assert.ok(!/>عد إلى/.test(text) && !/'عد إلى/.test(text),
+      'عد without its vowel reads as count, so ارجع is used');
+  });
+  assert.ok(html.indexOf('ارجع إلى اليوم') !== -1);
+  assert.ok(html.indexOf('ارجع إلى هذا الشهر') !== -1);
+});
+
+test('no helper in the controller is shadowed by a local of the same name', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const code = app.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const helpers = [...code.matchAll(/^\s{2}function ([A-Za-z_$][\w$]*)\s*\(/gm)].map((m) => m[1]);
+  const shadowed = [];
+  helpers.forEach(function (name) {
+    const local = new RegExp('(?:var|let|const)\\s+' + name + '\\b|function\\s*\\([^)]*\\b' + name + '\\b[^)]*\\)');
+    if (local.test(code)) shadowed.push(name);
+  });
+  assert.deepStrictEqual(shadowed, [],
+    'a local of the same name hides the helper, and a call to it then fails: ' + shadowed.join(', '));
 });
