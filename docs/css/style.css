@@ -535,6 +535,12 @@ button { background: none; border: none; cursor: pointer; }
 .ayah { cursor: pointer; border-radius: 6px; padding: 0 2px; transition: background .2s; }
 .ayah.is-active { background: var(--accent-wash); }
 .ayah.is-marked { background: color-mix(in srgb, var(--gold) 16%, transparent); }
+/* The verse being recited, carried into view as the reciter reaches it. */
+.ayah.is-reciting {
+  background: var(--accent-wash);
+  box-shadow: 0 0 0 2px var(--accent-solid);
+  border-radius: 6px;
+}
 
 .ayah-num {
   display: inline-grid; place-items: center; width: 1.9em; height: 1.9em;
