@@ -15,7 +15,9 @@
   /* text */
   --ink: #16241c;
   --ink-2: #55655c;
-  --ink-3: #8b988f;
+  --ink-3: #5e6c65;
+  --accent-solid: var(--accent-ink);
+  --on-accent: #fffdf8;
 
   /* identity */
   --green: #1e6f47;
@@ -25,11 +27,17 @@
 
   /* prayer windows */
   --w-fajr: #4c5da8;
+  --w-fajr-ink: #4c5da8;
   --w-duha: #c98b2c;
+  --w-duha-ink: #885e1e;
   --w-dhuhr: #2f7fc0;
+  --w-dhuhr-ink: #26689c;
   --w-asr: #b5643a;
+  --w-asr-ink: #945230;
   --w-maghrib: #a84a6b;
+  --w-maghrib-ink: #9c4564;
   --w-isha: #5b4a99;
+  --w-isha-ink: #5b4a99;
 
   /* the active window paints this */
   --accent: #1e6f47;
@@ -76,17 +84,25 @@
   --line-soft: #222b31;
   --ink: #e9e6dd;
   --ink-2: #a3b0aa;
-  --ink-3: #6f7d77;
+  --ink-3: #96a39b;
+  --accent-solid: var(--accent);
+  --on-accent: #10161a;
   --green: #45b07a;
   --green-2: #5cc78f;
   --green-wash: rgba(69, 176, 122, .12);
   --gold: #d0a84f;
   --w-fajr: #7f8fd8;
+  --w-fajr-ink: #7f8fd8;
   --w-duha: #e0a64a;
+  --w-duha-ink: #e0a64a;
   --w-dhuhr: #5ba3dd;
+  --w-dhuhr-ink: #5ba3dd;
   --w-asr: #d4855c;
+  --w-asr-ink: #d4855c;
   --w-maghrib: #cd7093;
+  --w-maghrib-ink: #cd7093;
   --w-isha: #8a79c9;
+  --w-isha-ink: #8a79c9;
   --danger: #e07272;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .3);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, .35), 0 14px 32px rgba(0, 0, 0, .45);
@@ -170,7 +186,7 @@ button { background: none; border: none; cursor: pointer; }
   gap: 3px; color: var(--ink-3); font-size: .6rem; position: relative; transition: color .18s;
 }
 .tab .icon { width: 22px; height: 22px; }
-.tab[aria-current='page'] { color: var(--accent); }
+.tab[aria-current='page'] { color: var(--accent-ink); }
 .tab[aria-current='page']::before {
   content: ''; position: absolute; top: 0; width: 26px; height: 2px;
   background: var(--accent); border-radius: 0 0 3px 3px;
@@ -200,7 +216,7 @@ button { background: none; border: none; cursor: pointer; }
 
 .arc-center { position: absolute; inset: 34% 0 auto 0; text-align: center; }
 .arc-label { font-size: var(--step--1); color: var(--ink-2); }
-.arc-name { font-size: var(--step-2); font-weight: 700; color: var(--accent); margin-top: -2px; }
+.arc-name { font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); margin-top: -2px; }
 .arc-count {
   font-size: var(--step-4); font-weight: 300; letter-spacing: .01em;
   font-variant-numeric: tabular-nums; direction: ltr; line-height: 1.15;
@@ -216,8 +232,11 @@ button { background: none; border: none; cursor: pointer; }
 .window-name { font-size: .62rem; color: var(--ink-2); }
 .window-time { font-size: var(--step--1); font-weight: 600; direction: ltr; font-variant-numeric: tabular-nums; }
 .window.is-now { background: var(--accent-wash); border-color: var(--accent); }
-.window.is-now .window-name { color: var(--accent); }
-.window.is-past { opacity: .45; }
+.window.is-now .window-name { color: var(--accent-ink); }
+/* A prayer already passed is quieter, but a person still reads it to check the
+   time they prayed, so the colour is muted rather than the whole box faded. */
+.window.is-past .window-name, .window.is-past .window-time { color: var(--ink-3); }
+.window.is-past .window-time { font-weight: 500; }
 
 /* ---------- cards ---------- */
 
@@ -228,7 +247,7 @@ button { background: none; border: none; cursor: pointer; }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--s2); margin-bottom: var(--s3); }
 .card-head h2 { font-size: var(--step-1); font-weight: 700; display: flex; align-items: center; gap: var(--s2); }
 .card-head h2 .icon { color: var(--accent); }
-.card-more { font-size: var(--step--1); color: var(--accent); font-weight: 600; }
+.card-more { font-size: var(--step--1); color: var(--accent-ink); font-weight: 600; }
 
 .section-title { font-size: var(--step--1); color: var(--ink-3); font-weight: 600; margin: var(--s5) 0 var(--s2); }
 
@@ -236,8 +255,8 @@ button { background: none; border: none; cursor: pointer; }
    these controls are drawn. Rather than fatten every chip and switch and spoil
    the layout, each one reaches out an invisible touch area to meet the finger.
    Nothing moves on screen and everything becomes reachable. */
-.date-nudge, .chip, .switch, .card-more, .search-hit, .tile { position: relative; }
-.date-nudge::before, .chip::before, .switch::before, .card-more::before {
+.date-nudge, .switch, .card-more, .search-hit, .tile, .foot a { position: relative; }
+.date-nudge::before, .switch::before, .card-more::before, .foot a::before {
   content: ''; position: absolute; inset-block: -11px; inset-inline: -10px;
 }
 .date-nudge::before { inset: -11px; }
@@ -247,21 +266,21 @@ button { background: none; border: none; cursor: pointer; }
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
-  padding: 11px var(--s4); border-radius: var(--r-sm); font-size: var(--step-0);
+  padding: 13px var(--s4); min-height: 46px; border-radius: var(--r-sm); font-size: var(--step-0);
   font-weight: 600; background: var(--sunken); color: var(--ink); transition: transform .08s, background .18s;
 }
 .btn:active { transform: scale(.97); }
-.btn-primary { background: var(--accent); color: #fff; }
+.btn-primary { background: var(--accent-solid); color: var(--on-accent); }
 .btn-ghost { background: none; border: 1px solid var(--line); color: var(--ink-2); }
 .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: var(--s2); flex-wrap: wrap; }
 
 .chip {
-  padding: 7px 14px; border-radius: 999px; background: var(--raised); border: 1px solid var(--line);
+  padding: 14px 16px; border-radius: 999px; background: var(--raised); border: 1px solid var(--line);
   font-size: var(--step--1); color: var(--ink-2); font-weight: 500; transition: all .16s;
 }
-.chip.is-on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.chip.is-on { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); }
 .chip-row { display: flex; gap: var(--s2); flex-wrap: wrap; }
 .chip-scroll { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: var(--s2); scrollbar-width: none; }
 .chip-scroll::-webkit-scrollbar { display: none; }
@@ -299,7 +318,7 @@ button { background: none; border: none; cursor: pointer; }
 .row-meta { font-size: var(--step--1); color: var(--ink-3); direction: ltr; font-variant-numeric: tabular-nums; }
 .row-mark {
   width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--accent-wash);
-  color: var(--accent); display: grid; place-items: center; font-size: var(--step--1);
+  color: var(--accent-ink); display: grid; place-items: center; font-size: var(--step--1);
   font-weight: 700; flex: none;
 }
 
@@ -315,7 +334,7 @@ button { background: none; border: none; cursor: pointer; }
   display: grid; place-items: center; flex: none; transition: all .18s; color: transparent;
 }
 .check-box .icon { width: 14px; height: 14px; stroke-width: 3; }
-.check.is-done .check-box { background: var(--accent); border-color: var(--accent); color: #fff; }
+.check.is-done .check-box { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); }
 /* A line drawn through arabic cuts across the letters that join, so a done
    deed is marked by its tick and a quieter colour instead. */
 .check.is-done .check-label { color: var(--ink-3); }
@@ -361,13 +380,13 @@ button { background: none; border: none; cursor: pointer; }
 
 .ayah-num {
   white-space: nowrap;
-  font-family: var(--ui); font-size: .58em; color: var(--accent);
+  font-family: var(--ui); font-size: .58em; color: var(--accent-ink);
   border: 1px solid var(--accent); border-radius: 50%; padding: 0 .42em; margin: 0 .3em;
   display: inline-block; vertical-align: middle; font-variant-numeric: tabular-nums;
 }
 
 .basmala {
-  font-family: var(--quran); text-align: center; color: var(--accent);
+  font-family: var(--quran); text-align: center; color: var(--accent-ink);
   font-size: calc(1.4rem * var(--quran-scale)); padding: var(--s3) 0 var(--s4);
 }
 
@@ -396,7 +415,7 @@ button { background: none; border: none; cursor: pointer; }
   width: 100%; padding: 12px var(--s4); background: var(--raised);
   border: 1px solid var(--line); border-radius: var(--r-sm); outline: none;
   font-size: var(--step-0); transition: border-color .18s;
-}
+ min-height: 46px; }
 .field:focus { border-color: var(--accent); }
 .field::placeholder { color: var(--ink-3); }
 
@@ -404,7 +423,7 @@ button { background: none; border: none; cursor: pointer; }
   padding: var(--s3); background: var(--raised); border-radius: var(--r-sm);
   margin-bottom: var(--s2); box-shadow: var(--shadow); width: 100%; text-align: right;
 }
-.search-hit-ref { display: block; font-size: var(--step--1); color: var(--accent); font-weight: 600; margin-bottom: var(--s1); }
+.search-hit-ref { display: block; font-size: var(--step--1); color: var(--accent-ink); font-weight: 600; margin-bottom: var(--s1); }
 .search-hit mark { background: color-mix(in srgb, var(--gold) 30%, transparent); color: inherit; border-radius: 3px; }
 
 [hidden] { display: none !important; }
@@ -442,7 +461,7 @@ button { background: none; border: none; cursor: pointer; }
 .banner-text { flex: 1; font-size: var(--step--1); line-height: 1.5; }
 .banner-act {
   flex: none; padding: 6px 14px; border-radius: 999px;
-  background: var(--accent); color: #fff; font-weight: 600; font-size: var(--step--1);
+  background: var(--accent-solid); color: var(--on-accent); font-weight: 600; font-size: var(--step--1);
 }
 .banner-close { flex: none; color: inherit; opacity: .6; display: grid; place-items: center; }
 .banner-close .icon { width: 18px; height: 18px; }
@@ -457,7 +476,7 @@ button { background: none; border: none; cursor: pointer; }
 .counter-phrase { font-family: var(--naskh); font-size: var(--step-2); margin: var(--s3) 0 var(--s5); }
 .counter-btn {
   width: 168px; height: 168px; border-radius: 50%; margin: 0 auto;
-  background: var(--accent); color: #fff; font-size: var(--step-1); font-weight: 600;
+  background: var(--accent-solid); color: var(--on-accent); font-size: var(--step-1); font-weight: 600;
   display: grid; place-items: center; box-shadow: var(--shadow-lift); transition: transform .07s;
 }
 .counter-btn:active { transform: scale(.93); }
@@ -471,8 +490,8 @@ button { background: none; border: none; cursor: pointer; }
 .dhikr-text { font-family: var(--naskh); font-size: calc(1.05rem * var(--quran-scale)); line-height: 2.1; }
 .dhikr-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s3); }
 .dhikr-count {
-  min-width: 46px; height: 40px; border-radius: var(--r-sm); background: var(--accent);
-  color: #fff; font-weight: 700; font-size: var(--step-1); display: grid; place-items: center;
+  min-width: 46px; height: 40px; border-radius: var(--r-sm); background: var(--accent-solid);
+  color: var(--on-accent); font-weight: 700; font-size: var(--step-1); display: grid; place-items: center;
   direction: ltr; transition: transform .07s;
 }
 .dhikr-count:active { transform: scale(.92); }
@@ -547,7 +566,7 @@ button { background: none; border: none; cursor: pointer; }
    light theme, which reads as a fault rather than a control, so the track and
    the thumb are drawn here instead. */
 .slider {
-  width: 100%; padding-block: 14px; background: none;
+  width: 100%; padding-block: 14px; min-height: 44px; background: none;
   -webkit-appearance: none; appearance: none;
 }
 .slider::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--line); }
@@ -574,9 +593,9 @@ button { background: none; border: none; cursor: pointer; }
 @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 
 .foot { text-align: center; color: var(--ink-3); font-size: var(--step--1); padding: var(--s5) 0 var(--s3); line-height: 1.9; }
-.foot a { color: var(--accent); text-decoration: none; }
+.foot a { color: var(--accent-ink); text-decoration: none; }
 
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent); font-size: .62rem; font-weight: 600; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink); font-size: .62rem; font-weight: 600; }
 .badge-gold { background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--gold); }
 
 @media (min-width: 560px) {

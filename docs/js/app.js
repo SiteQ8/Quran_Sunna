@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '5.1.0';
+  var VERSION = '5.6.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -191,16 +191,30 @@
     asr: '#b5643a', maghrib: '#a84a6b', isha: '#5b4a99'
   };
 
+  /* The colour that fills a shape is often too pale to read as a word, so each
+     window carries a second one for text that clears four and a half to one. */
+  var ACCENT_INK_FALLBACK = {
+    fajr: '#4c5da8', duha: '#885e1e', dhuhr: '#26689c',
+    asr: '#945230', maghrib: '#9c4564', isha: '#5b4a99'
+  };
+
+  function token(name, fallback) {
+    var value = '';
+    if (name && window.getComputedStyle) {
+      try { value = window.getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+      catch (e) { value = ''; }
+    }
+    return value || fallback;
+  }
+
   function applyAccent(windowKey) {
     var root = document.documentElement;
-    var token = ACCENT_TOKEN[windowKey];
-    var value = '';
-    if (token && window.getComputedStyle) {
-      try { value = window.getComputedStyle(root).getPropertyValue(token).trim(); } catch (e) { value = ''; }
-    }
-    if (!value) value = ACCENT_FALLBACK[windowKey] || '#1e6f47';
-    root.style.setProperty('--accent', value);
-    root.style.setProperty('--accent-wash', hexToWash(value));
+    var name = ACCENT_TOKEN[windowKey];
+    var fill = token(name, ACCENT_FALLBACK[windowKey] || '#1e6f47');
+    var ink = token(name ? name + '-ink' : null, ACCENT_INK_FALLBACK[windowKey] || fill);
+    root.style.setProperty('--accent', fill);
+    root.style.setProperty('--accent-ink', ink);
+    root.style.setProperty('--accent-wash', hexToWash(fill));
     root.setAttribute('data-window', windowKey);
   }
 
@@ -427,17 +441,23 @@
     $('arc-at').textContent = clockText(c.next.at);
     if ($('arc-label')) $('arc-label').textContent = 'يبقى على';
 
+    /* Two dashes rather than one offset, so the drawn run is plainly the first
+       part of the path and no reasoning about which way an offset shifts is
+       needed. The path itself starts on the right, so the arc empties the way
+       the page is read. */
+    var drawn = ARC_LENGTH * c.progress;
     var fill = $('arc-fill');
     if (fill) {
-      fill.setAttribute('stroke-dasharray', String(ARC_LENGTH));
-      fill.setAttribute('stroke-dashoffset', String(ARC_LENGTH * (1 - c.progress)));
+      fill.setAttribute('stroke-dasharray', drawn.toFixed(2) + ' ' + (ARC_LENGTH - drawn).toFixed(2));
+      fill.setAttribute('stroke-dashoffset', '0');
     }
 
     var dot = $('arc-dot');
     if (dot) {
-      var angle = Math.PI * (1 + c.progress);
-      dot.setAttribute('cx', String(120 + 100 * Math.cos(angle)));
-      dot.setAttribute('cy', String(140 + 100 * Math.sin(angle)));
+      /* The same parameter as the fill, so the dot always sits on its edge. */
+      var angle = Math.PI * c.progress;
+      dot.setAttribute('cx', (120 + 100 * Math.cos(angle)).toFixed(2));
+      dot.setAttribute('cy', (140 - 100 * Math.sin(angle)).toFixed(2));
     }
 
     renderWindows(c);
@@ -2023,24 +2043,40 @@
 
   /* A worker that has installed but is waiting would otherwise sit unused until
      every tab closed, so the reader is told and can take it now. */
+  /* An update is offered rather than forced, because swapping the files under
+     someone who is reading is rude. But an offer that is never accepted leaves
+     the device on old code for good, so the handover also happens by itself the
+     moment the app goes out of sight, and the next visit is simply current. */
+  function handOver(worker) {
+    if (!worker) return;
+    var asked = false;
+    function apply() {
+      if (asked) return;
+      asked = true;
+      worker.postMessage({ type: 'take-over' });
+    }
+    showBanner('وصل تحديث للتطبيق', 'حدّث الآن', apply);
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) apply();
+    });
+    window.addEventListener('pagehide', apply);
+  }
+
   function watchUpdate(registration) {
     if (!registration) return;
     function offer(worker) {
       if (!worker) return;
       worker.addEventListener('statechange', function () {
-        if (worker.state === 'installed' && window.navigator.serviceWorker.controller) {
-          showBanner('وصل تحديث للتطبيق', 'حدّث الآن', function () {
-            worker.postMessage({ type: 'take-over' });
-          });
-        }
+        if (worker.state === 'installed' && window.navigator.serviceWorker.controller) handOver(worker);
       });
     }
     if (registration.waiting && window.navigator.serviceWorker.controller) {
-      showBanner('وصل تحديث للتطبيق', 'حدّث الآن', function () {
-        registration.waiting.postMessage({ type: 'take-over' });
-      });
+      handOver(registration.waiting);
     }
     registration.addEventListener('updatefound', function () { offer(registration.installing); });
+    /* Ask the server whether anything newer exists, rather than waiting for the
+       browser to get around to it. */
+    window.setInterval(function () { registration.update(); }, 60 * 60 * 1000);
   }
 
   function registerWorker() {
