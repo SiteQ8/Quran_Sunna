@@ -1,0 +1,25 @@
+{
+  "name": "سُنّتي · القرآن والسنة",
+  "short_name": "سُنّتي",
+  "description": "المصحف كاملًا وأوقات الصلاة والأذكار وتتبع السنن، يعمل بلا إنترنت.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f4ee",
+  "theme_color": "#1e6f47",
+  "categories": ["lifestyle", "education", "books"],
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "القرآن", "url": "./#quran", "description": "افتح المصحف" },
+    { "name": "الأذكار", "url": "./#azkar", "description": "أذكار الصباح والمساء" },
+    { "name": "القبلة", "url": "./#qibla", "description": "اتجاه القبلة" }
+  ]
+}
