@@ -70,9 +70,9 @@
 
   <div class="clock">
     <div class="clock-date">
-      <button class="date-nudge" id="hijri-down" aria-label="أنقص يوماً من التاريخ الهجري"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
+      <button class="date-nudge" id="hijri-down" aria-label="أنقص يوماً من التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-minus"/></svg></button>
       <span><b id="hijri-date">…</b> <span id="greg-date"></span></span>
-      <button class="date-nudge" id="hijri-up" aria-label="أضف يوماً إلى التاريخ الهجري"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+      <button class="date-nudge" id="hijri-up" aria-label="أضف يوماً إلى التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg></button>
     </div>
 
     <div class="arc-wrap">
@@ -96,7 +96,7 @@
 
   <div class="card">
     <div class="card-head">
-      <h2><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span id="now-title">سنن هذا الوقت</span></h2>
+      <h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg><span id="now-title">سنن هذا الوقت</span></h2>
       <button class="card-more" data-go="tracker">كل السنن</button>
     </div>
     <div id="now-list"></div>
@@ -104,7 +104,7 @@
 
   <div class="card">
     <div class="card-head">
-      <h2><svg class="icon" aria-hidden="true"><use href="#i-fire"/></svg>وردك اليوم</h2>
+      <h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-fire"/></svg>وردك اليوم</h2>
       <button class="card-more" data-go="tracker">تفصيل</button>
     </div>
     <div class="meter-head"><span><b id="today-done">0</b> من <span id="today-total">0</span> سنة</span><span id="streak-line"></span></div>
@@ -116,14 +116,14 @@
   <div class="grid" id="home-tiles"></div>
 
   <div class="card" style="margin-top:16px">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-quote"/></svg>آية اليوم</h2>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-quote"/></svg>آية اليوم</h2>
       <button class="card-more" id="ayah-share">مشاركة</button></div>
     <div class="ayah-block" id="daily-ayah" style="font-size:1.15rem;line-height:2.2">…</div>
     <p class="source" id="daily-ayah-ref" style="text-align:center"></p>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>على الأبواب</h2>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg>على الأبواب</h2>
       <button class="card-more" data-go="calendar">التقويم</button></div>
     <div id="home-upcoming"></div>
   </div>
@@ -138,16 +138,16 @@
     <p>١١٤ سورة و٦٢٣٦ آية محفوظة في جهازك</p>
   </div>
 
-  <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
+  <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
 
   <div class="card" id="resume-card" hidden>
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>تابع القراءة</h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>تابع القراءة</h2></div>
     <button class="row" id="resume-btn"><span class="row-mark" id="resume-num"></span><span class="row-body"><span class="row-title" id="resume-name"></span><span class="row-note" id="resume-note"></span></span></button>
   </div>
 
   <div class="btn-row" style="margin-bottom:12px">
-    <button class="btn btn-ghost" data-go="bookmarks"><svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg>المحفوظات</button>
-    <button class="btn btn-ghost" data-go="khatma"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg>خطة الختمة</button>
+    <button class="btn btn-ghost" data-go="bookmarks"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bookmark"/></svg>المحفوظات</button>
+    <button class="btn btn-ghost" data-go="khatma"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg>خطة الختمة</button>
   </div>
 
   <div class="chip-scroll" id="browse-mode">
@@ -162,10 +162,10 @@
 <!-- ══════════ القارئ ══════════ -->
 <section class="view" id="v-reader" aria-labelledby="reader-title">
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" aria-hidden="true"><use href="#i-next"/></svg></button>
-    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
+    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
   </div>
   <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
   <div class="surah-head">
@@ -173,7 +173,7 @@
     <p id="reader-meta"></p>
   </div>
   <div id="reader-body"></div>
-  <button class="btn btn-ghost btn-block" id="reader-done" style="margin-top:18px"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>أنهيت هذه السورة</button>
+  <button class="btn btn-ghost btn-block" id="reader-done" style="margin-top:18px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>أنهيت هذه السورة</button>
 </section>
 
 <!-- ══════════ البحث ══════════ -->
@@ -220,9 +220,9 @@
 
 <section class="view" id="v-azkar-list" aria-labelledby="azkar-list-title">
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى أقسام الأذكار"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى أقسام الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <h1 id="azkar-list-title" style="font-size:1.1rem;font-weight:700">…</h1>
-    <button class="btn btn-ghost" id="azkar-reset" style="margin-inline-start:auto" aria-label="إعادة العدّادات"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    <button class="btn btn-ghost" id="azkar-reset" style="margin-inline-start:auto" aria-label="إعادة العدّادات"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
   </div>
   <div class="meter" style="margin-bottom:14px"><span id="azkar-meter" style="width:0%"></span></div>
   <div id="azkar-items"></div>
@@ -273,7 +273,7 @@
   <p class="compass-read" id="qibla-degrees">---°</p>
   <p class="setting-note" style="text-align:center" id="qibla-note"></p>
   <button class="btn btn-primary btn-block" id="qibla-enable" hidden style="margin-top:18px">فعّل بوصلة الجهاز</button>
-  <button class="btn btn-ghost btn-block" id="qibla-locate" style="margin-top:8px"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>حدّث موقعي</button>
+  <button class="btn btn-ghost btn-block" id="qibla-locate" style="margin-top:8px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg>حدّث موقعي</button>
 </section>
 
 <!-- ══════════ المسبحة ══════════ -->
@@ -321,7 +321,7 @@
 <section class="view" id="v-calendar" aria-labelledby="calendar-title">
   <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>ما يميّز يومك، وما هو قادم</p></div>
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span id="calendar-today">…</span></h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg><span id="calendar-today">…</span></h2></div>
     <div id="calendar-occasions"></div>
   </div>
   <h2 class="section-title">قادم</h2>
@@ -333,7 +333,7 @@
   <div class="view-head"><h1 id="settings-title">الإعدادات</h1><p>اضبط الحساب والمظهر ونسخة بياناتك</p></div>
 
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>الموقع والحساب</h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg>الموقع والحساب</h2></div>
     <div class="setting"><span><span class="setting-label">موقعك</span><br><span class="setting-note" id="settings-place">لم يحدد بعد</span></span>
       <button class="btn btn-ghost" id="settings-locate">تحديد</button></div>
     <div class="setting"><span class="setting-label">مدينة جاهزة</span>
@@ -357,7 +357,7 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-text"/></svg>القراءة والمظهر</h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-text"/></svg>القراءة والمظهر</h2></div>
     <div class="setting"><span class="setting-label">حجم النص</span><span class="setting-note" id="font-value">100%</span></div>
     <input class="slider" id="settings-font" type="range" min="80" max="170" step="5" aria-label="حجم النص">
     <p class="ayah-block" style="margin:10px 0 4px">إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</p>
@@ -379,18 +379,18 @@
   </div>
 
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>بياناتك</h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg>بياناتك</h2></div>
     <p class="setting-note" style="margin-bottom:10px">كل شيء محفوظ في جهازك وحده، فلا يغادر أي شيء إلى خادم.</p>
     <div class="btn-row">
-      <button class="btn btn-ghost" id="data-export"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>نسخة احتياطية</button>
-      <button class="btn btn-ghost" id="data-import"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>استعادة</button>
+      <button class="btn btn-ghost" id="data-export"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg>نسخة احتياطية</button>
+      <button class="btn btn-ghost" id="data-import"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-upload"/></svg>استعادة</button>
     </div>
     <input type="file" id="data-file" accept="application/json,.json" hidden>
     <button class="btn btn-danger btn-block" id="data-clear" style="margin-top:8px">حذف كل البيانات</button>
   </div>
 
   <div class="card">
-    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-offline"/></svg>العمل بلا إنترنت</h2></div>
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-offline"/></svg>العمل بلا إنترنت</h2></div>
     <p class="setting-note" id="offline-state">…</p>
     <button class="btn btn-primary btn-block" id="settings-install" style="margin-top:10px" hidden>ثبّت التطبيق على جهازك</button>
     <button class="btn btn-ghost btn-block" id="offline-cache" style="margin-top:10px">حمّل كل شيء للعمل بلا إنترنت</button>
@@ -422,26 +422,26 @@
 </div>
 
 <div class="player" id="player" role="region" aria-label="مشغل الصوت">
-  <button id="player-toggle" aria-label="إيقاف مؤقت"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
+  <button id="player-toggle" aria-label="إيقاف مؤقت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pause"/></svg></button>
   <div class="player-body">
     <div class="player-title" id="player-title"></div>
     <div class="player-sub" id="player-sub"></div>
   </div>
-  <button id="player-stop" aria-label="إيقاف"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+  <button id="player-stop" aria-label="إيقاف"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 
 <nav class="tabs" aria-label="التنقل الرئيسي">
-  <button class="tab" data-go="home" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
-  <button class="tab" data-go="quran"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
-  <button class="tab" data-go="azkar"><svg class="icon" aria-hidden="true"><use href="#i-beads"/></svg>الأذكار</button>
-  <button class="tab" data-go="tracker"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
-  <button class="tab" data-go="more"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
+  <button class="tab" data-go="home" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
+  <button class="tab" data-go="quran"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
+  <button class="tab" data-go="azkar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-beads"/></svg>الأذكار</button>
+  <button class="tab" data-go="tracker"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
+  <button class="tab" data-go="more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
 </nav>
 
 <div class="banner" id="banner" role="status" aria-live="polite" hidden>
   <span class="banner-text" id="banner-text"></span>
   <button class="banner-act" id="banner-act"></button>
-  <button class="banner-close" id="banner-close" aria-label="إخفاء"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+  <button class="banner-close" id="banner-close" aria-label="إخفاء"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -449,7 +449,7 @@
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
   <div class="sheet-panel">
     <div class="sheet-grip"></div>
-    <div class="card-head"><h2 id="sheet-title"></h2><button id="sheet-close" aria-label="إغلاق"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+    <div class="card-head"><h2 id="sheet-title"></h2><button id="sheet-close" aria-label="إغلاق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button></div>
     <div id="sheet-body"></div>
   </div>
 </div>
