@@ -382,8 +382,10 @@ button { background: none; border: none; cursor: pointer; }
   padding: var(--s3); background: var(--raised); border-radius: var(--r-sm);
   margin-bottom: var(--s2); box-shadow: var(--shadow); width: 100%; text-align: right;
 }
-.search-hit-ref { font-size: var(--step--1); color: var(--accent); font-weight: 600; margin-bottom: var(--s1); }
+.search-hit-ref { display: block; font-size: var(--step--1); color: var(--accent); font-weight: 600; margin-bottom: var(--s1); }
 .search-hit mark { background: color-mix(in srgb, var(--gold) 30%, transparent); color: inherit; border-radius: 3px; }
+
+[hidden] { display: none !important; }
 
 /* ---------- counter ---------- */
 
