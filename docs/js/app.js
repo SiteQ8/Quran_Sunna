@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.4.1';
+  var VERSION = '6.5.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -183,6 +183,7 @@
   /* ---------------- appearance ---------------- */
 
   function applyTheme() {
+    patternStamp = '';
     var choice = Store.get('theme');
     var dark = choice === 'dark';
     if (choice === 'auto' && window.matchMedia) {
@@ -225,15 +226,99 @@
     return value || fallback;
   }
 
+  /* A colour the reader picks, instead of the one the hour brings. Each carries
+     a second, darker or lighter form for text, fitted so it clears four and a
+     half to one against the page, the card and its own tinted panel. */
+  var PALETTES = {
+    green:  { name: 'أخضر',    light: '#1e6f47', lightInk: '#1e6f47', dark: '#2da56a' },
+    gold:   { name: 'ذهبي',    light: '#b08833', lightInk: '#7d6124', dark: '#bb9036' },
+    maroon: { name: 'عنّابي',  light: '#a84a6b', lightInk: '#9c4564', dark: '#e86694' },
+    blue:   { name: 'أزرق',    light: '#2f7fc0', lightInk: '#26689c', dark: '#399ae8' },
+    violet: { name: 'بنفسجي',  light: '#5b4a99', lightInk: '#5b4a99', dark: '#977bfe' },
+    teal:   { name: 'فيروزي',  light: '#1a8a8a', lightInk: '#156e6e', dark: '#1fa6a6' },
+    copper: { name: 'نحاسي',   light: '#b5643a', lightInk: '#945230', dark: '#dd7a47' },
+    sadu:   { name: 'أحمر السدو', light: '#9c2b2b', lightInk: '#9c2b2b', dark: '#ff4c4c' }
+  };
+
+  function darkTheme() {
+    return document.documentElement.getAttribute('data-theme') === 'dark';
+  }
+
   function applyAccent(windowKey) {
     var root = document.documentElement;
-    var name = ACCENT_TOKEN[windowKey];
-    var fill = token(name, ACCENT_FALLBACK[windowKey] || '#1e6f47');
-    var ink = token(name ? name + '-ink' : null, ACCENT_INK_FALLBACK[windowKey] || fill);
+    var chosen = PALETTES[Store.get('accent')];
+    var fill, ink;
+    if (chosen) {
+      /* A fixed colour stays through the day, so the hour no longer changes it. */
+      fill = darkTheme() ? chosen.dark : chosen.light;
+      ink = darkTheme() ? chosen.dark : chosen.lightInk;
+    } else {
+      var name = ACCENT_TOKEN[windowKey];
+      fill = token(name, ACCENT_FALLBACK[windowKey] || '#1e6f47');
+      ink = token(name ? name + '-ink' : null, ACCENT_INK_FALLBACK[windowKey] || fill);
+    }
     root.style.setProperty('--accent', fill);
     root.style.setProperty('--accent-ink', ink);
     root.style.setProperty('--accent-wash', hexToWash(fill));
     root.setAttribute('data-window', windowKey);
+    applyPattern();
+  }
+
+  /* Two patterns to lay under the app, both drawn here so each takes the colour
+     the reader has chosen rather than carrying one of its own. */
+  var PATTERNS = {
+    star: {
+      name: 'النجمة الثمانية',
+      size: 80,
+      weight: .30,
+      draw: function (c) {
+        var square = function (x, y, cx, cy) {
+          return "<rect x='" + x + "' y='" + y + "' width='26' height='26'/>" +
+            "<rect x='" + x + "' y='" + y + "' width='26' height='26' transform='rotate(45 " + cx + " " + cy + ")'/>";
+        };
+        return "<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>" +
+          "<g fill='none' stroke='" + c + "' stroke-width='1'>" +
+          square(27, 27, 40, 40) + square(-13, -13, 0, 0) + square(67, -13, 80, 0) +
+          square(-13, 67, 0, 80) + square(67, 67, 80, 80) + "</g>" +
+          "<g fill='none' stroke='" + c + "' stroke-width='.7' opacity='.7'>" +
+          "<path d='M40 0v80M0 40h80'/></g></svg>";
+      }
+    },
+    /* السدو، نسيج البادية الكويتية: عصائب أفقية فيها العين والأضلاع. */
+    sadu: {
+      name: 'السدو الكويتي',
+      size: 60,
+      weight: .14,
+      draw: function (c) {
+        return "<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'>" +
+          "<g fill='" + c + "'>" +
+          "<path d='M0 4h60v2H0z'/><path d='M0 54h60v2H0z'/>" +
+          "<path d='M30 12 42 24 30 36 18 24z'/>" +
+          "<path d='M0 12 6 24 0 36zM60 12 54 24 60 36z'/>" +
+          "<path d='M10 44 16 50 4 50zM30 44 36 50 24 50zM50 44 56 50 44 50z'/>" +
+          "</g>" +
+          "<g fill='none' stroke='" + c + "' stroke-width='1.6'>" +
+          "<path d='M0 24h18M42 24h18'/></g></svg>";
+      }
+    },
+    none: { name: 'بلا زخرفة', size: 80, weight: 0, draw: null }
+  };
+
+  var patternStamp = '';
+
+  function applyPattern() {
+    var key = Store.get('pattern');
+    var def = PATTERNS[key] || PATTERNS.star;
+    var colour = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#1e6f47';
+    var stamp = key + colour;
+    if (stamp === patternStamp) return;
+    patternStamp = stamp;
+    var root = document.documentElement;
+    if (!def.draw) { root.style.setProperty('--pattern', 'none'); return; }
+    root.style.setProperty('--pattern',
+      'url("data:image/svg+xml,' + encodeURIComponent(def.draw(colour)) + '")');
+    root.style.setProperty('--pattern-size', def.size + 'px ' + def.size + 'px');
+    root.style.setProperty('--pattern-weight', String(def.weight));
   }
 
   function hexToWash(hex) {
@@ -376,6 +461,31 @@
     renderQibla();
   }
 
+  /* Naming where a person is, without asking any server. The cities the app
+     already carries are enough to say "الكويت" or "قرب الدوحة", and anything
+     far from all of them falls back to the coordinates themselves. */
+  function nameForPlace(lat, lng) {
+    if (typeof CITIES === 'undefined') return null;
+    var best = null;
+    for (var i = 0; i < CITIES.length; i++) {
+      var c = CITIES[i];
+      var km = PrayerEngine.between(lat, lng, c.lat, c.lng);
+      if (!best || km < best.km) best = { city: c, km: km };
+    }
+    if (!best) return null;
+    if (best.km <= 25) return { n: best.city.n, z: best.city.z, method: best.city.method };
+    if (best.km <= 120) {
+      return { n: 'قرب ' + best.city.n, z: best.city.z, method: best.city.method };
+    }
+    return null;
+  }
+
+  function coordsLabel(lat, lng) {
+    var ns = lat >= 0 ? 'شمالاً' : 'جنوباً';
+    var ew = lng >= 0 ? 'شرقاً' : 'غرباً';
+    return Math.abs(lat).toFixed(2) + '° ' + ns + '، ' + Math.abs(lng).toFixed(2) + '° ' + ew;
+  }
+
   function locate() {
     if (!window.navigator || !window.navigator.geolocation) {
       toast('المتصفح لا يتيح تحديد الموقع، فاختر مدينة من القائمة');
@@ -386,11 +496,13 @@
       var tz = -new Date().getTimezoneOffset() / 60;
       var zone = null;
       try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
+      var lat = pos.coords.latitude, lng = pos.coords.longitude;
+      var near = nameForPlace(lat, lng);
       setPlace({
-        n: 'موقعك الحالي', lat: pos.coords.latitude, lng: pos.coords.longitude,
-        tz: tz, z: zone
+        n: near ? near.n : coordsLabel(lat, lng),
+        lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
       }, true);
-      toast('ضُبطت المواقيت على موقعك');
+      toast('ضُبطت المواقيت على ' + (near ? near.n : 'موقعك'));
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
     }, { enableHighAccuracy: true, timeout: 9000 });
@@ -690,7 +802,7 @@
          tells a person nothing about which body issues the times. */
       $('place-line').innerHTML =
         '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
-        '<span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>';
+        ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>';
     }
   }
 
@@ -1959,6 +2071,14 @@
     if ($('settings-asr')) $('settings-asr').value = s.asr;
     if ($('settings-highlat')) $('settings-highlat').value = s.highLat;
     if ($('settings-theme')) $('settings-theme').value = s.theme;
+
+    fillSelect($('settings-accent'),
+      [{ value: 'auto', label: 'يتبع وقت الصلاة' }].concat(
+        Object.keys(PALETTES).map(function (k) { return { value: k, label: PALETTES[k].name }; })),
+      s.accent);
+    fillSelect($('settings-pattern'),
+      Object.keys(PATTERNS).map(function (k) { return { value: k, label: PATTERNS[k].name }; }),
+      s.pattern);
     if ($('settings-tafsir')) $('settings-tafsir').value = s.tafsir;
     if ($('settings-font')) $('settings-font').value = String(s.fontScale);
 
@@ -2347,6 +2467,16 @@
     bind('settings-theme', 'change', function (e) {
       Store.set('theme', e.target.value);
       applyTheme();
+      applyAccent(currentWindowKey());
+    });
+    bind('settings-accent', 'change', function (e) {
+      Store.set('accent', e.target.value);
+      applyAccent(currentWindowKey());
+    });
+    bind('settings-pattern', 'change', function (e) {
+      Store.set('pattern', e.target.value);
+      patternStamp = '';
+      applyPattern();
     });
     bind('settings-reciter', 'change', function (e) { Store.set('reciter', +e.target.value); });
     bind('settings-tafsir', 'change', function (e) { Store.set('tafsir', e.target.value); });
@@ -2585,7 +2715,7 @@
     actions: ACTIONS,
     helpers: {
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
-      tabOwner: tabOwner, prayerName: prayerName, windowSunnah: windowSunnah, withLam: withLam,
+      tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

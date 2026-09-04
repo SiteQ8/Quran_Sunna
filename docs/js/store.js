@@ -10,7 +10,8 @@
 
   var DEFAULTS = {
     theme: 'auto',
-    accent: 'green',
+    accent: 'auto',
+    pattern: 'star',
     fontScale: 100,
     quranFont: 'amiri',
     method: 'Kuwait',

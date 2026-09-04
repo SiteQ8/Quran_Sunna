@@ -198,6 +198,15 @@
   }
 
   /* Great circle distance to the Kaaba in kilometres. */
+  /* Great circle distance between any two points, in kilometres. */
+  function between(lat1, lng1, lat2, lng2) {
+    var r = 6371;
+    var dLat = (lat2 - lat1) * DEG, dLng = (lng2 - lng1) * DEG;
+    var a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * DEG) * Math.cos(lat2 * DEG) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    return r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
   function distanceToKaaba(lat, lng) {
     var kLat = 21.4224779, kLng = 39.8251832, r = 6371;
     var dLat = (kLat - lat) * DEG, dLng = (kLng - lng) * DEG;
@@ -233,6 +242,7 @@
     format: format,
     qibla: qibla,
     distanceToKaaba: distanceToKaaba,
+    between: between,
     julian: julian,
     sunPosition: sunPosition
   };
