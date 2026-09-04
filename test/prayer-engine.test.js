@@ -80,7 +80,7 @@ test('fajr, dhuhr and maghrib match the reference to the minute everywhere', () 
     const got = new PE.Calculator({ lat: row.lat, lng: row.lng, method: METHOD_BY_ID[row.method] }).timesFor(date, row.tz);
     ['Fajr', 'Dhuhr', 'Maghrib'].forEach(function (label) {
       const key = label.toLowerCase();
-      assert.strictEqual(PE.format(got[key]), row.t[label],
+      assert.strictEqual(PE.format(got[key], 'plain'), row.t[label],
         row.city + ' ' + row.date + ' ' + label);
     });
   });
@@ -135,11 +135,12 @@ test('qibla bearing and distance are correct for known cities', () => {
 });
 
 test('formatting pads hours and minutes and wraps past midnight', () => {
-  assert.strictEqual(PE.format(0), '00:00');
-  assert.strictEqual(PE.format(65), '01:05');
-  assert.strictEqual(PE.format(1439), '23:59');
-  assert.strictEqual(PE.format(1500), '01:00');
-  assert.strictEqual(PE.format(NaN), '--:--');
+  assert.strictEqual(PE.format(0, 'plain'), '00:00');
+  assert.strictEqual(PE.format(65, 'plain'), '01:05');
+  assert.strictEqual(PE.format(1439, 'plain'), '23:59');
+  assert.strictEqual(PE.format(1500, 'plain'), '01:00', 'a minute past the end of a day wraps');
+  assert.strictEqual(PE.format(NaN, 'plain'), '--:--');
+  assert.strictEqual(PE.format(1500), '1:00 ص', 'and wraps on the twelve hour clock too');
 });
 
 test('times stay ordered through a full year in Kuwait', () => {
@@ -239,4 +240,35 @@ test('the far north keeps its prayers in order whichever rule is chosen', () => 
     assert.ok(t.sunrise < t.dhuhr && t.dhuhr < t.asr && t.asr < t.maghrib,
       rule + ' put the day out of order');
   });
+});
+
+test('a prayer time is written the way a clock here is read', () => {
+  assert.strictEqual(PE.format(0), '12:00 ص', 'midnight is twelve, not zero');
+  assert.strictEqual(PE.format(1), '12:01 ص');
+  assert.strictEqual(PE.format(60), '1:00 ص');
+  assert.strictEqual(PE.format(719), '11:59 ص');
+  assert.strictEqual(PE.format(720), '12:00 م', 'noon is twelve in the afternoon');
+  assert.strictEqual(PE.format(721), '12:01 م');
+  assert.strictEqual(PE.format(780), '1:00 م');
+  assert.strictEqual(PE.format(1439), '11:59 م');
+  assert.strictEqual(PE.format(NaN), '--:-- ص');
+});
+
+test('the twenty four hour form stays available for sorting and comparing', () => {
+  assert.strictEqual(PE.format(0, 'plain'), '00:00');
+  assert.strictEqual(PE.format(720, 'plain'), '12:00');
+  assert.strictEqual(PE.format(1439, 'plain'), '23:59');
+  assert.strictEqual(PE.format(NaN, 'plain'), '--:--');
+  /* the plain form still sorts as text, which the twelve hour one cannot */
+  const times = [1087, 246, 720, 327].map(function (m) { return PE.format(m, 'plain'); });
+  assert.deepStrictEqual(times.slice().sort(), ['04:06', '05:27', '12:00', '18:07']);
+});
+
+test('an hour never comes out as zero or thirteen on the twelve hour clock', () => {
+  for (let m = 0; m < 1440; m += 7) {
+    const shown = PE.format(m);
+    const hour = +shown.split(':')[0];
+    assert.ok(hour >= 1 && hour <= 12, m + ' minutes came out as ' + shown);
+    assert.match(shown, /^\d{1,2}:\d{2} [صم]$/, m + ' came out as ' + shown);
+  }
 });

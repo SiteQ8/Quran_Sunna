@@ -210,8 +210,10 @@ const MIN_CONTRAST_LARGE = 3;
         prose.querySelectorAll('a').forEach((a) => a.remove());
         const latin = [...new Set((prose.textContent.match(/[A-Za-z]{2,}/g) || []))];
         if (latin.length) issues.push('latin in an arabic interface: ' + latin.slice(0, 6).join(', '));
-        const digits = (prose.textContent.match(/[0-9]/g) || []);
-        if (digits.length) issues.push('latin digits on screen: ' + digits.length);
+        /* The app writes every number with one set of figures. A stray figure
+           from the other set reads as a leftover from another screen. */
+        const stray = (prose.textContent.match(/[\u0660-\u0669]/g) || []);
+        if (stray.length) issues.push('two sets of figures on one screen: ' + stray.join(''));
 
         return issues;
       }, [view, MIN_CONTRAST_BODY, MIN_CONTRAST_LARGE]);

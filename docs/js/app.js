@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.1.0';
+  var VERSION = '6.2.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -74,8 +74,10 @@
   function $(id) { return document.getElementById(id); }
   function $$(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
 
+  /* Numbers are written with the figures a Kuwaiti reader sees on every clock
+     and price tag, so the app keeps to one set throughout and does not mix. */
   function ar(value) {
-    return String(value).replace(/[0-9]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[+d]; });
+    return String(value === null || value === undefined ? '' : value);
   }
 
   function esc(text) {
@@ -94,8 +96,8 @@
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
-  /* Arabic counts one, two, a few and many differently, so ٣ يوماً reads as a
-     mistake where ٣ أيام is right. */
+  /* Arabic counts one, two, a few and many differently, so 3 يوماً reads as a
+     mistake where 3 أيام is right. */
   function days(n) {
     if (n === 1) return 'يوم واحد';
     if (n === 2) return 'يومان';
@@ -111,8 +113,8 @@
     return 'ل' + (text.indexOf('ال') === 0 ? text.slice(1) : text);
   }
 
-  /* Every other number in the app is written in arabic numerals, so a clock in
-     latin ones beside ٢٢ ربيع الأول reads as a leftover from another screen. */
+  /* The prayer engine writes the time on twelve hours with صباحاً or مساءً,
+     which is how a clock is read here, and the figures match the rest. */
   function clockText(minutes) { return ar(PrayerEngine.format(minutes)); }
 
   function buzz(ms) {
@@ -191,7 +193,7 @@
   function applyFont() {
     var scale = Store.get('fontScale') / 100;
     document.documentElement.style.setProperty('--quran-scale', String(scale));
-    if ($('font-value')) $('font-value').textContent = ar(Store.get('fontScale')) + '٪';
+    if ($('font-value')) $('font-value').textContent = ar(Store.get('fontScale')) + '%';
   }
 
   var ACCENT_TOKEN = {
@@ -724,7 +726,7 @@
     var plain = Mushaf.normalize(needle);
     if (Mushaf.normalize(meta.ar).indexOf(plain) !== -1) return true;
     if (meta.en.toLowerCase().indexOf(needle.toLowerCase()) !== -1) return true;
-    if (String(meta.n) === needle.replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); })) return true;
+    if (String(meta.n) === needle.replace(/[\u0660-\u0669]/g, function (d) { return String(d.charCodeAt(0) - 0x0660); })) return true;
     return String(meta.n).indexOf(needle) === 0;
   }
 
@@ -1159,7 +1161,7 @@
     var today = status.today || { from: null, to: null, pages: 0 };
     host.innerHTML =
       '<div class="meter-head"><span><b>' + ar(status.read) + '</b> من ' + ar(TOTAL_PAGES) + ' صفحة</span>' +
-      '<span class="badge">' + ar(status.percent) + '٪</span></div>' +
+      '<span class="badge">' + ar(status.percent) + '%</span></div>' +
       '<div class="meter"><span style="width:' + status.percent + '%"></span></div>' +
       '<p class="setting-note" style="margin-top:12px">' + esc(aheadLine) + '</p>' +
       (today.from
@@ -1348,6 +1350,7 @@
     { nav: 'hadith', icon: 'text', name: 'من الأربعين النووية', note: 'عشرون حديثاً جامعاً' },
     { nav: 'dua', icon: 'hands', name: 'الأدعية', note: 'من الكتاب والسنة' },
     { nav: 'ruqyah', icon: 'shield', name: 'الرقية الشرعية', note: 'آيات وأدعية ثابتة' },
+    { nav: 'timetable', icon: 'clock', name: 'جدول الشهر', note: 'مواقيت كل يوم في صفحة' },
     { nav: 'calendar', icon: 'calendar', name: 'التقويم الهجري', note: 'المناسبات والمواسم' },
     { nav: 'bookmarks', icon: 'bookmark', name: 'المحفوظات', note: 'آياتك المعلّمة' },
     { nav: 'settings', icon: 'settings', name: 'الإعدادات', note: 'الحساب والمظهر والنسخ' },
@@ -1755,6 +1758,102 @@
     markPicked(hijriDay);
   }
 
+  /* ---------------- the month at a glance ---------------- */
+
+  /* Which month of the gregorian calendar the table is showing, since prayer
+     times are worked out for a date and a place, not for a lunar month. */
+  var timetableMonth = null;
+
+  function timetableAt() {
+    if (timetableMonth) return timetableMonth;
+    var now = new Date();
+    return { y: now.getFullYear(), m: now.getMonth() };
+  }
+
+  var GREG_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
+  var TABLE_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+  function timetableRows() {
+    var at = timetableAt();
+    var adjust = Store.get('hijriAdjust');
+    var last = new Date(at.y, at.m + 1, 0).getDate();
+    var rows = [];
+    for (var d = 1; d <= last; d++) {
+      var date = new Date(at.y, at.m, d);
+      rows.push({
+        date: date,
+        hijri: Hijri.toHijri(date, adjust),
+        times: computeTimes(date),
+        friday: isFriday(date)
+      });
+    }
+    return rows;
+  }
+
+  function renderTimetable() {
+    var table = $('tt-table');
+    if (!table) return;
+    var at = timetableAt();
+    var rows = timetableRows();
+    var today = new Date();
+
+    if ($('tt-month')) $('tt-month').textContent = GREG_MONTHS[at.m] + ' ' + ar(at.y);
+    if ($('tt-place')) {
+      $('tt-place').textContent = place().n + '، تقويم ' + methodName(Store.get('method'));
+    }
+    if ($('tt-today')) {
+      $('tt-today').hidden = (at.y === today.getFullYear() && at.m === today.getMonth());
+    }
+
+    var head = '<thead><tr><th>اليوم</th>' +
+      TABLE_KEYS.map(function (k) { return '<th>' + esc(prayerName(k, rows[0].date)) + '</th>'; }).join('') +
+      '</tr></thead>';
+
+    /* A gregorian month straddles two hijri ones, so the name is written where
+       it changes and the days between carry their number alone. Cutting the
+       name to fit would break it mid word, and ربيع ا is not a month. */
+    var lastMonth = null;
+    var body = rows.map(function (row) {
+      var isToday = sameDay(row.date, today);
+      var showName = row.hijri.monthName !== lastMonth;
+      lastMonth = row.hijri.monthName;
+      return '<tr' + (isToday ? ' class="is-today"' : '') + (row.friday ? ' data-friday="1"' : '') + '>' +
+        '<th scope="row"><span class="tt-day">' + ar(row.date.getDate()) + '</span>' +
+        '<span class="tt-hijri">' + ar(row.hijri.d) +
+        (showName ? ' ' + esc(row.hijri.monthName) : '') + '</span></th>' +
+        TABLE_KEYS.map(function (k) {
+          return '<td>' + esc(clockText(row.times[k])) + '</td>';
+        }).join('') + '</tr>';
+    }).join('');
+
+    table.innerHTML = head + '<tbody>' + body + '</tbody>';
+
+    var current = table.querySelector('tr.is-today');
+    if (current && current.scrollIntoView) current.scrollIntoView({ block: 'center' });
+  }
+
+  function stepTimetable(by) {
+    var at = timetableAt();
+    var next = new Date(at.y, at.m + by, 1);
+    timetableMonth = { y: next.getFullYear(), m: next.getMonth() };
+    renderTimetable();
+  }
+
+  /* Plain text, because a timetable is a thing people paste into a message to
+     the family or pin up in the mosque. */
+  function timetableText() {
+    var at = timetableAt();
+    var lines = ['مواقيت ' + GREG_MONTHS[at.m] + ' ' + ar(at.y) + ' لـ' + place().n,
+      'حساب ' + methodName(Store.get('method')), ''];
+    timetableRows().forEach(function (row) {
+      lines.push(ar(row.date.getDate()) + '/' + ar(at.m + 1) + '  ' +
+        TABLE_KEYS.map(function (k) { return clockText(row.times[k]); }).join('  '));
+    });
+    return lines.join('\n');
+  }
+
   /* ---------------- settings ---------------- */
 
   function fillSelect(el, options, value) {
@@ -1940,6 +2039,7 @@
     dua: renderDua,
     ruqyah: renderRuqyah,
     calendar: renderCalendar,
+    timetable: renderTimetable,
     settings: renderSettings,
     about: renderSettings
   };
@@ -2139,6 +2239,15 @@
       state.tasbih.count = 0;
       renderTasbih();
       toast('صُفّر العدّاد');
+    });
+
+    bind('tt-prev', 'click', function () { stepTimetable(-1); });
+    bind('tt-next', 'click', function () { stepTimetable(1); });
+    bind('tt-today', 'click', function () { timetableMonth = null; renderTimetable(); });
+    bind('tt-copy', 'click', function () {
+      copyText(timetableText()).then(
+        function () { toast('نُسخ جدول الشهر'); },
+        function () { toast('تعذّر النسخ'); });
     });
 
     bind('cal-prev', 'click', function () { stepCalendar(-1); });

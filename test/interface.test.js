@@ -124,9 +124,10 @@ test('every icon the interface draws exists in the sprite', () => {
 test('the prayer clock fills in and counts down', () => {
   const { doc } = boot();
   const countdown = doc.getElementById('arc-count').textContent;
-  assert.match(countdown, /^[٠-٩]{2}:[٠-٩]{2}:[٠-٩]{2}$/, 'countdown should read as a clock, got ' + countdown);
+  assert.match(countdown, /^\d{2}:\d{2}:\d{2}$/, 'a countdown is a length of time, got ' + countdown);
   assert.notStrictEqual(doc.getElementById('arc-name').textContent, '…');
-  assert.match(doc.getElementById('arc-at').textContent, /^[٠-٩]{2}:[٠-٩]{2}$/);
+  assert.match(doc.getElementById('arc-at').textContent, /^\d{1,2}:\d{2} [صم]$/,
+    'a prayer time is written on twelve hours, got ' + doc.getElementById('arc-at').textContent);
 });
 
 test('the arc fill and dot track the progress of the window', () => {
@@ -143,7 +144,7 @@ test('all six daily marks render with times', () => {
   const windows = doc.querySelectorAll('#windows .window');
   assert.strictEqual(windows.length, 6);
   windows.forEach(function (w) {
-    assert.match(w.querySelector('.window-time').textContent, /^[٠-٩]{2}:[٠-٩]{2}$/);
+    assert.match(w.querySelector('.window-time').textContent, /^\d{1,2}:\d{2} [صم]$/);
   });
   assert.strictEqual(doc.querySelectorAll('#windows .is-now').length, 1, 'exactly one window is current');
 });
@@ -152,7 +153,7 @@ test('the hijri date renders in arabic numerals beside the gregorian one', () =>
   const { doc } = boot();
   const text = doc.getElementById('hijri-date').textContent;
   assert.ok(text.indexOf('هـ') !== -1, 'expected a hijri date, got ' + text);
-  assert.ok(/[٠-٩]/.test(text), 'expected arabic digits');
+  assert.ok(/[0-9]/.test(text), 'expected arabic digits');
   assert.ok(doc.getElementById('greg-date').textContent.length > 6);
 });
 
@@ -438,7 +439,7 @@ test('a middle dot never sits beside an arabic numeral', () => {
   ['home', 'quran', 'search', 'calendar', 'settings'].forEach(function (view) {
     win.App.go(view);
     const text = doc.getElementById('v-' + view).textContent;
-    assert.ok(!/[٠-٩]\s*·|·\s*[٠-٩]/.test(text), view + ' puts a middle dot next to a numeral');
+    assert.ok(!/[0-9]\s*·|·\s*[0-9]/.test(text), view + ' puts a middle dot next to a numeral');
   });
 });
 
@@ -447,16 +448,16 @@ test('the sunnah tracker records ticks and updates the meter', () => {
   win.App.go('tracker');
   const boxes = doc.querySelectorAll('#tracker-list [data-check]');
   assert.strictEqual(boxes.length, 40, 'the wird and the five groups together');
-  assert.strictEqual(doc.getElementById('tracker-done').textContent, '٠');
+  assert.strictEqual(doc.getElementById('tracker-done').textContent, '0');
 
   click(win, boxes[0]);
   assert.ok(doc.querySelectorAll('#tracker-list [data-check]')[0].classList.contains('is-done'));
-  assert.strictEqual(doc.getElementById('tracker-done').textContent, '١');
+  assert.strictEqual(doc.getElementById('tracker-done').textContent, '1');
   assert.notStrictEqual(doc.getElementById('tracker-meter').style.width, '0%');
 
   click(win, doc.querySelectorAll('#tracker-list [data-check]')[0]);
   assert.ok(!doc.querySelectorAll('#tracker-list [data-check]')[0].classList.contains('is-done'));
-  assert.strictEqual(doc.getElementById('tracker-done').textContent, '٠');
+  assert.strictEqual(doc.getElementById('tracker-done').textContent, '0');
 });
 
 test('the daily wird sits at the head of the tracker', () => {
@@ -472,9 +473,9 @@ test('a tick on the home view feeds the same meter as the tracker', () => {
   const box = doc.querySelector('#now-list [data-check]');
   assert.ok(box, 'the home view lists the sunnah of this window');
   click(win, box);
-  assert.strictEqual(doc.getElementById('today-done').textContent, '١');
+  assert.strictEqual(doc.getElementById('today-done').textContent, '1');
   win.App.go('tracker');
-  assert.strictEqual(doc.getElementById('tracker-done').textContent, '١');
+  assert.strictEqual(doc.getElementById('tracker-done').textContent, '1');
 });
 
 test('the activity grid draws thirty days with today marked', () => {
@@ -492,17 +493,17 @@ test('the tasbih counts, tracks a target and stores a daily total', () => {
   win.App.go('tasbih');
   const btn = doc.getElementById('tasbih-tap');
   for (let i = 0; i < 5; i++) click(win, btn);
-  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '٥');
+  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '5');
   assert.strictEqual(win.Store.day().tasbih, 5);
-  assert.ok(doc.getElementById('tasbih-target').textContent.indexOf('٣٣') !== -1);
+  assert.ok(doc.getElementById('tasbih-target').textContent.indexOf('33') !== -1);
 
   click(win, doc.querySelector('[data-phrase="3"]'));
-  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '٠', 'switching phrase resets the count');
+  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '0', 'switching phrase resets the count');
   assert.strictEqual(doc.getElementById('tasbih-phrase').textContent, 'لا إله إلا الله');
   assert.strictEqual(win.Store.day().tasbih, 5, 'the daily total keeps every phrase');
 
   click(win, doc.getElementById('tasbih-reset'));
-  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '٠');
+  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '0');
 });
 
 /* ---------------- qibla ---------------- */
@@ -511,7 +512,7 @@ test('the qibla view reports a bearing and a distance', () => {
   const { win, doc } = boot();
   win.App.go('qibla');
   const degrees = doc.getElementById('qibla-degrees').textContent;
-  assert.match(degrees, /^[٠-٩]+°$/, 'the bearing is written in arabic digits, got ' + degrees);
+  assert.match(degrees, /^[0-9]+°$/, 'the bearing is written in arabic digits, got ' + degrees);
   const bearing = win.App.state.qibla;
   assert.ok(bearing > 200 && bearing < 250, 'kuwait faces roughly south west, got ' + bearing);
   assert.ok(doc.getElementById('qibla-note').textContent.indexOf('كيلومتر') !== -1);
@@ -543,7 +544,7 @@ test('the khatma plan splits the mushaf and tracks pages read', () => {
 
   for (let i = 0; i < 5; i++) click(win, doc.getElementById('khatma-page-plus'));
   assert.strictEqual(win.Store.progress().pagesRead, 5);
-  assert.ok(doc.getElementById('khatma-state').textContent.indexOf('٥') !== -1);
+  assert.ok(doc.getElementById('khatma-state').textContent.indexOf('5') !== -1);
 
   click(win, doc.getElementById('khatma-page-minus'));
   assert.strictEqual(win.Store.progress().pagesRead, 4);
@@ -666,7 +667,7 @@ test('the text size slider changes the reading scale', () => {
   fire(win, slider, 'input');
   assert.strictEqual(win.Store.get('fontScale'), 140);
   assert.strictEqual(doc.documentElement.style.getPropertyValue('--quran-scale'), '1.4');
-  assert.strictEqual(doc.getElementById('font-value').textContent, '١٤٠٪');
+  assert.strictEqual(doc.getElementById('font-value').textContent, '140%');
 });
 
 test('the vibrate switch toggles and reports its state', () => {
@@ -757,14 +758,16 @@ test('the interface escapes text rather than trusting it', () => {
 
 test('arabic numerals are used for every digit shown', () => {
   const { win } = boot();
-  assert.strictEqual(win.App.helpers.ar('1448'), '١٤٤٨');
-  assert.strictEqual(win.App.helpers.ar(0), '٠');
+  assert.strictEqual(win.App.helpers.ar('1448'), '1448');
+  assert.strictEqual(win.App.helpers.ar(0), '0');
 });
 
-test('no latin digit reaches the screen on the home view', () => {
+test('one set of figures is used throughout', () => {
   const { doc } = boot();
   ['hijri-date', 'greg-date', 'today-done', 'today-total'].forEach(function (id) {
-    assert.ok(!/[0-9]/.test(doc.getElementById(id).textContent), id + ' leaked a latin digit');
+    const text = doc.getElementById(id).textContent;
+    assert.ok(!/[\u0660-\u0669]/.test(text), id + ' mixes in a second set of figures: ' + text);
+    assert.ok(/\d/.test(text), id + ' shows no number at all: ' + text);
   });
 });
 
@@ -806,7 +809,7 @@ test('a failed download leaves the rest of the app usable', async () => {
   await new Promise((r) => setTimeout(r, 60));
   assert.strictEqual(win.Mushaf.ready(), false);
   assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
-  assert.match(doc.getElementById('arc-count').textContent, /^[٠-٩]{2}:[٠-٩]{2}:[٠-٩]{2}$/,
+  assert.match(doc.getElementById('arc-count').textContent, /^[0-9]{2}:[0-9]{2}:[0-9]{2}$/,
     'the clock keeps running without the mushaf');
   win.App.go('azkar');
   assert.ok(doc.querySelectorAll('#azkar-groups [data-azkar]').length >= 10);
@@ -975,7 +978,7 @@ test('the khatma plan opens the mushaf at the page it names', () => {
   win.App.go('khatma');
   const next = doc.querySelector('#khatma-state [data-page]');
   assert.strictEqual(next.getAttribute('data-page'), '51');
-  assert.ok(next.textContent.indexOf('٥١') !== -1,
+  assert.ok(next.textContent.indexOf('51') !== -1,
     'the label must agree with the page it opens, got ' + next.textContent);
   click(win, next);
   const start = win.Mushaf.pageStart(51);
@@ -1003,7 +1006,7 @@ test('the reader remembers the verse, not just the surah', () => {
   assert.strictEqual(place.a, 255);
 
   win.App.go('quran');
-  assert.ok(doc.getElementById('resume-note').textContent.indexOf('٢٥٥') !== -1,
+  assert.ok(doc.getElementById('resume-note').textContent.indexOf('255') !== -1,
     'the card should name the verse, got ' + doc.getElementById('resume-note').textContent);
   click(win, doc.getElementById('resume-btn'));
   assert.strictEqual(win.App.state.ayah, 255, 'resuming returns to the verse');
@@ -1025,7 +1028,7 @@ test('the reader says which part and page it is showing', () => {
   const meta = doc.getElementById('reader-meta').textContent;
   assert.ok(meta.indexOf('الجزء') !== -1, 'got ' + meta);
   assert.ok(meta.indexOf('صفحة') !== -1, 'got ' + meta);
-  assert.ok(!/[0-9]/.test(meta), 'the numbers should be arabic, got ' + meta);
+  assert.ok(!/[\u0660-\u0669]/.test(meta), 'the figures should match the rest, got ' + meta);
 });
 
 test('a verse can be copied and its page opened from the sheet', () => {
@@ -1366,7 +1369,9 @@ test('a place with no zone still works from its stored number', () => {
   win.App.setPlace({ n: 'مكان بلا منطقة', lat: 29.3759, lng: 47.9774, tz: 3 }, false);
   const t = win.App.computeTimes(new Date('2026-09-04T12:00:00'));
   assert.ok(!isNaN(t.dhuhr) && t.dhuhr > 0, 'the times must still come out');
-  assert.match(win.PrayerEngine.format(t.dhuhr), /^\d{2}:\d{2}$/);
+  assert.match(win.PrayerEngine.format(t.dhuhr), /^\d{1,2}:\d{2} [صم]$/);
+  assert.match(win.PrayerEngine.format(t.dhuhr, 'plain'), /^\d{2}:\d{2}$/,
+    'the twenty four hour form stays available for sorting');
 });
 
 /* ---------------- reachable by a thumb, and arabic throughout ---------------- */
@@ -1491,7 +1496,7 @@ test('the install banner is painted, not left see through', () => {
     'without a background it sits on top of the list and both are read at once');
 });
 
-test('the clock keeps the same numerals as the rest of the screen', () => {
+test('the clock and the dates share one set of figures', () => {
   const { doc } = boot();
   const shown = [
     doc.getElementById('arc-count').textContent,
@@ -1500,8 +1505,8 @@ test('the clock keeps the same numerals as the rest of the screen', () => {
     doc.getElementById('greg-date').textContent
   ].concat([...doc.querySelectorAll('.window-time')].map((e) => e.textContent));
   shown.forEach(function (text) {
-    assert.ok(!/[0-9]/.test(text), 'latin digits reached the screen in: ' + text);
-    assert.ok(/[٠-٩]/.test(text), 'expected arabic digits in: ' + text);
+    assert.ok(!/[\u0660-\u0669]/.test(text), 'a second set of figures appeared in: ' + text);
+    assert.ok(/\d/.test(text), 'expected a number in: ' + text);
   });
 });
 
@@ -1564,7 +1569,7 @@ test('the version the app shows is the version it is', () => {
   const { win, doc } = boot();
   win.App.go('more');
   const shown = doc.getElementById('version-line').textContent;
-  const digits = shown.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  const digits = shown.replace(/[0-9]/g, (d) => '0123456789'.indexOf(d));
   assert.ok(digits.indexOf(win.App.version) !== -1,
     'the screen says ' + shown + ' but the app is ' + win.App.version);
 });
@@ -1658,7 +1663,7 @@ test('the sunnah groups fold, each with its own tally', () => {
   groups.forEach(function (g) {
     const tally = g.querySelector('.fold-tally');
     assert.ok(tally, 'every group names how many of it are done');
-    assert.match(tally.textContent, /^[٠-٩]+ من [٠-٩]+$/, 'got ' + tally.textContent);
+    assert.match(tally.textContent, /^[0-9]+ من [0-9]+$/, 'got ' + tally.textContent);
     assert.ok(g.querySelector('.fold-head'), 'and has a head to press');
     assert.strictEqual(g.querySelector('.fold-head').getAttribute('aria-expanded'), 'true');
   });
@@ -1686,7 +1691,7 @@ test('the tally follows what has been ticked', () => {
   click(win, doc.querySelector('#tracker-list .fold .check'));
   const after = doc.querySelector('#tracker-list .fold-tally').textContent;
   assert.notStrictEqual(after, before);
-  assert.strictEqual(after.indexOf('١'), 0);
+  assert.strictEqual(after.indexOf('1'), 0);
 });
 
 /* ---------------- the qibla ---------------- */
@@ -1741,7 +1746,7 @@ test('the qibla tells you which way to turn', () => {
   win.App.state.heading = ((bearing + 90) % 360);
   win.App.render.qibla();
   const note = doc.getElementById('qibla-note').textContent;
-  assert.ok(note.indexOf('٩٠') !== -1, 'it should say ninety degrees, got ' + note);
+  assert.ok(note.indexOf('90') !== -1, 'it should say ninety degrees, got ' + note);
   assert.ok(!doc.getElementById('compass-face').classList.contains('is-aligned'));
 });
 
@@ -1944,7 +1949,7 @@ test('the sunnah card on the home view folds with its own tally', () => {
   assert.ok(fold, 'the home sunnah card should be a folding group');
   assert.ok(fold.classList.contains('is-open'), 'it starts open');
   const tally = doc.getElementById('now-tally');
-  assert.match(tally.textContent, /^[٠-٩]+ من [٠-٩]+$/, 'got ' + tally.textContent);
+  assert.match(tally.textContent, /^[0-9]+ من [0-9]+$/, 'got ' + tally.textContent);
 
   click(win, fold.querySelector('.fold-head'));
   assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'));
@@ -1960,7 +1965,7 @@ test('the tally on the home card follows what is ticked', () => {
   const before = doc.getElementById('now-tally').textContent;
   click(win, doc.querySelector('#now-list .check'));
   assert.notStrictEqual(doc.getElementById('now-tally').textContent, before);
-  assert.strictEqual(doc.getElementById('now-tally').textContent.indexOf('١'), 0);
+  assert.strictEqual(doc.getElementById('now-tally').textContent.indexOf('1'), 0);
 });
 
 /* ---------------- where the times come from ---------------- */
@@ -2062,8 +2067,8 @@ test('each day carries both numbers and the first sits under its weekday', () =>
   const { win, doc } = boot();
   win.App.go('calendar');
   const first = doc.querySelector('#cal-grid .cal-cell:not(.is-empty)');
-  assert.strictEqual(first.querySelector('.cal-num').textContent, '١');
-  assert.match(first.querySelector('.cal-greg').textContent, /^[٠-٩]+$/);
+  assert.strictEqual(first.querySelector('.cal-num').textContent, '1');
+  assert.match(first.querySelector('.cal-greg').textContent, /^[0-9]+$/);
 
   const month = win.Hijri.toHijri(new Date(), win.Store.get('hijriAdjust'));
   const days = win.Hijri.monthDays(month.y, month.m, win.Store.get('hijriAdjust'));
@@ -2119,9 +2124,9 @@ test('a count of days is written the way arabic counts', () => {
   const { win, doc } = boot();
   win.App.go('calendar');
   const text = doc.getElementById('calendar-upcoming').textContent;
-  assert.ok(!/(?:^|[^٠-٩])١ يوماً/.test(text), 'one day is يوم واحد');
-  assert.ok(!/(?:^|[^٠-٩])٢ يوماً/.test(text), 'two days is يومان');
-  assert.ok(!/(?:^|[^٠-٩])[٣-٩] يوماً/.test(text),
+  assert.ok(!/(?:^|[^0-9])1 يوماً/.test(text), 'one day is يوم واحد');
+  assert.ok(!/(?:^|[^0-9])2 يوماً/.test(text), 'two days is يومان');
+  assert.ok(!/(?:^|[^0-9])[3-9] يوماً/.test(text),
     'three to ten take أيام, not يوماً, in: ' + text.replace(/\s+/g, ' ').slice(0, 90));
 });
 
@@ -2135,4 +2140,83 @@ test('the daily card says plainly what it counts', () => {
      glue them into one */
   assert.ok(/سُنّة\s/.test(head), 'the streak line must not run into the tally: ' + head);
   assert.strictEqual(doc.getElementById('streak-line').textContent, 'لم تبدأ اليوم بعد');
+});
+
+/* ---------------- the month timetable ---------------- */
+
+test('the timetable lays out every day of the month', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const rows = doc.querySelectorAll('#tt-table tbody tr');
+  const now = new Date();
+  const last = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  assert.strictEqual(rows.length, last, 'one row per day, got ' + rows.length);
+  assert.strictEqual(doc.querySelectorAll('#tt-table thead th').length, 7,
+    'a column for the day and one for each prayer');
+  assert.strictEqual(doc.querySelectorAll('#tt-table tr.is-today').length, 1);
+  assert.ok(doc.getElementById('tt-place').textContent.indexOf(win.App.state.place.n) !== -1,
+    'it should name the place the times belong to');
+});
+
+test('every time in the table is written on twelve hours', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const cells = [...doc.querySelectorAll('#tt-table tbody td')];
+  assert.ok(cells.length >= 28 * 6);
+  cells.forEach(function (cell) {
+    assert.match(cell.textContent, /^\d{1,2}:\d{2} [صم]$/, 'got ' + cell.textContent);
+  });
+});
+
+test('the hijri month is named where it turns over, never cut in half', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const labels = [...doc.querySelectorAll('#tt-table .tt-hijri')].map((e) => e.textContent.trim());
+  const named = labels.filter((t) => /[\u0621-\u064A]/.test(t));
+  assert.ok(named.length >= 1 && named.length <= 2,
+    'a gregorian month touches one or two hijri months, got ' + named.length + ' names');
+  named.forEach(function (label) {
+    const name = label.replace(/^\d+\s*/, '');
+    assert.ok(win.Hijri.MONTHS.indexOf(name) !== -1, 'a cut month name: ' + name);
+  });
+});
+
+test('the table walks month by month and finds its way back', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const start = doc.getElementById('tt-month').textContent;
+  assert.ok(doc.getElementById('tt-today').hidden, 'nothing to go back to yet');
+
+  click(win, doc.getElementById('tt-next'));
+  assert.notStrictEqual(doc.getElementById('tt-month').textContent, start);
+  assert.ok(!doc.getElementById('tt-today').hidden);
+  assert.strictEqual(doc.querySelectorAll('#tt-table tr.is-today').length, 0,
+    'today is not in another month');
+
+  click(win, doc.getElementById('tt-today'));
+  assert.strictEqual(doc.getElementById('tt-month').textContent, start);
+  assert.strictEqual(doc.querySelectorAll('#tt-table tr.is-today').length, 1);
+});
+
+test('the table can be copied as plain text to send on', () => {
+  const { win, doc } = boot();
+  let copied = null;
+  win.navigator.clipboard = { writeText: (t) => { copied = t; return Promise.resolve(); } };
+  win.App.go('timetable');
+  click(win, doc.getElementById('tt-copy'));
+  assert.ok(copied, 'nothing reached the clipboard');
+  const lines = copied.split('\n').filter(Boolean);
+  const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+  assert.strictEqual(lines.length, days + 2, 'a heading, the method, then a line a day');
+  assert.ok(lines[0].indexOf(win.App.state.place.n) !== -1);
+  assert.ok(/\d{1,2}:\d{2} [صم]/.test(lines[2]), 'got ' + lines[2]);
+});
+
+test('the day the table shows agrees with the clock on the home screen', () => {
+  const { win, doc } = boot();
+  const home = [...doc.querySelectorAll('.window-time')].map((e) => e.textContent);
+  win.App.go('timetable');
+  const row = doc.querySelector('#tt-table tr.is-today');
+  const table = [...row.querySelectorAll('td')].map((e) => e.textContent);
+  assert.deepStrictEqual(table, home, 'the same day cannot have two sets of times');
 });

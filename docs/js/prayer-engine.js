@@ -172,12 +172,20 @@
     return mins;
   };
 
-  function format(minutes) {
-    if (isNaN(minutes)) return '--:--';
+  /* A clock face in the gulf is read on twelve hours with صباحاً or مساءً, so
+     that is how a prayer time is written. The twenty four hour form stays
+     available for anything that needs to sort or compare. */
+  function format(minutes, style) {
+    if (isNaN(minutes)) return style === 'plain' ? '--:--' : '--:-- ص';
     var m = Math.round(minutes) % 1440;
     if (m < 0) m += 1440;
     var h = Math.floor(m / 60), mm = m % 60;
-    return (h < 10 ? '0' : '') + h + ':' + (mm < 10 ? '0' : '') + mm;
+    var two = function (n) { return (n < 10 ? '0' : '') + n; };
+    if (style === 'plain') return two(h) + ':' + two(mm);
+    var suffix = h < 12 ? 'ص' : 'م';
+    var twelve = h % 12;
+    if (twelve === 0) twelve = 12;
+    return twelve + ':' + two(mm) + ' ' + suffix;
   }
 
   /* Great circle bearing from a point to the Kaaba, in degrees clockwise from true north. */

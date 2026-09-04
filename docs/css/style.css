@@ -254,6 +254,25 @@ button { background: none; border: none; cursor: pointer; }
   background: var(--sunken); color: var(--ink-3);
 }
 
+/* ---------- the month timetable ---------- */
+
+.tt-scroll { max-height: 62vh; overflow-y: auto; margin: 0 calc(var(--s4) * -1); }
+.tt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tt th, .tt td { padding: 9px 4px; text-align: center; font-size: var(--step--1); }
+.tt thead th {
+  position: sticky; top: 0; z-index: 1; background: var(--raised);
+  font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
+  padding-block: 11px;
+}
+.tt tbody th { text-align: center; font-weight: 600; padding-inline-start: var(--s4); white-space: nowrap; }
+.tt-day { display: block; font-size: var(--step-0); }
+.tt-hijri { display: block; font-size: .62rem; color: var(--ink-3); font-weight: 400; margin-top: 1px; }
+.tt tbody tr { border-bottom: 1px solid var(--line); }
+.tt tbody tr:last-child { border-bottom: 0; }
+.tt tbody tr[data-friday='1'] { background: var(--sunken); }
+.tt tbody tr.is-today { background: var(--accent-wash); }
+.tt tbody tr.is-today th, .tt tbody tr.is-today td { color: var(--accent-ink); font-weight: 700; }
+
 /* ---------- the month ---------- */
 
 .cal-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }
