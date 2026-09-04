@@ -190,6 +190,29 @@
   function juzStart(n) { return data && data.j[n - 1] ? { s: data.j[n - 1][0], a: data.j[n - 1][1] } : null; }
   function pageStart(n) { return data && data.p[n - 1] ? { s: data.p[n - 1][0], a: data.p[n - 1][1] } : null; }
 
+  /* Every verse on a page of the printed mushaf, in order, with the surah it
+     belongs to, so a page can be laid out as one. The last page runs to the
+     end of the text. */
+  function pageVerses(n) {
+    if (!data || !data.p[n - 1]) return [];
+    var from = data.p[n - 1];
+    var to = data.p[n] || null;
+    var out = [];
+    var s = from[0], a = from[1];
+    while (true) {
+      if (to && s === to[0] && a === to[1]) break;
+      var text = ayah(s, a);
+      if (!text) {
+        s++; a = 1;
+        if (s > 114) break;
+        continue;
+      }
+      out.push({ s: s, a: a, text: text });
+      a++;
+    }
+    return out;
+  }
+
   function isSajda(s, a) {
     if (!data) return false;
     for (var i = 0; i < data.s.length; i++) {
@@ -298,6 +321,7 @@
     pageOf: pageOf,
     juzStart: juzStart,
     pageStart: pageStart,
+    pageVerses: pageVerses,
     isSajda: isSajda,
     sajdaList: sajdaList,
     search: search,

@@ -114,7 +114,8 @@
   <div class="clock">
     <div class="clock-date">
       <button class="date-nudge" id="hijri-down" aria-label="أنقص يوماً من التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-minus"/></svg></button>
-      <span><b id="hijri-date">…</b> <span id="greg-date"></span></span>
+      <span><b id="hijri-date">…</b> <span id="greg-date"></span>
+        <button class="date-adjusted" id="hijri-reset" hidden title="التاريخ معدّل، اضغط للرجوع إلى الحساب"></button></span>
       <button class="date-nudge" id="hijri-up" aria-label="أضف يوماً إلى التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg></button>
     </div>
 
@@ -202,6 +203,10 @@
     <p>114 سورة و6236 آية محفوظة في جهازك</p>
   </div>
 
+  <div class="btn-row" style="margin-bottom:12px">
+    <button class="btn btn-ghost" data-go="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg>بالصفحات</button>
+    <button class="btn btn-ghost" id="quran-goto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg>اذهب إلى</button>
+  </div>
   <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
 
   <div class="card" id="resume-card" hidden>
@@ -241,6 +246,23 @@
 </section>
 
 <!-- ══════════ البحث ══════════ -->
+<section class="view" id="v-page" aria-labelledby="page-title">
+  <div class="reader-bar">
+    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <div class="page-head">
+      <h1 id="page-title" class="page-num">صفحة 1</h1>
+      <p id="page-meta" class="page-meta"></p>
+    </div>
+    <button class="btn btn-ghost" id="page-jump" aria-label="اذهب إلى صفحة أو جزء أو آية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg></button>
+  </div>
+  <div class="reader-body page-body" id="page-body"></div>
+  <div class="page-nav">
+    <button class="btn btn-ghost" id="page-prev" aria-label="الصفحة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg>السابقة</button>
+    <button class="btn btn-ghost" id="page-random" aria-label="افتح صفحة عشوائية">صفحة عشوائية</button>
+    <button class="btn btn-ghost" id="page-next" aria-label="الصفحة التالية">التالية<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+  </div>
+</section>
+
 <section class="view" id="v-search" aria-labelledby="search-title">
   <div class="view-head">
     <h1 id="search-title">البحث</h1>
@@ -432,9 +454,11 @@
     <div class="convert-row" style="margin-top:12px">
       <label class="convert-field"><span class="setting-label">هجري</span>
         <span class="convert-hijri">
-          <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم">
           <select class="select" id="conv-hm" aria-label="الشهر الهجري"></select>
-          <input class="field" id="conv-hy" type="number" min="1300" max="1600" inputmode="numeric" aria-label="السنة الهجرية" placeholder="السنة">
+          <span class="convert-pair">
+            <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم">
+            <input class="field" id="conv-hy" type="number" min="1300" max="1600" inputmode="numeric" aria-label="السنة الهجرية" placeholder="السنة">
+          </span>
         </span></label>
     </div>
     <p class="convert-out" id="conv-hijri-out"></p>

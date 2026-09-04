@@ -221,6 +221,14 @@ button { background: none; border: none; cursor: pointer; }
   align-items: center; justify-content: center; gap: var(--s2);
 }
 .clock-date b { font-weight: 600; color: var(--ink); }
+/* A date that has been nudged says so, in the colour of a warning, and a tap
+   on it puts the reckoning back. Silent shifting is how a day gets lost. */
+.date-adjusted {
+  display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px;
+  font-size: .62rem; font-weight: 700; background: color-mix(in srgb, #b8860b 18%, transparent);
+  color: #7d6124; vertical-align: middle;
+}
+[data-theme='dark'] .date-adjusted { color: #e0c070; }
 
 .date-nudge {
   width: 24px; height: 24px; border-radius: 50%; color: var(--ink-3);
@@ -334,6 +342,26 @@ button { background: none; border: none; cursor: pointer; }
 .surah-frame h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; }
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
 
+/* ---------- reading by the page ---------- */
+
+.page-head { flex: 1; text-align: center; }
+.page-num { font-size: var(--step-1); font-weight: 700; }
+.page-meta { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
+.page-body { min-height: 60vh; }
+.page-surah { margin: var(--s3) 0; }
+.page-foot { text-align: center; margin-top: var(--s4); }
+.page-foot-num {
+  display: inline-grid; place-items: center; min-width: 40px; height: 28px; padding: 0 10px;
+  border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink);
+  font-size: var(--step--1); font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.page-nav { display: flex; gap: var(--s2); margin-top: var(--s3); }
+.page-nav .btn { flex: 1; }
+.page-nav .btn:disabled { opacity: .4; }
+
+.goto-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: var(--s3); }
+.goto-row .btn { justify-self: start; }
+
 /* ---------- the month timetable ---------- */
 
 .tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }
@@ -361,7 +389,10 @@ button { background: none; border: none; cursor: pointer; }
 
 .convert-field { display: block; }
 .convert-field .setting-label { display: block; margin-bottom: 6px; }
-.convert-hijri { display: grid; grid-template-columns: 1fr 1.6fr 1.2fr; gap: 8px; }
+/* The month name is the widest thing here, so it takes a whole line and the day
+   and year share the next. Cut to fit it read ربيع الأو, which is no month. */
+.convert-hijri { display: grid; gap: 8px; }
+.convert-pair { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
 .convert-out {
   margin-top: 8px; font-weight: 600; color: var(--accent-ink); min-height: 1.4em;
   font-variant-numeric: tabular-nums;
