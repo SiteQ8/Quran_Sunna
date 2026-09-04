@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.5.0';
+  var VERSION = '6.5.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -269,14 +269,14 @@
   var PATTERNS = {
     star: {
       name: 'النجمة الثمانية',
-      size: 80,
-      weight: .30,
+      size: 112,
+      weight: .22,
       draw: function (c) {
         var square = function (x, y, cx, cy) {
           return "<rect x='" + x + "' y='" + y + "' width='26' height='26'/>" +
             "<rect x='" + x + "' y='" + y + "' width='26' height='26' transform='rotate(45 " + cx + " " + cy + ")'/>";
         };
-        return "<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'>" +
+        return "<svg xmlns='http://www.w3.org/2000/svg' width='112' height='112' viewBox='0 0 80 80'>" +
           "<g fill='none' stroke='" + c + "' stroke-width='1'>" +
           square(27, 27, 40, 40) + square(-13, -13, 0, 0) + square(67, -13, 80, 0) +
           square(-13, 67, 0, 80) + square(67, 67, 80, 80) + "</g>" +

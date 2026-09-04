@@ -2657,3 +2657,22 @@ test('the place and the method do not run into one word', () => {
     'they should be two words, got ' + line.textContent.replace(/\s+/g, ' '));
   assert.ok(!/الكويتتقويم/.test(line.textContent), 'they ran together');
 });
+
+test('the clock stands on a panel, so the numbers never sit on the lattice', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.clock \{([^}]*)\}/.exec(css);
+  assert.ok(rule, 'the clock needs a rule');
+  assert.match(rule[1], /background:\s*color-mix\(in srgb, var\(--raised\)\s*\d+%/,
+    'a soft panel under the clock, letting the pattern show at its edges');
+  const share = parseInt(/var\(--raised\)\s*(\d+)%/.exec(rule[1])[1], 10);
+  assert.ok(share >= 80, 'the panel must be solid enough to read on, found ' + share + '%');
+});
+
+test('the star lattice reads as ornament, not as graph paper', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const star = /name: 'النجمة الثمانية',\s*size: (\d+),\s*weight: (\.?\d*\.?\d+)/.exec(app);
+  assert.ok(star, 'the star tile should carry a size and a weight');
+  assert.ok(+star[1] >= 100, 'a small tile packs the stars into a grid, found ' + star[1] + 'px');
+  assert.ok(+star[2] <= 0.25 && +star[2] >= 0.15,
+    'a line pattern belongs between faint and loud, found ' + star[2]);
+});
