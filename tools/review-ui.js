@@ -206,6 +206,27 @@ const MIN_CONTRAST_LARGE = 3;
         if (!root.querySelector('h1') && !root.getAttribute('aria-labelledby'))
           issues.push('no heading');
 
+        /* The niche is drawn over the same square as the arc it frames. If the
+           two are given different boxes the niche stretches and its legs run
+           down past the words, which is only visible once it is rendered. */
+        const arc = root.querySelector('.arc');
+        const arch = root.querySelector('.mihrab');
+        if (arc && arch) {
+          const a = arc.getBoundingClientRect(), n = arch.getBoundingClientRect();
+          if (Math.abs(a.top - n.top) > 1 || Math.abs(a.height - n.height) > 1) {
+            issues.push('the niche and the arc have different boxes: arc ' +
+              Math.round(a.width) + 'x' + Math.round(a.height) + ', niche ' +
+              Math.round(n.width) + 'x' + Math.round(n.height));
+          }
+          const line = root.querySelector('.arc-label');
+          const count = root.querySelector('.arc-count');
+          if (line && count) {
+            const l = line.getBoundingClientRect(), c = count.getBoundingClientRect();
+            if (l.top < n.top + n.height * 0.3) issues.push('the words sit too high in the niche');
+            if (c.bottom > n.bottom + n.height * 0.12) issues.push('the countdown falls out under the niche');
+          }
+        }
+
         const prose = root.cloneNode(true);
         prose.querySelectorAll('a').forEach((a) => a.remove());
         const latin = [...new Set((prose.textContent.match(/[A-Za-z]{2,}/g) || []))];
