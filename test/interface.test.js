@@ -934,3 +934,16 @@ test('the compass turns its needle and leaves north alone', () => {
     'rotating the whole rose would swing north away from north');
 });
 
+
+test('the dot riding the arc never sits on the words inside it', () => {
+  const { win, doc } = boot();
+  /* The dot climbs to the top of the arc halfway through a window, which is
+     exactly where the label sits, so the two are checked against each other
+     across a whole window rather than at one moment. */
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const inset = /\.arc-center\s*\{[^}]*inset:\s*(\d+)%/.exec(css);
+  assert.ok(inset, 'the text inside the arc is placed by an inset');
+  assert.ok(+inset[1] >= 32, 'the text must clear the top of the arc, found ' + inset[1] + '%');
+  assert.ok(doc.getElementById('arc-label'));
+  assert.ok(win.App.clockState().progress >= 0);
+});
