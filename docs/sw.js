@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v6.7.1';
+var VERSION = 'sunnati-v6.8.0';
 
 var SHELL = [
   './',
@@ -64,8 +64,77 @@ function isSettled(pathname) {
     /\.(png|svg|woff2?)$/.test(pathname);
 }
 
+/* The page hands over the day's prayer times and the reminder interval, and
+   the worker keeps them in the cache since it has no store of its own. */
+var SCHEDULE_KEY = './__schedule';
+
+function keepSchedule(data) {
+  return caches.open(VERSION).then(function (cache) {
+    return cache.put(SCHEDULE_KEY, new Response(JSON.stringify(data), {
+      headers: { 'content-type': 'application/json' }
+    }));
+  });
+}
+
+function readSchedule() {
+  return caches.open(VERSION).then(function (cache) {
+    return cache.match(SCHEDULE_KEY);
+  }).then(function (hit) { return hit ? hit.json() : null; }).catch(function () { return null; });
+}
+
 self.addEventListener('message', function (event) {
-  if (event.data && event.data.type === 'take-over') self.skipWaiting();
+  if (!event.data) return;
+  if (event.data.type === 'take-over') self.skipWaiting();
+  if (event.data.type === 'schedule') event.waitUntil(keepSchedule(event.data));
+});
+
+/* Tapping a notification brings the app forward rather than opening a second
+   copy of it. */
+self.addEventListener('notificationclick', function (event) {
+  event.notification.close();
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      if ('focus' in list[i]) return list[i].focus();
+    }
+    if (self.clients.openWindow) return self.clients.openWindow('./');
+  }));
+});
+
+/* Where the browser allows a periodic wake, the worker checks the schedule it
+   was handed and raises whatever fell due while the page was closed. */
+function dueNotifications() {
+  return readSchedule().then(function (plan) {
+    if (!plan) return;
+    var now = Date.now();
+    var jobs = [];
+    var seen = plan.shown || {};
+    if (plan.notify && plan.prayers) {
+      plan.prayers.forEach(function (p) {
+        var key = new Date(p.at).toDateString() + ':' + p.key;
+        if (p.at <= now && now - p.at < 6 * 3600000 && !seen[key]) {
+          seen[key] = true;
+          jobs.push(self.registration.showNotification('حان وقت ' + p.name, {
+            body: 'الله أكبر، حيّ على الصلاة', tag: key, lang: 'ar', dir: 'rtl',
+            icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
+          }));
+        }
+      });
+    }
+    if (plan.salawatEvery && now - (plan.salawatAt || 0) >= plan.salawatEvery * 60000) {
+      plan.salawatAt = now;
+      jobs.push(self.registration.showNotification('صلِّ على النبي ﷺ', {
+        body: 'اللهم صلِّ وسلِّم على نبينا محمد', tag: 'salawat', lang: 'ar', dir: 'rtl',
+        icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
+      }));
+    }
+    plan.shown = seen;
+    jobs.push(keepSchedule(plan));
+    return Promise.all(jobs);
+  });
+}
+
+self.addEventListener('periodicsync', function (event) {
+  if (event.tag === 'sunnati-reminders') event.waitUntil(dueNotifications());
 });
 
 self.addEventListener('install', function (event) {

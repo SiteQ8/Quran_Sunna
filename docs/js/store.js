@@ -24,6 +24,8 @@
     tzOffset: null,
     zone: null,
     notify: false,
+    salawat: 0,
+    salawatAt: 0,
     reciter: 0,
     tafsir: 'ar.muyassar',
     khatmaDays: 30,

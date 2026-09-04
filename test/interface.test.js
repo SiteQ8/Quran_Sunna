@@ -2847,3 +2847,109 @@ test('no helper in the controller is shadowed by a local of the same name', () =
   assert.deepStrictEqual(shadowed, [],
     'a local of the same name hides the helper, and a call to it then fails: ' + shadowed.join(', '));
 });
+
+/* ---------------- notifications that actually arrive ---------------- */
+
+test('a notification is raised through the worker, which a phone allows', () => {
+  const { win } = boot();
+  const shown = [];
+  win.navigator.serviceWorker = {
+    ready: Promise.resolve({ showNotification: function (t, o) { shown.push({ t: t, o: o }); return Promise.resolve(); } })
+  };
+  win.Notification = function () { throw new Error('Illegal constructor'); };
+  win.Notification.permission = 'granted';
+  return win.App.helpers.notify('حان وقت العصر', 'حيّ على الصلاة', 'x').then(function (ok) {
+    assert.strictEqual(ok, true, 'it should not give up when the page cannot raise one itself');
+    assert.strictEqual(shown.length, 1);
+    assert.strictEqual(shown[0].t, 'حان وقت العصر');
+    assert.strictEqual(shown[0].o.dir, 'rtl', 'arabic reads from the right');
+    assert.strictEqual(shown[0].o.lang, 'ar');
+    assert.ok(shown[0].o.icon, 'carries the app icon');
+  });
+});
+
+test('nothing is raised without permission', () => {
+  const { win } = boot();
+  win.Notification = function () {};
+  win.Notification.permission = 'default';
+  return win.App.helpers.notify('x', 'y', 'z').then(function (ok) { assert.strictEqual(ok, false); });
+});
+
+test('the salawat reminder fires when due and not again straight away', () => {
+  const { win } = boot();
+  const shown = [];
+  win.navigator.serviceWorker = { ready: Promise.resolve({ showNotification: function (t, o) { shown.push(t); return Promise.resolve(); } }) };
+  win.Notification = function () {}; win.Notification.permission = 'granted';
+
+  win.Store.set('salawat', 0);
+  win.App.helpers.maybeSalawat(false);
+  assert.strictEqual(shown.length, 0, 'off means off');
+
+  win.Store.set('salawat', 60);
+  win.Store.set('salawatAt', Date.now() - 61 * 60000);
+  win.App.helpers.maybeSalawat(false);
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.strictEqual(shown.length, 1, 'due, so it fires');
+      assert.strictEqual(shown[0], 'صلِّ على النبي ﷺ');
+      win.App.helpers.maybeSalawat(false);
+      setTimeout(function () {
+        assert.strictEqual(shown.length, 1, 'just fired, so it waits');
+        done();
+      }, 20);
+    }, 20);
+  });
+});
+
+test('the reminder is offered in the settings with sensible intervals', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-salawat');
+  assert.ok(sel);
+  const values = [...sel.options].map((o) => o.value);
+  assert.deepStrictEqual(values, ['0', '60', '120', '180', '360']);
+  assert.strictEqual(sel.options[0].text, 'بلا تذكير');
+});
+
+test('the worker answers a tap on a notification and a periodic wake', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("addEventListener('notificationclick'") !== -1, 'a tap should bring the app forward');
+  assert.ok(sw.indexOf('clients.openWindow') !== -1 && sw.indexOf('focus()') !== -1);
+  assert.ok(sw.indexOf("addEventListener('periodicsync'") !== -1, 'where the browser wakes it, it checks the schedule');
+  assert.ok(sw.indexOf("event.data.type === 'schedule'") !== -1, 'and it takes the schedule from the page');
+});
+
+/* ---------------- icons, not emoji ---------------- */
+
+test('no emoji anywhere the app draws a glyph', () => {
+  const emoji = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
+  ['data/azkar.js', 'data/content.js', 'js/hijri.js', 'js/app.js', 'index.html'].forEach(function (rel) {
+    const text = fs.readFileSync(path.join(DOCS, rel), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    assert.ok(!emoji.test(text), rel + ' still carries an emoji');
+  });
+  const { win, doc } = boot();
+  ['home', 'azkar', 'tracker', 'calendar', 'more'].forEach(function (v) {
+    win.App.go(v);
+    assert.ok(!emoji.test(doc.getElementById('v-' + v).textContent), v + ' shows an emoji');
+  });
+});
+
+test('every icon a section or an occasion names is in the sprite', () => {
+  const { win, doc } = boot();
+  const ids = new Set([...doc.querySelectorAll('svg g[id^="i-"]')].map((g) => g.id.slice(2)));
+  Object.keys(win.AZKAR_DB).forEach(function (k) {
+    assert.ok(ids.has(win.AZKAR_DB[k].icon), win.AZKAR_DB[k].title + ' names an icon the sprite lacks: ' + win.AZKAR_DB[k].icon);
+  });
+  win.SUNNAH_TRACKER.forEach(function (g) {
+    assert.ok(ids.has(g.icon), g.s + ' names an icon the sprite lacks: ' + g.icon);
+  });
+  win.Hijri.upcoming(new Date(), 0).forEach(function (o) {
+    assert.ok(ids.has(o.icon), o.name + ' names an icon the sprite lacks: ' + o.icon);
+  });
+  ['home', 'azkar', 'tracker', 'calendar'].forEach(function (v) {
+    win.App.go(v);
+    doc.querySelectorAll('#v-' + v + ' svg.icon use').forEach(function (u) {
+      assert.ok(ids.has(u.getAttribute('href').slice(3)), v + ' draws ' + u.getAttribute('href') + ' which does not exist');
+    });
+  });
+});

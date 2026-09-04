@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.7.1';
+  var VERSION = '6.8.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -604,6 +604,8 @@
 
     renderWindows(c);
     maybeNotify(c);
+    maybeSalawat(false);
+    if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); }
   }
 
   function renderWindows(c) {
@@ -620,6 +622,32 @@
     }).join('');
   }
 
+  /* On a phone a page may not raise a notification itself: android throws on
+     new Notification and the old code swallowed the error, so nothing ever
+     appeared. The worker can, so it is asked to, and the direct call is kept
+     for a desktop browser without one. */
+  function notify(title, body, tag) {
+    if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
+    var options = {
+      body: body, tag: tag, lang: 'ar', dir: 'rtl',
+      icon: 'icons/icon-192.png', badge: 'icons/icon-96.png',
+      vibrate: Store.get('vibrate') ? [200, 100, 200] : undefined,
+      data: { url: './' }
+    };
+    function direct() {
+      try { new window.Notification(title, options); return true; } catch (e) { return false; }
+    }
+    if (navigator.serviceWorker && navigator.serviceWorker.ready) {
+      return navigator.serviceWorker.ready.then(function (reg) {
+        if (reg && typeof reg.showNotification === 'function') {
+          return reg.showNotification(title, options).then(function () { return true; }, direct);
+        }
+        return direct();
+      }).catch(direct);
+    }
+    return Promise.resolve(direct());
+  }
+
   function maybeNotify(c) {
     if (!Store.get('notify')) return;
     if (!window.Notification || window.Notification.permission !== 'granted') return;
@@ -627,9 +655,59 @@
     if (state.notified[key]) return;
     if (c.now - c.prev.at > 2) return;
     state.notified[key] = true;
-    try {
-      new window.Notification('سُنّتي', { body: 'حان وقت ' + c.prev.ar, tag: key });
-    } catch (e) { /* the browser may refuse outside a worker */ }
+    var name = prayerName(c.prev.key, new Date());
+    notify('حان وقت ' + name, name === 'الشروق' ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة', key);
+    maybeSalawat(true);
+  }
+
+  /* A reminder to send blessings on the Prophet, every so many minutes that
+     the reader chooses, and more insistently on Friday. */
+  var SALAWAT_LINES = [
+    'اللهم صلِّ وسلِّم على نبينا محمد',
+    'اللهم صلِّ على محمد وعلى آل محمد كما صليت على إبراهيم وعلى آل إبراهيم',
+    'من صلى عليَّ صلاةً صلى الله عليه بها عشراً',
+    'أكثروا الصلاة عليَّ يوم الجمعة وليلة الجمعة'
+  ];
+
+  function maybeSalawat(force) {
+    var every = +Store.get('salawat') || 0;
+    if (!every) return;
+    if (!window.Notification || window.Notification.permission !== 'granted') return;
+    var last = +Store.get('salawatAt') || 0;
+    var due = Date.now() - last >= every * 60000;
+    if (!due && !force) return;
+    if (force && Date.now() - last < 10 * 60000) return;
+    Store.set('salawatAt', Date.now());
+    var friday = isFriday(new Date());
+    var line = friday ? SALAWAT_LINES[3] : SALAWAT_LINES[Math.floor(Math.random() * 3)];
+    notify('صلِّ على النبي ﷺ', line, 'salawat');
+  }
+
+  function askPeriodicWake() {
+    if (!navigator.serviceWorker) return;
+    navigator.serviceWorker.ready.then(function (reg) {
+      if (!reg.periodicSync) return;
+      reg.periodicSync.register('sunnati-reminders', { minInterval: 60 * 60 * 1000 }).catch(function () {});
+    }).catch(function () {});
+  }
+
+  function scheduleForWorker() {
+    if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
+    askPeriodicWake();
+    var times = computeTimes(new Date());
+    var today = new Date();
+    var list = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map(function (k) {
+      var at = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      at.setMinutes(times[k]);
+      return { key: k, name: prayerName(k, today), at: at.getTime() };
+    });
+    navigator.serviceWorker.controller.postMessage({
+      type: 'schedule',
+      notify: !!Store.get('notify'),
+      prayers: list,
+      salawatEvery: +Store.get('salawat') || 0,
+      salawatAt: +Store.get('salawatAt') || 0
+    });
   }
 
   /* ---------------- home ---------------- */
@@ -793,7 +871,7 @@
     var list = Hijri.upcoming(new Date(), Store.get('hijriAdjust')).slice(0, 3);
     if (!list.length) { host.innerHTML = empty('لا مناسبة قريبة'); return; }
     host.innerHTML = list.map(function (o) {
-      return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
+      return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) + '</span></span></div>';
     }).join('');
@@ -1449,7 +1527,7 @@
     host.innerHTML = azkarSections().map(function (row) {
       var p = Store.azkarProgress(row.key, row.def.items.length);
       return '<button class="tile" data-azkar="' + esc(row.key) + '">' +
-        '<span style="font-size:1.5rem">' + esc(row.def.icon) + '</span>' +
+        '<span class="tile-glyph">' + icon(row.def.icon) + '</span>' +
         '<span class="tile-name">' + esc(row.def.title) + '</span>' +
         '<span class="tile-note">' + ar(p.done) + ' من ' + ar(row.def.items.length) + '</span></button>';
     }).join('');
@@ -1563,7 +1641,7 @@
     if (typeof SUNNAH_TRACKER !== 'undefined') {
       html += SUNNAH_TRACKER.map(function (group, gi) {
         var ids = group.i.map(function (_, ii) { return 'sunnah:' + gi + ':' + ii; });
-        return fold('sunnah:' + gi, group.s, null, ids,
+        return fold('sunnah:' + gi, group.s, group.icon || null, ids,
           group.i.map(function (item, ii) {
             var id = 'sunnah:' + gi + ':' + ii;
             var done = !!record.sunnah[id];
@@ -1965,7 +2043,7 @@
     if (!list) return;
     var upcoming = Hijri.upcoming(new Date(), Store.get('hijriAdjust'));
     list.innerHTML = upcoming.map(function (o) {
-      return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
+      return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
@@ -2147,6 +2225,13 @@
     if ($('settings-highlat')) $('settings-highlat').value = s.highLat;
     if ($('settings-theme')) $('settings-theme').value = s.theme;
 
+    fillSelect($('settings-salawat'), [
+      { value: '0', label: 'بلا تذكير' },
+      { value: '60', label: 'كل ساعة' },
+      { value: '120', label: 'كل ساعتين' },
+      { value: '180', label: 'كل ثلاث ساعات' },
+      { value: '360', label: 'كل ست ساعات' }
+    ], String(s.salawat || 0));
     fillSelect($('settings-accent'),
       [{ value: 'auto', label: 'يتبع وقت الصلاة' }].concat(
         Object.keys(PALETTES).map(function (k) { return { value: k, label: PALETTES[k].name }; })),
@@ -2194,6 +2279,10 @@
       Store.set('notify', granted);
       setSwitch($('settings-notify'), granted);
       toast(granted ? 'ستصلك تنبيهات الصلاة' : 'لم يُسمح بالإشعارات');
+      if (granted) {
+        notify('سُنّتي', 'هكذا يصلك التنبيه عند دخول الوقت', 'welcome');
+        scheduleForWorker();
+      }
     });
   }
 
@@ -2547,6 +2636,17 @@
       applyTheme();
       applyAccent(currentWindowKey());
     });
+    bind('settings-salawat', 'change', function (e) {
+      Store.set('salawat', +e.target.value);
+      if (+e.target.value && window.Notification && window.Notification.permission !== 'granted') {
+        window.Notification.requestPermission().then(function (r) {
+          toast(r === 'granted' ? 'سيصلك تذكير بالصلاة على النبي ﷺ' : 'لم يُسمح بالإشعارات');
+        });
+      } else if (+e.target.value) {
+        toast('سيصلك تذكير بالصلاة على النبي ﷺ');
+      }
+      scheduleForWorker();
+    });
     bind('settings-accent', 'change', function (e) {
       Store.set('accent', e.target.value);
       applyAccent(currentWindowKey());
@@ -2794,7 +2894,8 @@
     helpers: {
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
-      applyAccent: applyAccent, palettes: PALETTES, windowSunnah: windowSunnah, withLam: withLam,
+      applyAccent: applyAccent, palettes: PALETTES,
+      notify: notify, maybeSalawat: maybeSalawat, scheduleForWorker: scheduleForWorker, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
