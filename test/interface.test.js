@@ -1317,3 +1317,75 @@ test('a place with no zone still works from its stored number', () => {
   assert.ok(!isNaN(t.dhuhr) && t.dhuhr > 0, 'the times must still come out');
   assert.match(win.PrayerEngine.format(t.dhuhr), /^\d{2}:\d{2}$/);
 });
+
+/* ---------------- reachable by a thumb, and arabic throughout ---------------- */
+
+test('the surah list shows no latin word yet still answers to one', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  const list = doc.getElementById('surah-list');
+  const latin = (list.textContent.match(/[A-Za-z]{2,}/g) || []);
+  assert.deepStrictEqual(latin, [], 'an arabic mushaf should hold no latin name');
+  assert.ok(list.textContent.indexOf('تبدأ صفحة') !== -1, 'the note names the page instead');
+
+  const field = doc.getElementById('surah-filter');
+  field.value = 'Kahf';
+  fire(win, field, 'input');
+  assert.strictEqual(doc.querySelectorAll('#surah-list [data-surah]').length, 1,
+    'typing the latin name must still find the surah');
+  assert.ok(doc.querySelector('#surah-list [data-surah]').textContent.indexOf('الكهف') !== -1);
+});
+
+test('no view puts a latin word in front of the reader', () => {
+  const { win, doc } = boot();
+  ['home', 'quran', 'azkar', 'tracker', 'khatma', 'tasbih', 'radio', 'calendar',
+   'hadith', 'dua', 'ruqyah', 'qibla', 'bookmarks'].forEach(function (name) {
+    win.App.go(name);
+    const view = doc.getElementById('v-' + name).cloneNode(true);
+    /* A web address is an address, not prose, so links are left out of this. */
+    view.querySelectorAll('a').forEach((a) => a.remove());
+    const latin = [...new Set(view.textContent.match(/[A-Za-z]{2,}/g) || [])];
+    assert.deepStrictEqual(latin, [], name + ' shows ' + latin.join(', '));
+  });
+});
+
+test('every small control reaches out a touch area', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  ['date-nudge', 'chip', 'switch', 'card-more'].forEach(function (name) {
+    assert.ok(new RegExp('\\.' + name + '::before').test(css) ||
+      new RegExp('\\.' + name + '[^{]*::before').test(css),
+      '.' + name + ' is drawn smaller than a thumb and needs a reach');
+  });
+  assert.match(css, /\.select\s*\{[^}]*min-height:\s*44px/, 'a select must be tall enough to hit');
+});
+
+test('every icon carries the square the sprite is drawn in', () => {
+  const { win, doc } = boot();
+  ['home', 'more', 'quran', 'tracker', 'khatma', 'settings', 'azkar'].forEach(function (v) {
+    win.App.go(v);
+    const bare = [...doc.querySelectorAll('svg.icon')].filter((s) => !s.getAttribute('viewBox'));
+    assert.strictEqual(bare.length, 0,
+      v + ' draws ' + bare.length + ' icons with no viewBox, so they render cropped');
+  });
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const written = (html.match(/<svg class="icon/g) || []).length;
+  const boxed = (html.match(/<svg class="icon[^"]*" viewBox="0 0 24 24"/g) || []).length;
+  assert.strictEqual(boxed, written, 'every icon in the markup needs the same square');
+});
+
+test('a title and its note never share a line', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  ['row-title', 'row-note', 'check-note'].forEach(function (name) {
+    assert.match(css, new RegExp('\\.' + name + '\\s*\\{[^}]*display:\\s*block'),
+      '.' + name + ' must be a block or it runs into what sits beside it');
+  });
+});
+
+test('the text size slider is drawn rather than left to the browser', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.slider::-webkit-slider-runnable-track/, 'the track needs a colour of its own');
+  assert.match(css, /\.slider::-webkit-slider-thumb/);
+  assert.match(css, /\.slider::-moz-range-track/);
+  assert.ok(!/\.slider\s*\{[^}]*accent-color/.test(css),
+    'accent-color alone leaves the track almost black in the light theme');
+});

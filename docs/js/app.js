@@ -80,7 +80,11 @@
   }
 
   function icon(name, cls) {
-    return '<svg class="icon' + (cls ? ' ' + cls : '') + '" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
+    /* The sprite is drawn in a twenty four unit square. Without saying so, the
+       browser shows only the top left corner of it at whatever size the icon
+       is given, which crops every glyph in the app. */
+    return '<svg class="icon' + (cls ? ' ' + cls : '') +
+      '" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
   }
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
@@ -632,11 +636,17 @@
 
   function surahRow(meta) {
     var done = Store.progress().completed.indexOf(meta.n) !== -1;
+    /* The transliterated name is kept for searching but never shown, because a
+       reader who opens an arabic mushaf should not meet a latin word in it.
+       The page it opens at is more use to them anyway. */
+    var note = Mushaf.ready()
+      ? 'تبدأ صفحة ' + ar(Mushaf.pageOf(meta.n, 1))
+      : ar(meta.ay) + ' آية';
     return '<button class="row" data-surah="' + meta.n + '">' +
       '<span class="row-mark">' + ar(meta.n) + '</span>' +
       '<span class="row-body"><span class="row-title">' + esc(meta.ar) +
       (done ? ' ' + icon('check') : '') + '</span>' +
-      '<span class="row-note">' + esc(meta.en) + '</span></span>' +
+      '<span class="row-note">' + esc(note) + '</span></span>' +
       '<span class="row-meta">' + esc(meta.tp) + '، ' + ar(meta.ay) + ' آية</span></button>';
   }
 

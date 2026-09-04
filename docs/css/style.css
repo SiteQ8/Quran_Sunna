@@ -232,6 +232,17 @@ button { background: none; border: none; cursor: pointer; }
 
 .section-title { font-size: var(--step--1); color: var(--ink-3); font-weight: 600; margin: var(--s5) 0 var(--s2); }
 
+/* A thumb is about eleven millimetres across, which is far wider than some of
+   these controls are drawn. Rather than fatten every chip and switch and spoil
+   the layout, each one reaches out an invisible touch area to meet the finger.
+   Nothing moves on screen and everything becomes reachable. */
+.date-nudge, .chip, .switch, .card-more, .search-hit, .tile { position: relative; }
+.date-nudge::before, .chip::before, .switch::before, .card-more::before {
+  content: ''; position: absolute; inset-block: -11px; inset-inline: -10px;
+}
+.date-nudge::before { inset: -11px; }
+.select { min-height: 44px; }
+
 /* ---------- buttons ---------- */
 
 .btn {
@@ -281,8 +292,10 @@ button { background: none; border: none; cursor: pointer; }
 }
 .row:active { transform: scale(.99); }
 .row-body { flex: 1; min-width: 0; }
-.row-title { font-size: var(--step-0); font-weight: 600; }
-.row-note { font-size: var(--step--1); color: var(--ink-3); margin-top: 1px; }
+/* Both are spans inside a plain block, so without this the title and its note
+   share a line and read as one word: القبلةاتجاه الكعبة من موقعك. */
+.row-title { display: block; font-size: var(--step-0); font-weight: 600; }
+.row-note { display: block; font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; line-height: 1.7; }
 .row-meta { font-size: var(--step--1); color: var(--ink-3); direction: ltr; font-variant-numeric: tabular-nums; }
 .row-mark {
   width: 34px; height: 34px; border-radius: var(--r-sm); background: var(--accent-wash);
@@ -305,7 +318,10 @@ button { background: none; border: none; cursor: pointer; }
 .check.is-done .check-box { background: var(--accent); border-color: var(--accent); color: #fff; }
 .check.is-done .check-label { color: var(--ink-3); text-decoration: line-through; }
 .check-label { flex: 1; font-size: var(--step-0); }
-.check-note { font-size: var(--step--1); color: var(--ink-3); }
+/* The note is a second line under the deed, not a continuation of it. Without
+   this it reads as صلاة الفجر في وقتهامن صلى الصبح, two sentences run together. */
+.check-note { display: block; margin-top: 3px; font-size: var(--step--1); color: var(--ink-3); line-height: 1.7; }
+.check.is-done .check-note { text-decoration: none; }
 
 /* ---------- progress ---------- */
 
@@ -525,7 +541,26 @@ button { background: none; border: none; cursor: pointer; }
 .switch[aria-checked='true'] { background: var(--accent); }
 .switch[aria-checked='true']::after { transform: translateX(-19px); }
 
-.slider { width: 100%; accent-color: var(--accent); }
+/* accent-color alone leaves the unfilled part of the track almost black in the
+   light theme, which reads as a fault rather than a control, so the track and
+   the thumb are drawn here instead. */
+.slider {
+  width: 100%; padding-block: 14px; background: none;
+  -webkit-appearance: none; appearance: none;
+}
+.slider::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--line); }
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none; margin-top: -9px;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--raised); box-shadow: var(--shadow);
+}
+.slider::-moz-range-track { height: 6px; border-radius: 999px; background: var(--line); }
+.slider::-moz-range-progress { height: 6px; border-radius: 999px; background: var(--accent); }
+.slider::-moz-range-thumb {
+  width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); border: 3px solid var(--raised);
+}
+.slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
 .empty { text-align: center; color: var(--ink-3); padding: var(--s6) var(--s4); font-size: var(--step-0); }
 .empty .icon { width: 34px; height: 34px; margin-bottom: var(--s3); color: var(--line); }
