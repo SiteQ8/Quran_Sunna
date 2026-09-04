@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '5.6.0';
+  var VERSION = '5.7.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -60,6 +60,7 @@
     repeat: null,
     wakeLock: null,
     installOffer: null,
+    updateOffered: false,
     qibla: null,
     dailyAyah: null
   };
@@ -1654,6 +1655,27 @@
     toast('حُذفت ' + ar(removed) + ' مدخلة');
   }
 
+  /* The last resort for a device holding an old copy: throw away every cache,
+     let go of the worker, and ask the network for the whole thing again. */
+  function refetchEverything() {
+    toast('جارٍ جلب النسخة الأحدث');
+    var jobs = [];
+    if (window.caches && window.caches.keys) {
+      jobs.push(window.caches.keys().then(function (names) {
+        return Promise.all(names.map(function (n) { return window.caches.delete(n); }));
+      }));
+    }
+    if (window.navigator && window.navigator.serviceWorker) {
+      jobs.push(window.navigator.serviceWorker.getRegistrations().then(function (list) {
+        return Promise.all(list.map(function (r) { return r.unregister(); }));
+      }));
+    }
+    Promise.all(jobs).catch(function () { return null; }).then(function () {
+      state.updateOffered = true;
+      window.location.reload();
+    });
+  }
+
   function cacheEverything() {
     if (!window.caches) { toast('المتصفح لا يتيح التخزين للعمل بلا إنترنت'); return; }
     toast('جارٍ التحميل');
@@ -1920,6 +1942,7 @@
     bind('data-file', 'change', function (e) { importBackup(e.target.files && e.target.files[0]); });
     bind('data-clear', 'click', clearEverything);
     bind('offline-cache', 'click', cacheEverything);
+    bind('offline-refresh', 'click', refetchEverything);
     bind('settings-install', 'click', install);
 
     bind('banner-close', 'click', hideBanner);
@@ -2076,21 +2099,30 @@
     registration.addEventListener('updatefound', function () { offer(registration.installing); });
     /* Ask the server whether anything newer exists, rather than waiting for the
        browser to get around to it. */
-    window.setInterval(function () { registration.update(); }, 60 * 60 * 1000);
+    window.setInterval(function () { registration.update(); }, 30 * 60 * 1000);
+    /* Coming back to the app is the moment a person is most willing to wait a
+       second for it to catch up. */
+    document.addEventListener('visibilitychange', function () {
+      if (!document.hidden) { try { registration.update(); } catch (e) { /* offline */ } }
+    });
   }
 
   function registerWorker() {
     if (!window.navigator || !window.navigator.serviceWorker) return;
     if (window.location.protocol === 'file:') return;
 
-    var reloading = false;
+    /* The new worker takes over on its own, so this fires while someone may be
+       mid ayah. They are offered the new version rather than dropped into a
+       reload they did not ask for. */
     window.navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (reloading) return;
-      reloading = true;
-      window.location.reload();
+      if (state.updateOffered) return;
+      state.updateOffered = true;
+      showBanner('وصلت نسخة جديدة من التطبيق', 'تحديث', function () { window.location.reload(); });
     });
 
-    window.navigator.serviceWorker.register('sw.js')
+    /* Without this the browser may keep serving sw.js from its own cache for a
+       day, and a fix waits a day before it is even noticed. */
+    window.navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
       .then(watchUpdate)
       .catch(function () { /* offline install is optional */ });
   }

@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v5.6.0';
+var VERSION = 'sunnati-v5.7.0';
 
 var SHELL = [
   './',
@@ -51,9 +51,13 @@ self.addEventListener('install', function (event) {
       }));
     })
   );
-  /* No skipWaiting here on purpose. Seizing control mid install would swap the
-     files under someone who is reading, so the page asks for the handover when
-     it is ready and the worker obliges through the message above. */
+  /* A new worker used to sit and wait for every tab of the site to close before
+     it took over. On a phone with dozens of tabs open that day never comes, so
+     a device that had visited once kept running months old code and no fix
+     reached it. The worker now steps forward as soon as it is ready. It does
+     not pull the page out from under a reader, because the page is already
+     loaded, and the reader is offered the new version rather than reloaded. */
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', function (event) {
