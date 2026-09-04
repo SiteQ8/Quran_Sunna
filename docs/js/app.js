@@ -641,8 +641,23 @@
 
   /* ---------------- the reader ---------------- */
 
+  function rememberPlace(s, a) {
+    state.surah = s;
+    state.ayah = a || 1;
+    Store.set('lastRead', { s: s, a: state.ayah });
+  }
+
+  /* Opens the mushaf at a page rather than a surah, which is how a khatma is
+     actually read and how the plan describes it. */
+  function openAtPage(page) {
+    if (!Mushaf.ready()) { toast('نص المصحف لم يكتمل تحميله بعد'); return; }
+    var start = Mushaf.pageStart(Math.max(1, Math.min(TOTAL_PAGES, page)));
+    if (!start) return;
+    openReader(start.s, start.a);
+  }
+
   function openReader(n, ayah) {
-    state.surah = Math.max(1, Math.min(114, n));
+    rememberPlace(Math.max(1, Math.min(114, n)), ayah);
     go('reader');
     if (ayah) scrollToAyah(ayah);
   }
@@ -663,8 +678,12 @@
     if ($('reader-title')) $('reader-title').textContent = meta ? 'سورة ' + meta.ar : '';
     if ($('reader-meta')) {
       var virtue = typeof SURAH_VIRTUES !== 'undefined' ? SURAH_VIRTUES[n] : null;
+      var where = Mushaf.ready()
+        ? '، الجزء ' + ar(Mushaf.juzOf(n, state.ayah || 1)) +
+          '، صفحة ' + ar(Mushaf.pageOf(n, state.ayah || 1))
+        : '';
       $('reader-meta').textContent = meta
-        ? meta.tp + '، ' + ar(meta.ay) + ' آية، الجزء ' + ar(Mushaf.ready() ? Mushaf.juzOf(n, 1) : 1) + (virtue ? '، ' + virtue : '')
+        ? meta.tp + '، ' + ar(meta.ay) + ' آية' + where + (virtue ? '، ' + virtue : '')
         : '';
     }
 
@@ -686,10 +705,12 @@
     }).join('');
 
     body.innerHTML = '<div class="ayah-block">' + html + '</div>';
-    Store.set('lastRead', { s: n, a: 1 });
+    var last = Store.get('lastRead');
+    rememberPlace(n, last && last.s === n ? last.a : 1);
   }
 
   function verseSheet(s, a) {
+    rememberPlace(s, a);
     var text = Mushaf.ayah(s, a);
     var meta = surahMeta(s);
     var saved = Store.isBookmarked(s, a);
@@ -700,6 +721,10 @@
       '<button class="btn ' + (saved ? 'btn-primary' : 'btn-ghost') + '" data-act="bookmark" data-ref="' + s + ':' + a + '">' +
       icon('bookmark') + (saved ? 'محفوظة' : 'احفظ') + '</button>' +
       '<button class="btn btn-ghost" data-act="share" data-ref="' + s + ':' + a + '">' + icon('share') + 'مشاركة</button>' +
+      '</div>' +
+      '<div class="btn-row" style="margin-top:8px">' +
+      '<button class="btn btn-ghost" data-act="copy" data-ref="' + s + ':' + a + '">' + icon('text') + 'نسخ</button>' +
+      '<button class="btn btn-ghost" data-page="' + Mushaf.pageOf(s, a) + '">' + icon('book') + 'أول الصفحة</button>' +
       '</div>' +
       '<div class="btn-row" style="margin-top:8px">' +
       '<button class="btn btn-ghost" data-act="listen" data-ref="' + s + ':' + a + '">' + icon('play') + 'استماع</button>' +
@@ -891,7 +916,9 @@
         ? '<p class="setting-note">ورد اليوم من صفحة ' + ar(today.from) + ' إلى ' + ar(today.to) + '</p>'
         : '') +
       (status.read < TOTAL_PAGES && Mushaf.ready()
-        ? '<p class="setting-note">الصفحة القادمة تبدأ عند ' + esc(pageLabel(status.read + 1)) + '</p>'
+        ? '<p class="setting-note">الصفحة القادمة تبدأ عند ' + esc(pageLabel(status.read + 1)) + '</p>' +
+          '<button class="btn btn-primary btn-block" style="margin-top:14px" data-page="' +
+          (status.read + 1) + '">' + icon('book') + 'تابع من صفحة ' + ar(status.read + 1) + '</button>'
         : '');
   }
 
@@ -1475,6 +1502,13 @@
       var parts = ref.split(':');
       loadTafsir(+parts[0], +parts[1]);
     },
+    copy: function (ref) {
+      var parts = ref.split(':');
+      var sNum = +parts[0], aNum = +parts[1];
+      var meta = surahMeta(sNum);
+      copyText(Mushaf.ayah(sNum, aNum) + '\n\nسورة ' + (meta ? meta.ar : '') + '، آية ' + ar(aNum))
+        .then(function () { toast('نُسخت الآية'); }, function () { toast('تعذّر النسخ'); });
+    },
     'clear-bookmarks': function () {
       Store.clearBookmarks();
       renderBookmarks();
@@ -1510,6 +1544,9 @@
       verseSheet(+parts[0], +parts[1]);
       return;
     }
+
+    var page = target.closest('[data-page]');
+    if (page) { openAtPage(+page.getAttribute('data-page')); return; }
 
     var act = target.closest('[data-act]');
     if (act) {
