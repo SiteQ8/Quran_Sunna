@@ -7,10 +7,12 @@
   var MONTHS = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
     'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
   var WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  var DIGITS = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  var DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
+  /* Kept under its old name so nothing that calls it breaks, but the app now
+     writes every number with the same figures rather than two sets at once. */
   function toArabicDigits(value) {
-    return String(value).replace(/[0-9]/g, function (d) { return DIGITS[+d]; });
+    return String(value === null || value === undefined ? '' : value);
   }
 
   var formatter = null;

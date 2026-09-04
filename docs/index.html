@@ -136,7 +136,7 @@
       <button class="card-more" data-go="tracker">كل السنن</button>
     </div>
     <p class="setting-note" style="margin-bottom:10px">ما تعلّمه من السنن اليوم يُحسب هنا، ويبدأ العدّ من جديد كل فجر.</p>
-    <div class="meter-head"><span>أدّيت <b id="today-done">٠</b> من <span id="today-total">٠</span> سُنّة</span> <span id="streak-line"></span></div>
+    <div class="meter-head"><span>أدّيت <b id="today-done">0</b> من <span id="today-total">0</span> سُنّة</span> <span id="streak-line"></span></div>
     <div class="meter"><span id="today-meter" style="width:0%"></span></div>
     <div class="heat" id="home-heat" style="margin-top:14px"></div>
   </div>
@@ -164,7 +164,7 @@
 <section class="view" id="v-quran" aria-labelledby="quran-title">
   <div class="view-head">
     <h1 id="quran-title">المصحف</h1>
-    <p>١١٤ سورة و٦٢٣٦ آية محفوظة في جهازك</p>
+    <p>114 سورة و6236 آية محفوظة في جهازك</p>
   </div>
 
   <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
@@ -268,7 +268,7 @@
     </div>
     <div class="meter"><span id="tracker-meter" style="width:0%"></span></div>
     <div class="heat" id="tracker-heat" style="margin-top:16px"></div>
-    <p class="setting-note" style="margin-top:8px">آخر ٣٠ يوماً</p>
+    <p class="setting-note" style="margin-top:8px">آخر 30 يوماً</p>
   </div>
 
   <div id="tracker-list"></div>
@@ -282,6 +282,22 @@
 </section>
 
 <!-- ══════════ القبلة ══════════ -->
+<section class="view" id="v-timetable" aria-labelledby="timetable-title">
+  <div class="view-head"><h1 id="timetable-title">جدول الشهر</h1><p>مواقيت كل يوم في شهر واحد أمامك</p></div>
+  <div class="card">
+    <div class="cal-head">
+      <button class="cal-step" id="tt-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+      <div class="cal-title"><div class="cal-month" id="tt-month">…</div><div class="cal-span" id="tt-place"></div></div>
+      <button class="cal-step" id="tt-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    </div>
+    <div class="tt-scroll"><table class="tt" id="tt-table"></table></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-ghost" id="tt-today">عد إلى هذا الشهر</button>
+      <button class="btn btn-ghost" id="tt-copy"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-text"/></svg>انسخ الجدول</button>
+    </div>
+  </div>
+</section>
+
 <section class="view" id="v-qibla" aria-labelledby="qibla-title">
   <div class="view-head"><h1 id="qibla-title">القبلة</h1><p>اتجاه الكعبة من موقعك بحساب دائرة عظمى</p></div>
   <div class="compass">
