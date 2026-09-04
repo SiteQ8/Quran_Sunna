@@ -1475,7 +1475,7 @@ test('the header and the prayer strip agree about the day', () => {
 test('the stylesheet asks for no colour it never defined', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const defined = new Set([...css.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gm)].map((m) => m[1]));
+  const defined = new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
   [...app.matchAll(/setProperty\('(--[a-z0-9-]+)'/g)].forEach((m) => defined.add(m[1]));
   const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]));
   const missing = [...used].filter((t) => !defined.has(t));
@@ -2042,4 +2042,97 @@ test('the azkar grid shows every section it holds', () => {
   assert.ok(doc.getElementById('azkar-list-title').textContent.indexOf('الاستغفار') !== -1);
   assert.strictEqual(doc.querySelectorAll('#azkar-items .dhikr').length,
     win.AZKAR_DB.istighfar.items.length);
+});
+
+/* ---------------- the month ---------------- */
+
+test('the calendar draws a real month, not a list', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const cells = doc.querySelectorAll('#cal-grid .cal-cell:not(.is-empty)');
+  assert.ok(cells.length === 29 || cells.length === 30,
+    'a hijri month is twenty nine or thirty days, got ' + cells.length);
+  assert.strictEqual(doc.querySelectorAll('#cal-week span').length, 7, 'seven weekday letters');
+  assert.strictEqual(doc.querySelectorAll('.cal-cell.is-today').length, 1, 'today is marked once');
+  assert.match(doc.getElementById('cal-month').textContent, /هـ$/);
+  assert.ok(doc.getElementById('cal-span').textContent.length > 8, 'and names the gregorian span');
+});
+
+test('each day carries both numbers and the first sits under its weekday', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const first = doc.querySelector('#cal-grid .cal-cell:not(.is-empty)');
+  assert.strictEqual(first.querySelector('.cal-num').textContent, '١');
+  assert.match(first.querySelector('.cal-greg').textContent, /^[٠-٩]+$/);
+
+  const month = win.Hijri.toHijri(new Date(), win.Store.get('hijriAdjust'));
+  const days = win.Hijri.monthDays(month.y, month.m, win.Store.get('hijriAdjust'));
+  const blanks = doc.querySelectorAll('#cal-grid .cal-cell.is-empty').length;
+  assert.strictEqual(blanks, days[0].weekday,
+    'the empty places before the first should match the weekday it falls on');
+});
+
+test('the seasons of worship are marked on the days they fall', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  /* walk to ramadan and every day of it should carry a mark */
+  const here = win.Hijri.toHijri(new Date(), 0);
+  const steps = ((9 - here.m) + 12) % 12;
+  for (let i = 0; i < steps; i++) click(win, doc.getElementById('cal-next'));
+  assert.ok(doc.getElementById('cal-month').textContent.indexOf('رمضان') !== -1,
+    'got ' + doc.getElementById('cal-month').textContent);
+  const cells = doc.querySelectorAll('#cal-grid .cal-cell:not(.is-empty)');
+  const marked = doc.querySelectorAll('#cal-grid .cal-cell.has-mark');
+  assert.strictEqual(marked.length, cells.length, 'every day of ramadan is a day of the season');
+});
+
+test('stepping to another month speaks about that month, not about today', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const todayLine = doc.getElementById('calendar-today').textContent;
+  click(win, doc.getElementById('cal-next'));
+  assert.notStrictEqual(doc.getElementById('calendar-today').textContent, todayLine,
+    'the card underneath should follow the grid above it');
+  assert.strictEqual(doc.querySelectorAll('.cal-cell.is-picked').length, 1);
+  assert.ok(!doc.getElementById('cal-today').hidden, 'a way back to today should appear');
+
+  click(win, doc.getElementById('cal-today'));
+  assert.strictEqual(doc.getElementById('calendar-today').textContent, todayLine);
+  assert.ok(doc.getElementById('cal-today').hidden);
+});
+
+test('tapping a day tells you what is in it', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const cells = [...doc.querySelectorAll('#cal-grid .cal-cell:not(.is-empty)')];
+  const marked = cells.filter((c) => c.classList.contains('has-mark'))[0];
+  assert.ok(marked, 'the month should hold at least one marked day');
+  click(win, marked);
+  assert.strictEqual(doc.querySelectorAll('.cal-cell.is-picked').length, 1);
+  assert.ok(doc.querySelectorAll('#calendar-occasions .occasion').length >= 1,
+    'a marked day should explain itself when tapped');
+});
+
+/* ---------------- counting in arabic ---------------- */
+
+test('a count of days is written the way arabic counts', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const text = doc.getElementById('calendar-upcoming').textContent;
+  assert.ok(!/(?:^|[^٠-٩])١ يوماً/.test(text), 'one day is يوم واحد');
+  assert.ok(!/(?:^|[^٠-٩])٢ يوماً/.test(text), 'two days is يومان');
+  assert.ok(!/(?:^|[^٠-٩])[٣-٩] يوماً/.test(text),
+    'three to ten take أيام, not يوماً, in: ' + text.replace(/\s+/g, ' ').slice(0, 90));
+});
+
+test('the daily card says plainly what it counts', () => {
+  const { doc } = boot();
+  const head = doc.querySelector('.meter-head').textContent;
+  assert.ok(head.indexOf('سُنّة') !== -1,
+    'سنة without its shadda reads as a year, got ' + head);
+  assert.ok(head.indexOf('أدّيت') === 0, 'it should say what the number is, got ' + head);
+  /* the two halves are separate words, so a screen reader and a copy do not
+     glue them into one */
+  assert.ok(/سُنّة\s/.test(head), 'the streak line must not run into the tally: ' + head);
+  assert.strictEqual(doc.getElementById('streak-line').textContent, 'لم تبدأ اليوم بعد');
 });

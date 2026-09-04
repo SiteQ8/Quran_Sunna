@@ -254,6 +254,61 @@ button { background: none; border: none; cursor: pointer; }
   background: var(--sunken); color: var(--ink-3);
 }
 
+/* ---------- the month ---------- */
+
+.cal-head { display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3); }
+.cal-title { flex: 1; text-align: center; }
+.cal-month { font-size: var(--step-1); font-weight: 700; }
+.cal-span { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
+.cal-step {
+  width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
+  color: var(--ink-2); background: var(--sunken); flex: none;
+}
+.cal-step:active { transform: scale(.94); }
+
+.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-week { margin-bottom: 4px; }
+.cal-week span {
+  text-align: center; font-size: .78rem; font-weight: 700; color: var(--ink-3);
+  padding-bottom: 4px;
+}
+/* Seven columns across a phone leave a cell of forty three pixels, a pixel
+   short of a thumb, so each reaches one pixel into the four pixel gap. Two
+   pixels of that gap stay free, so no cell can claim its neighbour's tap. */
+.cal-cell::before { content: ''; position: absolute; inset: -1px; }
+.cal-cell {
+  position: relative; aspect-ratio: 1; border-radius: var(--r-sm);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 1px; background: var(--sunken); font-variant-numeric: tabular-nums;
+}
+.cal-cell.is-empty { background: none; }
+.cal-num { font-size: var(--step-0); font-weight: 600; line-height: 1.1; }
+.cal-greg { font-size: .68rem; color: var(--ink-3); line-height: 1; }
+.cal-cell.is-today { background: var(--accent-solid); }
+.cal-cell.is-today .cal-num, .cal-cell.is-today .cal-greg { color: var(--on-accent); }
+.cal-cell.is-picked { box-shadow: inset 0 0 0 2px var(--accent-solid); }
+.cal-dot {
+  position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
+  background: var(--ink-3);
+}
+.cal-cell.is-today .cal-dot { background: var(--on-accent); }
+
+/* A season reads differently from a fast, so each carries its own colour. */
+.cal-cell.kind-eid .cal-dot, .occasion.kind-eid { --occ: #b8860b; }
+.cal-cell.kind-fast .cal-dot, .occasion.kind-fast { --occ: #2a72ad; }
+.cal-cell.kind-month .cal-dot, .occasion.kind-month { --occ: #1e6f47; }
+.cal-cell.kind-season .cal-dot, .occasion.kind-season { --occ: #1e6f47; }
+.cal-cell.kind-night .cal-dot, .occasion.kind-night { --occ: #5b4a99; }
+.cal-cell.kind-weekly .cal-dot, .occasion.kind-weekly { --occ: #8b5a3c; }
+.cal-cell.has-mark .cal-dot { background: var(--occ, var(--ink-3)); }
+.cal-cell.is-today.has-mark .cal-dot { background: var(--on-accent); }
+
+.occasion {
+  border-inline-start: 3px solid var(--occ, var(--line));
+  padding-inline-start: var(--s3); margin-bottom: var(--s3);
+}
+.occasion:last-child { margin-bottom: 0; }
+
 /* ---------- folding groups ---------- */
 
 .fold {

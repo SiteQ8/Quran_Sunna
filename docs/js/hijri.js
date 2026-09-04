@@ -91,6 +91,34 @@
     return null;
   }
 
+  /* Every day of a hijri month, with the gregorian date it falls on, so a month
+     can be laid out as a grid rather than described in a list. A hijri month is
+     twenty nine or thirty days and which one is only known by walking it. */
+  function monthDays(hy, hm, adjust) {
+    var first = toGregorian(hy, hm, 1, adjust);
+    if (!first) return [];
+    var out = [];
+    var walk = new Date(first.getFullYear(), first.getMonth(), first.getDate());
+    for (var i = 0; i < 31; i++) {
+      var h = toHijri(walk, adjust);
+      if (h.m !== hm || h.y !== hy) break;
+      out.push({
+        d: h.d,
+        weekday: walk.getDay(),
+        date: new Date(walk.getFullYear(), walk.getMonth(), walk.getDate())
+      });
+      walk.setDate(walk.getDate() + 1);
+    }
+    return out;
+  }
+
+  /* The month before or after a given one, since a hijri year is twelve months
+     and the year turns over between ذو الحجة and محرم. */
+  function stepMonth(hy, hm, by) {
+    var index = (hy * 12 + (hm - 1)) + by;
+    return { y: Math.floor(index / 12), m: (index % 12) + 1 };
+  }
+
   function daysBetween(from, to) {
     var a = new Date(from.getFullYear(), from.getMonth(), from.getDate());
     var b = new Date(to.getFullYear(), to.getMonth(), to.getDate());
@@ -157,6 +185,8 @@
     occasions: occasions,
     upcoming: upcoming,
     daysBetween: daysBetween,
+    monthDays: monthDays,
+    stepMonth: stepMonth,
     hasPlatformCalendar: function () { return !!getFormatter(); }
   };
 

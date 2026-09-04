@@ -189,10 +189,11 @@ const MIN_CONTRAST_LARGE = 3;
           if (y < 0 || y > window.innerHeight) return;
           /* A control may reach past what it draws, so the reach is measured by
              asking what is actually under the finger. */
-          /* Ten pixels clear of the drawn edge, which is inside the control own
-             reach and short of a neighbour that reaches back the other way. */
-          const up = document.elementFromPoint(x, Math.max(1, y - box.height / 2 - 8));
-          const side = document.elementFromPoint(Math.max(1, x - box.width / 2 - 8), y);
+          /* Probed at exactly twenty two pixels from the middle, which is half of
+             the forty four a thumb needs. If the control answers there then its
+             reach is wide enough, whatever it draws. */
+          const up = document.elementFromPoint(x, Math.max(1, y - 22));
+          const side = document.elementFromPoint(Math.max(1, x - 22), y);
           const reach = (up && up.closest('button, a, select, input, [role="switch"]') === el) ||
             (side && side.closest('button, a, select, input, [role="switch"]') === el);
           if (box.height < 44 && !reach)
