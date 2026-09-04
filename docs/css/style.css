@@ -198,7 +198,18 @@ button { background: none; border: none; cursor: pointer; }
 
 /* ---------- prayer arc ---------- */
 
-.clock { text-align: center; padding: var(--s2) 0 var(--s4); }
+/* The clock, the date and the day's times sat straight on the lattice, and a
+   number over a lattice is hard to read. They now stand on a soft panel that
+   lets the pattern show through faintly at its edges, so the ornament frames
+   the reading rather than running under it. */
+.clock {
+  text-align: center; padding: var(--s3) var(--s3) var(--s4);
+  margin: 0 calc(var(--s2) * -1) var(--s4);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--raised) 88%, transparent);
+  box-shadow: var(--shadow);
+  position: relative; z-index: 1;
+}
 
 .clock-date {
   font-size: var(--step--1); color: var(--ink-2); display: flex;
