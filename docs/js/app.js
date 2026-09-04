@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.10.0';
+  var VERSION = '7.0.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -37,7 +37,7 @@
   var TABS = ['home', 'quran', 'azkar', 'tracker', 'more'];
 
   var OWNED_BY = {
-    reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran',
+    reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran', page: 'quran',
     'azkar-list': 'azkar'
   };
 
@@ -64,6 +64,7 @@
     qibla: null,
     recite: null,
     scope: 'quran',
+    page: 1,
     dailyAyah: null
   };
 
@@ -783,6 +784,12 @@
       $('greg-date').textContent = h.weekday + '، ' +
         ar(now.getDate()) + '/' + ar(now.getMonth() + 1) + '/' + ar(now.getFullYear());
     }
+    if ($('hijri-reset')) {
+      var shift = +adjust || 0;
+      $('hijri-reset').hidden = shift === 0;
+      $('hijri-reset').textContent = shift === 0 ? '' :
+        'معدّل ' + (shift > 0 ? '+' : '−') + ar(Math.abs(shift));
+    }
   }
 
   function nudgeHijri(delta) {
@@ -1384,6 +1391,112 @@
 
   function playSurah(n) {
     reciteFrom(n, state.ayah || 1);
+  }
+
+  /* ---------------- reading by the page ---------------- */
+
+  /* The mushaf turned page by page, as a printed one is. A new surah on the
+     page opens with its name in a cartouche and its basmala, and every verse
+     answers to a tap as it does in the surah reader. */
+  var PAGES_IN_MUSHAF = 604;
+
+  function openPage(n) {
+    state.page = Math.max(1, Math.min(PAGES_IN_MUSHAF, n || 1));
+    Store.set('lastPage', state.page);
+    go('page');
+  }
+
+  function renderPage() {
+    var body = $('page-body');
+    if (!body) return;
+    if (!Mushaf.ready()) { body.innerHTML = empty('نص المصحف لم يكتمل تحميله بعد'); return; }
+    var n = state.page || +Store.get('lastPage') || 1;
+    state.page = n;
+    var verses = Mushaf.pageVerses(n);
+    if (!verses.length) { body.innerHTML = empty('تعذّر بناء هذه الصفحة'); return; }
+
+    var first = verses[0], last = verses[verses.length - 1];
+    var firstMeta = surahMeta(first.s), lastMeta = surahMeta(last.s);
+    if ($('page-title')) $('page-title').textContent = 'صفحة ' + ar(n);
+    if ($('page-meta')) {
+      $('page-meta').textContent = 'الجزء ' + ar(Mushaf.juzOf(first.s, first.a)) + '، ' +
+        (first.s === last.s ? 'سورة ' + firstMeta.ar : 'من ' + firstMeta.ar + ' إلى ' + lastMeta.ar);
+    }
+
+    var marked = {};
+    Store.bookmarks().forEach(function (b) { marked[b.s + ':' + b.a] = true; });
+
+    var html = '', current = 0;
+    verses.forEach(function (v) {
+      if (v.s !== current) {
+        current = v.s;
+        if (v.a === 1) {
+          var meta = surahMeta(v.s);
+          html += '<div class="surah-frame page-surah"><h2>سورة ' + esc(meta.ar) + '</h2></div>';
+          if (v.s !== 1 && v.s !== 9) html += '<p class="basmala">' + esc(Mushaf.basmala()) + '</p>';
+        }
+      }
+      var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
+      var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
+      html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
+        esc(v.text) + sajda + '\u2060<span class="ayah-num">' + ar(v.a) + '</span></span> ';
+    });
+    body.innerHTML = '<div class="ayah-block">' + html + '</div>' +
+      '<div class="page-foot"><span class="page-foot-num">' + ar(n) + '</span></div>';
+
+    if ($('page-prev')) $('page-prev').disabled = n <= 1;
+    if ($('page-next')) $('page-next').disabled = n >= PAGES_IN_MUSHAF;
+    /* the place is remembered as a verse too, so تابع القراءة finds it */
+    rememberPlace(first.s, first.a);
+    if (window.scrollTo) window.scrollTo(0, 0);
+  }
+
+  function turnPage(by) {
+    var n = (state.page || 1) + by;
+    if (n < 1 || n > PAGES_IN_MUSHAF) return;
+    openPage(n);
+  }
+
+  /* ---------------- going straight to a place ---------------- */
+
+  function openGoTo() {
+    var meta = surahMeta(state.surah || 1);
+    openSheet('اذهب إلى',
+      '<div class="goto-row"><label class="setting-label" for="goto-page">صفحة</label>' +
+      '<input class="field" id="goto-page" type="number" inputmode="numeric" min="1" max="604" placeholder="1 إلى 604">' +
+      '<button class="btn btn-primary" data-act="goto-page">افتح</button></div>' +
+      '<div class="goto-row"><label class="setting-label" for="goto-juz">جزء</label>' +
+      '<input class="field" id="goto-juz" type="number" inputmode="numeric" min="1" max="30" placeholder="1 إلى 30">' +
+      '<button class="btn btn-primary" data-act="goto-juz">افتح</button></div>' +
+      '<div class="goto-row"><label class="setting-label" for="goto-surah">سورة وآية</label>' +
+      '<select class="select" id="goto-surah">' +
+      SURAHS.map(function (m) { return '<option value="' + m.n + '"' + (m.n === (state.surah || 1) ? ' selected' : '') + '>' + ar(m.n) + '، ' + esc(m.ar) + '</option>'; }).join('') +
+      '</select>' +
+      '<input class="field" id="goto-ayah" type="number" inputmode="numeric" min="1" max="' + (meta ? meta.ay : 286) + '" placeholder="الآية">' +
+      '<button class="btn btn-primary" data-act="goto-ayah">افتح</button></div>'
+    );
+  }
+
+  function goToPage() {
+    var n = +($('goto-page') || {}).value;
+    if (!n || n < 1 || n > PAGES_IN_MUSHAF) { toast('اكتب رقم صفحة من 1 إلى 604'); return; }
+    closeSheet(); openPage(n);
+  }
+
+  function goToJuz() {
+    var n = +($('goto-juz') || {}).value;
+    if (!n || n < 1 || n > 30) { toast('اكتب رقم جزء من 1 إلى 30'); return; }
+    var start = Mushaf.juzStart(n);
+    closeSheet();
+    if (start) openPage(Mushaf.pageOf(start.s, start.a));
+  }
+
+  function goToAyah() {
+    var s = +($('goto-surah') || {}).value, a = +($('goto-ayah') || {}).value || 1;
+    var meta = surahMeta(s);
+    if (!meta) return;
+    if (a < 1 || a > meta.ay) { toast('سورة ' + meta.ar + ' فيها ' + ayat(meta.ay)); return; }
+    closeSheet(); openReader(s, a);
   }
 
   /* ---------------- a verse as a picture ---------------- */
@@ -2617,6 +2730,7 @@
     ruqyah: renderRuqyah,
     calendar: renderCalendar,
     timetable: renderTimetable,
+    page: renderPage,
     settings: renderSettings,
     about: renderSettings
   };
@@ -2637,6 +2751,9 @@
       var meta = surahMeta(s);
       shareText('سُنّتي', Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
     },
+    'goto-page': goToPage,
+    'goto-juz': goToJuz,
+    'goto-ayah': goToAyah,
     picture: function (ref) {
       var parts = ref.split(':');
       shareVerseCard(+parts[0], +parts[1]);
@@ -2831,6 +2948,30 @@
       toast('صُفّر العدّاد');
     });
 
+    bind('page-prev', 'click', function () { turnPage(1 * -1); });
+    bind('page-next', 'click', function () { turnPage(1); });
+    bind('page-random', 'click', function () { openPage(1 + Math.floor(Math.random() * PAGES_IN_MUSHAF)); });
+    bind('page-jump', 'click', openGoTo);
+    (function () {
+      var startX = null, startY = null;
+      var body = $('page-body');
+      if (!body) return;
+      body.addEventListener('touchstart', function (e) {
+        var t = e.touches && e.touches[0];
+        if (t) { startX = t.clientX; startY = t.clientY; }
+      }, { passive: true });
+      body.addEventListener('touchend', function (e) {
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t || startX === null) return;
+        var dx = t.clientX - startX, dy = t.clientY - startY;
+        startX = startY = null;
+        if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+        /* the page reads from the right, so a swipe to the right turns back */
+        turnPage(dx > 0 ? -1 : 1);
+      }, { passive: true });
+    })();
+    bind('quran-goto', 'click', openGoTo);
+
     bind('tt-prev', 'click', function () { stepTimetable(-1); });
     bind('tt-next', 'click', function () { stepTimetable(1); });
     bind('tt-today', 'click', function () { timetableMonth = null; renderTimetable(); });
@@ -2838,6 +2979,13 @@
       copyText(timetableText()).then(
         function () { toast('نُسخ جدول الشهر'); },
         function () { toast('تعذّر النسخ'); });
+    });
+
+    bind('hijri-reset', 'click', function () {
+      Store.set('hijriAdjust', 0);
+      renderDate(); renderHome();
+      if (state.view === 'calendar') renderCalendar();
+      toast('عاد التاريخ إلى حساب أم القرى');
     });
 
     bind('conv-greg', 'change', convertGregorian);
@@ -3150,7 +3298,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
-      verseCard: verseCard, windowSunnah: windowSunnah, withLam: withLam,
+      verseCard: verseCard, openPage: openPage, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

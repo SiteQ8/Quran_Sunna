@@ -3135,3 +3135,117 @@ test('the voice is offered in the settings', () => {
   assert.ok(sel);
   assert.deepStrictEqual([...sel.options].map((o) => o.value), ['none', 'tone', 'speech']);
 });
+
+/* ---------------- reading by the page ---------------- */
+
+test('the mushaf can be read page by page, as a printed one turns', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-go="page"]'));
+  assert.ok(doc.getElementById('v-page').classList.contains('is-open'));
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 1');
+  assert.strictEqual(doc.querySelectorAll('#page-body .ayah').length, 7, 'the first page is the fatiha');
+  assert.ok(doc.getElementById('page-prev').disabled, 'nothing before the first page');
+
+  click(win, doc.getElementById('page-next'));
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 2');
+  assert.ok(doc.querySelector('#page-body .surah-frame'), 'a surah that opens on the page is named in its cartouche');
+  assert.ok(doc.querySelector('#page-body .basmala'), 'with its basmala');
+  assert.strictEqual(doc.querySelector('#page-body .ayah').getAttribute('data-ayah'), '2:1');
+
+  win.App.helpers.openPage(604);
+  assert.strictEqual(doc.querySelectorAll('#page-body .surah-frame').length, 3, 'the last page holds three surahs');
+  assert.ok(doc.getElementById('page-next').disabled, 'nothing after the last page');
+  assert.ok(doc.getElementById('page-meta').textContent.indexOf('من الإخلاص إلى الناس') !== -1);
+});
+
+test('every verse of the mushaf appears on exactly one page', () => {
+  const { win } = boot();
+  let total = 0, misplaced = 0;
+  for (let n = 1; n <= 604; n++) {
+    const verses = win.Mushaf.pageVerses(n);
+    total += verses.length;
+    verses.forEach(function (v) { if (win.Mushaf.pageOf(v.s, v.a) !== n) misplaced++; });
+  }
+  assert.strictEqual(total, 6236, 'the pages together must hold the whole mushaf');
+  assert.strictEqual(misplaced, 0);
+});
+
+test('the page reader lights the mushaf tab and remembers the place', () => {
+  const { win, doc } = boot();
+  win.App.helpers.openPage(50);
+  assert.strictEqual(doc.querySelector('.tab[aria-current="page"]').getAttribute('data-go'), 'quran');
+  assert.strictEqual(win.Store.get('lastPage'), 50);
+  const place = win.Store.get('lastRead');
+  assert.strictEqual(win.Mushaf.pageOf(place.s, place.a), 50, 'تابع القراءة should find this page');
+});
+
+test('a verse on a page answers to a tap like any other', () => {
+  const { win, doc } = boot();
+  win.App.helpers.openPage(2);
+  click(win, doc.querySelector('#page-body [data-ayah="2:2"]'));
+  assert.ok(doc.getElementById('sheet').classList.contains('is-open'));
+  assert.ok(doc.querySelector('[data-act="recite"]'), 'the sheet offers to read on');
+});
+
+/* ---------------- going straight to a place ---------------- */
+
+test('اذهب إلى takes you to a page, a juz or a verse', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.getElementById('quran-goto'));
+  assert.ok(doc.getElementById('sheet').classList.contains('is-open'));
+
+  doc.getElementById('goto-page').value = '300';
+  click(win, doc.querySelector('[data-act="goto-page"]'));
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 300');
+
+  click(win, doc.getElementById('page-jump'));
+  doc.getElementById('goto-juz').value = '30';
+  click(win, doc.querySelector('[data-act="goto-juz"]'));
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 582');
+  assert.ok(doc.getElementById('page-meta').textContent.indexOf('النبأ') !== -1);
+
+  click(win, doc.getElementById('page-jump'));
+  doc.getElementById('goto-surah').value = '18';
+  doc.getElementById('goto-ayah').value = '10';
+  click(win, doc.querySelector('[data-act="goto-ayah"]'));
+  assert.ok(doc.getElementById('v-reader').classList.contains('is-open'));
+  assert.strictEqual(win.App.state.surah, 18);
+  assert.strictEqual(win.App.state.ayah, 10);
+});
+
+test('اذهب إلى refuses what the mushaf does not hold', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.getElementById('quran-goto'));
+  doc.getElementById('goto-page').value = '700';
+  click(win, doc.querySelector('[data-act="goto-page"]'));
+  assert.ok(doc.getElementById('sheet').classList.contains('is-open'), 'the sheet stays for a page that does not exist');
+  doc.getElementById('goto-surah').value = '112';
+  doc.getElementById('goto-ayah').value = '9';
+  click(win, doc.querySelector('[data-act="goto-ayah"]'));
+  assert.ok(doc.getElementById('toast').textContent.indexOf('4 آيات') !== -1, 'it says how many the surah has');
+});
+
+/* ---------------- the date says when it has been shifted ---------------- */
+
+test('a nudged hijri date is marked as such and one tap puts it back', () => {
+  const { win, doc } = boot();
+  assert.ok(doc.getElementById('hijri-reset').hidden, 'nothing to say when the date is as reckoned');
+  click(win, doc.getElementById('hijri-down'));
+  assert.ok(!doc.getElementById('hijri-reset').hidden, 'a shifted date must say so');
+  assert.strictEqual(doc.getElementById('hijri-reset').textContent, 'معدّل −1');
+  click(win, doc.getElementById('hijri-reset'));
+  assert.strictEqual(win.Store.get('hijriAdjust'), 0);
+  assert.ok(doc.getElementById('hijri-reset').hidden);
+});
+
+test('the converter gives the hijri month a line of its own', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(!/\.convert-hijri \{[^}]*grid-template-columns:\s*1fr 1\.6fr/.test(css),
+    'three columns cut ربيع الأول to ربيع الأو');
+  const { doc } = boot();
+  const row = doc.querySelector('.convert-hijri');
+  assert.strictEqual(row.firstElementChild.id, 'conv-hm', 'the month comes first, on its own');
+});
