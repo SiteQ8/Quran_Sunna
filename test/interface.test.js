@@ -2266,9 +2266,20 @@ test('the pattern under the app is actually visible', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   const rule = /body::before \{([^}]*)\}/.exec(css);
   assert.ok(rule, 'the pattern layer needs a rule');
-  const opacity = parseFloat(/opacity:\s*([\d.]+)/.exec(rule[1])[1]);
-  assert.ok(opacity >= 0.2, 'a pattern nobody can see is not a pattern, found ' + opacity);
-  assert.ok(rule[1].indexOf('svg') !== -1, 'and it should be a vector that tiles');
+  /* The weight belongs to the tile now, since a pattern of lines and one of
+     solid shapes cannot carry the same opacity. */
+  assert.match(rule[1], /opacity:\s*var\(--pattern-weight/);
+  const app0 = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const weights = [...app0.matchAll(/weight:\s*(\.?\d*\.?\d+)/g)].map((m) => parseFloat(m[1]));
+  assert.ok(weights.length >= 2, 'each tile should carry its own weight');
+  assert.ok(Math.max.apply(null, weights) >= 0.2,
+    'a pattern nobody can see is not a pattern, heaviest is ' + Math.max.apply(null, weights));
+  /* The tile itself is drawn by the controller now, so it can take the colour
+     the reader chose and can be turned off altogether. */
+  assert.match(rule[1], /background-image:\s*var\(--pattern\)/);
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("setProperty('--pattern'") !== -1, 'and the controller sets it');
+  assert.match(app, /var PATTERNS = \{/, 'from a set of tiles it holds');
 });
 
 /* ---------------- the android wrapper ---------------- */
@@ -2528,4 +2539,121 @@ test('the words of the clock sit in flow, so they cannot drift out of the arch',
   assert.match(rule[1], /padding-top/, 'and are pushed down under the apex by a padding');
   assert.ok(!/\.arc-center \{[^}]*inset:\s*\d+%/.test(css),
     'a percentage resolves against the wrap, which is not the arch');
+});
+
+/* ---------------- what the reader chooses ---------------- */
+
+test('a colour can be chosen, or left to follow the hour', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const picker = doc.getElementById('settings-accent');
+  assert.ok(picker, 'the settings should offer a colour');
+  assert.ok(picker.options.length >= 7, 'a few to choose from');
+  assert.strictEqual(picker.options[0].value, 'auto');
+  assert.ok(picker.options[0].text.indexOf('وقت الصلاة') !== -1,
+    'the first choice is the one that follows the hour');
+
+  const byHour = doc.documentElement.style.getPropertyValue('--accent');
+  picker.value = 'sadu';
+  fire(win, picker, 'change');
+  assert.strictEqual(win.Store.get('accent'), 'sadu');
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--accent'), '#9c2b2b');
+
+  /* a chosen colour holds through the day, so the window no longer moves it */
+  win.App.render.home();
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--accent'), '#9c2b2b');
+
+  picker.value = 'auto';
+  fire(win, picker, 'change');
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--accent'), byHour,
+    'letting go returns it to the hour');
+});
+
+test('every colour offered is readable on the page and on a card', () => {
+  const { win } = boot();
+  function channel(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function rgb(hex) { const m = /^#(..)(..)(..)$/.exec(hex); return [parseInt(m[1],16), parseInt(m[2],16), parseInt(m[3],16)]; }
+  function lum(c) { return 0.2126*channel(c[0]) + 0.7152*channel(c[1]) + 0.0722*channel(c[2]); }
+  function ratio(a, b) { const x = lum(a), y = lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+  const page = [246,244,238], card = [255,253,248];
+  const wash = (hex, base) => rgb(hex).map((v,i) => v*0.12 + base[i]*0.88);
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const block = /var PALETTES = \{[\s\S]*?\n  \};/.exec(app)[0];
+  const rows = [...block.matchAll(/light: '(#[0-9a-f]{6})', lightInk: '(#[0-9a-f]{6})'/g)];
+  assert.ok(rows.length >= 7, 'expected a palette per colour, found ' + rows.length);
+  rows.forEach(function (row) {
+    const fill = row[1], ink = row[2];
+    [page, card, wash(fill, page), wash(fill, card)].forEach(function (ground) {
+      const r = ratio(rgb(ink), ground);
+      assert.ok(r >= 4.5, ink + ' sits at ' + r.toFixed(2) + ':1, which cannot be read');
+    });
+    assert.ok(ratio(rgb('#fffdf8'), rgb(ink)) >= 4.5,
+      'white on ' + ink + ' must read, for a filled button');
+  });
+  assert.ok(win.App);
+});
+
+test('the pattern can be changed, and taken away', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const picker = doc.getElementById('settings-pattern');
+  assert.ok(picker);
+  const names = [...picker.options].map((o) => o.text);
+  assert.ok(names.some((n) => n.indexOf('السدو') !== -1), 'the sadu of kuwait should be offered');
+  assert.ok(names.some((n) => n.indexOf('بلا') !== -1), 'and the choice of none');
+
+  picker.value = 'sadu';
+  fire(win, picker, 'change');
+  const drawn = decodeURIComponent(doc.documentElement.style.getPropertyValue('--pattern'));
+  assert.ok(drawn.indexOf('svg') !== -1, 'it should be drawn as a vector');
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--pattern-size'), '60px 60px');
+
+  picker.value = 'none';
+  fire(win, picker, 'change');
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--pattern'), 'none');
+});
+
+test('the pattern takes the colour that was chosen', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const colour = doc.getElementById('settings-accent');
+  const shape = doc.getElementById('settings-pattern');
+  shape.value = 'sadu'; fire(win, shape, 'change');
+  colour.value = 'teal'; fire(win, colour, 'change');
+
+  const drawn = decodeURIComponent(doc.documentElement.style.getPropertyValue('--pattern'));
+  const ink = doc.documentElement.style.getPropertyValue('--accent-ink');
+  assert.ok(drawn.indexOf(ink) !== -1,
+    'the pattern should be drawn in ' + ink + ', not in a colour of its own');
+});
+
+/* ---------------- where you are ---------------- */
+
+test('the app names where you are instead of saying your current place', () => {
+  const { win } = boot();
+  const name = win.App.helpers.nameForPlace;
+  assert.strictEqual(name(29.3394, 48.0782).n, 'الكويت', 'inside a city it names the city');
+  assert.strictEqual(name(29.3375, 47.6581).n, 'قرب الكويت', 'a little out it says near it');
+  assert.strictEqual(name(-20, -140), null, 'far from everywhere it knows, it says nothing');
+});
+
+test('somewhere it cannot name is given as coordinates, not as nothing', () => {
+  const { win } = boot();
+  const label = win.App.helpers.coordsLabel(-20.5, -140.25);
+  assert.ok(label.indexOf('جنوباً') !== -1, 'south of the equator, got ' + label);
+  assert.ok(label.indexOf('غرباً') !== -1, 'west of greenwich, got ' + label);
+  assert.ok(/20\.50/.test(label) && /140\.25/.test(label));
+  const north = win.App.helpers.coordsLabel(29.37, 47.97);
+  assert.ok(north.indexOf('شمالاً') !== -1 && north.indexOf('شرقاً') !== -1);
+});
+
+test('the place and the method do not run into one word', () => {
+  const { doc } = boot();
+  const line = doc.getElementById('place-line');
+  const place = line.firstChild.textContent;
+  const how = line.querySelector('.place-how').textContent;
+  assert.ok(line.textContent.indexOf(place + ' ' + how) !== -1 || /\s/.test(line.textContent.replace(place, '').charAt(0)),
+    'they should be two words, got ' + line.textContent.replace(/\s+/g, ' '));
+  assert.ok(!/الكويتتقويم/.test(line.textContent), 'they ran together');
 });
