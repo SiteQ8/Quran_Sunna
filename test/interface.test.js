@@ -1807,3 +1807,59 @@ test('the heading does not promise forty when it holds twenty', () => {
   assert.ok(head[1].indexOf('من الأربعين') !== -1,
     'twenty hadiths under the title الأربعون would be a claim the app cannot keep, got ' + head[1]);
 });
+
+/* ---------------- the arabic ---------------- */
+
+test('the arabic holds to the rules of joining rather than cutting', () => {
+  const { execFileSync } = require('node:child_process');
+  let out = '';
+  try {
+    out = execFileSync(process.execPath, [path.join(__dirname, '..', 'tools', 'review-arabic.js')],
+      { encoding: 'utf8', cwd: path.join(__dirname, '..') });
+  } catch (err) {
+    assert.fail('the arabic review reported:\n' + (err.stdout || err.message));
+  }
+  assert.match(out, /لا ملحوظات/);
+});
+
+test('the review can actually fail, so a clean run means something', () => {
+  const os = require('node:os');
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arabic-'));
+  const root = path.join(__dirname, '..');
+  ['docs/js', 'docs/data', 'docs/css', 'tools', 'play'].forEach(function (d) {
+    fs.mkdirSync(path.join(dir, d), { recursive: true });
+  });
+  ['docs/index.html', 'docs/privacy.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
+   'docs/js/hijri.js', 'docs/js/store.js', 'docs/data/surahs.js', 'docs/data/azkar.js',
+   'docs/data/content.js', 'docs/data/extras.js', 'README.md', 'play/README.md',
+   'tools/review-arabic.js'].forEach(function (f) {
+    fs.copyFileSync(path.join(root, f), path.join(dir, f));
+  });
+  /* a sentence cut in two where a joiner belongs */
+  const spoiled = fs.readFileSync(path.join(dir, 'docs/index.html'), 'utf8')
+    .replace('<p>أدوات ومحتوى إضافي</p>',
+      '<p>أدوات ومحتوى إضافي وهي كثيرة ونافعة. القائمة تحتها مرتبة على حسب الحاجة إليها</p>');
+  fs.writeFileSync(path.join(dir, 'docs/index.html'), spoiled);
+
+  let failed = false;
+  try {
+    require('node:child_process').execFileSync(process.execPath,
+      [path.join(dir, 'tools', 'review-arabic.js')], { encoding: 'utf8', cwd: dir });
+  } catch (err) {
+    failed = true;
+    assert.match(String(err.stdout), /نقطة في وسط الكلام/);
+  }
+  fs.rmSync(dir, { recursive: true, force: true });
+  assert.ok(failed, 'a full stop standing between two clauses must be caught');
+});
+
+test('no interface label carries a stop it does not need', () => {
+  const { doc } = boot();
+  ['.row-title', '.tile-name', '.fold-title', '.chip', '.tab span', '.window-name'].forEach(function (sel) {
+    doc.querySelectorAll(sel).forEach(function (el) {
+      const t = el.textContent.trim();
+      if (!t || t.length > 34) return;
+      assert.ok(!/[\u0621-\u064A]\.$/.test(t), 'a label should not end with a stop: ' + t);
+    });
+  });
+});
