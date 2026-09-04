@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.6.0';
+  var VERSION = '6.7.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -63,6 +63,7 @@
     updateOffered: false,
     qibla: null,
     recite: null,
+    scope: 'quran',
     dailyAyah: null
   };
 
@@ -99,11 +100,14 @@
 
   /* Arabic counts one, two, a few and many differently, so 3 يوماً reads as a
      mistake where 3 أيام is right. */
-  function days(n) {
-    if (n === 1) return 'يوم واحد';
-    if (n === 2) return 'يومان';
-    if (n >= 3 && n <= 10) return ar(n) + ' أيام';
-    return ar(n) + ' يوماً';
+  function days(n) { return count(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً'); }
+
+  /* The four forms arabic counts by: one, two, three to ten, and above. */
+  function count(n, one, two, few, many) {
+    if (n === 1) return one;
+    if (n === 2) return two;
+    if (n >= 3 && n <= 10) return ar(n) + ' ' + few;
+    return ar(n) + ' ' + many;
   }
 
 
@@ -230,14 +234,14 @@
      a second, darker or lighter form for text, fitted so it clears four and a
      half to one against the page, the card and its own tinted panel. */
   var PALETTES = {
-    green:  { name: 'أخضر',    light: '#1e6f47', lightInk: '#1e6f47', dark: '#2da56a' },
+    green:  { name: 'أخضر',    light: '#1e6f47', lightInk: '#1e6f47', dark: '#30b171' },
     gold:   { name: 'ذهبي',    light: '#b08833', lightInk: '#7d6124', dark: '#bb9036' },
-    maroon: { name: 'عنّابي',  light: '#a84a6b', lightInk: '#9c4564', dark: '#e86694' },
+    maroon: { name: 'عنّابي',  light: '#a84a6b', lightInk: '#9c4564', dark: '#f66c9d' },
     blue:   { name: 'أزرق',    light: '#2f7fc0', lightInk: '#26689c', dark: '#399ae8' },
-    violet: { name: 'بنفسجي',  light: '#5b4a99', lightInk: '#5b4a99', dark: '#977bfe' },
+    violet: { name: 'بنفسجي',  light: '#5b4a99', lightInk: '#5b4a99', dark: '#a889ff' },
     teal:   { name: 'فيروزي',  light: '#1a8a8a', lightInk: '#156e6e', dark: '#1fa6a6' },
     copper: { name: 'نحاسي',   light: '#b5643a', lightInk: '#945230', dark: '#dd7a47' },
-    sadu:   { name: 'أحمر السدو', light: '#9c2b2b', lightInk: '#9c2b2b', dark: '#ff4c4c' }
+    sadu:   { name: 'أحمر السدو', light: '#9c2b2b', lightInk: '#9c2b2b', dark: '#ff6969' }
   };
 
   function darkTheme() {
@@ -601,8 +605,10 @@
       var cls = 'window';
       if (m.key === c.prev.key) cls += ' is-now';
       else if (m.at < c.now) cls += ' is-past';
-      return '<div class="' + cls + '"><div class="window-name">' + esc(m.ar) + '</div>' +
-        '<div class="window-time">' + esc(clockText(m.at)) + '</div></div>';
+      return '<div class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
+        (m.key === c.prev.key ? '، الوقت الحالي' : '') + '">' +
+        '<div class="window-name" aria-hidden="true">' + esc(m.ar) + '</div>' +
+        '<div class="window-time" aria-hidden="true">' + esc(clockText(m.at)) + '</div></div>';
     }).join('');
   }
 
@@ -1241,11 +1247,70 @@
       '</mark>' + esc(text.slice(span.end));
   }
 
+  /* The azkar, the hadiths and the supplications are searched by the same fold
+     the mushaf uses, so the diacritics in them do not get in the way. */
+  function searchTexts(scope, needle) {
+    var plain = Mushaf.normalize(needle);
+    var out = [];
+    function take(text, where, key) {
+      if (out.length >= 60) return;
+      if (Mushaf.normalize(text).indexOf(plain) !== -1 || Mushaf.expand(text).indexOf(plain) !== -1) {
+        out.push({ text: text, where: where, key: key });
+      }
+    }
+    if (scope === 'azkar' && typeof AZKAR_DB !== 'undefined') {
+      Object.keys(AZKAR_DB).forEach(function (k) {
+        AZKAR_DB[k].items.forEach(function (item, i) { take(item.t, AZKAR_DB[k].title, 'azkar:' + k); });
+      });
+    } else if (scope === 'hadith' && typeof HADITHS !== 'undefined') {
+      HADITHS.forEach(function (h) { take(h.t, 'الحديث ' + ar(h.n) + '، ' + h.r, 'hadith'); });
+    } else if (scope === 'dua' && typeof DUAS !== 'undefined') {
+      DUAS.forEach(function (group) {
+        group.items.forEach(function (d) { take(d.t, group.cat + '، ' + (d.r || ''), 'dua'); });
+      });
+    }
+    return out;
+  }
+
+  function renderTextHits(host, hits, needle) {
+    if (!hits.length) { host.innerHTML = empty('لا نتيجة في هذا المجال'); return; }
+    host.innerHTML = hits.map(function (hit) {
+      var go = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"' :
+        ' data-go="' + esc(hit.key) + '"';
+      return '<button class="search-hit"' + go + '>' +
+        '<span class="search-hit-ref">' + esc(hit.where) + '</span>' +
+        highlight(hit.text, needle) + '</button>';
+    }).join('');
+  }
+
   function renderSearch() {
     var host = $('search-results');
     if (!host) return;
     var field = $('quran-search');
     if (field && field.value !== state.query) field.value = state.query;
+
+    $$('#search-scope .chip').forEach(function (chip) {
+      var on = chip.getAttribute('data-scope') === (state.scope || 'quran');
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+
+    if ((state.scope || 'quran') !== 'quran') {
+      var needleText = state.query.trim();
+      if (needleText.length < 2) {
+        if ($('search-count')) $('search-count').textContent = 'اكتب حرفين على الأقل';
+        host.innerHTML = '';
+        return;
+      }
+      var found = searchTexts(state.scope, needleText);
+      if ($('search-count')) {
+        $('search-count').textContent = found.length
+          ? 'وجدنا ' + count(found.length, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة')
+          : 'لا نتيجة';
+      }
+      renderTextHits(host, found, needleText);
+      return;
+    }
 
     if (!Mushaf.ready()) { host.innerHTML = skeleton(3); return; }
     var needle = state.query.trim();
@@ -1774,6 +1839,9 @@
 
   /* ---------------- calendar ---------------- */
 
+  var GREG_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+
   /* Which month the grid is showing. Null means the one today falls in. */
   var calendarMonth = null;
 
@@ -1813,10 +1881,8 @@
     }
     if ($('cal-span') && days.length) {
       var from = days[0].date, to = days[days.length - 1].date;
-      var months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
-      $('cal-span').textContent = ar(from.getDate()) + ' ' + months[from.getMonth()] +
-        ' إلى ' + ar(to.getDate()) + ' ' + months[to.getMonth()] + ' ' + ar(to.getFullYear());
+      $('cal-span').textContent = ar(from.getDate()) + ' ' + GREG_MONTHS[from.getMonth()] +
+        ' إلى ' + ar(to.getDate()) + ' ' + GREG_MONTHS[to.getMonth()] + ' ' + ar(to.getFullYear());
     }
 
     var week = $('cal-week');
@@ -1843,8 +1909,12 @@
       var cls = 'cal-cell';
       if (isToday) cls += ' is-today';
       if (mark) cls += ' has-mark kind-' + mark.kind;
-      var label = mark ? ' title="' + esc(mark.name) + '"' : '';
-      cells += '<button class="' + cls + '" data-day="' + day.d + '"' + label +
+      /* A screen reader would otherwise read 22 4 and nothing more, so every
+         cell says the whole date and what falls on it. */
+      var spoken = ar(day.d) + ' ' + Hijri.MONTHS[month.m - 1] + '، ' + Hijri.WEEKDAYS[day.weekday] +
+        ' ' + ar(day.date.getDate()) + ' ' + GREG_MONTHS[day.date.getMonth()] +
+        (mark ? '، ' + mark.name : '') + (isToday ? '، اليوم' : '');
+      cells += '<button class="' + cls + '" data-day="' + day.d + '" aria-label="' + esc(spoken) + '"' +
         (isToday ? ' aria-current="date"' : '') + '>' +
         '<span class="cal-num">' + ar(day.d) + '</span>' +
         '<span class="cal-greg">' + ar(day.date.getDate()) + '</span>' +
@@ -1941,9 +2011,6 @@
     var now = new Date();
     return { y: now.getFullYear(), m: now.getMonth() };
   }
-
-  var GREG_MONTHS = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-    'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
 
   var TABLE_KEYS = ['fajr', 'sunrise', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
@@ -2336,6 +2403,9 @@
     var dhikr = target.closest('[data-dhikr]');
     if (dhikr) { countDhikr(+dhikr.getAttribute('data-dhikr')); return; }
 
+    var scope = target.closest('[data-scope]');
+    if (scope) { state.scope = scope.getAttribute('data-scope'); renderSearch(); return; }
+
     var browse = target.closest('[data-browse]');
     if (browse) { state.browse = browse.getAttribute('data-browse'); renderSurahList(); return; }
 
@@ -2715,7 +2785,8 @@
     actions: ACTIONS,
     helpers: {
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
-      tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, windowSunnah: windowSunnah, withLam: withLam,
+      tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
+      applyAccent: applyAccent, palettes: PALETTES, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

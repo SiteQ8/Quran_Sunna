@@ -39,6 +39,8 @@
   <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preload" href="fonts/plex-arabic-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/plex-arabic-700-arabic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fonts.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
@@ -128,7 +130,7 @@
       </div>
     </div>
 
-    <div class="windows" id="windows"></div>
+    <div class="windows" id="windows" role="list" aria-label="مواقيت اليوم"></div>
     <button class="place-line" id="place-line" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب"></button>
   </div>
 
@@ -223,10 +225,16 @@
 <!-- ══════════ البحث ══════════ -->
 <section class="view" id="v-search" aria-labelledby="search-title">
   <div class="view-head">
-    <h1 id="search-title">البحث في القرآن</h1>
-    <p>اكتب كلمة أو جزء آية، بالتشكيل أو بدونه</p>
+    <h1 id="search-title">البحث</h1>
+    <p>في القرآن أو الأذكار أو الأحاديث، بالتشكيل أو بدونه</p>
   </div>
-  <input class="field" id="quran-search" type="search" placeholder="مثال: الحمد لله" aria-label="ابحث في نص القرآن" style="margin-bottom:12px">
+  <div class="chip-row" id="search-scope" role="radiogroup" aria-label="مجال البحث" style="margin-bottom:12px">
+    <button class="chip is-on" data-scope="quran" role="radio" aria-checked="true">القرآن</button>
+    <button class="chip" data-scope="azkar" role="radio" aria-checked="false">الأذكار</button>
+    <button class="chip" data-scope="hadith" role="radio" aria-checked="false">الأحاديث</button>
+    <button class="chip" data-scope="dua" role="radio" aria-checked="false">الأدعية</button>
+  </div>
+  <input class="field" id="quran-search" type="search" placeholder="مثال: الحمد لله" aria-label="اكتب ما تبحث عنه" style="margin-bottom:12px">
   <p class="setting-note" id="search-count"></p>
   <div id="search-results"></div>
   <button class="btn btn-ghost btn-block" data-go="quran" style="margin-top:16px">رجوع إلى المصحف</button>

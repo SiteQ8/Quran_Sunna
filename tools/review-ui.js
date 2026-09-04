@@ -246,6 +246,48 @@ const MIN_CONTRAST_LARGE = 3;
       }
     }
 
+    /* The accent changes six times a day and a reader can pick eight more, and
+       every one of them writes text on its own tinted panel. Checking only the
+       colour of the hour the review happens to run in would miss the others,
+       so each is set in turn and the same panel is measured under it. */
+    const hours = await page.evaluate(([minBody]) => {
+      function channel(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+      function parse(rgb) {
+        const m = /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?/.exec(rgb || '') ||
+          /color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)/.exec(rgb || '');
+        if (!m) return null;
+        const scale = rgb.indexOf('color(') === 0 ? 255 : 1;
+        return { r: +m[1] * scale, g: +m[2] * scale, b: +m[3] * scale, a: m[4] === undefined ? 1 : +m[4] };
+      }
+      function over(t, b) { return { r: t.r*t.a + b.r*(1-t.a), g: t.g*t.a + b.g*(1-t.a), b: t.b*t.a + b.b*(1-t.a), a: 1 }; }
+      function lum(c) { return 0.2126*channel(c.r) + 0.7152*channel(c.g) + 0.0722*channel(c.b); }
+      function ratio(a, b) { const x = lum(a), y = lum(b); return (Math.max(x,y)+0.05)/(Math.min(x,y)+0.05); }
+      App.go('quran');
+      const mark = document.querySelector('#surah-list .row-mark');
+      const card = parse(getComputedStyle(mark.closest('.row')).backgroundColor);
+      const out = [];
+      const keys = ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'];
+      const chosen = Store.get('accent');
+      const tryOne = (label) => {
+        const ink = parse(getComputedStyle(mark).color);
+        const wash = over(parse(getComputedStyle(mark).backgroundColor), card);
+        const r = ratio(ink, wash);
+        if (r < minBody) out.push(label + ' writes text on its panel at ' + r.toFixed(2) + ':1');
+      };
+      Store.set('accent', 'auto');
+      keys.forEach((k) => { App.render.home; App.helpers.applyAccent(k); tryOne('the ' + k + ' colour'); });
+      Object.keys(App.helpers.palettes).forEach((k) => {
+        Store.set('accent', k); App.helpers.applyAccent('dhuhr'); tryOne('the ' + k + ' choice');
+      });
+      Store.set('accent', chosen); App.helpers.applyAccent('dhuhr');
+      return out;
+    }, [MIN_CONTRAST_BODY]);
+    if (hours.length) {
+      problems += hours.length;
+      console.log('  across every colour:');
+      hours.forEach((h) => console.log('      ' + h));
+    }
+
     if (noise.length) {
       problems += noise.length;
       console.log('  browser complained:');

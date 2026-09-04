@@ -2710,3 +2710,79 @@ test('a verse number stays on the line of the word it closes', () => {
   assert.strictEqual(html.charCodeAt(at - 1), 0x2060,
     'a word joiner binds the number to the last word, or it can fall onto a line of its own');
 });
+
+/* ---------------- searching beyond the mushaf ---------------- */
+
+test('the search reaches the azkar, the hadiths and the supplications', () => {
+  const { win, doc } = boot();
+  win.App.go('search');
+  const type = function (q) { const f = doc.getElementById('quran-search'); f.value = q; fire(win, f, 'input'); };
+  const pick = function (s) { click(win, doc.querySelector('[data-scope="' + s + '"]')); };
+
+  assert.strictEqual(doc.querySelectorAll('#search-scope [data-scope]').length, 4);
+  assert.strictEqual(doc.querySelector('[data-scope="quran"]').getAttribute('aria-checked'), 'true');
+
+  pick('azkar'); type('أصبحنا');
+  assert.ok(doc.querySelectorAll('#search-results .search-hit').length >= 1, 'the morning azkar hold this word');
+  assert.ok(doc.querySelector('#search-results .search-hit mark'), 'and the match is marked');
+  assert.strictEqual(doc.querySelector('[data-scope="azkar"]').getAttribute('aria-checked'), 'true');
+
+  pick('hadith'); type('النيات');
+  assert.ok(doc.querySelector('#search-results .search-hit-ref').textContent.indexOf('الحديث 1') !== -1);
+
+  pick('dua'); type('ربنا آتنا');
+  assert.ok(doc.querySelectorAll('#search-results .search-hit').length >= 1);
+
+  pick('quran'); type('الحمد لله');
+  assert.ok(doc.getElementById('search-count').textContent.indexOf('آية') !== -1, 'back to the mushaf');
+});
+
+test('a hit outside the mushaf leads to where it lives', () => {
+  const { win, doc } = boot();
+  win.App.go('search');
+  click(win, doc.querySelector('[data-scope="azkar"]'));
+  const f = doc.getElementById('quran-search'); f.value = 'أصبحنا'; fire(win, f, 'input');
+  const hit = doc.querySelector('#search-results .search-hit');
+  assert.ok(hit.hasAttribute('data-azkar'), 'a dhikr opens its own section');
+  click(win, hit);
+  assert.ok(doc.getElementById('v-azkar-list').classList.contains('is-open'));
+});
+
+test('results are counted the way arabic counts', () => {
+  const { win } = boot();
+  const c = win.App.helpers.count;
+  assert.strictEqual(c(1, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة'), 'نتيجة واحدة');
+  assert.strictEqual(c(2, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة'), 'نتيجتين');
+  assert.strictEqual(c(5, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة'), '5 نتائج');
+  assert.strictEqual(c(23, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة'), '23 نتيجة');
+});
+
+/* ---------------- spoken labels ---------------- */
+
+test('a day in the calendar tells a screen reader the whole date', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const today = doc.querySelector('.cal-cell.is-today');
+  const spoken = today.getAttribute('aria-label');
+  assert.ok(spoken, 'the cell needs a label');
+  assert.ok(spoken.indexOf('اليوم') !== -1, 'and says it is today: ' + spoken);
+  assert.ok(win.Hijri.MONTHS.some((m) => spoken.indexOf(m) !== -1), 'names the hijri month: ' + spoken);
+  assert.ok(win.Hijri.WEEKDAYS.some((w) => spoken.indexOf(w) !== -1), 'and the weekday: ' + spoken);
+});
+
+test('the strip of times reads as a list with the current one marked', () => {
+  const { doc } = boot();
+  const strip = doc.getElementById('windows');
+  assert.strictEqual(strip.getAttribute('role'), 'list');
+  const items = strip.querySelectorAll('[role="listitem"]');
+  assert.strictEqual(items.length, 6);
+  const current = [...items].filter((i) => i.getAttribute('aria-label').indexOf('الوقت الحالي') !== -1);
+  assert.strictEqual(current.length, 1, 'exactly one is the current window');
+});
+
+test('the first screen fonts are fetched before the stylesheet asks for them', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const preloads = [...html.matchAll(/rel="preload" href="(fonts\/[^"]+)" as="font"/g)].map((m) => m[1]);
+  assert.ok(preloads.length >= 2, 'the faces the first paint needs should be preloaded');
+  preloads.forEach(function (f) { assert.ok(fs.existsSync(path.join(DOCS, f)), 'missing ' + f); });
+});

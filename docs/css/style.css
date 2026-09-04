@@ -93,7 +93,7 @@
   --green-wash: rgba(69, 176, 122, .12);
   --gold: #d0a84f;
   --w-fajr: #7f8fd8;
-  --w-fajr-ink: #7f8fd8;
+  --w-fajr-ink: #8394e0;
   --w-duha: #e0a64a;
   --w-duha-ink: #e0a64a;
   --w-dhuhr: #5ba3dd;
@@ -101,9 +101,9 @@
   --w-asr: #d4855c;
   --w-asr-ink: #d4855c;
   --w-maghrib: #cd7093;
-  --w-maghrib-ink: #cd7093;
+  --w-maghrib-ink: #da779d;
   --w-isha: #8a79c9;
-  --w-isha-ink: #8a79c9;
+  --w-isha-ink: #9c89e3;
   --danger: #e07272;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .3);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, .35), 0 14px 32px rgba(0, 0, 0, .45);
