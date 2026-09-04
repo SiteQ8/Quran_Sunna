@@ -1163,8 +1163,44 @@ test('the worker hands over only when the page asks', () => {
   const code = sw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
   const install = /addEventListener\('install'[\s\S]*?addEventListener\('activate'/.exec(code);
   assert.ok(install, 'the worker should have an install step');
-  assert.ok(install[0].indexOf('skipWaiting') === -1,
-    'a worker that seizes control on install would reload the page under the reader');
+  assert.ok(install[0].indexOf('skipWaiting') !== -1,
+    'a worker that waits for every tab to close never takes over on a busy phone');
+  assert.match(code, /clients\.claim\(\)/, 'and it should take charge of the page already open');
+});
+
+test('a new version is offered rather than forced on the reader', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const handler = /controllerchange'[\s\S]{0,400}?\}\);/.exec(app);
+  assert.ok(handler, 'the page should notice when a new worker takes charge');
+  assert.match(handler[0], /showBanner/, 'it should offer the new version');
+  /* A reload may only sit inside what the offer runs when it is pressed, never
+     before it, or a reader is thrown out of the middle of an ayah unasked. */
+  const offerAt = handler[0].indexOf('showBanner');
+  const before = handler[0].slice(0, offerAt);
+  assert.ok(!/location\.reload/.test(before),
+    'the page reloaded before anyone was asked');
+});
+
+test('the browser is told never to serve the worker from its own cache', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.match(app, /register\('sw\.js',\s*\{\s*updateViaCache:\s*'none'/,
+    'otherwise a fix can sit unnoticed for a day');
+  assert.match(app, /visibilitychange[\s\S]{0,200}registration\.update/,
+    'coming back to the app is the moment to check for a newer copy');
+});
+
+test('a device holding an old copy can be told to fetch everything again', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const button = doc.getElementById('offline-refresh');
+  assert.ok(button, 'there must be a way out of a stale cache');
+  assert.ok(button.textContent.trim().length > 4);
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function refetchEverything\(\)[\s\S]*?\n  \}/.exec(app);
+  assert.ok(fn, 'the button needs something behind it');
+  assert.match(fn[0], /caches\.delete/, 'it should throw away the stored copy');
+  assert.match(fn[0], /unregister/, 'and let go of the worker holding it');
+  assert.match(fn[0], /location\.reload/, 'and then ask for the whole thing again');
 });
 
 /* ---------------- memorising ---------------- */
