@@ -928,13 +928,20 @@ test('a full day of ticks never reads more done than there is to do', () => {
   assert.ok(done.percent <= 100, 'the meter must not run past full, got ' + done.percent);
 });
 
-test('the compass turns its needle and leaves north alone', () => {
+test('the compass keeps north at north whichever way the phone is held', () => {
   const { win, doc } = boot();
   win.App.go('qibla');
   const needle = doc.getElementById('qibla-needle');
+  const rose = doc.getElementById('compass-rose');
   assert.match(needle.getAttribute('transform'), /^rotate\(-?\d+(\.\d+)? 100 100\)$/);
-  assert.ok(!doc.getElementById('compass-rose').style.transform,
-    'rotating the whole rose would swing north away from north');
+  /* الشمال is drawn on the face, so the face is what must turn against the
+     phone. Turning the needle alone would leave the letter stuck to the top of
+     the screen and pointing at nothing. */
+  win.App.state.heading = 137;
+  win.App.render.qibla();
+  assert.strictEqual(rose.style.transform, 'rotate(-137.00deg)');
+  assert.strictEqual(needle.getAttribute('transform'),
+    'rotate(' + win.App.state.qibla.toFixed(2) + ' 100 100)');
 });
 
 
@@ -1085,7 +1092,7 @@ test('an address opens the view it names', () => {
 test('the shortcuts in the manifest point at addresses that exist', () => {
   const { doc } = boot();
   const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
-  assert.ok(manifest.shortcuts.length >= 4, 'a phone should offer several ways in');
+  assert.ok(manifest.shortcuts.length >= 3, 'a phone should offer several ways in');
   manifest.shortcuts.forEach(function (item) {
     const hash = item.url.replace('./', '');
     assert.ok(hash.indexOf('#') === 0, item.url + ' should be an address');
@@ -1639,4 +1646,164 @@ test('the arc empties the way the page is read', () => {
   const cx = +doc.getElementById('arc-dot').getAttribute('cx');
   assert.ok(Math.abs(cx - (120 + 100 * Math.cos(Math.PI * p))) < 0.5,
     'the dot must sit on the edge of what is drawn');
+});
+
+/* ---------------- the folding tracker ---------------- */
+
+test('the sunnah groups fold, each with its own tally', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const groups = [...doc.querySelectorAll('.fold')];
+  assert.ok(groups.length >= 5, 'the deeds should be grouped, found ' + groups.length);
+  groups.forEach(function (g) {
+    const tally = g.querySelector('.fold-tally');
+    assert.ok(tally, 'every group names how many of it are done');
+    assert.match(tally.textContent, /^[٠-٩]+ من [٠-٩]+$/, 'got ' + tally.textContent);
+    assert.ok(g.querySelector('.fold-head'), 'and has a head to press');
+    assert.strictEqual(g.querySelector('.fold-head').getAttribute('aria-expanded'), 'true');
+  });
+});
+
+test('a group shuts when its head is pressed and stays shut', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const head = doc.querySelectorAll('.fold-head')[1];
+  click(win, head);
+  assert.strictEqual(doc.querySelectorAll('.fold:not(.is-open)').length, 1);
+  assert.strictEqual(head.getAttribute('aria-expanded'), 'false');
+
+  click(win, doc.querySelector('.fold.is-open .check'));
+  assert.strictEqual(doc.querySelectorAll('.fold:not(.is-open)').length, 1,
+    'ticking a deed must not fling every group back open');
+});
+
+test('the tally follows what has been ticked', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const before = doc.querySelector('.fold-tally').textContent;
+  click(win, doc.querySelector('.fold .check'));
+  assert.notStrictEqual(doc.querySelector('.fold-tally').textContent, before);
+  assert.ok(doc.querySelector('.fold-tally').textContent.indexOf('١') === 0);
+});
+
+/* ---------------- the qibla ---------------- */
+
+test('the face turns so north stays north, and the needle holds the qibla', () => {
+  const { win, doc } = boot();
+  win.App.go('qibla');
+  const rose = doc.getElementById('compass-rose');
+  const needle = doc.getElementById('qibla-needle');
+  const bearing = win.App.state.qibla;
+
+  win.App.state.heading = null;
+  win.App.render.qibla();
+  assert.strictEqual(rose.style.transform, 'rotate(0.00deg)', 'with no compass the face is north up');
+
+  win.App.state.heading = 90;
+  win.App.render.qibla();
+  assert.strictEqual(rose.style.transform, 'rotate(-90.00deg)', 'the face turns against the phone');
+  assert.strictEqual(needle.getAttribute('transform'), 'rotate(' + bearing.toFixed(2) + ' 100 100)',
+    'the needle holds the true bearing inside the face');
+});
+
+test('a reading that is not a compass is refused', () => {
+  const { win } = boot();
+  win.App.state.heading = null;
+
+  const relative = new win.Event('deviceorientation');
+  Object.defineProperty(relative, 'alpha', { value: 137 });
+  Object.defineProperty(relative, 'absolute', { value: false });
+  win.dispatchEvent(relative);
+  assert.strictEqual(win.App.state.heading, null,
+    'an angle measured from wherever the phone started is not north');
+
+  const absolute = new win.Event('deviceorientationabsolute');
+  Object.defineProperty(absolute, 'alpha', { value: 137 });
+  Object.defineProperty(absolute, 'absolute', { value: true });
+  win.dispatchEvent(absolute);
+  assert.strictEqual(typeof win.App.state.heading, 'number', 'a true compass reading is taken');
+  assert.ok(win.App.state.heading >= 0 && win.App.state.heading < 360);
+});
+
+test('the qibla tells you which way to turn', () => {
+  const { win, doc } = boot();
+  win.App.go('qibla');
+  const bearing = win.App.state.qibla;
+
+  win.App.state.heading = bearing;
+  win.App.render.qibla();
+  assert.ok(doc.getElementById('qibla-note').textContent.indexOf('مواجه القبلة') !== -1);
+  assert.ok(doc.getElementById('compass-face').classList.contains('is-aligned'));
+
+  win.App.state.heading = ((bearing + 90) % 360);
+  win.App.render.qibla();
+  const note = doc.getElementById('qibla-note').textContent;
+  assert.ok(note.indexOf('٩٠') !== -1, 'it should say ninety degrees, got ' + note);
+  assert.ok(!doc.getElementById('compass-face').classList.contains('is-aligned'));
+});
+
+/* ---------------- what ships to the store ---------------- */
+
+test('the manifest carries everything an install needs', () => {
+  const m = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  ['id', 'name', 'short_name', 'description', 'lang', 'dir', 'start_url', 'scope',
+   'display', 'orientation', 'background_color', 'theme_color', 'categories'].forEach(function (k) {
+    assert.ok(m[k], 'the manifest needs ' + k);
+  });
+  assert.strictEqual(m.lang, 'ar');
+  assert.strictEqual(m.dir, 'rtl');
+  assert.ok(m.icons.length >= 8);
+  assert.ok(m.icons.some((i) => i.purpose === 'maskable'), 'a launcher needs a maskable icon');
+  assert.ok(m.icons.some((i) => i.sizes === '512x512'));
+  assert.ok(m.screenshots.length >= 3, 'the install card shows screenshots');
+  assert.ok(m.shortcuts.length >= 3);
+});
+
+test('every icon, screenshot and splash the manifest names is on disk', () => {
+  const m = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  m.icons.concat(m.screenshots).forEach(function (entry) {
+    assert.ok(fs.existsSync(path.join(DOCS, entry.src)), 'missing ' + entry.src);
+  });
+  m.shortcuts.forEach(function (s) {
+    s.icons.forEach(function (i) { assert.ok(fs.existsSync(path.join(DOCS, i.src)), 'missing ' + i.src); });
+  });
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const splash = [...html.matchAll(/apple-touch-startup-image" href="([^"]+)"/g)].map((x) => x[1]);
+  assert.ok(splash.length >= 12, 'apple wants a startup image per screen size');
+  splash.forEach(function (rel) { assert.ok(fs.existsSync(path.join(DOCS, rel)), 'missing ' + rel); });
+});
+
+test('the privacy policy the store asks for is there and says nothing is collected', () => {
+  const file = path.join(DOCS, 'privacy.html');
+  assert.ok(fs.existsSync(file), 'google play will not accept a listing without one');
+  const html = fs.readFileSync(file, 'utf8');
+  assert.match(html, /lang="ar"/);
+  assert.match(html, /dir="rtl"/);
+  ['لا يجمع', 'الموقع الجغرافي', 'الأطفال', 'التواصل'].forEach(function (needle) {
+    assert.ok(html.indexOf(needle) !== -1, 'the policy should cover ' + needle);
+  });
+});
+
+/* ---------------- the forty ---------------- */
+
+test('the hadiths run in order and each names who narrated it and where it is', () => {
+  const { win } = boot();
+  const list = win.HADITHS;
+  assert.strictEqual(list.length, 20);
+  list.forEach(function (h, i) {
+    assert.strictEqual(h.n, i + 1, 'hadith ' + (i + 1) + ' carries the number ' + h.n);
+    assert.ok(h.t && h.t.length > 20, 'hadith ' + h.n + ' has no text');
+    assert.ok(h.s && h.s.indexOf('رضي الله') !== -1, 'hadith ' + h.n + ' should name its companion');
+    assert.ok(h.r && h.r.length > 3, 'hadith ' + h.n + ' should name where it is recorded');
+  });
+  const texts = new Set(list.map((h) => h.t));
+  assert.strictEqual(texts.size, list.length, 'no hadith should appear twice');
+});
+
+test('the heading does not promise forty when it holds twenty', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const head = /<h1 id="hadith-title">([^<]+)<\/h1>/.exec(html);
+  assert.ok(head);
+  assert.ok(head[1].indexOf('من الأربعين') !== -1,
+    'twenty hadiths under the title الأربعون would be a claim the app cannot keep, got ' + head[1]);
 });

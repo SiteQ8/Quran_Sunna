@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '5.7.0';
+  var VERSION = '5.8.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -64,6 +64,10 @@
     qibla: null,
     dailyAyah: null
   };
+
+  /* Which groups the reader has left open. Everything starts open, and a group
+     they shut stays shut while they work. */
+  var openGroups = {};
 
   /* ---------------- helpers ---------------- */
 
@@ -1245,10 +1249,27 @@
     }
     renderHeat($('tracker-heat'), 30);
 
+    /* Forty odd deeds in one column is a wall to scroll past. Each group folds
+       shut with its own tally on the head, so a person opens the one they are
+       working on and the rest stay out of the way. */
+    function fold(key, title, iconName, ids, rows) {
+      var done = ids.filter(function (id) { return !!record.sunnah[id]; }).length;
+      var open = openGroups[key] !== false;
+      return '<section class="fold' + (open ? ' is-open' : '') + '" data-fold="' + esc(key) + '">' +
+        '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        (iconName ? icon(iconName) : '') +
+        '<span class="fold-title">' + esc(title) + '</span>' +
+        '<span class="fold-tally' + (done === ids.length ? ' is-full' : '') + '">' +
+        ar(done) + ' من ' + ar(ids.length) + '</span>' +
+        icon('chevron', 'fold-arrow') + '</button>' +
+        '<div class="fold-body">' + rows + '</div></section>';
+    }
+
     var html = '';
 
     if (typeof WIRD_ITEMS !== 'undefined') {
-      html += '<div class="card"><div class="card-head"><h2>' + icon('fire') + 'الورد اليومي</h2></div>' +
+      var wirdIds = WIRD_ITEMS.map(function (item) { return 'wird:' + item.id; });
+      html += fold('wird', 'الورد اليومي', 'fire', wirdIds,
         WIRD_ITEMS.map(function (item) {
           var id = 'wird:' + item.id;
           var done = !!record.sunnah[id];
@@ -1256,19 +1277,20 @@
             '<span class="check-box">' + icon('check') + '</span>' +
             '<span class="check-label">' + esc(item.t) +
             '<span class="check-note">' + esc(item.n) + '</span></span></button>';
-        }).join('') + '</div>';
+        }).join(''));
     }
 
     if (typeof SUNNAH_TRACKER !== 'undefined') {
       html += SUNNAH_TRACKER.map(function (group, gi) {
-        return '<div class="card"><div class="card-head"><h2>' + esc(group.s) + '</h2></div>' +
+        var ids = group.i.map(function (_, ii) { return 'sunnah:' + gi + ':' + ii; });
+        return fold('sunnah:' + gi, group.s, null, ids,
           group.i.map(function (item, ii) {
             var id = 'sunnah:' + gi + ':' + ii;
             var done = !!record.sunnah[id];
             return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '">' +
               '<span class="check-box">' + icon('check') + '</span>' +
               '<span class="check-label">' + esc(item) + '</span></button>';
-          }).join('') + '</div>';
+          }).join(''));
       }).join('');
     }
 
@@ -1290,7 +1312,7 @@
     { nav: 'tasbih', icon: 'beads', name: 'المسبحة', note: 'عدّاد بأهداف محفوظة' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
-    { nav: 'hadith', icon: 'text', name: 'الأربعون النووية', note: 'عشرون حديثاً جامعاً' },
+    { nav: 'hadith', icon: 'text', name: 'من الأربعين النووية', note: 'عشرون حديثاً جامعاً' },
     { nav: 'dua', icon: 'hands', name: 'الأدعية', note: 'من الكتاب والسنة' },
     { nav: 'ruqyah', icon: 'shield', name: 'الرقية الشرعية', note: 'آيات وأدعية ثابتة' },
     { nav: 'calendar', icon: 'calendar', name: 'التقويم الهجري', note: 'المناسبات والمواسم' },
@@ -1319,25 +1341,54 @@
     return state.qibla;
   }
 
+  /* True north on the screen, once the phone tells us where it is pointing. */
+  function roseTurn() {
+    return state.heading === null ? 0 : -state.heading;
+  }
+
+  /* How far the top of the phone is from the qibla, as a number a person can
+     act on: zero means they are facing it. */
+  function offBy(bearing) {
+    if (state.heading === null) return null;
+    var d = Math.abs(((bearing - state.heading) % 360 + 540) % 360 - 180);
+    return d;
+  }
+
   function renderQibla() {
     if (!$('qibla-degrees')) return;
     var p = place();
     var bearing = state.qibla === null ? computeQibla() : state.qibla;
     var distance = PrayerEngine.distanceToKaaba(p.lat, p.lng);
+    var off = offBy(bearing);
 
     $('qibla-degrees').textContent = ar(Math.round(bearing)) + '°';
+
     if ($('qibla-note')) {
-      $('qibla-note').textContent = 'من ' + p.n + ' إلى الكعبة ' + ar(Math.round(distance)) +
-        ' كيلومتراً، والزاوية من الشمال الحقيقي' +
-        (state.heading === null ? '، فوجّه أعلى الجهاز نحو الشمال' : '');
+      var where = 'من ' + p.n + ' إلى الكعبة ' + ar(Math.round(distance)) + ' كيلومتراً';
+      if (state.heading === null) {
+        $('qibla-note').textContent = where +
+          '، والزاوية من الشمال الحقيقي، فوجّه أعلى الجهاز نحو الشمال ثم اتبع السهم';
+      } else if (off <= 5) {
+        $('qibla-note').textContent = where + '، وأنت الآن مواجه القبلة';
+      } else {
+        $('qibla-note').textContent = where + '، فأدر نفسك ' + ar(Math.round(off)) + ' درجة حتى يستقيم السهم لأعلى';
+      }
     }
 
-    /* Only the needle turns. The face carries the north mark, so rotating the
-       whole rose would swing north away from north. */
+    /* The whole face turns so that الشمال keeps pointing at true north, and the
+       needle sits inside it at the qibla angle. Turning the needle alone would
+       leave the letter glued to the top of the screen while the phone moves,
+       so the face and the needle would disagree about where north is. */
+    var rose = $('compass-rose');
+    if (rose) rose.style.transform = 'rotate(' + roseTurn().toFixed(2) + 'deg)';
+
     var needle = $('qibla-needle');
-    if (needle) {
-      var turn = state.heading === null ? bearing : bearing - state.heading;
-      needle.setAttribute('transform', 'rotate(' + turn.toFixed(2) + ' 100 100)');
+    if (needle) needle.setAttribute('transform', 'rotate(' + bearing.toFixed(2) + ' 100 100)');
+
+    var face = $('compass-face');
+    if (face) {
+      if (off !== null && off <= 5) face.classList.add('is-aligned');
+      else face.classList.remove('is-aligned');
     }
 
     var enable = $('qibla-enable');
@@ -1348,17 +1399,39 @@
     }
   }
 
+  var headingBound = false;
   function watchHeading() {
-    if (!window.addEventListener) return;
+    if (!window.addEventListener || headingBound) return;
+    headingBound = true;
+    /* Only the absolute event is a compass. The plain one reports an angle
+       measured from wherever the phone happened to be when the page opened,
+       which is not north and drifts, so it is taken only when the phone says
+       outright that it is absolute or hands over a compass heading. */
     window.addEventListener('deviceorientationabsolute', onHeading, true);
     window.addEventListener('deviceorientation', onHeading, true);
   }
 
+  /* A phone held in landscape reports its angles about a turned screen, so the
+     rotation of the screen itself is taken back out. */
+  function screenAngle() {
+    if (window.screen && window.screen.orientation && typeof window.screen.orientation.angle === 'number') {
+      return window.screen.orientation.angle;
+    }
+    return typeof window.orientation === 'number' ? window.orientation : 0;
+  }
+
   function onHeading(event) {
     var heading = null;
-    if (typeof event.webkitCompassHeading === 'number') heading = event.webkitCompassHeading;
-    else if (typeof event.alpha === 'number') heading = 360 - event.alpha;
+    if (typeof event.webkitCompassHeading === 'number' && !isNaN(event.webkitCompassHeading)) {
+      heading = event.webkitCompassHeading;
+    } else if (event.absolute === true && typeof event.alpha === 'number' && event.alpha !== null) {
+      heading = 360 - event.alpha;
+    }
     if (heading === null || isNaN(heading)) return;
+    heading = ((heading + screenAngle()) % 360 + 360) % 360;
+    /* A compass jitters, so a reading is only taken up when it has really
+       moved, or the needle shivers on the screen. */
+    if (state.heading !== null && Math.abs(state.heading - heading) < 1) return;
     state.heading = heading;
     if (state.view === 'qibla') renderQibla();
   }
@@ -1796,6 +1869,16 @@
     if (act) {
       var fn = ACTIONS[act.getAttribute('data-act')];
       if (fn) fn(act.getAttribute('data-ref') || '');
+      return;
+    }
+
+    var foldHead = target.closest('.fold-head');
+    if (foldHead) {
+      var section = foldHead.closest('[data-fold]');
+      var key = section.getAttribute('data-fold');
+      openGroups[key] = !section.classList.contains('is-open');
+      section.classList.toggle('is-open');
+      foldHead.setAttribute('aria-expanded', section.classList.contains('is-open') ? 'true' : 'false');
       return;
     }
 

@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.siteq8.sunnati",
+      "sha256_cert_fingerprints": [
+        "REPLACE_WITH_THE_SHA256_OF_YOUR_UPLOAD_KEY",
+        "REPLACE_WITH_THE_SHA256_PLAY_GIVES_YOU_AFTER_UPLOAD"
+      ]
+    }
+  }
+]

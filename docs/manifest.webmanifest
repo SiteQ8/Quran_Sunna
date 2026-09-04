@@ -1,114 +1,42 @@
 {
-  "name": "سُنّتي · القرآن والسنة",
+  "id": "/Quran_Sunna/",
+  "name": "سُنّتي، رفيقك اليومي في العبادة",
   "short_name": "سُنّتي",
-  "description": "المصحف كاملًا وأوقات الصلاة والأذكار وتتبع السنن، يعمل بلا إنترنت.",
+  "description": "المصحف كاملاً وأوقات الصلاة والأذكار والقبلة وتتبع السنن، يعمل في جهازك بلا إنترنت وبلا حساب وبلا إعلانات.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait",
-  "background_color": "#f6f4ee",
+  "background_color": "#f4f2ec",
   "theme_color": "#1e6f47",
-  "categories": [
-    "lifestyle",
-    "education",
-    "books"
-  ],
+  "categories": ["books", "education", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
-    {
-      "src": "icons/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/maskable-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    { "src": "icons/icon-72.png", "sizes": "72x72", "type": "image/png" },
+    { "src": "icons/icon-96.png", "sizes": "96x96", "type": "image/png" },
+    { "src": "icons/icon-128.png", "sizes": "128x128", "type": "image/png" },
+    { "src": "icons/icon-144.png", "sizes": "144x144", "type": "image/png" },
+    { "src": "icons/icon-152.png", "sizes": "152x152", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-256.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "icons/icon-384.png", "sizes": "384x384", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "screenshots": [
+    { "src": "screens/home.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "المواقيت وسنن الوقت" },
+    { "src": "screens/reader.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "المصحف بالرسم العثماني" },
+    { "src": "screens/azkar.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "الأذكار بعدّاد لكل ذكر" },
+    { "src": "screens/tracker.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "تتبع السنن اليومية" },
+    { "src": "screens/qibla.png", "sizes": "390x844", "type": "image/png", "form_factor": "narrow", "label": "القبلة ببوصلة الجهاز" }
   ],
   "shortcuts": [
-    {
-      "name": "أذكار الصباح",
-      "short_name": "الصباح",
-      "url": "./#azkar/morning",
-      "description": "افتح أذكار الصباح مباشرة",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "أذكار المساء",
-      "short_name": "المساء",
-      "url": "./#azkar/evening",
-      "description": "افتح أذكار المساء مباشرة",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "المصحف",
-      "short_name": "المصحف",
-      "url": "./#quran",
-      "description": "تصفح السور والأجزاء",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "القبلة",
-      "short_name": "القبلة",
-      "url": "./#qibla",
-      "description": "اتجاه الكعبة من موقعك",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    },
-    {
-      "name": "المسبحة",
-      "short_name": "المسبحة",
-      "url": "./#tasbih",
-      "description": "عدّاد التسبيح",
-      "icons": [
-        {
-          "src": "icons/icon-192.png",
-          "sizes": "192x192"
-        }
-      ]
-    }
-  ],
-  "id": "/Quran_Sunna/",
-  "display_override": [
-    "standalone",
-    "minimal-ui"
-  ],
-  "launch_handler": {
-    "client_mode": "navigate-existing"
-  },
-  "prefer_related_applications": false
+    { "name": "المصحف", "short_name": "المصحف", "url": "./#quran", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "أذكار الصباح", "short_name": "الأذكار", "url": "./#azkar", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] },
+    { "name": "القبلة", "short_name": "القبلة", "url": "./#qibla", "icons": [{ "src": "icons/icon-96.png", "sizes": "96x96" }] }
+  ]
 }
