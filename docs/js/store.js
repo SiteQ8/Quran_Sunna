@@ -26,6 +26,8 @@
     notify: false,
     salawat: 0,
     salawatAt: 0,
+    voice: 'none',
+    notified: {},
     reciter: 0,
     tafsir: 'ar.muyassar',
     khatmaDays: 30,
