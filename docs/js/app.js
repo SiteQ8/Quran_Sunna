@@ -94,6 +94,16 @@
 
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
+  /* Arabic counts one, two, a few and many differently, so ٣ يوماً reads as a
+     mistake where ٣ أيام is right. */
+  function days(n) {
+    if (n === 1) return 'يوم واحد';
+    if (n === 2) return 'يومان';
+    if (n >= 3 && n <= 10) return ar(n) + ' أيام';
+    return ar(n) + ' يوماً';
+  }
+
+
   /* The lam of ownership swallows the alef of the article, so الكويت becomes
      للكويت rather than لـالكويت. */
   function withLam(name) {
@@ -608,8 +618,8 @@
     if ($('streak-line')) {
       var s = Store.streak(new Date());
       $('streak-line').textContent = s.current > 0
-        ? 'متتابع ' + ar(s.current) + ' يوماً'
-        : 'ابدأ سلسلتك اليوم';
+        ? days(s.current) + ' متتابعة'
+        : 'لم تبدأ اليوم بعد';
     }
     renderHeat($('home-heat'), 30);
   }
@@ -655,7 +665,7 @@
     host.innerHTML = list.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + ar(o.days) + ' يوماً') + '</span></span></div>';
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + days(o.days)) + '</span></span></div>';
     }).join('');
   }
 
@@ -1266,7 +1276,9 @@
     if ($('tracker-meter')) $('tracker-meter').style.width = c.percent + '%';
     if ($('tracker-streak')) {
       var s = Store.streak(new Date());
-      $('tracker-streak').textContent = 'أطول سلسلة ' + ar(s.longest) + ' يوماً';
+      $('tracker-streak').textContent = s.longest > 0
+        ? 'أطول تتابع ' + days(s.longest)
+        : 'لا تتابع بعد';
     }
     renderHeat($('tracker-heat'), 30);
 
@@ -1587,34 +1599,160 @@
 
   /* ---------------- calendar ---------------- */
 
-  function renderCalendar() {
-    if (!$('calendar-today')) return;
-    var adjust = Store.get('hijriAdjust');
-    var now = new Date();
-    var h = Hijri.toHijri(now, adjust);
-    $('calendar-today').textContent = Hijri.format(h) + '، ' + h.weekday;
+  /* Which month the grid is showing. Null means the one today falls in. */
+  var calendarMonth = null;
 
-    var today = Hijri.occasions(now, adjust);
-    var host = $('calendar-occasions');
-    if (host) {
-      host.innerHTML = today.length
-        ? today.map(function (o) {
-          return '<div style="margin-bottom:12px"><div class="row-title">' + esc(o.name) + '</div>' +
-            '<div class="row-note">' + esc(o.note) + '</div></div>';
-        }).join('')
-        : '<p class="setting-note">لا مناسبة مخصوصة في هذا اليوم، والعمل الصالح فيه محبوب على كل حال.</p>';
+  function shownMonth() {
+    if (calendarMonth) return calendarMonth;
+    var h = Hijri.toHijri(new Date(), Store.get('hijriAdjust'));
+    return { y: h.y, m: h.m };
+  }
+
+  function sameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() &&
+      a.getDate() === b.getDate();
+  }
+
+  /* A short label for the marks under a day, so the grid says what kind of day
+     it is without needing to be read word by word. */
+  var OCCASION_RANK = { eid: 5, month: 4, season: 4, night: 3, fast: 2, weekly: 1 };
+
+  function strongest(list) {
+    var best = null;
+    list.forEach(function (o) {
+      if (!best || (OCCASION_RANK[o.kind] || 0) > (OCCASION_RANK[best.kind] || 0)) best = o;
+    });
+    return best;
+  }
+
+  function renderCalendarGrid() {
+    var grid = $('cal-grid');
+    if (!grid) return;
+    var adjust = Store.get('hijriAdjust');
+    var month = shownMonth();
+    var days = Hijri.monthDays(month.y, month.m, adjust);
+    var today = new Date();
+
+    if ($('cal-month')) {
+      $('cal-month').textContent = Hijri.MONTHS[month.m - 1] + ' ' + ar(month.y) + ' هـ';
+    }
+    if ($('cal-span') && days.length) {
+      var from = days[0].date, to = days[days.length - 1].date;
+      var months = ['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+        'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'];
+      $('cal-span').textContent = ar(from.getDate()) + ' ' + months[from.getMonth()] +
+        ' إلى ' + ar(to.getDate()) + ' ' + months[to.getMonth()] + ' ' + ar(to.getFullYear());
     }
 
-    var upcoming = Hijri.upcoming(now, adjust);
-    var list = $('calendar-upcoming');
-    if (list) {
-      list.innerHTML = upcoming.map(function (o) {
-        return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
-          '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-          '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + ar(o.days) + ' يوماً') +
-          '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
+    var week = $('cal-week');
+    if (week) {
+      /* One letter each, as an arabic wall calendar writes them, because a three
+         letter cut gives الأ for both الأحد and الأربعاء. */
+      var initials = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+      week.innerHTML = initials.map(function (letter, i) {
+        return '<span title="' + esc(Hijri.WEEKDAYS[i]) + '">' + letter + '</span>';
       }).join('');
     }
+
+    if (!days.length) { grid.innerHTML = empty('تعذّر بناء هذا الشهر'); return; }
+
+    var cells = '';
+    /* The week starts on Sunday, so a month opening on a Wednesday leaves three
+       empty places before it. */
+    for (var blank = 0; blank < days[0].weekday; blank++) cells += '<span class="cal-cell is-empty"></span>';
+
+    days.forEach(function (day) {
+      var list = Hijri.occasions(day.date, adjust);
+      var mark = strongest(list);
+      var isToday = sameDay(day.date, today);
+      var cls = 'cal-cell';
+      if (isToday) cls += ' is-today';
+      if (mark) cls += ' has-mark kind-' + mark.kind;
+      var label = mark ? ' title="' + esc(mark.name) + '"' : '';
+      cells += '<button class="' + cls + '" data-day="' + day.d + '"' + label +
+        (isToday ? ' aria-current="date"' : '') + '>' +
+        '<span class="cal-num">' + ar(day.d) + '</span>' +
+        '<span class="cal-greg">' + ar(day.date.getDate()) + '</span>' +
+        (mark ? '<span class="cal-dot"></span>' : '') + '</button>';
+    });
+
+    grid.innerHTML = cells;
+    if ($('cal-today')) {
+      var h = Hijri.toHijri(today, adjust);
+      $('cal-today').hidden = (month.y === h.y && month.m === h.m);
+    }
+  }
+
+  /* The day the reader has picked out of the grid, or today when none. */
+  var pickedDay = null;
+
+  function renderCalendarDay() {
+    var adjust = Store.get('hijriAdjust');
+    var date = pickedDay || new Date();
+    var h = Hijri.toHijri(date, adjust);
+
+    if ($('calendar-today')) {
+      $('calendar-today').textContent = Hijri.format(h) + '، ' + h.weekday;
+    }
+
+    var host = $('calendar-occasions');
+    if (!host) return;
+    var list = Hijri.occasions(date, adjust);
+    host.innerHTML = list.length
+      ? list.map(function (o) {
+        return '<div class="occasion kind-' + esc(o.kind) + '">' +
+          '<div class="row-title">' + esc(o.name) + '</div>' +
+          '<div class="row-note">' + esc(o.note) + '</div></div>';
+      }).join('')
+      : '<p class="setting-note">لا مناسبة مخصوصة في هذا اليوم، والعمل الصالح فيه محبوب على كل حال.</p>';
+  }
+
+  function renderCalendarUpcoming() {
+    var list = $('calendar-upcoming');
+    if (!list) return;
+    var upcoming = Hijri.upcoming(new Date(), Store.get('hijriAdjust'));
+    list.innerHTML = upcoming.map(function (o) {
+      return '<div class="row" style="cursor:default"><span class="row-mark">' + esc(o.icon) + '</span>' +
+        '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + days(o.days)) +
+        '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
+    }).join('');
+  }
+
+  function renderCalendar() {
+    if (!$('cal-grid')) return;
+    renderCalendarGrid();
+    renderCalendarDay();
+    renderCalendarUpcoming();
+  }
+
+  function stepCalendar(by) {
+    var month = shownMonth();
+    calendarMonth = Hijri.stepMonth(month.y, month.m, by);
+    /* The card underneath should speak about the month on the screen, so it
+       moves to the first of it rather than staying on today. */
+    var days = Hijri.monthDays(calendarMonth.y, calendarMonth.m, Store.get('hijriAdjust'));
+    pickedDay = days.length ? days[0].date : null;
+    renderCalendar();
+    if (days.length) markPicked(days[0].d);
+  }
+
+  function markPicked(hijriDay) {
+    $$('#cal-grid .cal-cell').forEach(function (cell) {
+      if (+cell.getAttribute('data-day') === hijriDay) cell.classList.add('is-picked');
+      else cell.classList.remove('is-picked');
+    });
+  }
+
+  function pickCalendarDay(hijriDay) {
+    var month = shownMonth();
+    var days = Hijri.monthDays(month.y, month.m, Store.get('hijriAdjust'));
+    for (var i = 0; i < days.length; i++) {
+      if (days[i].d === hijriDay) { pickedDay = days[i].date; break; }
+    }
+    renderCalendarGrid();
+    renderCalendarDay();
+    markPicked(hijriDay);
   }
 
   /* ---------------- settings ---------------- */
@@ -1938,6 +2076,9 @@
       return;
     }
 
+    var day = target.closest('[data-day]');
+    if (day) { pickCalendarDay(+day.getAttribute('data-day')); return; }
+
     var sleep = target.closest('[data-sleep]');
     if (sleep) { setSleep(+sleep.getAttribute('data-sleep')); return; }
   }
@@ -1999,6 +2140,10 @@
       renderTasbih();
       toast('صُفّر العدّاد');
     });
+
+    bind('cal-prev', 'click', function () { stepCalendar(-1); });
+    bind('cal-next', 'click', function () { stepCalendar(1); });
+    bind('cal-today', 'click', function () { calendarMonth = null; pickedDay = null; renderCalendar(); });
 
     bind('qibla-enable', 'click', askCompass);
     bind('qibla-locate', 'click', locate);

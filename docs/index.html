@@ -133,9 +133,10 @@
   <div class="card">
     <div class="card-head">
       <h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-fire"/></svg>وردك اليوم</h2>
-      <button class="card-more" data-go="tracker">تفصيل</button>
+      <button class="card-more" data-go="tracker">كل السنن</button>
     </div>
-    <div class="meter-head"><span><b id="today-done">0</b> من <span id="today-total">0</span> سنة</span><span id="streak-line"></span></div>
+    <p class="setting-note" style="margin-bottom:10px">ما تعلّمه من السنن اليوم يُحسب هنا، ويبدأ العدّ من جديد كل فجر.</p>
+    <div class="meter-head"><span>أدّيت <b id="today-done">٠</b> من <span id="today-total">٠</span> سُنّة</span> <span id="streak-line"></span></div>
     <div class="meter"><span id="today-meter" style="width:0%"></span></div>
     <div class="heat" id="home-heat" style="margin-top:14px"></div>
   </div>
@@ -347,7 +348,17 @@
 
 <!-- ══════════ التقويم ══════════ -->
 <section class="view" id="v-calendar" aria-labelledby="calendar-title">
-  <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>ما يميّز يومك، وما هو قادم</p></div>
+  <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>الشهر كاملاً ومواسم العبادة فيه</p></div>
+  <div class="card">
+    <div class="cal-head">
+      <button class="cal-step" id="cal-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+      <div class="cal-title"><div class="cal-month" id="cal-month">…</div><div class="cal-span" id="cal-span"></div></div>
+      <button class="cal-step" id="cal-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    </div>
+    <div class="cal-week" id="cal-week" aria-hidden="true"></div>
+    <div class="cal-grid" id="cal-grid" role="grid" aria-label="أيام الشهر"></div>
+    <button class="btn btn-ghost btn-block" id="cal-today" style="margin-top:14px" hidden>عد إلى اليوم</button>
+  </div>
   <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg><span id="calendar-today">…</span></h2></div>
     <div id="calendar-occasions"></div>

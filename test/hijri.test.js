@@ -128,3 +128,42 @@ test('the day of the week belongs to the date, not to the adjustment', () => {
   assert.strictEqual(days[1] - days[0], 1);
   assert.strictEqual(days[2] - days[1], 1);
 });
+
+test('a month can be laid out as a grid of real days', () => {
+  const days = H.monthDays(1448, 9, 0);
+  assert.ok(days.length === 29 || days.length === 30, 'got ' + days.length);
+  assert.strictEqual(days[0].d, 1);
+  assert.strictEqual(days[days.length - 1].d, days.length);
+  days.forEach(function (day, i) {
+    assert.strictEqual(day.d, i + 1, 'the days should run in order');
+    assert.ok(day.date instanceof Date);
+    assert.strictEqual(day.weekday, day.date.getDay());
+    const back = H.toHijri(day.date, 0);
+    assert.strictEqual(back.m, 9, 'every day must fall inside the month asked for');
+    assert.strictEqual(back.d, day.d);
+  });
+  /* the gregorian dates run one after another with no gap */
+  for (let i = 1; i < days.length; i++) {
+    assert.strictEqual(H.daysBetween(days[i - 1].date, days[i].date), 1);
+  }
+});
+
+test('every month of four years is twenty nine or thirty days', () => {
+  for (let y = 1447; y <= 1450; y++) {
+    for (let m = 1; m <= 12; m++) {
+      const n = H.monthDays(y, m, 0).length;
+      assert.ok(n === 29 || n === 30, y + '/' + m + ' came out ' + n + ' days');
+    }
+  }
+});
+
+test('stepping a month turns the year over at the right place', () => {
+  assert.deepStrictEqual(H.stepMonth(1448, 12, 1), { y: 1449, m: 1 });
+  assert.deepStrictEqual(H.stepMonth(1449, 1, -1), { y: 1448, m: 12 });
+  assert.deepStrictEqual(H.stepMonth(1448, 6, 1), { y: 1448, m: 7 });
+  assert.deepStrictEqual(H.stepMonth(1448, 1, -1), { y: 1447, m: 12 });
+  /* a year forward and a year back returns where it began */
+  let at = { y: 1448, m: 5 };
+  for (let i = 0; i < 12; i++) at = H.stepMonth(at.y, at.m, 1);
+  assert.deepStrictEqual(at, { y: 1449, m: 5 });
+});
