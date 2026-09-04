@@ -1863,3 +1863,72 @@ test('no interface label carries a stop it does not need', () => {
     });
   });
 });
+
+test('no hadith is left cut off in the middle', () => {
+  const { win } = boot();
+  win.HADITHS.forEach(function (h) {
+    assert.strictEqual(h.t.indexOf('...'), -1,
+      'hadith ' + h.n + ' trails off, so the reader never gets the answer');
+    assert.strictEqual(h.t.indexOf('…'), -1, 'hadith ' + h.n + ' trails off');
+  });
+});
+
+test('the hadiths carry the wording they are known by', () => {
+  const { win } = boot();
+  const openings = {
+    1: 'إنَّما الأعمالُ بالنِّيَّاتِ',
+    5: 'مَن أحدَثَ في أمرِنا',
+    9: 'ما نَهَيْتُكُم عنه فاجتَنِبوه',
+    13: 'لا يُؤمِنُ أحَدُكم حتَّى يُحِبَّ لأخيهِ',
+    16: 'لا تَغضَبْ',
+    20: 'إنَّ ممَّا أدرَكَ النَّاسُ'
+  };
+  Object.keys(openings).forEach(function (n) {
+    const h = win.HADITHS.filter(function (x) { return x.n === +n; })[0];
+    assert.ok(h, 'hadith ' + n + ' is missing');
+    assert.strictEqual(h.t.indexOf(openings[n]), 0,
+      'hadith ' + n + ' opens with ' + h.t.slice(0, 40));
+  });
+});
+
+test('the hadith of jibril gives all three answers', () => {
+  const { win } = boot();
+  const h = win.HADITHS.filter(function (x) { return x.n === 2; })[0];
+  ['الإسلام', 'الإيمان', 'الإحسان', 'كأنَّك تراه'].forEach(function (needle) {
+    assert.ok(h.t.indexOf(needle) !== -1, 'it should reach ' + needle);
+  });
+});
+
+/* ---------------- the typefaces ---------------- */
+
+test('the app carries its own typefaces rather than fetching them', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.strictEqual(html.indexOf('fonts.googleapis'), -1,
+    'a reader with no connection would see a different face from the one it was designed in');
+  assert.strictEqual(html.indexOf('fonts.gstatic'), -1);
+  assert.match(html, /href="css\/fonts\.css"/);
+
+  const faces = fs.readFileSync(path.join(DOCS, 'css', 'fonts.css'), 'utf8');
+  ['IBM Plex Sans Arabic', 'Amiri', 'Amiri Quran'].forEach(function (family) {
+    assert.ok(faces.indexOf("font-family: '" + family + "'") !== -1, family + ' is missing');
+  });
+  [...faces.matchAll(/url\('\.\.\/fonts\/([^']+)'\)/g)].forEach(function (m) {
+    assert.ok(fs.existsSync(path.join(DOCS, 'fonts', m[1])), 'missing font file ' + m[1]);
+  });
+});
+
+test('the worker keeps the typefaces so they survive going offline', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf('./css/fonts.css') !== -1, 'the face sheet must be kept');
+  const kept = (sw.match(/\.\/fonts\/[^']+\.woff2/g) || []).length;
+  const onDisk = fs.readdirSync(path.join(DOCS, 'fonts')).filter((f) => /\.woff2$/.test(f)).length;
+  assert.strictEqual(kept, onDisk, 'every face on disk should be kept for offline');
+});
+
+test('nothing in the page reaches out to another site for something it needs', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
+    .filter((u) => !/github\.com/.test(u));
+  assert.deepStrictEqual(outside, [],
+    'the shell should stand on its own, found: ' + outside.join(', '));
+});
