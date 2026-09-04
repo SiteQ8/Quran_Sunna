@@ -167,6 +167,7 @@
     <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
     <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
   </div>
+  <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
   <div class="surah-head">
     <h2 id="reader-title">…</h2>
     <p id="reader-meta"></p>
@@ -391,6 +392,7 @@
   <div class="card">
     <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-offline"/></svg>العمل بلا إنترنت</h2></div>
     <p class="setting-note" id="offline-state">…</p>
+    <button class="btn btn-primary btn-block" id="settings-install" style="margin-top:10px" hidden>ثبّت التطبيق على جهازك</button>
     <button class="btn btn-ghost btn-block" id="offline-cache" style="margin-top:10px">حمّل كل شيء للعمل بلا إنترنت</button>
   </div>
 </section>
@@ -435,6 +437,12 @@
   <button class="tab" data-go="tracker"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
   <button class="tab" data-go="more"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
 </nav>
+
+<div class="banner" id="banner" role="status" aria-live="polite" hidden>
+  <span class="banner-text" id="banner-text"></span>
+  <button class="banner-act" id="banner-act"></button>
+  <button class="banner-close" id="banner-close" aria-label="إخفاء"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
+</div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

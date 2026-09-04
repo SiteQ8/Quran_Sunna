@@ -1,7 +1,7 @@
 /* سُنّتي service worker
    يخزّن هيكل التطبيق ونص المصحف عند أول زيارة، فيعمل بعدها بلا إنترنت. */
 
-var VERSION = 'sunnati-v5.1.0';
+var VERSION = 'sunnati-v5.3.0';
 var SHELL = [
   './',
   './index.html',
@@ -19,8 +19,14 @@ var SHELL = [
   './manifest.webmanifest',
   './icons/icon.svg',
   './icons/icon-192.png',
-  './icons/icon-512.png'
+  './icons/icon-512.png',
+  './icons/maskable-512.png',
+  './icons/icon-180.png'
 ];
+
+self.addEventListener('message', function (event) {
+  if (event.data && event.data.type === 'take-over') self.skipWaiting();
+});
 
 self.addEventListener('install', function (event) {
   event.waitUntil(
@@ -28,7 +34,7 @@ self.addEventListener('install', function (event) {
       return Promise.all(SHELL.map(function (url) {
         return cache.add(url).catch(function () { return null; });
       }));
-    }).then(function () { return self.skipWaiting(); })
+    })
   );
 });
 

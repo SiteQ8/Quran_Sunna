@@ -330,7 +330,10 @@ button { background: none; border: none; cursor: pointer; }
   font-size: calc(1.32rem * var(--quran-scale));
   line-height: 2.35;
   text-align: justify;
-  text-align-last: center;
+  /* A centred last line stretches the closing word away from its verse number,
+     which reads as a broken word. Letting it sit where it falls keeps the
+     number beside the words it belongs to. */
+  text-align-last: start;
   color: var(--ink);
 }
 
@@ -339,6 +342,7 @@ button { background: none; border: none; cursor: pointer; }
 .ayah.is-marked { background: color-mix(in srgb, var(--gold) 16%, transparent); }
 
 .ayah-num {
+  white-space: nowrap;
   font-family: var(--ui); font-size: .58em; color: var(--accent);
   border: 1px solid var(--accent); border-radius: 50%; padding: 0 .42em; margin: 0 .3em;
   display: inline-block; vertical-align: middle; font-variant-numeric: tabular-nums;
@@ -386,6 +390,46 @@ button { background: none; border: none; cursor: pointer; }
 .search-hit mark { background: color-mix(in srgb, var(--gold) 30%, transparent); color: inherit; border-radius: 3px; }
 
 [hidden] { display: none !important; }
+
+/* ---------- reading progress ---------- */
+
+.read-progress {
+  position: sticky; top: 0; z-index: 20; height: 3px;
+  background: var(--line); border-radius: 999px; margin-bottom: var(--s3);
+}
+.read-progress span {
+  display: block; height: 100%; width: 0; border-radius: 999px;
+  background: var(--accent); transition: width .2s ease-out;
+}
+.ayah.is-reciting {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-radius: 4px; box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.repeat-row { display: flex; gap: var(--s2); align-items: center; margin-bottom: var(--s2); }
+.repeat-row label { flex: 1; font-size: var(--step--1); color: var(--ink-2); }
+.repeat-row select { flex: none; min-width: 96px; }
+.reader-body.is-hidden .ayah { color: transparent; text-shadow: 0 0 12px var(--ink-3); }
+.reader-body.is-hidden .ayah.is-reciting,
+.reader-body.is-hidden .ayah-num { color: var(--ink-1); text-shadow: none; }
+
+/* ---------- banner ---------- */
+
+.banner {
+  position: fixed; inset-inline: var(--s3); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s3));
+  z-index: 60; display: flex; align-items: center; gap: var(--s2);
+  padding: var(--s2) var(--s3); border-radius: var(--r-sm);
+  background: var(--ink-1); color: var(--bg); box-shadow: var(--shadow-lift);
+  animation: banner-rise .24s ease-out;
+}
+.banner-text { flex: 1; font-size: var(--step--1); line-height: 1.5; }
+.banner-act {
+  flex: none; padding: 6px 14px; border-radius: 999px;
+  background: var(--accent); color: #fff; font-weight: 600; font-size: var(--step--1);
+}
+.banner-close { flex: none; color: inherit; opacity: .6; display: grid; place-items: center; }
+.banner-close .icon { width: 18px; height: 18px; }
+@keyframes banner-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
+@media (prefers-reduced-motion: reduce) { .banner { animation: none } }
 
 /* ---------- counter ---------- */
 

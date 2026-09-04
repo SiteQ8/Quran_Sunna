@@ -29,9 +29,12 @@
     Kuwait: { id: 9, name: 'الكويت', fajr: 18, isha: 17.5 },
     Qatar: { id: 10, name: 'قطر', fajr: 18, ishaMin: 90 },
     Singapore: { id: 11, name: 'سنغافورة', fajr: 20, isha: 18 },
-    Turkey: { id: 13, name: 'ديانت تركيا', fajr: 18, isha: 17 },
-    Dubai: { id: 16, name: 'الإمارات', fajr: 18.2, isha: 18.2 },
-    Morocco: { id: 21, name: 'المغرب', fajr: 19, isha: 17 },
+    Turkey: { id: 13, name: 'ديانت تركيا', fajr: 18, isha: 17,
+      offsets: { sunrise: -7, dhuhr: 5, asr: 4, maghrib: 7 } },
+    Dubai: { id: 16, name: 'الإمارات', fajr: 18.2, isha: 18.2,
+      offsets: { dhuhr: 3, maghrib: 3 } },
+    Morocco: { id: 21, name: 'المغرب', fajr: 19, isha: 17,
+      offsets: { dhuhr: 5, maghrib: 5 } },
     France: { id: 12, name: 'الاتحاد الإسلامي الفرنسي', fajr: 12, isha: 12 },
     Russia: { id: 14, name: 'الإدارة الروحية لمسلمي روسيا', fajr: 16, isha: 15 }
   };
@@ -61,7 +64,13 @@
     this.method = METHODS[opts.method] ? opts.method : 'MWL';
     this.asrFactor = opts.asr === 'hanafi' ? 2 : 1;
     this.highLat = opts.highLat || 'angleBased';
-    this.offsets = opts.offsets || {};
+    /* A method may publish its own minute adjustments, and a caller may add
+       more on top, so the two are merged rather than one replacing the other. */
+    var base = (METHODS[this.method] && METHODS[this.method].offsets) || {};
+    this.offsets = {};
+    for (var b in base) this.offsets[b] = base[b];
+    var extra = opts.offsets || {};
+    for (var e in extra) this.offsets[e] = (this.offsets[e] || 0) + extra[e];
     this.elevation = opts.elevation || 0;
   }
 
@@ -189,9 +198,30 @@
     return Math.round(r * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)));
   }
 
+  /* The offset a zone is actually on for a given date. A stored number cannot
+     be right all year in any country that moves its clocks, so the zone name
+     is asked afresh every time the times are worked out. */
+  function zoneOffset(zone, date) {
+    if (!zone || typeof Intl === 'undefined' || !Intl.DateTimeFormat) return null;
+    try {
+      var parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone, timeZoneName: 'longOffset'
+      }).formatToParts(date || new Date());
+      var name = '';
+      for (var i = 0; i < parts.length; i++) if (parts[i].type === 'timeZoneName') name = parts[i].value;
+      if (name === 'GMT') return 0;
+      var m = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(name);
+      if (!m) return null;
+      return (m[1] === '-' ? -1 : 1) * (Number(m[2]) + Number(m[3] || 0) / 60);
+    } catch (e) {
+      return null;
+    }
+  }
+
   var api = {
     METHODS: METHODS,
     Calculator: Calculator,
+    zoneOffset: zoneOffset,
     format: format,
     qibla: qibla,
     distanceToKaaba: distanceToKaaba,
