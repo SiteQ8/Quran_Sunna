@@ -242,6 +242,18 @@ button { background: none; border: none; cursor: pointer; }
 .window.is-past .window-name, .window.is-past .window-time { color: var(--ink-3); }
 .window.is-past .window-time { font-weight: 500; }
 
+.place-line {
+  display: flex; align-items: center; justify-content: center; gap: var(--s2);
+  width: 100%; margin-top: var(--s2); min-height: 44px; flex-wrap: wrap;
+  font-size: var(--step--1); color: var(--ink-3);
+}
+.place-where { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--ink-2); }
+.place-where .icon { width: 15px; height: 15px; color: var(--accent-ink); }
+.place-how {
+  padding: 3px 10px; border-radius: 999px;
+  background: var(--sunken); color: var(--ink-3);
+}
+
 /* ---------- folding groups ---------- */
 
 .fold {

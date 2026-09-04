@@ -114,16 +114,21 @@
     </div>
 
     <div class="windows" id="windows"></div>
-    <p class="setting-note" style="margin-top:8px" id="place-line"></p>
+    <button class="place-line" id="place-line" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب"></button>
   </div>
 
-  <div class="card">
-    <div class="card-head">
-      <h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg><span id="now-title">سنن هذا الوقت</span></h2>
-      <button class="card-more" data-go="tracker">كل السنن</button>
+  <section class="fold is-open" id="now-fold" data-fold="now">
+    <button class="fold-head">
+      <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>
+      <span class="fold-title" id="now-title">سنن هذا الوقت</span>
+      <span class="fold-tally" id="now-tally"></span>
+      <svg class="icon fold-arrow" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"/></svg>
+    </button>
+    <div class="fold-body">
+      <div id="now-list"></div>
+      <button class="btn btn-ghost btn-block" data-go="tracker" style="margin-top:12px">كل السنن</button>
     </div>
-    <div id="now-list"></div>
-  </div>
+  </section>
 
   <div class="card">
     <div class="card-head">

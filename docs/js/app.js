@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.0.0';
+  var VERSION = '6.1.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -538,11 +538,28 @@
     var block = pick.block;
     if ($('now-title')) $('now-title').textContent = block.l;
     var record = Store.day();
+    var ids = block.items.map(function (_, i) { return 'now:' + key + ':' + i; });
+    var done = ids.filter(function (id) { return !!record.sunnah[id]; }).length;
+
+    if ($('now-tally')) {
+      $('now-tally').textContent = ar(done) + ' من ' + ar(ids.length);
+      if (done === ids.length) $('now-tally').classList.add('is-full');
+      else $('now-tally').classList.remove('is-full');
+    }
+
+    var fold = $('now-fold');
+    if (fold) {
+      var open = openGroups.now !== false;
+      fold.classList.toggle('is-open', open);
+      var head = fold.querySelector('.fold-head');
+      if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
     host.innerHTML = '<p class="setting-note" style="margin-bottom:12px">' + esc(block.sub) + '</p>' +
       block.items.map(function (item, i) {
-        var id = 'now:' + key + ':' + i;
-        var done = !!record.sunnah[id];
-        return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '">' +
+        var id = ids[i];
+        return '<button class="check' + (record.sunnah[id] ? ' is-done' : '') +
+          '" data-check="' + esc(id) + '">' +
           '<span class="check-box">' + icon('check') + '</span>' +
           '<span class="check-label">' + esc(item) + '</span></button>';
       }).join('');
@@ -654,8 +671,12 @@
     renderUpcoming();
     var p = place();
     if ($('place-line')) {
-      $('place-line').textContent = 'المواقيت محسوبة ' + withLam(p.n) +
-        ' بطريقة ' + methodName(Store.get('method'));
+      /* Two facts, the place and the reckoning, kept apart so neither leans on
+         the other. Saying محسوبة للكويت بطريقة الكويت reads as a stutter and
+         tells a person nothing about which body issues the times. */
+      $('place-line').innerHTML =
+        '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
+        '<span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>';
     }
   }
 
