@@ -496,6 +496,12 @@ button { background: none; border: none; cursor: pointer; }
 .tile .icon { width: 24px; height: 24px; color: var(--accent); }
 .tile-name { font-size: var(--step-0); font-weight: 600; }
 .tile-note { font-size: .6rem; color: var(--ink-3); }
+/* The glyph on a tile, drawn from the sprite in the colour of the section. */
+.tile-glyph {
+  display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
+  background: var(--accent-wash); color: var(--accent-ink); margin-bottom: 4px;
+}
+.tile-glyph .icon { width: 24px; height: 24px; stroke-width: 1.5; }
 
 /* ---------- list rows ---------- */
 
