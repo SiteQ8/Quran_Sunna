@@ -947,3 +947,102 @@ test('the dot riding the arc never sits on the words inside it', () => {
   assert.ok(doc.getElementById('arc-label'));
   assert.ok(win.App.clockState().progress >= 0);
 });
+
+/* ---------------- reading a plan ---------------- */
+
+test('the khatma plan opens the mushaf at the page it names', () => {
+  const { win, doc } = boot();
+  win.App.go('khatma');
+  const button = doc.querySelector('#khatma-state [data-page]');
+  assert.ok(button, 'the plan should offer to open where you stopped');
+  assert.ok(button.textContent.indexOf('صفحة') !== -1, 'the button names the page it opens');
+  assert.strictEqual(button.getAttribute('data-page'), '1', 'a fresh plan starts at page one');
+  click(win, button);
+  assert.ok(doc.getElementById('v-reader').classList.contains('is-open'));
+  assert.strictEqual(win.App.state.surah, 1);
+
+  win.Store.setReadPages(50);
+  win.App.go('khatma');
+  const next = doc.querySelector('#khatma-state [data-page]');
+  assert.strictEqual(next.getAttribute('data-page'), '51');
+  assert.ok(next.textContent.indexOf('٥١') !== -1,
+    'the label must agree with the page it opens, got ' + next.textContent);
+  click(win, next);
+  const start = win.Mushaf.pageStart(51);
+  assert.strictEqual(win.App.state.surah, start.s);
+  assert.strictEqual(win.App.state.ayah, start.a);
+});
+
+test('a finished khatma stops offering the next page', () => {
+  const { win, doc } = boot();
+  win.Store.setReadPages(604);
+  win.App.go('khatma');
+  assert.strictEqual(doc.querySelector('#khatma-state [data-page]'), null);
+  assert.ok(doc.getElementById('khatma-state').textContent.indexOf('أتممت') !== -1);
+});
+
+test('the reader remembers the verse, not just the surah', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="2"]'));
+  assert.strictEqual(win.Store.get('lastRead').a, 1, 'a first visit starts at the top');
+
+  click(win, doc.querySelector('[data-ayah="2:255"]'));
+  const place = win.Store.get('lastRead');
+  assert.strictEqual(place.s, 2);
+  assert.strictEqual(place.a, 255);
+
+  win.App.go('quran');
+  assert.ok(doc.getElementById('resume-note').textContent.indexOf('٢٥٥') !== -1,
+    'the card should name the verse, got ' + doc.getElementById('resume-note').textContent);
+  click(win, doc.getElementById('resume-btn'));
+  assert.strictEqual(win.App.state.ayah, 255, 'resuming returns to the verse');
+});
+
+test('drawing the reader again does not throw the place away', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="18"]'));
+  click(win, doc.querySelector('[data-ayah="18:60"]'));
+  win.App.render.reader();
+  assert.strictEqual(win.Store.get('lastRead').a, 60, 'a redraw must not reset to the first verse');
+});
+
+test('the reader says which part and page it is showing', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="36"]'));
+  const meta = doc.getElementById('reader-meta').textContent;
+  assert.ok(meta.indexOf('الجزء') !== -1, 'got ' + meta);
+  assert.ok(meta.indexOf('صفحة') !== -1, 'got ' + meta);
+  assert.ok(!/[0-9]/.test(meta), 'the numbers should be arabic, got ' + meta);
+});
+
+test('a verse can be copied and its page opened from the sheet', () => {
+  const { win, doc } = boot();
+  let copied = null;
+  win.navigator.clipboard = { writeText: (t) => { copied = t; return Promise.resolve(); } };
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="112"]'));
+  click(win, doc.querySelector('[data-ayah="112:1"]'));
+  assert.ok(doc.querySelector('[data-act="copy"]'));
+  click(win, doc.querySelector('[data-act="copy"]'));
+  assert.ok(copied && copied.indexOf('أَحَدٌ') !== -1, 'the verse text should be on the clipboard');
+  assert.ok(copied.indexOf('الإخلاص') !== -1, 'and its reference with it');
+
+  const jump = doc.querySelector('#sheet-body [data-page]');
+  assert.ok(jump, 'the sheet should offer the head of the page');
+  assert.strictEqual(jump.getAttribute('data-page'), String(win.Mushaf.pageOf(112, 1)));
+});
+
+test('opening a page before the text arrives says so rather than failing', () => {
+  const { win, doc } = boot({ withMushaf: false });
+  win.App.go('khatma');
+  const button = doc.querySelector('#khatma-state [data-page]');
+  if (button) {
+    click(win, button);
+    assert.ok(!doc.getElementById('v-reader').classList.contains('is-open'));
+    assert.ok(doc.getElementById('toast').textContent.length > 0);
+  }
+  assert.ok(doc.getElementById('v-khatma').classList.contains('is-open'));
+});
