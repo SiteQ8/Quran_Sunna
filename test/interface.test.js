@@ -144,7 +144,7 @@ test('all six daily marks render with times', () => {
   const windows = doc.querySelectorAll('#windows .window');
   assert.strictEqual(windows.length, 6);
   windows.forEach(function (w) {
-    assert.match(w.querySelector('.window-time').textContent, /^\d{1,2}:\d{2} [صم]$/);
+    assert.match(w.querySelector('.window-time').textContent, /^\d{1,2}:\d{2}[ \u2060][صم]$/);
   });
   assert.strictEqual(doc.querySelectorAll('#windows .is-now').length, 1, 'exactly one window is current');
 });
@@ -2225,7 +2225,8 @@ test('the table can be copied as plain text to send on', () => {
 
 test('the day the table shows agrees with the clock on the home screen', () => {
   const { win, doc } = boot();
-  const home = [...doc.querySelectorAll('.window-time')].map((e) => e.textContent);
+  /* the strip binds the suffix with a joiner where the table uses a space */
+  const home = [...doc.querySelectorAll('.window-time')].map((e) => e.textContent.replace('\u2060', ' '));
   win.App.go('timetable');
   const row = doc.querySelector('#tt-table tr.is-today');
   const table = [...row.querySelectorAll('td')].map((e) => e.textContent);
@@ -2952,4 +2953,75 @@ test('every icon a section or an occasion names is in the sprite', () => {
       assert.ok(ids.has(u.getAttribute('href').slice(3)), v + ' draws ' + u.getAttribute('href') + ' which does not exist');
     });
   });
+});
+
+/* ---------------- a verse as a picture ---------------- */
+
+test('the verse sheet offers a picture as well as text', () => {
+  const { win, doc } = boot();
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="2"]'));
+  click(win, doc.querySelector('[data-ayah="2:255"]'));
+  assert.ok(doc.querySelector('[data-act="picture"]'), 'a verse can be sent as a picture');
+  assert.ok(doc.querySelector('[data-act="share"]'), 'and still as text');
+});
+
+test('the picture is drawn on a canvas in the mushaf typeface', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function verseCard\(s, a\) \{([\s\S]*?)\n  \}\n/.exec(app);
+  assert.ok(fn, 'the card drawer should exist');
+  assert.ok(fn[1].indexOf("'Amiri Quran'") !== -1, 'the verse is set in the mushaf face');
+  assert.ok(fn[1].indexOf("direction = 'rtl'") !== -1, 'and drawn from the right');
+  assert.ok(fn[1].indexOf('toBlob') !== -1, 'and handed over as an image');
+  assert.ok(fn[1].indexOf('canShare') !== -1 || app.indexOf('canShare({ files') !== -1, 'shared as a file where the device allows');
+});
+
+/* ---------------- turning a date ---------------- */
+
+test('the converter turns a gregorian date into the hijri one the app reckons', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const field = doc.getElementById('conv-greg');
+  field.value = '2027-02-08';
+  fire(win, field, 'input');
+  const out = doc.getElementById('conv-greg-out').textContent;
+  assert.ok(out.indexOf('1 رمضان 1448') !== -1, 'got ' + out);
+  assert.ok(out.indexOf('الإثنين') === 0, 'and names the weekday: ' + out);
+});
+
+test('the converter turns a hijri date back, and refuses a day the month lacks', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  doc.getElementById('conv-hd').value = '1';
+  doc.getElementById('conv-hm').value = '9';
+  doc.getElementById('conv-hy').value = '1448';
+  fire(win, doc.getElementById('conv-hd'), 'input');
+  assert.ok(doc.getElementById('conv-hijri-out').textContent.indexOf('8 فبراير 2027') !== -1,
+    'got ' + doc.getElementById('conv-hijri-out').textContent);
+
+  doc.getElementById('conv-hd').value = '30';
+  doc.getElementById('conv-hm').value = '3';
+  fire(win, doc.getElementById('conv-hd'), 'input');
+  const out = doc.getElementById('conv-hijri-out').textContent;
+  assert.ok(out.indexOf('فقط') !== -1, 'a twenty nine day month has no thirtieth: ' + out);
+});
+
+test('the converter opens on today, agreeing with the header', () => {
+  const { win, doc } = boot();
+  win.App.go('calendar');
+  const header = doc.getElementById('hijri-date').textContent;
+  assert.ok(doc.getElementById('conv-greg-out').textContent.indexOf(header) !== -1,
+    'the converter and the header must reckon the same day');
+});
+
+/* ---------------- the strip does not wrap ---------------- */
+
+test('the suffix after a time is bound to its figures', () => {
+  const { doc } = boot();
+  doc.querySelectorAll('.window-time').forEach(function (el) {
+    assert.ok(el.querySelector('.ampm'), 'the ص or م is set apart and smaller');
+    assert.strictEqual(el.innerHTML.indexOf('\u2060') > 0, true, 'and joined to the figures so it cannot wrap');
+  });
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.window-time \{[^}]*white-space:\s*nowrap/);
 });

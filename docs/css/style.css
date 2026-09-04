@@ -252,7 +252,11 @@ button { background: none; border: none; cursor: pointer; }
   border: 1px solid transparent; transition: background .2s, border-color .2s;
 }
 .window-name { font-size: .62rem; color: var(--ink-2); }
-.window-time { font-size: var(--step--1); font-weight: 600; direction: ltr; font-variant-numeric: tabular-nums; }
+.window-time {
+  font-size: var(--step--1); font-weight: 600; direction: ltr;
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.window-time .ampm { font-size: .72em; font-weight: 600; margin-inline-start: 2px; }
 .window.is-now { background: var(--accent-wash); border-color: var(--accent); }
 .window.is-now .window-name { color: var(--accent-ink); }
 /* A prayer already passed is quieter, but a person still reads it to check the
@@ -348,6 +352,16 @@ button { background: none; border: none; cursor: pointer; }
 .tt tbody tr[data-friday='1'] { background: var(--sunken); }
 .tt tbody tr.is-today { background: var(--accent-wash); }
 .tt tbody tr.is-today th, .tt tbody tr.is-today td { color: var(--accent-ink); font-weight: 700; }
+
+/* ---------- turning a date ---------- */
+
+.convert-field { display: block; }
+.convert-field .setting-label { display: block; margin-bottom: 6px; }
+.convert-hijri { display: grid; grid-template-columns: 1fr 1.6fr 1.2fr; gap: 8px; }
+.convert-out {
+  margin-top: 8px; font-weight: 600; color: var(--accent-ink); min-height: 1.4em;
+  font-variant-numeric: tabular-nums;
+}
 
 /* ---------- the month ---------- */
 

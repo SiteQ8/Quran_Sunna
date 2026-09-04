@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.8.0';
+  var VERSION = '6.9.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -126,6 +126,15 @@
 
   /* The prayer engine writes the time on twelve hours with صباحاً or مساءً,
      which is how a clock is read here, and the figures match the rest. */
+  /* The ص or م after a time is set smaller and bound to the figures with a
+     joiner, so a narrow column cannot push it onto a line of its own. */
+  function clockMarkup(minutes) {
+    var text = clockText(minutes);
+    var parts = text.split(' ');
+    if (parts.length !== 2) return esc(text);
+    return esc(parts[0]) + '\u2060<small class="ampm">' + esc(parts[1]) + '</small>';
+  }
+
   function clockText(minutes) { return ar(PrayerEngine.format(minutes)); }
 
   function buzz(ms) {
@@ -618,7 +627,7 @@
       return '<div class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
         (m.key === c.prev.key ? '، الوقت الحالي' : '') + '">' +
         '<div class="window-name" aria-hidden="true">' + esc(m.ar) + '</div>' +
-        '<div class="window-time" aria-hidden="true">' + esc(clockText(m.at)) + '</div></div>';
+        '<div class="window-time" aria-hidden="true">' + clockMarkup(m.at) + '</div></div>';
     }).join('');
   }
 
@@ -1160,6 +1169,7 @@
       '<button class="btn ' + (saved ? 'btn-primary' : 'btn-ghost') + '" data-act="bookmark" data-ref="' + s + ':' + a + '">' +
       icon('bookmark') + (saved ? 'محفوظة' : 'احفظ') + '</button>' +
       '<button class="btn btn-ghost" data-act="share" data-ref="' + s + ':' + a + '">' + icon('share') + 'مشاركة</button>' +
+      '<button class="btn btn-ghost" data-act="picture" data-ref="' + s + ':' + a + '">' + icon('star') + 'صورة</button>' +
       '</div>' +
       '<div class="btn-row" style="margin-top:8px">' +
       '<button class="btn btn-ghost" data-act="copy" data-ref="' + s + ':' + a + '">' + icon('text') + 'نسخ</button>' +
@@ -1321,6 +1331,124 @@
 
   function playSurah(n) {
     reciteFrom(n, state.ayah || 1);
+  }
+
+  /* ---------------- a verse as a picture ---------------- */
+
+  /* A verse drawn on a card with the app's own ornament, so it can be sent as
+     a picture rather than as a line of text. Drawn on a canvas, in the
+     mushaf typeface, at twice the size for a sharp result. */
+  function verseCard(s, a) {
+    var meta = surahMeta(s);
+    var text = Mushaf.ayah(s, a);
+    if (!text) return Promise.resolve(null);
+
+    var W = 1080, PAD = 96;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return Promise.resolve(null);
+
+    var fill = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#1e6f47';
+    var wash = document.documentElement.style.getPropertyValue('--accent').trim() || fill;
+
+    function ready() {
+      return document.fonts && document.fonts.load
+        ? Promise.all([document.fonts.load("400 60px 'Amiri Quran'"), document.fonts.load("700 40px 'IBM Plex Sans Arabic'"),
+            document.fonts.load("400 30px 'IBM Plex Sans Arabic'")]).catch(function () {})
+        : Promise.resolve();
+    }
+
+    function wrap(context, words, maxWidth) {
+      var lines = [], line = '';
+      words.forEach(function (word) {
+        var probe = line ? line + ' ' + word : word;
+        if (context.measureText(probe).width > maxWidth && line) { lines.push(line); line = word; }
+        else line = probe;
+      });
+      if (line) lines.push(line);
+      return lines;
+    }
+
+    function star(context, cx, cy, r) {
+      context.save();
+      context.translate(cx, cy);
+      context.strokeStyle = '#b08833';
+      context.lineWidth = 3;
+      [0, Math.PI / 4].forEach(function (rot) {
+        context.save(); context.rotate(rot);
+        context.strokeRect(-r, -r, r * 2, r * 2);
+        context.restore();
+      });
+      context.restore();
+    }
+
+    return ready().then(function () {
+      ctx.font = "400 60px 'Amiri Quran', 'Amiri', serif";
+      ctx.direction = 'rtl';
+      var lines = wrap(ctx, text.split(' '), W - PAD * 2 - 40);
+      var lineHeight = 134;
+      var H = PAD * 2 + 140 + lines.length * lineHeight + 160;
+      canvas.width = W; canvas.height = H;
+      ctx = canvas.getContext('2d');
+
+      /* paper, with a faint lattice and a gold frame */
+      ctx.fillStyle = '#f7f5ef';
+      ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.globalAlpha = 0.07;
+      for (var y = 40; y < H; y += 112) for (var x = 40; x < W; x += 112) star(ctx, x, y, 22);
+      ctx.restore();
+      ctx.strokeStyle = wash; ctx.lineWidth = 6;
+      ctx.strokeRect(36, 36, W - 72, H - 72);
+      ctx.strokeStyle = '#b08833'; ctx.lineWidth = 2;
+      ctx.strokeRect(52, 52, W - 104, H - 104);
+      star(ctx, 52, 52, 14); star(ctx, W - 52, 52, 14); star(ctx, 52, H - 52, 14); star(ctx, W - 52, H - 52, 14);
+
+      /* the surah, up top */
+      ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = fill;
+      ctx.font = "700 40px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), W / 2, PAD + 40);
+
+      /* the verse, line by line */
+      ctx.fillStyle = '#16241c';
+      ctx.font = "400 60px 'Amiri Quran', 'Amiri', serif";
+      var top = PAD + 175;
+      lines.forEach(function (line, i) { ctx.fillText(line, W / 2, top + i * lineHeight); });
+
+      /* the rosette that closes it, and the app's name */
+      var footY = top + lines.length * lineHeight + 20;
+      star(ctx, W / 2, footY, 16);
+      ctx.fillStyle = '#5e6c65';
+      ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('سُنّتي', W / 2, H - PAD + 10);
+
+      return new Promise(function (resolve) {
+        canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+      });
+    });
+  }
+
+  function shareVerseCard(s, a) {
+    toast('جارٍ تجهيز الصورة');
+    return verseCard(s, a).then(function (blob) {
+      if (!blob) { toast('تعذّر رسم الآية'); return false; }
+      var meta = surahMeta(s);
+      var name = 'ayah-' + s + '-' + a + '.png';
+      var file = null;
+      try { file = new window.File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
+      if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a) })
+          .then(function () { return true; }, function () { return false; });
+      }
+      /* no sharing on this device, so the picture is handed over as a download */
+      var url = window.URL.createObjectURL(blob);
+      var link = document.createElement('a');
+      link.href = url; link.download = name;
+      document.body.appendChild(link); link.click(); link.remove();
+      window.setTimeout(function () { window.URL.revokeObjectURL(url); }, 2000);
+      toast('نُزّلت صورة الآية');
+      return true;
+    });
   }
 
   /* ---------------- search ---------------- */
@@ -2050,11 +2178,58 @@
     }).join('');
   }
 
+  /* Turning a date one way or the other, with the app's own reckoning and the
+     reader's own adjustment, so it agrees with the rest of the screen. */
+  function fillConverter() {
+    var hm = $('conv-hm');
+    if (!hm || hm.options.length) return;
+    fillSelect(hm, Hijri.MONTHS.map(function (name, i) { return { value: String(i + 1), label: name }; }), '');
+    var today = new Date();
+    if ($('conv-greg') && !$('conv-greg').value) {
+      $('conv-greg').value = today.getFullYear() + '-' + pad(today.getMonth() + 1) + '-' + pad(today.getDate());
+    }
+    var h = Hijri.toHijri(today, Store.get('hijriAdjust'));
+    if ($('conv-hd') && !$('conv-hd').value) $('conv-hd').value = h.d;
+    if ($('conv-hy') && !$('conv-hy').value) $('conv-hy').value = h.y;
+    hm.value = String(h.m);
+    convertGregorian();
+    convertHijri();
+  }
+
+  function convertGregorian() {
+    var out = $('conv-greg-out');
+    var field = $('conv-greg');
+    if (!out || !field) return;
+    var parts = String(field.value || '').split('-');
+    if (parts.length !== 3) { out.textContent = ''; return; }
+    var date = new Date(+parts[0], +parts[1] - 1, +parts[2]);
+    if (isNaN(date.getTime())) { out.textContent = 'تاريخ غير صالح'; return; }
+    var h = Hijri.toHijri(date, Store.get('hijriAdjust'));
+    out.textContent = h.weekday + '، ' + Hijri.format(h);
+  }
+
+  function convertHijri() {
+    var out = $('conv-hijri-out');
+    if (!out || !$('conv-hd')) return;
+    var d = +$('conv-hd').value, m = +$('conv-hm').value, y = +$('conv-hy').value;
+    if (!d || !m || !y) { out.textContent = ''; return; }
+    var length = Hijri.monthDays(y, m, Store.get('hijriAdjust')).length;
+    if (length && d > length) {
+      out.textContent = Hijri.MONTHS[m - 1] + ' ' + ar(y) + ' فيه ' + daysOf(length) + ' فقط';
+      return;
+    }
+    var date = Hijri.toGregorian(y, m, d, Store.get('hijriAdjust'));
+    if (!date) { out.textContent = 'تاريخ غير صالح'; return; }
+    out.textContent = Hijri.WEEKDAYS[date.getDay()] + '، ' + ar(date.getDate()) + ' ' +
+      GREG_MONTHS[date.getMonth()] + ' ' + ar(date.getFullYear());
+  }
+
   function renderCalendar() {
     if (!$('cal-grid')) return;
     renderCalendarGrid();
     renderCalendarDay();
     renderCalendarUpcoming();
+    fillConverter();
   }
 
   function stepCalendar(by) {
@@ -2404,6 +2579,10 @@
       var meta = surahMeta(s);
       shareText('سُنّتي', Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
     },
+    picture: function (ref) {
+      var parts = ref.split(':');
+      shareVerseCard(+parts[0], +parts[1]);
+    },
     listen: function (ref) {
       var parts = ref.split(':');
       playVerse(+parts[0], +parts[1]);
@@ -2601,6 +2780,13 @@
       copyText(timetableText()).then(
         function () { toast('نُسخ جدول الشهر'); },
         function () { toast('تعذّر النسخ'); });
+    });
+
+    bind('conv-greg', 'change', convertGregorian);
+    bind('conv-greg', 'input', convertGregorian);
+    ['conv-hd', 'conv-hm', 'conv-hy'].forEach(function (id) {
+      bind(id, 'change', convertHijri);
+      bind(id, 'input', convertHijri);
     });
 
     bind('cal-prev', 'click', function () { stepCalendar(-1); });
@@ -2895,7 +3081,8 @@
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
-      notify: notify, maybeSalawat: maybeSalawat, scheduleForWorker: scheduleForWorker, windowSunnah: windowSunnah, withLam: withLam,
+      notify: notify, maybeSalawat: maybeSalawat, scheduleForWorker: scheduleForWorker,
+      verseCard: verseCard, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
