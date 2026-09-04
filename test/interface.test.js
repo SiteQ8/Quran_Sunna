@@ -957,9 +957,17 @@ test('the dot riding the arc never sits on the words inside it', () => {
      exactly where the label sits, so the two are checked against each other
      across a whole window rather than at one moment. */
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  const inset = /\.arc-center\s*\{[^}]*inset:\s*(\d+)%/.exec(css);
-  assert.ok(inset, 'the text inside the arc is placed by an inset');
-  assert.ok(+inset[1] >= 32, 'the text must clear the top of the arc, found ' + inset[1] + '%');
+  const pad = /\.arc-center \{[^}]*padding-top:\s*(\d+)px/.exec(css);
+  assert.ok(pad, 'the words are pushed under the apex by a padding');
+
+  /* The arc is drawn in a 240 by 152 square at a fixed 264 wide, so the apex
+     and the dot that rides it land at heights the padding must clear. */
+  const width = 264, height = width * 152 / 240;
+  const apex = height * 40 / 152;
+  const dot = height * 6 / 152;
+  assert.ok(+pad[1] > apex + dot,
+    'the words start at ' + pad[1] + 'px, and the dot reaches ' +
+    Math.round(apex + dot) + 'px at the top of its climb');
   assert.ok(doc.getElementById('arc-label'));
   assert.ok(win.App.clockState().progress >= 0);
 });
@@ -2498,4 +2506,26 @@ test('no two functions in the controller share a name', () => {
   assert.deepStrictEqual(twice, [],
     'a second declaration replaces the first without a word, and whatever called ' +
     'the first stops working: ' + twice.join(', '));
+});
+
+test('the niche and the arc are given one box, not two', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const shared = /\.mihrab,\s*\.arc \{([^}]*)\}/.exec(css);
+  assert.ok(shared, 'the niche and the arc should be placed by one rule');
+  assert.match(shared[1], /top:\s*0/, 'both start at the same height');
+  assert.match(shared[1], /height:\s*auto/,
+    'a fixed height stretches the niche away from the arc it frames');
+  assert.ok(!/\.mihrab \{[^}]*height:\s*100%/.test(css),
+    'height 100% takes the wrap box, which is taller than the arc');
+});
+
+test('the words of the clock sit in flow, so they cannot drift out of the arch', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.arc-center \{([^}]*)\}/.exec(css);
+  assert.ok(rule);
+  assert.match(rule[1], /position:\s*relative/,
+    'placed absolutely they fall wherever the wrap happens to end');
+  assert.match(rule[1], /padding-top/, 'and are pushed down under the apex by a padding');
+  assert.ok(!/\.arc-center \{[^}]*inset:\s*\d+%/.test(css),
+    'a percentage resolves against the wrap, which is not the arch');
 });
