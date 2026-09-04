@@ -85,7 +85,10 @@ function litTab(doc) { return doc.querySelector('.tab[aria-current="page"]').get
 test('the page boots and lands on the home view', () => {
   const { win, doc } = boot();
   assert.strictEqual(typeof win.App, 'object');
-  assert.strictEqual(win.App.version, '5.1.0');
+  assert.match(win.App.version, /^\d+\.\d+\.\d+$/);
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'sunnati-v" + win.App.version + "'") !== -1,
+    'the worker must name this same version, or no device ever sees the update');
   assert.ok(doc.getElementById('v-home').classList.contains('is-open'));
   assert.strictEqual(litTab(doc), 'home');
   assert.strictEqual(doc.querySelectorAll('.view.is-open').length, 1);
@@ -129,8 +132,8 @@ test('the prayer clock fills in and counts down', () => {
 test('the arc fill and dot track the progress of the window', () => {
   const { win, doc } = boot();
   const progress = win.App.clockState().progress;
-  const offset = parseFloat(doc.getElementById('arc-fill').getAttribute('stroke-dashoffset'));
-  assert.ok(Math.abs(offset - 314.16 * (1 - progress)) < 1, 'the fill should follow progress');
+  const drawn = parseFloat(doc.getElementById('arc-fill').getAttribute('stroke-dasharray').split(' ')[0]);
+  assert.ok(Math.abs(drawn - 314.16 * progress) < 1, 'the drawn run should follow progress');
   const cx = parseFloat(doc.getElementById('arc-dot').getAttribute('cx'));
   assert.ok(cx >= 19 && cx <= 221, 'the dot rides the arc, got ' + cx);
 });
@@ -1155,7 +1158,12 @@ test('losing the network says what still works', () => {
 test('the worker hands over only when the page asks', () => {
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf("'take-over'") !== -1, 'the worker should listen for the handover');
-  assert.ok(!/install[\s\S]{0,400}skipWaiting/.test(sw),
+  /* Comments are stripped first, or a comment explaining why skipWaiting is
+     absent reads as skipWaiting being present. */
+  const code = sw.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const install = /addEventListener\('install'[\s\S]*?addEventListener\('activate'/.exec(code);
+  assert.ok(install, 'the worker should have an install step');
+  assert.ok(install[0].indexOf('skipWaiting') === -1,
     'a worker that seizes control on install would reload the page under the reader');
 });
 
@@ -1351,12 +1359,15 @@ test('no view puts a latin word in front of the reader', () => {
 
 test('every small control reaches out a touch area', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  ['date-nudge', 'chip', 'switch', 'card-more'].forEach(function (name) {
+  ['date-nudge', 'switch', 'card-more'].forEach(function (name) {
     assert.ok(new RegExp('\\.' + name + '::before').test(css) ||
       new RegExp('\\.' + name + '[^{]*::before').test(css),
       '.' + name + ' is drawn smaller than a thumb and needs a reach');
   });
   assert.match(css, /\.select\s*\{[^}]*min-height:\s*44px/, 'a select must be tall enough to hit');
+  /* a chip is drawn at full size instead, which also stops one chip stealing
+     the tap meant for the chip beside it */
+  assert.match(css, /\.chip \{[^}]*padding:\s*14px/, 'a chip should be tall enough on its own');
 });
 
 test('every icon carries the square the sprite is drawn in', () => {
@@ -1468,4 +1479,128 @@ test('the floating banner makes room rather than covering the last row', () => {
   assert.match(app, /setProperty\('--banner-room'/,
     'and the room must be set from the height the banner actually takes');
   assert.ok(/--banner-room', '0px'/.test(app), 'and given back when it closes');
+});
+
+/* ---------------- getting the update onto the device ---------------- */
+
+test('the worker names the same version the app does', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  const appVersion = /var VERSION = '([\d.]+)'/.exec(app);
+  const swVersion = /var VERSION = 'sunnati-v([\d.]+)'/.exec(sw);
+  assert.ok(appVersion && swVersion, 'both must carry a version');
+  assert.strictEqual(swVersion[1], appVersion[1],
+    'if the worker keeps an older name the browser sees no change, installs nothing, ' +
+    'and every device that has visited once keeps running the old code for good');
+});
+
+test('the shell is fetched from the network first', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  /* The last respondWith in the file handles code and markup. It must reach for
+     the network before the cache, or a fix can be published and never arrive. */
+  const tail = sw.slice(sw.lastIndexOf('event.respondWith'));
+  const network = tail.indexOf('fetch(request)');
+  const cache = tail.indexOf('caches.match');
+  assert.ok(network !== -1 && cache !== -1, 'it should try both');
+  assert.ok(network < cache,
+    'the cache must be the fallback for code, not the first answer');
+  assert.match(sw, /isSettled/, 'the mushaf and the icons may still come from the cache first');
+  assert.match(sw, /take-over[\s\S]{0,120}skipWaiting/,
+    'and it should hand over as soon as the page asks');
+});
+
+test('the worker still keeps everything the app needs offline', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  SCRIPTS.concat(['index.html', 'css/style.css', 'data/mushaf.json', 'manifest.webmanifest'])
+    .forEach(function (rel) {
+      assert.ok(sw.indexOf(rel) !== -1, 'the worker never keeps ' + rel);
+    });
+});
+
+test('the version the app shows is the version it is', () => {
+  const { win, doc } = boot();
+  win.App.go('more');
+  const shown = doc.getElementById('version-line').textContent;
+  const digits = shown.replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+  assert.ok(digits.indexOf(win.App.version) !== -1,
+    'the screen says ' + shown + ' but the app is ' + win.App.version);
+});
+
+test('an update that is never tapped still lands when the app is put away', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const handover = /function handOver\(worker\)[\s\S]*?\n  \}/.exec(app);
+  assert.ok(handover, 'there must be a single place that performs the handover');
+  assert.match(handover[0], /showBanner\(/, 'the reader is offered the update');
+  assert.match(handover[0], /visibilitychange/,
+    'and it is taken by itself once the app is out of sight, or a reader who never ' +
+    'taps the banner stays on old code for good');
+  assert.match(handover[0], /asked/, 'and only once');
+  assert.match(app, /registration\.update\(\)/, 'the app should ask whether anything newer exists');
+});
+
+/* ---------------- colours a person can actually read ---------------- */
+
+test('every window carries a readable colour beside its bright one', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (w) {
+    assert.match(css, new RegExp('--w-' + w + ':\\s*#[0-9a-f]{6}'), w + ' needs a colour');
+    assert.match(css, new RegExp('--w-' + w + '-ink:\\s*#[0-9a-f]{6}'),
+      w + ' needs a second colour for text, since a fill is often too pale to read');
+  });
+});
+
+test('the readable colours clear four and a half to one', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  function channel(c) { c /= 255; return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4); }
+  function rgb(hex) {
+    const m = /^#(..)(..)(..)$/.exec(hex);
+    return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)];
+  }
+  function lum(c) { return 0.2126 * channel(c[0]) + 0.7152 * channel(c[1]) + 0.0722 * channel(c[2]); }
+  function ratio(a, b) {
+    const x = lum(a), y = lum(b);
+    return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  }
+  /* the four surfaces any of this text can land on in the light theme */
+  const page = [246, 244, 238], card = [255, 253, 248];
+  function wash(hex, base) { return rgb(hex).map((v, i) => v * 0.12 + base[i] * 0.88); }
+
+  const light = css.slice(0, css.indexOf("[data-theme='dark']"));
+  ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (w) {
+    const fill = /#[0-9a-f]{6}/.exec(new RegExp('--w-' + w + ':\\s*(#[0-9a-f]{6})').exec(light)[1])[0];
+    const ink = new RegExp('--w-' + w + '-ink:\\s*(#[0-9a-f]{6})').exec(light)[1];
+    [page, card, wash(fill, page), wash(fill, card)].forEach(function (bg) {
+      const r = ratio(rgb(ink), bg);
+      assert.ok(r >= 4.5, w + ' text sits at ' + r.toFixed(2) + ':1, which is under four and a half');
+    });
+  });
+
+  const quiet = /--ink-3:\s*(#[0-9a-f]{6})/.exec(light)[1];
+  [page, card].forEach(function (bg) {
+    const r = ratio(rgb(quiet), bg);
+    assert.ok(r >= 4.5, 'the quiet grey carries every second line and sits at ' + r.toFixed(2) + ':1');
+  });
+});
+
+test('a filled control pairs its background with a colour that reads on it', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /--accent-solid:/, 'a filled control needs its own background token');
+  assert.match(css, /--on-accent:/, 'and a colour chosen to sit on it');
+  const white = /\{[^}]*background:\s*var\(--accent\)[^}]*color:\s*#fff/.exec(css);
+  assert.strictEqual(white, null,
+    'white on the bright accent falls under three to one on the gold hour');
+});
+
+test('the arc empties the way the page is read', () => {
+  const { win, doc } = boot();
+  const path = doc.getElementById('arc-fill').getAttribute('d');
+  assert.ok(path.indexOf('M220') === 0, 'the arc should start on the right, got ' + path);
+  const dash = doc.getElementById('arc-fill').getAttribute('stroke-dasharray');
+  assert.match(dash, /^[\d.]+ [\d.]+$/, 'two dashes say plainly which part is drawn');
+  assert.strictEqual(doc.getElementById('arc-fill').getAttribute('stroke-dashoffset'), '0');
+
+  const p = win.App.clockState().progress;
+  const cx = +doc.getElementById('arc-dot').getAttribute('cx');
+  assert.ok(Math.abs(cx - (120 + 100 * Math.cos(Math.PI * p))) < 0.5,
+    'the dot must sit on the edge of what is drawn');
 });

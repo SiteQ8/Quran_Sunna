@@ -20,7 +20,7 @@
      ishaMin means isha is a fixed number of minutes after maghrib instead of an angle. */
   var METHODS = {
     MWL: { id: 3, name: 'رابطة العالم الإسلامي', fajr: 18, isha: 17 },
-    ISNA: { id: 2, name: 'أمريكا الشمالية ISNA', fajr: 15, isha: 15 },
+    ISNA: { id: 2, name: 'الجمعية الإسلامية لأمريكا الشمالية', fajr: 15, isha: 15 },
     Egypt: { id: 5, name: 'الهيئة المصرية العامة للمساحة', fajr: 19.5, isha: 17.5 },
     Makkah: { id: 4, name: 'أم القرى مكة المكرمة', fajr: 18.5, ishaMin: 90 },
     Karachi: { id: 1, name: 'جامعة العلوم الإسلامية كراتشي', fajr: 18, isha: 18 },
