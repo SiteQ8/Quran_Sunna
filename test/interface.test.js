@@ -2175,7 +2175,7 @@ test('every time in the table is written on twelve hours', () => {
   const cells = [...doc.querySelectorAll('#tt-table tbody td')];
   assert.ok(cells.length >= 28 * 6);
   cells.forEach(function (cell) {
-    assert.match(cell.textContent, /^\d{1,2}:\d{2} [صم]$/, 'got ' + cell.textContent);
+    assert.match(cell.textContent, /^\d{1,2}:\d{2}[ \u2060][صم]$/, 'got ' + cell.textContent);
   });
 });
 
@@ -2229,7 +2229,7 @@ test('the day the table shows agrees with the clock on the home screen', () => {
   const home = [...doc.querySelectorAll('.window-time')].map((e) => e.textContent.replace('\u2060', ' '));
   win.App.go('timetable');
   const row = doc.querySelector('#tt-table tr.is-today');
-  const table = [...row.querySelectorAll('td')].map((e) => e.textContent);
+  const table = [...row.querySelectorAll('td')].map((e) => e.textContent.replace('\u2060', ' '));
   assert.deepStrictEqual(table, home, 'the same day cannot have two sets of times');
 });
 
@@ -3024,4 +3024,114 @@ test('the suffix after a time is bound to its figures', () => {
   });
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.window-time \{[^}]*white-space:\s*nowrap/);
+});
+
+/* ---------------- arrows point the way the page reads ---------------- */
+
+test('a previous button points right and a next button points left, as arabic reads', () => {
+  const { doc } = boot();
+  const arrow = function (id) { return doc.querySelector('#' + id + ' use').getAttribute('href'); };
+  ['reader', 'tt', 'cal', 'player'].forEach(function (pair) {
+    assert.strictEqual(arrow(pair + '-prev'), '#i-back', pair + '-prev should point right, back along the reading');
+    assert.strictEqual(arrow(pair + '-next'), '#i-next', pair + '-next should point left, onward');
+  });
+  /* and the sprite really draws them that way */
+  const back = doc.querySelector('#i-back path').getAttribute('d');
+  const next = doc.querySelector('#i-next path').getAttribute('d');
+  assert.ok(/m14 5 7 7/.test(back), 'i-back is the right pointing arrow');
+  assert.ok(/m10 5-7 7/.test(next), 'i-next is the left pointing arrow');
+});
+
+test('a time in the month table keeps its suffix on the line', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const cells = [...doc.querySelectorAll('#tt-table tbody td')];
+  assert.ok(cells.length > 100);
+  cells.forEach(function (td) {
+    assert.ok(td.querySelector('.ampm'), 'the suffix is set apart');
+    assert.ok(td.innerHTML.indexOf('\u2060') > 0, 'and joined to the figures');
+  });
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.tt th, \.tt td \{[^}]*white-space:\s*nowrap/);
+});
+
+/* ---------------- notifications that survive the background ---------------- */
+
+test('a prayer notification is still raised a quarter hour late, and only once', () => {
+  const { win } = boot();
+  const shown = [];
+  win.navigator.serviceWorker = { ready: Promise.resolve({ showNotification: function (t) { shown.push(t); return Promise.resolve(); } }) };
+  win.Notification = function () {}; win.Notification.permission = 'granted';
+  win.Store.set('notify', true); win.Store.set('notified', {});
+  const c = win.App.clockState();
+  const late = Object.assign({}, c, { now: c.prev.at + 15 });
+  win.App.helpers.maybeNotify(late);
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.strictEqual(shown.length, 1, 'a slow background clock must not lose the prayer');
+      win.App.helpers.maybeNotify(late);
+      setTimeout(function () {
+        assert.strictEqual(shown.length, 1, 'and it is not raised twice');
+        assert.strictEqual(Object.keys(win.Store.get('notified')).length, 1, 'the record is kept on disk');
+        const tooLate = Object.assign({}, c, { now: c.prev.at + 40 });
+        win.Store.set('notified', {});
+        win.App.helpers.maybeNotify(tooLate);
+        setTimeout(function () {
+          assert.strictEqual(shown.length, 1, 'forty minutes on, the moment has passed');
+          done();
+        }, 20);
+      }, 20);
+    }, 20);
+  });
+});
+
+test('the check runs the moment the app comes back to the front', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const top = /document\.addEventListener\('visibilitychange', function \(\) \{\s*if \(document\.visibilityState === 'visible'\) tick\(\);/;
+  assert.ok(top.test(app), 'a visibility listener at the top level should run the clock');
+});
+
+/* ---------------- a voice ---------------- */
+
+test('the reminder can chime or speak, and speaks only in an arabic voice', () => {
+  const { win } = boot();
+  const spoken = [];
+  win.AudioContext = function () {
+    return { currentTime: 0, destination: {},
+      createOscillator: function () { return { type: '', frequency: {}, connect: function () { return { connect: function () {} }; }, start: function () {}, stop: function () {} }; },
+      createGain: function () { return { gain: { setValueAtTime: function () {}, exponentialRampToValueAtTime: function () {} }, connect: function () { return { connect: function () {} }; } }; } };
+  };
+  win.SpeechSynthesisUtterance = function (t) { this.text = t; };
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
+    getVoices: function () { return [{ lang: 'ar-SA', name: 'Arabic' }]; },
+    speak: function (u) { spoken.push(u.text); } } });
+
+  win.Store.set('voice', 'none');
+  assert.strictEqual(win.App.helpers.speak('x', 't'), false, 'off is silent');
+  win.Store.set('voice', 'tone');
+  assert.strictEqual(win.App.helpers.speak('x', 't'), true, 'a tone plays');
+  win.Store.set('voice', 'speech');
+  assert.strictEqual(win.App.helpers.speak('اللهم صلِّ على محمد', 't'), true);
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.deepStrictEqual(spoken, ['اللهم صلِّ على محمد'], 'the arabic voice is asked');
+      /* a phone with only an english voice must not mangle arabic */
+      Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
+        getVoices: function () { return [{ lang: 'en-US', name: 'English' }]; },
+        speak: function (u) { spoken.push('WRONG'); } } });
+      win.App.helpers.speak('x', 't');
+      setTimeout(function () {
+        assert.ok(spoken.indexOf('WRONG') === -1, 'it chimes instead of speaking arabic in english');
+        done();
+      }, 800);
+    }, 800);
+  });
+});
+
+test('the voice is offered in the settings', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-voice');
+  assert.ok(sel);
+  assert.deepStrictEqual([...sel.options].map((o) => o.value), ['none', 'tone', 'speech']);
 });

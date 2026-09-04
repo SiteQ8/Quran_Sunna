@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '6.9.0';
+  var VERSION = '6.10.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -657,16 +657,68 @@
     return Promise.resolve(direct());
   }
 
+  /* A phone slows a page's clock to a crawl in the background, so a check that
+     only fires within two minutes of the time misses it more often than not.
+     The window is twenty minutes, the record of what was raised is kept on
+     disk rather than in memory so a reload cannot raise it twice, and the
+     check runs again the moment the app comes back to the front. */
   function maybeNotify(c) {
     if (!Store.get('notify')) return;
     if (!window.Notification || window.Notification.permission !== 'granted') return;
     var key = Store.dayKey() + ':' + c.prev.key;
-    if (state.notified[key]) return;
-    if (c.now - c.prev.at > 2) return;
-    state.notified[key] = true;
+    var raised = Store.get('notified') || {};
+    if (raised[key]) return;
+    if (c.now - c.prev.at > 20) return;
+    raised[key] = Date.now();
+    Object.keys(raised).forEach(function (k) { if (Date.now() - raised[k] > 2 * 86400000) delete raised[k]; });
+    Store.set('notified', raised);
     var name = prayerName(c.prev.key, new Date());
-    notify('حان وقت ' + name, name === 'الشروق' ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة', key);
+    var sunrise = c.prev.key === 'sunrise';
+    notify('حان وقت ' + name, sunrise ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة', key);
+    if (!sunrise) speak('حان وقت صلاة ' + name.replace(/^أذان /, ''), 'adhan');
     maybeSalawat(true);
+  }
+
+  /* ---------------- a voice for the reminder ---------------- */
+
+  /* A short chime, drawn from the device's own oscillator so no file is needed. */
+  function chime() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return false;
+      var ctx = new Ctx();
+      [[660, 0], [880, 0.22], [660, 0.48]].forEach(function (pair) {
+        var osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.type = 'sine'; osc.frequency.value = pair[0];
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime + pair[1]);
+        gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + pair[1] + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + pair[1] + 0.5);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(ctx.currentTime + pair[1]); osc.stop(ctx.currentTime + pair[1] + 0.55);
+      });
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* The phone's own arabic voice speaks the line, where it has one. Nothing is
+     downloaded and it works with the connection off. */
+  function speak(text, why) {
+    var mode = Store.get('voice') || 'none';
+    if (mode === 'none') return false;
+    if (mode === 'tone') return chime();
+    if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
+    try {
+      var line = new window.SpeechSynthesisUtterance(text);
+      line.lang = 'ar-SA';
+      line.rate = 0.85;
+      var voices = window.speechSynthesis.getVoices() || [];
+      var arabic = voices.filter(function (v) { return /^ar/i.test(v.lang); })[0];
+      if (arabic) line.voice = arabic;
+      else if (voices.length) return chime();
+      chime();
+      window.setTimeout(function () { window.speechSynthesis.speak(line); }, 700);
+      return true;
+    } catch (e) { return chime(); }
   }
 
   /* A reminder to send blessings on the Prophet, every so many minutes that
@@ -690,6 +742,7 @@
     var friday = isFriday(new Date());
     var line = friday ? SALAWAT_LINES[3] : SALAWAT_LINES[Math.floor(Math.random() * 3)];
     notify('صلِّ على النبي ﷺ', line, 'salawat');
+    speak('اللهم صلِّ وسلِّم على نبينا محمد', 'salawat');
   }
 
   function askPeriodicWake() {
@@ -2324,7 +2377,7 @@
         '<span class="tt-hijri">' + ar(row.hijri.d) +
         (showName ? ' ' + esc(row.hijri.monthName) : '') + '</span></th>' +
         TABLE_KEYS.map(function (k) {
-          return '<td>' + esc(clockText(row.times[k])) + '</td>';
+          return '<td>' + clockMarkup(row.times[k]) + '</td>';
         }).join('') + '</tr>';
     }).join('');
 
@@ -2407,6 +2460,11 @@
       { value: '180', label: 'كل ثلاث ساعات' },
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
+    fillSelect($('settings-voice'), [
+      { value: 'none', label: 'بلا صوت' },
+      { value: 'tone', label: 'نغمة' },
+      { value: 'speech', label: 'صوت ينطق الصلاة على النبي' }
+    ], s.voice || 'none');
     fillSelect($('settings-accent'),
       [{ value: 'auto', label: 'يتبع وقت الصلاة' }].concat(
         Object.keys(PALETTES).map(function (k) { return { value: k, label: PALETTES[k].name }; })),
@@ -2822,6 +2880,12 @@
       applyTheme();
       applyAccent(currentWindowKey());
     });
+    /* The clock runs slow in the background, so the moment the app is back in
+       front the check runs and anything that fell due is raised. */
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible') tick();
+    });
+
     bind('settings-salawat', 'change', function (e) {
       Store.set('salawat', +e.target.value);
       if (+e.target.value && window.Notification && window.Notification.permission !== 'granted') {
@@ -2832,6 +2896,10 @@
         toast('سيصلك تذكير بالصلاة على النبي ﷺ');
       }
       scheduleForWorker();
+    });
+    bind('settings-voice', 'change', function (e) {
+      Store.set('voice', e.target.value);
+      if (e.target.value !== 'none') speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
     bind('settings-accent', 'change', function (e) {
       Store.set('accent', e.target.value);
@@ -3081,7 +3149,7 @@
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
-      notify: notify, maybeSalawat: maybeSalawat, scheduleForWorker: scheduleForWorker,
+      notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
       verseCard: verseCard, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

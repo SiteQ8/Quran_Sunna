@@ -336,9 +336,13 @@ button { background: none; border: none; cursor: pointer; }
 
 /* ---------- the month timetable ---------- */
 
-.tt-scroll { max-height: 62vh; overflow-y: auto; margin: 0 calc(var(--s4) * -1); }
+.tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }
+/* On the narrowest phones the seven columns are given a touch less type. */
+@media (max-width: 340px) { .tt th, .tt td { font-size: .72rem; padding-inline: 2px; } }
 .tt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.tt th, .tt td { padding: 9px 4px; text-align: center; font-size: var(--step--1); }
+.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: var(--step--1); white-space: nowrap; }
+.tt td { direction: ltr; }
+.tt td .ampm { font-size: .72em; margin-inline-start: 2px; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);

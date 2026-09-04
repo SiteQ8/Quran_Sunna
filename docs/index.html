@@ -227,8 +227,8 @@
 <section class="view" id="v-reader" aria-labelledby="reader-title">
   <div class="reader-bar">
     <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
-    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
     <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
   </div>
   <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
@@ -327,9 +327,9 @@
   <div class="view-head"><h1 id="timetable-title">جدول الشهر</h1><p>مواقيت كل يوم في شهر واحد أمامك</p></div>
   <div class="card">
     <div class="cal-head">
-      <button class="cal-step" id="tt-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+      <button class="cal-step" id="tt-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
       <div class="cal-title"><div class="cal-month" id="tt-month">…</div><div class="cal-span" id="tt-place"></div></div>
-      <button class="cal-step" id="tt-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+      <button class="cal-step" id="tt-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
     </div>
     <div class="tt-scroll"><table class="tt" id="tt-table"></table></div>
     <div class="btn-row" style="margin-top:14px">
@@ -410,9 +410,9 @@
   <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>الشهر كاملاً ومواسم العبادة فيه</p></div>
   <div class="card">
     <div class="cal-head">
-      <button class="cal-step" id="cal-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+      <button class="cal-step" id="cal-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
       <div class="cal-title"><div class="cal-month" id="cal-month">…</div><div class="cal-span" id="cal-span"></div></div>
-      <button class="cal-step" id="cal-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+      <button class="cal-step" id="cal-next" aria-label="الشهر التالي"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
     </div>
     <div class="cal-week" id="cal-week" aria-hidden="true"></div>
     <div class="cal-grid" id="cal-grid" role="grid" aria-label="أيام الشهر"></div>
@@ -471,6 +471,8 @@
       <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
     <div class="setting"><span><span class="setting-label">الصلاة على النبي ﷺ</span><br><span class="setting-note">تذكير كل فترة تختارها</span></span>
       <select class="select" id="settings-salawat" aria-label="تذكير بالصلاة على النبي"></select></div>
+    <div class="setting"><span><span class="setting-label">صوت التذكير</span><br><span class="setting-note">يُسمع ما دام التطبيق مفتوحاً</span></span>
+      <select class="select" id="settings-voice" aria-label="صوت التذكير"></select></div>
     <p class="setting-note">تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.</p>
   </div>
 
@@ -549,8 +551,8 @@
 
 <div class="player" id="player" role="region" aria-label="مشغل الصوت">
   <button id="player-toggle" aria-label="إيقاف مؤقت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pause"/></svg></button>
-  <button id="player-prev" aria-label="الآية السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
-  <button id="player-next" aria-label="الآية التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+  <button id="player-prev" aria-label="الآية السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+  <button id="player-next" aria-label="الآية التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
   <div class="player-body">
     <div class="player-title" id="player-title"></div>
     <div class="player-sub" id="player-sub"></div>
