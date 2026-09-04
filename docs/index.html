@@ -2,436 +2,458 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<meta name="theme-color" content="#f8f6f1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6f4ee">
+<meta name="description" content="سُنّتي تطبيق إسلامي يعمل بلا إنترنت، فيه المصحف كاملاً وأوقات الصلاة بحساب فلكي على الجهاز والأذكار والقبلة وتتبع السنن اليومية.">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>سُنّتي | تطبيق إسلامي شامل</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='85'>🕌</text></svg>">
-<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Tajawal:wght@300;400;500;700;800&display=swap" rel="stylesheet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="سُنّتي">
+<meta property="og:title" content="سُنّتي">
+<meta property="og:description" content="مصحف كامل وأوقات صلاة وأذكار وقبلة، كلها تعمل بلا إنترنت.">
+<meta property="og:type" content="website">
+<title>سُنّتي · رفيقك اليومي في العبادة</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@400;700&family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="sleep-bar" id="sleep-display" style="display:none">
-<span>😴 مؤقت النوم</span>
-<span id="sleep-time">00:00</span>
-<button onclick="cancelSleep()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:2px 8px;border-radius:4px;font-size:.6rem;cursor:pointer">إلغاء</button>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
+<g id="i-home"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9.5 20v-6h5v6"/></g>
+<g id="i-book"><path d="M4 4.5h6a2.5 2.5 0 0 1 2.5 2.5v13"/><path d="M20 4.5h-6a2.5 2.5 0 0 0-2.5 2.5"/><path d="M4 4.5V18h6a2.5 2.5 0 0 1 2.5 2M20 4.5V18h-6a2.5 2.5 0 0 0-2.5 2"/></g>
+<g id="i-beads"><circle cx="12" cy="4.5" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="19" cy="15" r="2"/><circle cx="12" cy="19.5" r="2"/><circle cx="5" cy="15" r="2"/><circle cx="6" cy="8" r="2"/></g>
+<g id="i-sun"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g>
+<g id="i-grid"><rect x="3.5" y="3.5" width="7" height="7" rx="2"/><rect x="13.5" y="3.5" width="7" height="7" rx="2"/><rect x="3.5" y="13.5" width="7" height="7" rx="2"/><rect x="13.5" y="13.5" width="7" height="7" rx="2"/></g>
+<g id="i-search"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></g>
+<g id="i-bookmark"><path d="M6 3.5h12v17l-6-4-6 4z"/></g>
+<g id="i-share"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M5 13v6.5h14V13"/></g>
+<g id="i-play"><path d="M7 4.5 19 12 7 19.5z"/></g>
+<g id="i-pause"><path d="M8.5 4.5v15M15.5 4.5v15"/></g>
+<g id="i-back"><path d="m14 5 7 7-7 7"/><path d="M21 12H3"/></g>
+<g id="i-next"><path d="m10 5-7 7 7 7"/><path d="M3 12h18"/></g>
+<g id="i-check"><path d="m5 13 4.5 4.5L19 6.5"/></g>
+<g id="i-compass"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.5-5.5 2 2-5.5z"/></g>
+<g id="i-radio"><path d="M17 6.5 7.5 10"/><rect x="3" y="9" width="18" height="11.5" rx="2.5"/><circle cx="8" cy="15" r="2.5"/><path d="M14 13h4M14 17h4"/></g>
+<g id="i-settings"><circle cx="12" cy="12" r="3"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.2A1.6 1.6 0 0 0 4.3 6.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.1 1.1z"/></g>
+<g id="i-info"><circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.8v.2"/></g>
+<g id="i-download"><path d="M12 3.5v11"/><path d="m8 11 4 4 4-4"/><path d="M4.5 19.5h15"/></g>
+<g id="i-upload"><path d="M12 15V4"/><path d="m8 7.5 4-4 4 4"/><path d="M4.5 19.5h15"/></g>
+<g id="i-moon"><path d="M20 14.5A8.5 8.5 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5"/></g>
+<g id="i-plus"><path d="M12 5v14M5 12h14"/></g>
+<g id="i-minus"><path d="M5 12h14"/></g>
+<g id="i-close"><path d="M6 6 18 18M18 6 6 18"/></g>
+<g id="i-calendar"><rect x="3.5" y="5" width="17" height="16" rx="2.5"/><path d="M3.5 10h17M8 3v4M16 3v4"/></g>
+<g id="i-target"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r=".6" fill="currentColor"/></g>
+<g id="i-shield"><path d="M12 3 5 6v6c0 4.2 2.9 7.6 7 9 4.1-1.4 7-4.8 7-9V6z"/></g>
+<g id="i-refresh"><path d="M20 11a8 8 0 1 0-.6 4"/><path d="M20 4.5V11h-6"/></g>
+<g id="i-pin"><path d="M12 21s7-5.7 7-11a7 7 0 1 0-14 0c0 5.3 7 11 7 11z"/><circle cx="12" cy="10" r="2.6"/></g>
+<g id="i-bell"><path d="M18 9a6 6 0 1 0-12 0c0 5-2 6.5-2 6.5h16S18 14 18 9"/><path d="M13.7 19.5a2 2 0 0 1-3.4 0"/></g>
+<g id="i-layers"><path d="m12 3 8.5 4.5L12 12 3.5 7.5z"/><path d="m3.5 12.5 8.5 4.5 8.5-4.5"/></g>
+<g id="i-text"><path d="M4 6.5V4.5h16v2M12 4.5v15M8.5 19.5h7"/></g>
+<g id="i-quote"><path d="M9 6.5c-3 1.2-4.5 3.6-4.5 7.2V19h6v-5.5H7c0-2.4.7-3.9 2.6-4.7z"/><path d="M19.5 6.5c-3 1.2-4.5 3.6-4.5 7.2V19h6v-5.5h-3.5c0-2.4.7-3.9 2.6-4.7z"/></g>
+<g id="i-clock"><circle cx="12" cy="12" r="9"/><path d="M12 7v5.3l3.3 2"/></g>
+<g id="i-fire"><path d="M12 21c3.6 0 6-2.4 6-5.6 0-3.7-3.2-5.2-3.2-8.4-2 .6-2.6 2.4-2.6 4-1-.7-1.4-2-1.2-3.5C8.6 8.9 6 11 6 15.4 6 18.6 8.4 21 12 21"/></g>
+<g id="i-hands"><path d="M9 12V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V12"/><path d="M15 12V7a1.5 1.5 0 0 1 3 0v7.5c0 3.6-2.6 6-6 6s-6-2.4-6-6V11a1.5 1.5 0 0 1 3 0"/></g>
+<g id="i-offline"><path d="m3 3 18 18"/><path d="M9.5 15.5a4 4 0 0 1 5 0M6 12.3a8.5 8.5 0 0 1 3.4-2M18 12.3a8.5 8.5 0 0 0-6.6-2.2M2.8 8.9a13 13 0 0 1 4.4-2.6M21.2 8.9a13 13 0 0 0-8.6-3.3"/><circle cx="12" cy="19" r=".6" fill="currentColor"/></g>
+</defs></svg>
+
+<div class="shell">
+<main id="views">
+
+<!-- ══════════ الرئيسية ══════════ -->
+<section class="view is-open" id="v-home" aria-labelledby="home-title">
+  <h1 class="sr-only" id="home-title">الرئيسية</h1>
+
+  <div class="clock">
+    <div class="clock-date">
+      <button class="date-nudge" id="hijri-down" aria-label="أنقص يوماً من التاريخ الهجري"><svg class="icon" aria-hidden="true"><use href="#i-minus"/></svg></button>
+      <span><b id="hijri-date">…</b> <span id="greg-date"></span></span>
+      <button class="date-nudge" id="hijri-up" aria-label="أضف يوماً إلى التاريخ الهجري"><svg class="icon" aria-hidden="true"><use href="#i-plus"/></svg></button>
+    </div>
+
+    <div class="arc-wrap">
+      <svg class="arc" viewBox="0 0 240 152" role="img" aria-labelledby="arc-desc">
+        <title id="arc-desc">تقدم الوقت بين الصلاتين</title>
+        <path class="arc-track" id="arc-track" d="M20 140a100 100 0 0 1 200 0"/>
+        <path class="arc-fill" id="arc-fill" d="M20 140a100 100 0 0 1 200 0"/>
+        <circle class="arc-dot" id="arc-dot" cx="20" cy="140" r="6"/>
+      </svg>
+      <div class="arc-center">
+        <div class="arc-label" id="arc-label">الصلاة القادمة</div>
+        <div class="arc-name" id="arc-name">…</div>
+        <div class="arc-count" id="arc-count">--:--:--</div>
+        <div class="arc-at" id="arc-at"></div>
+      </div>
+    </div>
+
+    <div class="windows" id="windows"></div>
+    <p class="setting-note" style="margin-top:8px" id="place-line"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2><svg class="icon" aria-hidden="true"><use href="#i-clock"/></svg><span id="now-title">سنن هذا الوقت</span></h2>
+      <button class="card-more" data-go="tracker">كل السنن</button>
+    </div>
+    <div id="now-list"></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <h2><svg class="icon" aria-hidden="true"><use href="#i-fire"/></svg>وردك اليوم</h2>
+      <button class="card-more" data-go="tracker">تفصيل</button>
+    </div>
+    <div class="meter-head"><span><b id="today-done">0</b> من <span id="today-total">0</span> سنة</span><span id="streak-line"></span></div>
+    <div class="meter"><span id="today-meter" style="width:0%"></span></div>
+    <div class="heat" id="home-heat" style="margin-top:14px"></div>
+  </div>
+
+  <h2 class="section-title">الأقسام</h2>
+  <div class="grid" id="home-tiles"></div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-quote"/></svg>آية اليوم</h2>
+      <button class="card-more" id="ayah-share">مشاركة</button></div>
+    <div class="ayah-block" id="daily-ayah" style="font-size:1.15rem;line-height:2.2">…</div>
+    <p class="source" id="daily-ayah-ref" style="text-align:center"></p>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg>على الأبواب</h2>
+      <button class="card-more" data-go="calendar">التقويم</button></div>
+    <div id="home-upcoming"></div>
+  </div>
+
+  <p class="foot">سُنّتي · صنع في الكويت<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a></p>
+</section>
+
+<!-- ══════════ المصحف ══════════ -->
+<section class="view" id="v-quran" aria-labelledby="quran-title">
+  <div class="view-head">
+    <h1 id="quran-title">المصحف</h1>
+    <p>١١٤ سورة و٦٢٣٦ آية محفوظة في جهازك</p>
+  </div>
+
+  <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
+
+  <div class="card" id="resume-card" hidden>
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>تابع القراءة</h2></div>
+    <button class="row" id="resume-btn"><span class="row-mark" id="resume-num"></span><span class="row-body"><span class="row-title" id="resume-name"></span><span class="row-note" id="resume-note"></span></span></button>
+  </div>
+
+  <div class="btn-row" style="margin-bottom:12px">
+    <button class="btn btn-ghost" data-go="bookmarks"><svg class="icon" aria-hidden="true"><use href="#i-bookmark"/></svg>المحفوظات</button>
+    <button class="btn btn-ghost" data-go="khatma"><svg class="icon" aria-hidden="true"><use href="#i-target"/></svg>خطة الختمة</button>
+  </div>
+
+  <div class="chip-scroll" id="browse-mode">
+    <button class="chip is-on" data-browse="surah">السور</button>
+    <button class="chip" data-browse="juz">الأجزاء</button>
+  </div>
+
+  <input class="field" id="surah-filter" type="search" placeholder="اسم السورة أو رقمها" aria-label="ابحث عن سورة" style="margin-bottom:12px">
+  <div id="surah-list"></div>
+</section>
+
+<!-- ══════════ القارئ ══════════ -->
+<section class="view" id="v-reader" aria-labelledby="reader-title">
+  <div class="reader-bar">
+    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" aria-hidden="true"><use href="#i-next"/></svg></button>
+    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
+  </div>
+  <div class="surah-head">
+    <h2 id="reader-title">…</h2>
+    <p id="reader-meta"></p>
+  </div>
+  <div id="reader-body"></div>
+  <button class="btn btn-ghost btn-block" id="reader-done" style="margin-top:18px"><svg class="icon" aria-hidden="true"><use href="#i-check"/></svg>أنهيت هذه السورة</button>
+</section>
+
+<!-- ══════════ البحث ══════════ -->
+<section class="view" id="v-search" aria-labelledby="search-title">
+  <div class="view-head">
+    <h1 id="search-title">البحث في القرآن</h1>
+    <p>اكتب كلمة أو جزء آية، بالتشكيل أو بدونه</p>
+  </div>
+  <input class="field" id="quran-search" type="search" placeholder="مثال: الحمد لله" aria-label="ابحث في نص القرآن" style="margin-bottom:12px">
+  <p class="setting-note" id="search-count"></p>
+  <div id="search-results"></div>
+  <button class="btn btn-ghost btn-block" data-go="quran" style="margin-top:16px">رجوع إلى المصحف</button>
+</section>
+
+<!-- ══════════ المحفوظات ══════════ -->
+<section class="view" id="v-bookmarks" aria-labelledby="bookmarks-title">
+  <div class="view-head"><h1 id="bookmarks-title">المحفوظات</h1><p>الآيات التي علّمتها للرجوع إليها</p></div>
+  <div id="bookmark-list"></div>
+  <button class="btn btn-ghost btn-block" data-go="quran" style="margin-top:16px">رجوع إلى المصحف</button>
+</section>
+
+<!-- ══════════ خطة الختمة ══════════ -->
+<section class="view" id="v-khatma" aria-labelledby="khatma-title">
+  <div class="view-head"><h1 id="khatma-title">خطة الختمة</h1><p>وزّع صفحات المصحف على الأيام وتابع أين وصلت</p></div>
+  <div class="card">
+    <div class="setting"><span class="setting-label">مدة الختمة</span></div>
+    <div class="chip-row" id="khatma-days" style="margin:10px 0"></div>
+    <p class="setting-note" id="khatma-rate"></p>
+  </div>
+  <div class="card" id="khatma-state"></div>
+  <div class="btn-row">
+    <button class="btn btn-primary" id="khatma-page-plus">قرأت صفحة</button>
+    <button class="btn btn-ghost" id="khatma-page-minus">تراجع</button>
+    <button class="btn btn-ghost" id="khatma-restart">ابدأ من جديد</button>
+  </div>
+  <button class="btn btn-ghost btn-block" data-go="quran" style="margin-top:16px">رجوع إلى المصحف</button>
+</section>
+
+<!-- ══════════ الأذكار ══════════ -->
+<section class="view" id="v-azkar" aria-labelledby="azkar-title">
+  <div class="view-head"><h1 id="azkar-title">الأذكار</h1><p>من حصن المسلم، مع عدّاد يحفظ تقدمك في يومك</p></div>
+  <div class="grid grid-2" id="azkar-groups"></div>
+</section>
+
+<section class="view" id="v-azkar-list" aria-labelledby="azkar-list-title">
+  <div class="reader-bar">
+    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى أقسام الأذكار"><svg class="icon" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <h1 id="azkar-list-title" style="font-size:1.1rem;font-weight:700">…</h1>
+    <button class="btn btn-ghost" id="azkar-reset" style="margin-inline-start:auto" aria-label="إعادة العدّادات"><svg class="icon" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+  </div>
+  <div class="meter" style="margin-bottom:14px"><span id="azkar-meter" style="width:0%"></span></div>
+  <div id="azkar-items"></div>
+</section>
+
+<!-- ══════════ السنن ══════════ -->
+<section class="view" id="v-tracker" aria-labelledby="tracker-title">
+  <div class="view-head"><h1 id="tracker-title">السنن اليومية</h1><p>علّم ما أدّيته اليوم وتابع أثرك عبر الشهر</p></div>
+
+  <div class="card">
+    <div class="meter-head">
+      <span><b id="tracker-done">0</b> من <span id="tracker-total">0</span></span>
+      <span class="badge" id="tracker-streak"></span>
+    </div>
+    <div class="meter"><span id="tracker-meter" style="width:0%"></span></div>
+    <div class="heat" id="tracker-heat" style="margin-top:16px"></div>
+    <p class="setting-note" style="margin-top:8px">آخر ٣٠ يوماً</p>
+  </div>
+
+  <div id="tracker-list"></div>
+</section>
+
+<!-- ══════════ المزيد ══════════ -->
+<section class="view" id="v-more" aria-labelledby="more-title">
+  <div class="view-head"><h1 id="more-title">المزيد</h1><p>أدوات ومحتوى إضافي</p></div>
+  <div id="more-list"></div>
+  <p class="foot">سُنّتي <span id="version-line"></span><br><a href="https://github.com/SiteQ8">@SiteQ8</a> · علي العنزي</p>
+</section>
+
+<!-- ══════════ القبلة ══════════ -->
+<section class="view" id="v-qibla" aria-labelledby="qibla-title">
+  <div class="view-head"><h1 id="qibla-title">القبلة</h1><p>اتجاه الكعبة من موقعك بحساب دائرة عظمى</p></div>
+  <div class="compass">
+    <div class="compass-face"></div>
+    <svg class="compass-rose" id="compass-rose" viewBox="0 0 200 200" aria-hidden="true">
+      <g stroke="currentColor" opacity=".25">
+        <line x1="100" y1="10" x2="100" y2="24"/><line x1="100" y1="176" x2="100" y2="190"/>
+        <line x1="10" y1="100" x2="24" y2="100"/><line x1="176" y1="100" x2="190" y2="100"/>
+      </g>
+      <text x="100" y="22" text-anchor="middle" font-size="13" fill="currentColor" opacity=".5">ش</text>
+      <g id="qibla-needle">
+        <line x1="100" y1="100" x2="100" y2="34" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="100" cy="30" r="9" fill="var(--accent)"/>
+        <circle cx="100" cy="100" r="4" fill="var(--accent)"/>
+      </g>
+    </svg>
+  </div>
+  <p class="compass-read" id="qibla-degrees">---°</p>
+  <p class="setting-note" style="text-align:center" id="qibla-note"></p>
+  <button class="btn btn-primary btn-block" id="qibla-enable" hidden style="margin-top:18px">فعّل بوصلة الجهاز</button>
+  <button class="btn btn-ghost btn-block" id="qibla-locate" style="margin-top:8px"><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>حدّث موقعي</button>
+</section>
+
+<!-- ══════════ المسبحة ══════════ -->
+<section class="view" id="v-tasbih" aria-labelledby="tasbih-title">
+  <div class="view-head"><h1 id="tasbih-title">المسبحة</h1><p>اضغط للعد، والمجموع محفوظ ليومك</p></div>
+  <div class="counter">
+    <div class="counter-value" id="tasbih-value">0</div>
+    <div class="counter-target" id="tasbih-target"></div>
+    <div class="counter-phrase" id="tasbih-phrase">سبحان الله</div>
+    <button class="counter-btn" id="tasbih-tap">سبّح</button>
+  </div>
+  <div class="chip-row" id="tasbih-phrases" style="justify-content:center;margin-bottom:14px"></div>
+  <button class="btn btn-ghost btn-block" id="tasbih-reset">تصفير العدّاد</button>
+  <p class="setting-note" style="text-align:center;margin-top:10px" id="tasbih-total"></p>
+</section>
+
+<!-- ══════════ الإذاعة ══════════ -->
+<section class="view" id="v-radio" aria-labelledby="radio-title">
+  <div class="view-head"><h1 id="radio-title">الإذاعة</h1><p>بث مباشر، يحتاج اتصالاً بالإنترنت</p></div>
+  <div id="radio-list"></div>
+  <h2 class="section-title">مؤقت الإيقاف</h2>
+  <div class="chip-row" id="sleep-timer"></div>
+  <p class="setting-note" id="sleep-note" style="margin-top:8px"></p>
+</section>
+
+<!-- ══════════ الأحاديث ══════════ -->
+<section class="view" id="v-hadith" aria-labelledby="hadith-title">
+  <div class="view-head"><h1 id="hadith-title">الأربعون النووية</h1><p>أحاديث جامعة لأصول الدين</p></div>
+  <div id="hadith-list"></div>
+</section>
+
+<!-- ══════════ الأدعية ══════════ -->
+<section class="view" id="v-dua" aria-labelledby="dua-title">
+  <div class="view-head"><h1 id="dua-title">الأدعية</h1><p>أدعية من الكتاب والسنة</p></div>
+  <div id="dua-list"></div>
+</section>
+
+<!-- ══════════ الرقية ══════════ -->
+<section class="view" id="v-ruqyah" aria-labelledby="ruqyah-title">
+  <div class="view-head"><h1 id="ruqyah-title">الرقية الشرعية</h1><p>آيات وأدعية ثابتة للرقية</p></div>
+  <div id="ruqyah-list"></div>
+</section>
+
+<!-- ══════════ التقويم ══════════ -->
+<section class="view" id="v-calendar" aria-labelledby="calendar-title">
+  <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>ما يميّز يومك، وما هو قادم</p></div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-calendar"/></svg><span id="calendar-today">…</span></h2></div>
+    <div id="calendar-occasions"></div>
+  </div>
+  <h2 class="section-title">قادم</h2>
+  <div id="calendar-upcoming"></div>
+</section>
+
+<!-- ══════════ الإعدادات ══════════ -->
+<section class="view" id="v-settings" aria-labelledby="settings-title">
+  <div class="view-head"><h1 id="settings-title">الإعدادات</h1><p>اضبط الحساب والمظهر ونسخة بياناتك</p></div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg>الموقع والحساب</h2></div>
+    <div class="setting"><span><span class="setting-label">موقعك</span><br><span class="setting-note" id="settings-place">لم يحدد بعد</span></span>
+      <button class="btn btn-ghost" id="settings-locate">تحديد</button></div>
+    <div class="setting"><span class="setting-label">مدينة جاهزة</span>
+      <select class="select" id="settings-city"></select></div>
+    <div class="setting"><span class="setting-label">طريقة الحساب</span>
+      <select class="select" id="settings-method"></select></div>
+    <div class="setting"><span class="setting-label">وقت العصر</span>
+      <select class="select" id="settings-asr">
+        <option value="shafi">الجمهور</option>
+        <option value="hanafi">الحنفي</option>
+      </select></div>
+    <div class="setting"><span><span class="setting-label">خطوط العرض العالية</span><br><span class="setting-note">للمدن التي لا يغيب فيها الشفق</span></span>
+      <select class="select" id="settings-highlat">
+        <option value="angleBased">نسبة الزاوية</option>
+        <option value="nightMiddle">منتصف الليل</option>
+        <option value="oneSeventh">سُبع الليل</option>
+        <option value="none">بلا تعديل</option>
+      </select></div>
+    <div class="setting"><span><span class="setting-label">تنبيه الصلاة</span><br><span class="setting-note">إشعار عند دخول الوقت</span></span>
+      <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-text"/></svg>القراءة والمظهر</h2></div>
+    <div class="setting"><span class="setting-label">حجم النص</span><span class="setting-note" id="font-value">100%</span></div>
+    <input class="slider" id="settings-font" type="range" min="80" max="170" step="5" aria-label="حجم النص">
+    <p class="ayah-block" style="margin:10px 0 4px">إِنَّ مَعَ ٱلْعُسْرِ يُسْرًا</p>
+    <div class="setting"><span class="setting-label">السمة</span>
+      <select class="select" id="settings-theme">
+        <option value="auto">حسب النظام</option>
+        <option value="light">فاتح</option>
+        <option value="dark">داكن</option>
+      </select></div>
+    <div class="setting"><span class="setting-label">القارئ</span>
+      <select class="select" id="settings-reciter"></select></div>
+    <div class="setting"><span class="setting-label">التفسير</span>
+      <select class="select" id="settings-tafsir">
+        <option value="ar.muyassar">الميسر</option>
+        <option value="ar.jalalayn">الجلالين</option>
+      </select></div>
+    <div class="setting"><span class="setting-label">الاهتزاز عند العد</span>
+      <button class="switch" id="settings-vibrate" role="switch" aria-checked="true" aria-label="الاهتزاز"></button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>بياناتك</h2></div>
+    <p class="setting-note" style="margin-bottom:10px">كل شيء محفوظ في جهازك وحده، فلا يغادر أي شيء إلى خادم.</p>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="data-export"><svg class="icon" aria-hidden="true"><use href="#i-download"/></svg>نسخة احتياطية</button>
+      <button class="btn btn-ghost" id="data-import"><svg class="icon" aria-hidden="true"><use href="#i-upload"/></svg>استعادة</button>
+    </div>
+    <input type="file" id="data-file" accept="application/json,.json" hidden>
+    <button class="btn btn-danger btn-block" id="data-clear" style="margin-top:8px">حذف كل البيانات</button>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" aria-hidden="true"><use href="#i-offline"/></svg>العمل بلا إنترنت</h2></div>
+    <p class="setting-note" id="offline-state">…</p>
+    <button class="btn btn-ghost btn-block" id="offline-cache" style="margin-top:10px">حمّل كل شيء للعمل بلا إنترنت</button>
+  </div>
+</section>
+
+<!-- ══════════ عن التطبيق ══════════ -->
+<section class="view" id="v-about" aria-labelledby="about-title">
+  <div class="view-head"><h1 id="about-title">عن سُنّتي</h1><p>ما الذي يعمل هنا، وكيف</p></div>
+  <div class="card">
+    <p class="naskh" style="font-size:.95rem">سُنّتي رفيق يومي للعبادة يعمل كاملاً على جهازك، فالمصحف كله محفوظ معك وأوقات الصلاة تُحسب فلكياً على الجهاز نفسه دون طلب من أي خادم، ثم تبقى الأذكار والقبلة وتتبع السنن متاحة ولو انقطع الإنترنت.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>ما الذي يحتاج إنترنت</h2></div>
+    <p class="setting-note">تلاوة القارئ والإذاعة والتفسير وحدها تحتاج اتصالاً، وما عدا ذلك يعمل بلا شبكة.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>المصادر</h2></div>
+    <p class="setting-note">نص المصحف برواية حفص عن عاصم بالرسم العثماني، والأذكار من حصن المسلم، والأحاديث من الأربعين النووية، ثم التلاوات من شبكة القرآن المفتوحة.</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2>صدقة جارية</h2></div>
+    <p class="setting-note">التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.</p>
+  </div>
+  <p class="foot">علي العنزي · <a href="https://github.com/SiteQ8/Quran_Sunna">المستودع على GitHub</a><br><span id="about-version"></span></p>
+</section>
+
+</main>
 </div>
 
-
-<!-- ═══ الرئيسية ═══ -->
-<div class="pg on" id="pg-home">
-<div class="hero">
-<div class="hero-sm">بِسْمِ اللهِ الرَّحْمَٰنِ الرَّحِيمِ</div>
-<div class="hero-t">سُنّتي</div>
-<div class="hero-h">وَمَا يَزَالُ عَبْدِي يَتَقَرَّبُ إِلَيَّ بِالنَّوَافِلِ حَتَّى أُحِبَّهُ</div>
-<div class="hero-btm"><div style="display:flex;align-items:center;gap:6px">
-<button onclick="adjustHijri(-1)" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;font-size:.7rem">−</button>
-<div class="hero-dt" id="hd">—</div>
-<button onclick="adjustHijri(1)" style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,.15);border:none;color:#fff;cursor:pointer;font-size:.7rem">+</button>
-<span id="hijri-adj-val" style="font-size:.45rem;color:rgba(255,255,255,.4)"></span>
-</div><div class="hero-loc" id="loc">📍 ...</div></div>
-</div>
-<div class="npx"><div><div class="npx-l">الصلاة القادمة</div><div class="npx-n" id="nn">—</div></div><div class="npx-t" id="nt">--:--</div></div>
-
-<div class="sec"><h3><i style="background:var(--gl)">☀️</i><span id="sn-title">سنن الوقت الحالي</span></h3>
-<p id="sp-lbl">السنن المستحبة في هذا الوقت</p></div>
-
-<div style="background:linear-gradient(135deg,#fefdf5,#fdf8e8);border-radius:12px;padding:12px;margin:0 12px 8px;border:1px solid #e8dfc0">
-<div style="font-size:.6rem;color:#8b6914;font-weight:700;margin-bottom:4px">📜 من السيرة النبوية</div>
-<div id="seerah-quote" style="font-family:var(--nk);font-size:.78rem;color:#5a4a2a;line-height:1.8"></div>
-</div>
-<div id="csn"></div>
-
-<div class="sec"><h3><i style="background:#fef3e2">🕌</i>أوقات الصلاة</h3>
-<p>مواقيت الصلاة حسب موقعك الجغرافي</p></div>
-<div class="pl" id="pls"></div>
-
-<div class="sec"><h3><i style="background:#e8f0fe">📚</i>استكشف الأقسام</h3>
-<p>تصفح محتوى التطبيق الغني بالأذكار والأدعية</p></div>
-<div class="g3">
-<div class="gi" onclick="nav('quran')"><div class="gi-tp" style="background:var(--a1)"></div><span class="gi-ic">📖</span><div class="gi-nm">القرآن</div><div class="gi-sb">١١٤ سورة</div></div>
-<div class="gi" onclick="nav('azkar')"><div class="gi-tp" style="background:var(--a5)"></div><span class="gi-ic">📿</span><div class="gi-nm">الأذكار</div><div class="gi-sb">١٦ قسم</div></div>
-<div class="gi" onclick="nav('sunnah')"><div class="gi-tp" style="background:var(--a3)"></div><span class="gi-ic">☀️</span><div class="gi-nm">السنن</div><div class="gi-sb">تتبع يومي</div></div>
-<div class="gi" onclick="nav('tasbih')"><div class="gi-tp" style="background:var(--a4)"></div><span class="gi-ic">🔢</span><div class="gi-nm">المسبحة</div><div class="gi-sb">عداد ذكر</div></div>
-<div class="gi" onclick="nav('hadith')"><div class="gi-tp" style="background:var(--a2)"></div><span class="gi-ic">📜</span><div class="gi-nm">الأحاديث</div><div class="gi-sb">أربعون نووية</div></div>
-<div class="gi" onclick="nav('ruqyah')"><div class="gi-tp" style="background:var(--a6)"></div><span class="gi-ic">🛡️</span><div class="gi-nm">الرقية</div><div class="gi-sb">آيات وأذكار</div></div>
-<div class="gi" onclick="nav('dua')"><div class="gi-tp" style="background:#e91e63"></div><span class="gi-ic">🤲</span><div class="gi-nm">الأدعية</div><div class="gi-sb">مأثورة</div></div>
-<div class="gi" onclick="nav('qibla')"><div class="gi-tp" style="background:#00bcd4"></div><span class="gi-ic">🧭</span><div class="gi-nm">القبلة</div><div class="gi-sb">بوصلة</div></div>
-<div class="gi" onclick="nav('more')"><div class="gi-tp" style="background:#607d8b"></div><span class="gi-ic">📋</span><div class="gi-nm">المزيد</div><div class="gi-sb">إعدادات</div></div>
+<div class="player" id="player" role="region" aria-label="مشغل الصوت">
+  <button id="player-toggle" aria-label="إيقاف مؤقت"><svg class="icon" aria-hidden="true"><use href="#i-pause"/></svg></button>
+  <div class="player-body">
+    <div class="player-title" id="player-title"></div>
+    <div class="player-sub" id="player-sub"></div>
+  </div>
+  <button id="player-stop" aria-label="إيقاف"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 
-<div class="sec"><h3><i style="background:#fce4ec">📖</i>آية اليوم</h3>
-<p>تدبّر آية من كتاب الله عز وجل</p></div>
-<div class="cd"><div class="cd-br" style="background:var(--a3)"></div><div id="ayd" style="font-family:var(--q);font-size:1.1rem;line-height:2.1;text-align:center">...</div><div id="ayr" style="font-size:.6rem;color:var(--t3);text-align:center;margin-top:6px"></div></div>
-<div class="ft">سُنّتي v4.0 · صنع في الكويت 🇰🇼<br><a href="https://github.com/SiteQ8">@SiteQ8</a> · Ali AlEnezi</div>
-<div id="city-list" style="padding:4px 8px 8px;display:flex;flex-wrap:wrap;gap:2px;justify-content:center"></div>
-</div>
+<nav class="tabs" aria-label="التنقل الرئيسي">
+  <button class="tab" data-go="home" aria-current="page"><svg class="icon" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
+  <button class="tab" data-go="quran"><svg class="icon" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
+  <button class="tab" data-go="azkar"><svg class="icon" aria-hidden="true"><use href="#i-beads"/></svg>الأذكار</button>
+  <button class="tab" data-go="tracker"><svg class="icon" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
+  <button class="tab" data-go="more"><svg class="icon" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
+</nav>
 
-<!-- ═══ القرآن ═══ -->
-<div class="pg" id="pg-quran">
-<div class="pg-title"><h2>القرآن الكريم</h2><p>١١٤ سورة · ٦٢٣٦ آية · اضغط لقراءة أي سورة</p></div>
-<div id="qprog"></div>
-<input class="qsr" id="qs" placeholder="🔍 ابحث بالاسم أو الرقم..." type="text">
-<div class="sul" id="sl"></div>
-<div id="av" style="display:none"></div>
-</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ═══ الأذكار ═══ -->
-<div class="pg" id="pg-azkar">
-<div class="pg-title"><h2>الأذكار والأدعية</h2><p>من حصن المسلم — ١٦ قسم · ٩٠+ ذكر مع العداد</p></div>
-<div class="g2" id="azg">
-<div class="az" onclick="shAz('morning')"><div class="az-tp" style="background:var(--a1)"></div><span class="az-ic">🌅</span><div class="az-nm">أذكار الصباح</div><div class="az-ct">١٩ ذكر</div></div>
-<div class="az" onclick="shAz('evening')"><div class="az-tp" style="background:var(--a5)"></div><span class="az-ic">🌆</span><div class="az-nm">أذكار المساء</div><div class="az-ct">١٦ ذكر</div></div>
-<div class="az" onclick="shAz('sleep')"><div class="az-tp" style="background:var(--a4)"></div><span class="az-ic">🌙</span><div class="az-nm">أذكار النوم</div><div class="az-ct">٩ أذكار</div></div>
-<div class="az" onclick="shAz('wakeup')"><div class="az-tp" style="background:var(--a6)"></div><span class="az-ic">☀️</span><div class="az-nm">أذكار الاستيقاظ</div><div class="az-ct">٤ أذكار</div></div>
-<div class="az" onclick="shAz('afterprayer')"><div class="az-tp" style="background:var(--a3)"></div><span class="az-ic">🤲</span><div class="az-nm">بعد الصلاة</div><div class="az-ct">٨ أذكار</div></div>
-<div class="az" onclick="shAz('mosque')"><div class="az-tp" style="background:var(--a1)"></div><span class="az-ic">🕌</span><div class="az-nm">دخول المسجد</div><div class="az-ct">٢ دعاء</div></div>
-<div class="az" onclick="shAz('wudu')"><div class="az-tp" style="background:var(--a6)"></div><span class="az-ic">💧</span><div class="az-nm">الوضوء</div><div class="az-ct">٤ أذكار</div></div>
-<div class="az" onclick="shAz('food')"><div class="az-tp" style="background:var(--a5)"></div><span class="az-ic">🍽️</span><div class="az-nm">الطعام والشراب</div><div class="az-ct">٦ أذكار</div></div>
-<div class="az" onclick="shAz('travel')"><div class="az-tp" style="background:var(--a2)"></div><span class="az-ic">✈️</span><div class="az-nm">أذكار السفر</div><div class="az-ct">٦ أذكار</div></div>
-<div class="az" onclick="shAz('home')"><div class="az-tp" style="background:var(--a1)"></div><span class="az-ic">🏠</span><div class="az-nm">دخول المنزل</div><div class="az-ct">٢ دعاء</div></div>
-<div class="az" onclick="shAz('toilet')"><div class="az-tp" style="background:var(--a4)"></div><span class="az-ic">🚻</span><div class="az-nm">دخول الخلاء</div><div class="az-ct">٢ دعاء</div></div>
-<div class="az" onclick="shAz('rain')"><div class="az-tp" style="background:var(--a3)"></div><span class="az-ic">🌧️</span><div class="az-nm">المطر والرعد</div><div class="az-ct">٤ أذكار</div></div>
-<div class="az" onclick="shAz('distress')"><div class="az-tp" style="background:var(--a2)"></div><span class="az-ic">💚</span><div class="az-nm">دعاء الكرب</div><div class="az-ct">٥ أدعية</div></div>
-<div class="az" onclick="shAz('wearing')"><div class="az-tp" style="background:var(--a5)"></div><span class="az-ic">👔</span><div class="az-nm">لبس الثوب</div><div class="az-ct">٢ دعاء</div></div>
-<div class="az" onclick="shAz('mirror')"><div class="az-tp" style="background:var(--a6)"></div><span class="az-ic">🪞</span><div class="az-nm">النظر بالمرآة</div><div class="az-ct">١ دعاء</div></div>
-<div class="az" onclick="shAz('names')"><div class="az-tp" style="background:var(--a1)"></div><span class="az-ic">✨</span><div class="az-nm">أسماء الله الحسنى</div><div class="az-ct">٩٩ اسم</div></div>
-</div>
-<div id="azc" style="display:none"></div>
-</div>
-
-<!-- ═══ السنن ═══ -->
-<div class="pg" id="pg-sunnah">
-<div class="pg-title"><h2>السنن اليومية</h2><p>سجّل إنجازك اليومي في اتباع سنة النبي ﷺ</p></div>
-<div class="sps"><span><span id="sd">0</span>/<span id="st2">0</span> سنة</span><span id="sp" style="color:var(--g);font-weight:700">0%</span></div>
-<div class="spg"><div class="spb" id="sb" style="width:0%"></div></div>
-<div id="snl"></div>
-</div>
-
-<!-- ═══ الأحاديث ═══ -->
-<div class="pg" id="pg-hadith">
-<div class="pg-title"><h2>الأربعون النووية</h2><p>أحاديث جامعة لأصول الدين — اختارها الإمام النووي رحمه الله</p></div>
-<div id="hdl"></div>
-</div>
-
-<!-- ═══ الرقية ═══ -->
-<div class="pg" id="pg-ruqyah">
-<div class="pg-title"><h2>الرقية الشرعية</h2><p>آيات وأدعية الرقية من الكتاب والسنة الصحيحة</p></div>
-<div id="rql"></div>
-</div>
-
-<!-- ═══ الأدعية ═══ -->
-<div class="pg" id="pg-dua">
-<div class="pg-title"><h2>الأدعية المأثورة</h2><p>أدعية من القرآن والسنة لمختلف الأوقات والمناسبات</p></div>
-<div id="dul"></div>
-</div>
-
-<!-- ═══ المسبحة ═══ -->
-<div class="pg" id="pg-tasbih">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px"><span onclick="nav('home')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span><span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">المسبحة الإلكترونية</span><span></span></div>
-<div class="tbw">
-<div class="tbn" id="tc">0</div>
-<div class="tbl" id="tl">سبحان الله</div>
-<button class="tbb" onclick="tbT()">اضغط</button>
-<div class="tbp" id="tb-pool">
-<div class="tbpi on" onclick="tbS(this,'سبحان الله')">سبحان الله</div>
-<div class="tbpi" onclick="tbS(this,'الحمد لله')">الحمد لله</div>
-<div class="tbpi" onclick="tbS(this,'الله أكبر')">الله أكبر</div>
-<div class="tbpi" onclick="tbS(this,'لا إله إلا الله')">لا إله إلا الله</div>
-<div class="tbpi" onclick="tbS(this,'أستغفر الله')">أستغفر الله</div>
-<div class="tbpi" onclick="tbS(this,'لا حول ولا قوة إلا بالله')">لا حول ولا قوة إلا بالله</div>
-<div class="tbpi" onclick="tbS(this,'سبحان الله وبحمده')">سبحان الله وبحمده</div>
-<div class="tbpi" onclick="tbS(this,'سبحان الله العظيم')">سبحان الله العظيم</div>
-<div class="tbpi" onclick="tbS(this,'اللهم صلّ على محمد')">اللهم صلّ على محمد</div>
-</div>
-<button class="tbr" style="background:var(--gl);color:var(--g);border:1px solid var(--g);margin-top:8px" onclick="tbAdd()">+ إضافة ذكر مخصص</button>
-<button class="tbr" onclick="document.getElementById('tc').textContent='0'">↻ إعادة</button>
-</div>
-</div>
-
-<!-- ═══ القبلة ═══ -->
-<div class="pg" id="pg-qibla">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px"><span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span><span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">اتجاه القبلة</span><span></span></div>
-<div class="qbw"><div class="qbc"><div class="qbr" id="qr"><div class="qbn">N</div><div class="qba">🕋</div></div></div><div class="qbd" id="qd">---°</div><div style="font-size:.78rem;color:var(--t2);margin-top:4px">اتجاه القبلة من موقعك</div>
-<button id="qibla-perm" style="display:none;margin-top:10px;padding:12px 24px;border-radius:14px;background:var(--g);color:#fff;border:none;font-size:.88rem;cursor:pointer;font-family:var(--am);box-shadow:var(--sh)">🧭 تفعيل البوصلة</button>
-<button id="qloc-btn" onclick="refreshQiblaLocation()" style="margin-top:8px;padding:10px 20px;border-radius:12px;background:var(--bd);color:var(--t2);border:none;font-size:.78rem;cursor:pointer;font-family:var(--am)">📍 تحديث الموقع</button>
-<div id="qloc" style="font-size:.65rem;color:var(--t3);margin-top:6px"></div></div>
-</div>
-
-<!-- ═══ المزيد ═══ -->
-<div class="pg" id="pg-more">
-<div class="pg-title"><h2>المزيد</h2><p>أدوات ومميزات إضافية</p></div>
-<div class="mi" onclick="nav('qibla')"><div class="mic" style="background:#e8f5ee">🧭</div><div class="mit"><div class="min">اتجاه القبلة</div><div class="mid">بوصلة GPS لتحديد اتجاه القبلة</div></div></div>
-<div class="mi" onclick="nav('tasbih')"><div class="mic" style="background:#e0f2fe">🔢</div><div class="mit"><div class="min">المسبحة الإلكترونية</div><div class="mid">عداد التسبيح مع اهتزاز</div></div></div>
-<div class="mi" onclick="nav('ruqyah')"><div class="mic" style="background:#fef3e2">🛡️</div><div class="mit"><div class="min">الرقية الشرعية</div><div class="mid">آيات وأحاديث الرقية من الكتاب والسنة</div></div></div>
-<div class="mi" onclick="nav('dua')"><div class="mic" style="background:#fce4ec">🤲</div><div class="mit"><div class="min">الأدعية المأثورة</div><div class="mid">أدعية قرآنية ونبوية لمختلف المناسبات</div></div></div>
-<div class="mi" onclick="nav('hadith')"><div class="mic" style="background:#e8f0fe">📜</div><div class="mit"><div class="min">الأربعون النووية</div><div class="mid">أحاديث جامعة لأصول الدين</div></div></div>
-<div class="mi" onclick="nav('radio');setTimeout(renderRadioList,100)"><div class="mic" style="background:#fce4ec">📻</div><div class="mit"><div class="min">إذاعة القرآن الكريم</div><div class="mid">بث مباشر من إذاعات دول الخليج</div></div></div>
-<div class="mi" onclick="nav('wird');setTimeout(renderWird,100)"><div class="mic" style="background:#e8f5ee">📊</div><div class="mit"><div class="min">الورد اليومي</div><div class="mid">تتبع ١٢ عبادة يومية — أذكار ونوافل وقرآن</div></div></div>
-<div class="mi" onclick="nav('prophetday');setTimeout(function(){var el=document.getElementById('pday-list');if(el){var h='';PROPHET_DAY.forEach(function(p){h+='<div class=\'pday-section\'><div class=\'pday-time\'>'+p.time+'</div>';p.items.forEach(function(it){h+='<div class=\'pday-item\'>'+it+'</div>'});h+='</div>'});el.innerHTML=h}},100)"><div class="mic" style="background:#f3e8fe">🕌</div><div class="mit"><div class="min">يوم النبي ﷺ</div><div class="mid">جدول يومي مبني على السنة النبوية</div></div></div>
-<div class="mi" onclick="nav('niyyah');setTimeout(renderNiyyah,100)"><div class="mic" style="background:#fff3e0">🎯</div><div class="mit"><div class="min">تجديد النية</div><div class="mid">ضع نوايا روحية وتابع تقدمك</div></div></div>
-<div class="mi" onclick="nav('blesseddays');setTimeout(function(){var el=document.getElementById('bdays-list');if(el){var h='';BLESSED_DAYS.forEach(function(d){h+='<div class=\'bday-card\'><div class=\'bday-name\'>'+d.name+'</div><div class=\'bday-hijri\'>'+d.hijri+'</div><div class=\'bday-desc\'>'+d.desc+'</div></div>'});el.innerHTML=h}},100)"><div class="mic" style="background:#fce4ec">📅</div><div class="mit"><div class="min">الأيام المباركة</div><div class="mid">أيام الصيام والعبادة المستحبة</div></div></div>
-<div class="mi" onclick="nav('settings')"><div class="mic" style="background:#e3f2fd">⚙️</div><div class="mit"><div class="min">الإعدادات</div><div class="mid">حجم الخط والتخصيصات</div></div></div>
-<div class="mi" onclick="nav('about');setTimeout(updateStreak,200)"><div class="mic" style="background:#f3e8fe">ℹ️</div><div class="mit"><div class="min">عن التطبيق</div><div class="mid">المطور · صدقة جارية · الإصدار القادم</div></div></div>
-<div class="ft">سُنّتي v4.0<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a> · <a href="https://github.com/SiteQ8">@SiteQ8</a></div>
-</div>
-
-
-
-<!-- ═══ إذاعة القرآن ═══ -->
-<div class="pg" id="pg-radio">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📻 إذاعة القرآن الكريم</span>
-<span></span>
-</div>
-<div style="padding:0 12px 8px;font-size:.72rem;color:var(--t3);text-align:center">اضغط على أي محطة للاستماع المباشر</div>
-<div id="radio-list" style="padding:0 12px"></div>
-<div style="text-align:center;padding:16px">
-<div style="text-align:center;padding:8px 12px;margin-bottom:8px">
-<div style="font-size:.72rem;color:var(--t3);margin-bottom:6px">😴 مؤقت النوم</div>
-<div style="display:flex;gap:6px;justify-content:center">
-<button onclick="startSleep(15)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">١٥ د</button>
-<button onclick="startSleep(30)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">٣٠ د</button>
-<button onclick="startSleep(60)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">ساعة</button>
-<button onclick="startSleep(120)" style="padding:6px 12px;border-radius:8px;background:var(--s);border:1px solid var(--bd);font-size:.65rem;cursor:pointer;font-family:var(--am)">ساعتين</button>
-</div>
-</div>
-<button onclick="stopRadio()" style="padding:10px 24px;border-radius:12px;background:var(--bd);color:var(--t2);border:none;font-size:.78rem;cursor:pointer;font-family:var(--am)">⏹ إيقاف البث</button>
-</div>
-</div>
-
-<!-- ═══ الإعدادات ═══ -->
-<div class="pg" id="pg-settings">
-<div class="pg-title"><h2>⚙️ الإعدادات</h2><p>تخصيص التطبيق حسب رغبتك</p></div>
-<div class="settings-card">
-<div class="settings-label">📏 حجم الخط</div>
-<div style="display:flex;align-items:center;gap:10px">
-<span style="font-size:.7rem;color:var(--t3)">صغير</span>
-<input type="range" id="fsr" class="fs-slider" min="70" max="150" step="5" oninput="setFS(parseInt(this.value))">
-<span style="font-size:.7rem;color:var(--t3)">كبير</span>
-</div>
-<div style="text-align:center;font-size:.72rem;color:var(--g);font-weight:700;margin-top:4px" id="fsv">100%</div>
-<div id="fs-preview" style="font-family:var(--nk);font-size:1.1rem;line-height:2;text-align:center;padding:12px;margin-top:8px;background:#fefdf5;border-radius:10px;color:#2d1810">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
-</div>
-
-<div class="settings-card">
-<div class="settings-label">📊 تقدم القرآن</div>
-<div id="qprog2"></div>
-<button onclick="if(confirm('هل تريد مسح التقدم؟')){localStorage.removeItem('sunnati_quran_progress');renderProgressBar();alert('تم المسح')}" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t3);margin-top:8px">🗑️ مسح التقدم</button>
-</div>
-
-<div class="settings-card">
-<div class="settings-label">📍 الموقع والقبلة</div>
-<div class="settings-card">
-<div class="settings-label">🌙 الوضع الداكن</div>
-<button id="dark-btn" onclick="toggleDark()" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t2)">🌙 داكن</button>
-</div>
-
-<button onclick="localStorage.removeItem('sunnati_tour_done');showTour()" style="width:100%;padding:10px;border-radius:10px;background:var(--s);border:1px solid var(--bd);font-size:.78rem;cursor:pointer;font-family:var(--am);color:var(--t2);margin-bottom:12px">🎓 إعادة الجولة التعريفية</button>
-<div style="font-size:.82rem;color:var(--t2);padding:4px 0" id="loc2">جاري تحديد الموقع...</div>
-<button onclick="rqL();document.getElementById('loc2').textContent=document.getElementById('loc').textContent" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.78rem;cursor:pointer;font-family:var(--am);margin-top:6px">🔄 تحديث الموقع</button>
-</div>
-</div>
-
-
-<!-- ═══ الورد اليومي ═══ -->
-<div class="pg" id="pg-wird">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📊 الورد اليومي</span>
-<span></span>
-</div>
-<div style="padding:0 12px 6px">
-<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
-<div style="flex:1;height:8px;background:var(--s);border-radius:4px;overflow:hidden"><div id="wird-bar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--g),#34d399);border-radius:4px;transition:width .3s"></div></div>
-<span id="wird-pct" style="font-size:.6rem;color:var(--t3)">0/12</span>
-</div>
-<div style="font-size:.65rem;color:var(--t3);text-align:center;margin-bottom:8px">اضغط على أي عنصر لتسجيل إنجازه اليوم ✅</div>
-</div>
-<div id="wird-list" style="padding:0 12px"></div>
-</div>
-
-<!-- ═══ يوم النبي ═══ -->
-<div class="pg" id="pg-prophetday">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">🕌 يوم النبي ﷺ</span>
-<span></span>
-</div>
-<div style="padding:0 4px 80px" id="pday-list"></div>
-</div>
-
-<!-- ═══ تجديد النية ═══ -->
-<div class="pg" id="pg-niyyah">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">🎯 تجديد النية</span>
-<span></span>
-</div>
-<div style="padding:0 12px">
-<div style="background:var(--gl);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--bd)">
-<input id="niyyah-input" type="text" placeholder="اكتب نيتك..." style="width:100%;padding:10px;border-radius:8px;border:1px solid var(--bd);font-family:var(--am);font-size:.82rem;margin-bottom:8px">
-<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px">
-<button onclick="document.getElementById('niyyah-cat').value='worship'" class="tbpi" style="font-size:.6rem">🕌 عبادة</button>
-<button onclick="document.getElementById('niyyah-cat').value='knowledge'" class="tbpi" style="font-size:.6rem">📚 علم</button>
-<button onclick="document.getElementById('niyyah-cat').value='family'" class="tbpi" style="font-size:.6rem">👨‍👩‍👧 أسرة</button>
-<button onclick="document.getElementById('niyyah-cat').value='health'" class="tbpi" style="font-size:.6rem">💪 صحة</button>
-<button onclick="document.getElementById('niyyah-cat').value='charity'" class="tbpi" style="font-size:.6rem">💰 صدقة</button>
-</div>
-<input id="niyyah-cat" type="hidden" value="worship">
-<button onclick="var t=document.getElementById('niyyah-input').value;if(t.trim()){addNiyyah(t,document.getElementById('niyyah-cat').value);document.getElementById('niyyah-input').value=''}" style="width:100%;padding:10px;border-radius:10px;background:var(--g);color:#fff;border:none;font-size:.82rem;font-weight:700;cursor:pointer;font-family:var(--am)">+ إضافة نية</button>
-</div>
-</div>
-<div id="niyyah-list" style="padding:0 12px"></div>
-</div>
-
-<!-- ═══ الأيام المباركة ═══ -->
-<div class="pg" id="pg-blesseddays">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">📅 الأيام المباركة</span>
-<span></span>
-</div>
-<div id="bdays-list" style="padding:0 12px 80px"></div>
-</div>
-
-<div class="qp-bar" id="quran-player" style="display:none">
-<button id="qp-btn" onclick="toggleQuranAudio()">⏸</button>
-<div class="qp-info"><div class="qp-name" id="qp-name"></div><div class="qp-reciter" id="qp-reciter"></div></div>
-<button onclick="stopQuranAudio()">⏹</button>
-</div>
-
-
-<!-- ═══ عن التطبيق ═══ -->
-<div class="pg" id="pg-about">
-<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-<span onclick="nav('more')" style="cursor:pointer;color:var(--g);font-weight:600;font-size:.82rem">→ رجوع</span>
-<span style="font-family:var(--am);font-size:1.1rem;color:var(--g);font-weight:700">ℹ️ عن التطبيق</span>
-<span></span>
-</div>
-
-<!-- Dedication -->
-<div style="background:linear-gradient(135deg,#fefdf5,#fdf8e8);border:2px solid #e8dfc0;border-radius:20px;padding:24px 20px;margin:0 12px 12px;text-align:center">
-<div style="font-size:2.5rem;margin-bottom:8px">🤲</div>
-<div style="font-family:var(--nk);font-size:1.1rem;color:#8b6914;font-weight:700;margin-bottom:6px">هذا العمل صدقة جارية عن والدي ووالدتي</div>
-<div style="font-family:var(--nk);font-size:.82rem;color:#a0844a;line-height:1.8">اللهم اغفر لهما وارحمهما كما ربياني صغيراً<br>اللهم اجعل هذا العمل في ميزان حسناتهم</div>
-</div>
-
-<!-- App Info -->
-<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-<div style="width:56px;height:56px;border-radius:16px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:1.8rem">📖</div>
-<div><div style="font-family:var(--am);font-size:1.1rem;font-weight:800;color:var(--g)">سُنّتي</div><div style="font-size:.65rem;color:var(--t3)">Sunnati v3.0 — Islamic Companion App</div></div>
-</div>
-<div style="font-size:.78rem;color:var(--t2);line-height:1.8">
-تطبيق إسلامي شامل يهدف لمساعدة المسلم في حياته اليومية من خلال القرآن الكريم والأذكار والسنن النبوية والأدعية المأثورة.
-<br><br>
-جميع المحتويات مستمدة من مراجع إسلامية موثوقة — القرآن الكريم، صحيح البخاري ومسلم، حصن المسلم، والأربعون النووية.
-</div>
-</div>
-
-<!-- Features List -->
-<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
-<div style="font-size:.88rem;font-weight:700;color:var(--g);margin-bottom:10px">✨ المميزات</div>
-<div style="font-size:.72rem;color:var(--t2);line-height:2">
-📖 القرآن الكريم — ١١٤ سورة مع ١٥ قارئ<br>
-📿 أذكار الصباح والمساء مع عداد<br>
-☀️ السنن اليومية الموقوتة<br>
-🤲 الأدعية المأثورة من القرآن والسنة<br>
-🛡️ الرقية الشرعية<br>
-📜 الأربعون النووية<br>
-🔢 المسبحة الإلكترونية<br>
-🧭 اتجاه القبلة بالبوصلة<br>
-📻 إذاعة القرآن — ١٠ محطات<br>
-📊 الورد اليومي — ١٢ عبادة<br>
-🕌 يوم النبي ﷺ<br>
-🎯 تجديد النية<br>
-📅 الأيام المباركة<br>
-😴 مؤقت النوم<br>
-🎧 مشغل القرآن الصوتي<br>
-📏 التحكم بحجم الخط
-</div>
-</div>
-
-<!-- Developer -->
-<div style="background:var(--s);border-radius:16px;padding:18px;margin:0 12px 12px;border:1px solid var(--bd)">
-<div style="font-size:.88rem;font-weight:700;color:var(--g);margin-bottom:10px">👨‍💻 المطور</div>
-<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-<div style="width:48px;height:48px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:1.4rem">👤</div>
-<div>
-<div style="font-size:.95rem;font-weight:700">Ali AlEnezi — علي العنزي</div>
-<div style="font-size:.65rem;color:var(--t3)">صنع في الكويت 🇰🇼</div>
-</div>
-</div>
-<div style="font-size:.72rem;color:var(--t2);line-height:1.8">
-📧 Site@hotmail.com<br>
-🌐 <a href="https://3li.info" target="_blank" style="color:var(--g)">3li.info</a><br>
-💻 <a href="https://github.com/SiteQ8" target="_blank" style="color:var(--g)">github.com/SiteQ8</a>
-</div>
-</div>
-
-<!-- Coming Soon -->
-<div style="background:linear-gradient(135deg,var(--g),#34d399);border-radius:16px;padding:18px;margin:0 12px 12px;color:#fff;text-align:center">
-<div style="font-size:1.5rem;margin-bottom:6px">📱</div>
-<div style="font-size:.95rem;font-weight:800;margin-bottom:4px">قريباً على App Store و Google Play</div>
-<div style="font-size:.68rem;opacity:.8">تطبيق سُنّتي سيتوفر على أجهزة iPhone و Android<br>مع ميزات إضافية — إشعارات، ويدجات، وضع بدون إنترنت</div>
-</div>
-
-<!-- Streak -->
-
-
-<div style="text-align:center;padding:12px;font-size:.55rem;color:var(--t3)">
-سُنّتي v4.0 · صنع بـ ❤️ في الكويت 🇰🇼<br>
-صدقة جارية عن والدي ووالدتي · رحمهم الله
-</div>
-</div>
-
-<!-- ═══ التنقل ═══ -->
-<div class="nav">
-<div class="nv on" data-p="home"><span class="ni">🕌</span><span class="nl">الرئيسية</span></div>
-<div class="nv" data-p="quran"><span class="ni">📖</span><span class="nl">القرآن</span></div>
-<div class="nv" data-p="azkar"><span class="ni">📿</span><span class="nl">الأذكار</span></div>
-<div class="nv" data-p="sunnah"><span class="ni">☀️</span><span class="nl">السنن</span></div>
-<div class="nv" data-p="more"><span class="ni">📋</span><span class="nl">المزيد</span></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+  <div class="sheet-panel">
+    <div class="sheet-grip"></div>
+    <div class="card-head"><h2 id="sheet-title"></h2><button id="sheet-close" aria-label="إغلاق"><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button></div>
+    <div id="sheet-body"></div>
+  </div>
 </div>
 
 <script src="data/surahs.js"></script>
 <script src="data/azkar.js"></script>
 <script src="data/content.js"></script>
+<script src="data/extras.js"></script>
+<script src="js/prayer-engine.js"></script>
+<script src="js/hijri.js"></script>
+<script src="js/store.js"></script>
+<script src="js/mushaf.js"></script>
 <script src="js/app.js"></script>
-
-<!-- دعاء ختمة القرآن -->
-<div class="khatma" id="khatma" onclick="hideKhatma()">
-<div class="khatma-card" onclick="event.stopPropagation()">
-<div style="font-size:2.5rem;margin-bottom:8px">🌟</div>
-<h2>دعاء ختمة القرآن</h2>
-<div style="font-size:.72rem;color:#8b6914;margin-bottom:12px">مبارك عليك ختمة القرآن الكريم</div>
-<div class="khatma-dua">
-اللَّهُمَّ ارْحَمْنِي بالقُرْآنِ وَاجْعَلهُ لِي إِمَاماً وَنُوراً وَهُدًى وَرَحْمَةً<br><br>
-اللَّهُمَّ ذَكِّرْنِي مِنْهُ مَا نَسِيتُ وَعَلِّمْنِي مِنْهُ مَا جَهِلْتُ وَارْزُقْنِي تِلاَوَتَهُ آنَاءَ اللَّيْلِ وَأَطْرَافَ النَّهَارِ<br><br>
-اللَّهُمَّ اجْعَلْهُ حُجَّةً لِي وَلاَ تَجْعَلْهُ حُجَّةً عَلَيَّ<br><br>
-اللَّهُمَّ اجْعَلْهُ لِي شَافِعاً وَمُشَفَّعاً يَوْمَ القِيَامَةِ<br><br>
-اللَّهُمَّ زَيِّنِّي بِالقُرْآنِ وَأَكْرِمْنِي بِهِ<br><br>
-سُبْحَانَكَ اللَّهُمَّ وَبِحَمْدِكَ، أَشْهَدُ أَنْ لاَ إِلَهَ إِلاَّ أَنْتَ، أَسْتَغْفِرُكَ وَأَتُوبُ إِلَيْكَ
-</div>
-<button onclick="hideKhatma()" style="padding:12px 30px;border-radius:14px;background:var(--g);color:#fff;border:none;font-size:.88rem;font-weight:700;cursor:pointer;font-family:var(--am);margin-top:10px">آمين — إغلاق</button>
-</div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded',function(){
-  if(localStorage.getItem('sunnati_dark')==='1'){document.body.classList.add('dark-mode');var db=document.getElementById('dark-btn');if(db)db.textContent='☀️ فاتح'}
-  var sq=document.getElementById('seerah-quote');if(sq&&typeof getDailySeerah==='function')sq.textContent=getDailySeerah();
-  if(typeof renderCitySearch==='function')setTimeout(renderCitySearch,800);
-  var fs=parseInt(localStorage.getItem('sunnati_fontSize')||'100');
-  var el=document.getElementById('fsr');if(el)el.value=fs;
-  var lbl=document.getElementById('fsv');if(lbl)lbl.textContent=fs+'%';
-  var prev=document.getElementById('fs-preview');
-  if(prev)prev.style.fontSize=(fs/100*1.1)+'rem';
-  // Apply --fs to root
-  document.documentElement.style.setProperty('--fs',String(fs/100));
-});
-</script>
 </body>
 </html>

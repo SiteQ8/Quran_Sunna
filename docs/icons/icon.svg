@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="سُنّتي">
+  <rect width="512" height="512" rx="112" fill="#1e6f47"/>
+  <g fill="#f6f4ee">
+    <path d="M70 208a16 16 0 0 1 32 0v224H70Z"/>
+    <path d="M410 208a16 16 0 0 1 32 0v224h-32Z"/>
+    <rect x="112" y="272" width="288" height="160" rx="18"/>
+    <path d="M160 274a96 92 0 0 1 192 0Z"/>
+  </g>
+  <path d="M202 438v-62a54 54 0 0 1 108 0v62Z" fill="#1e6f47"/>
+  <path d="M256 92a34 34 0 1 0 0 68 34 34 0 0 0 0-68Z" fill="#b08833"/>
+  <path d="M271 86a34 34 0 1 0 0 68 34 34 0 0 0 0-68Z" fill="#1e6f47"/>
+</svg>
