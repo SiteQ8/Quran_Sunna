@@ -4,6 +4,32 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#f6f4ee">
+<script>
+/* Before anything paints: the colour the reader chose and the theme they set,
+   read straight from the store, so the app opens in its own colours rather
+   than flashing the default green until the controller wakes. */
+(function () {
+  try {
+    var s = JSON.parse(localStorage.getItem('sunnati.settings') || '{}');
+    var root = document.documentElement;
+    var dark = s.theme === 'dark' || (s.theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (dark) root.setAttribute('data-theme', 'dark');
+    var P = { green: ['#1e6f47', '#1e6f47', '#30b171'], gold: ['#b08833', '#7d6124', '#bb9036'], maroon: ['#a84a6b', '#9c4564', '#f66c9d'],
+      blue: ['#2f7fc0', '#26689c', '#399ae8'], violet: ['#5b4a99', '#5b4a99', '#a889ff'], teal: ['#1a8a8a', '#156e6e', '#1fa6a6'],
+      copper: ['#b5643a', '#945230', '#dd7a47'], sadu: ['#9c2b2b', '#9c2b2b', '#ff6969'] };
+    var c = P[s.accent];
+    if (c) {
+      root.style.setProperty('--accent', dark ? c[2] : c[0]);
+      root.style.setProperty('--accent-ink', dark ? c[2] : c[1]);
+      var m = document.querySelector('meta[name="theme-color"]');
+      if (m) m.setAttribute('content', dark ? '#10161a' : c[1]);
+    } else if (dark) {
+      var m2 = document.querySelector('meta[name="theme-color"]');
+      if (m2) m2.setAttribute('content', '#10161a');
+    }
+  } catch (e) { /* a fresh device, nothing chosen yet */ }
+})();
+</script>
 <meta name="description" content="سُنّتي تطبيق إسلامي يعمل بلا إنترنت، فيه المصحف كاملاً وأوقات الصلاة بحساب فلكي على الجهاز والأذكار والقبلة وتتبع السنن اليومية.">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -193,7 +219,7 @@
     <div id="home-upcoming"></div>
   </div>
 
-  <p class="foot">سُنّتي · صنع في الكويت<br><a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a></p>
+  <p class="foot">سُنّتي · صنع في الكويت<br><a href="https://3li.info">3li.info</a></p>
 </section>
 
 <!-- ══════════ المصحف ══════════ -->
@@ -363,7 +389,7 @@
 <section class="view" id="v-more" aria-labelledby="more-title">
   <div class="view-head"><h1 id="more-title">المزيد</h1><p>أدوات ومحتوى إضافي</p></div>
   <div id="more-list"></div>
-  <p class="foot">سُنّتي <span id="version-line"></span><br><a href="https://github.com/SiteQ8">@SiteQ8</a> · علي العنزي</p>
+  <p class="foot">سُنّتي <span id="version-line"></span><br><a href="https://3li.info">3li.info</a> · علي العنزي</p>
 </section>
 
 <!-- ══════════ القبلة ══════════ -->
@@ -410,7 +436,16 @@
 
 <!-- ══════════ المسبحة ══════════ -->
 <section class="view" id="v-tasbih" aria-labelledby="tasbih-title">
-  <div class="view-head"><h1 id="tasbih-title">المسبحة</h1><p>اضغط للعد، والمجموع محفوظ ليومك</p></div>
+  <div class="view-head"><h1 id="tasbih-title">المسبحة</h1><p>كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم</p></div>
+  <button class="now-azkar" id="tasbih-azkar" data-go="azkar">
+    <span class="now-azkar-glyph"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></span>
+    <span class="now-azkar-body">
+      <span class="now-azkar-kicker">من هنا</span>
+      <span class="now-azkar-title">الأذكار</span>
+      <span class="now-azkar-note" id="tasbih-azkar-note">أذكار الصباح والمساء وحصن المسلم كاملاً</span>
+    </span>
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><use href="#i-next"/></svg>
+  </button>
   <div class="counter">
     <div class="counter-value" id="tasbih-value">0</div>
     <div class="counter-target" id="tasbih-target"></div>
@@ -594,7 +629,7 @@
     <div class="card-head"><h2>صدقة جارية</h2></div>
     <p class="setting-note">التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.</p>
   </div>
-  <p class="foot">علي العنزي · <a href="https://github.com/SiteQ8/Quran_Sunna">المستودع على GitHub</a><br><span id="about-version"></span></p>
+  <p class="foot">علي العنزي · <a href="https://3li.info">3li.info</a> · <a href="https://github.com/SiteQ8/Quran_Sunna">المستودع على GitHub</a><br><span id="about-version"></span></p>
 </section>
 
 </main>
@@ -614,7 +649,7 @@
 <nav class="tabs" aria-label="التنقل الرئيسي">
   <button class="tab" data-go="home" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
   <button class="tab" data-go="quran"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
-  <button class="tab" data-go="azkar"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-beads"/></svg>الأذكار</button>
+  <button class="tab" data-go="tasbih"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-beads"/></svg>المسبحة</button>
   <button class="tab" data-go="tracker"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
   <button class="tab" data-go="more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
 </nav>
@@ -638,6 +673,7 @@
 <script src="data/surahs.js"></script>
 <script src="data/azkar.js"></script>
 <script src="data/hisn.js"></script>
+<script src="data/ojeiri.js"></script>
 <script src="data/content.js"></script>
 <script src="data/extras.js"></script>
 <script src="js/prayer-engine.js"></script>
