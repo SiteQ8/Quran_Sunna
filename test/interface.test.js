@@ -3413,7 +3413,8 @@ test('the azkar of this hour follow the prayer windows', () => {
   const { win, doc } = boot();
   const key = win.App.helpers.azkarForNow();
   const window_ = win.App.clockState().prev.key;
-  const expect = { fajr: 'morning', sunrise: 'morning', duha: 'morning', dhuhr: 'afterPrayer', asr: 'evening', maghrib: 'evening', isha: 'sleep' }[window_];
+  const expect = { fajr: 'morning', sunrise: 'morning', duha: 'morning', dhuhr: 'afterprayer', asr: 'evening', maghrib: 'evening', isha: 'sleep' }[window_];
+  assert.ok(win.AZKAR_DB[expect], 'the section the window asks for must exist: ' + expect);
   assert.strictEqual(key, expect, 'in the ' + window_ + ' window the app should offer ' + expect);
   win.App.go('azkar');
   const card = doc.getElementById('azkar-now');
@@ -4180,4 +4181,47 @@ test('the social set and the feature graphic are drawn from sadu bands, not phot
   const fg = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs'), 'utf8');
   assert.ok(fg.indexOf("from '../social/sadu.mjs'") !== -1, 'the store graphic shares the bands');
   fs.readdirSync(path.join(DOCS, 'screens', 'social')).forEach((f) => assert.ok(!/\.jpe?g$/.test(f), 'a photograph is left in screens/social: ' + f));
+});
+
+/* ---------------- inside the android package ---------------- */
+
+test('inside the package a granted notification permission switches the reminder on by itself', () => {
+  const { win } = boot();
+  win.Notification = function () {}; win.Notification.permission = 'granted';
+  assert.strictEqual(win.Store.get('notify'), false);
+  win.App.helpers.adoptGrantedNotifications();
+  assert.strictEqual(win.Store.get('notify'), true, 'the phone was already asked, and said yes');
+  assert.strictEqual(win.Store.get('notifyAsked'), true);
+  /* once the reader has answered the switch themselves, it is not touched again */
+  win.Store.set('notify', false);
+  win.App.helpers.adoptGrantedNotifications();
+  assert.strictEqual(win.Store.get('notify'), false);
+});
+
+test('the app knows it runs in its own package by the referrer, and remembers', () => {
+  const { win } = boot();
+  assert.strictEqual(win.App.helpers.inAndroidApp(), false);
+  Object.defineProperty(win.document, 'referrer', { configurable: true, value: 'android-app://io.github.siteq8.sunnati/' });
+  assert.strictEqual(win.App.helpers.inAndroidApp(), true);
+  Object.defineProperty(win.document, 'referrer', { configurable: true, value: '' });
+  assert.strictEqual(win.App.helpers.inAndroidApp(), true, 'remembered after the referrer is gone');
+});
+
+test("chrome's own notice about running in chrome is explained once, only inside the package", () => {
+  const { win, doc } = boot();
+  win.App.helpers.maybeExplainChrome();
+  assert.ok(doc.getElementById('banner').hidden, 'nothing to explain in a plain browser');
+  win.Store.set('inApp', true);
+  win.App.helpers.maybeExplainChrome();
+  assert.ok(!doc.getElementById('banner').hidden);
+  assert.ok(doc.getElementById('banner-text').textContent.indexOf('داخل كروم') !== -1);
+  click(win, doc.getElementById('banner-close'));
+  win.App.helpers.maybeExplainChrome();
+  assert.ok(doc.getElementById('banner').hidden, 'once');
+});
+
+test('the delegation service is open to chrome, or the app never learns it may notify', () => {
+  const manifest = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  const block = /<service[^>]*DelegationService[\s\S]*?<\/service>/.exec(manifest)[0];
+  assert.ok(block.indexOf('android:exported="true"') !== -1, 'chrome binds this service from outside the app');
 });
