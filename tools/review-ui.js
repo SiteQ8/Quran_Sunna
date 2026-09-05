@@ -229,6 +229,9 @@ const MIN_CONTRAST_LARGE = 3;
 
         const prose = root.cloneNode(true);
         prose.querySelectorAll('a').forEach((a) => a.remove());
+        /* the mushaf itself counts in its own figures, ١٢٣ on the markers and
+           the page foot, as a printed mushaf does; that is not a stray */
+        prose.querySelectorAll('.ayah-block, .page-foot-num, .ayah-num').forEach((m) => m.remove());
         const latin = [...new Set((prose.textContent.match(/[A-Za-z]{2,}/g) || []))];
         if (latin.length) issues.push('latin in an arabic interface: ' + latin.slice(0, 6).join(', '));
         /* The app writes every number with one set of figures. A stray figure

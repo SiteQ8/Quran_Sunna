@@ -378,11 +378,14 @@ button { background: none; border: none; cursor: pointer; }
 .page-meta { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
 .page-body { min-height: 60vh; }
 .page-surah { margin: var(--s3) 0; }
-.page-foot { text-align: center; margin-top: var(--s4); }
+.page-foot { text-align: center; margin-top: var(--s4); position: relative; }
+/* the page's own figure in a lozenge between two gold hairs, as a mushaf foots its page */
+.page-foot::before { content: ''; position: absolute; left: 10%; right: 10%; top: 50%; height: 1px; background: linear-gradient(90deg, transparent, var(--gold) 25%, var(--gold) 75%, transparent); }
 .page-foot-num {
-  display: inline-grid; place-items: center; min-width: 40px; height: 28px; padding: 0 10px;
-  border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink);
-  font-size: var(--step--1); font-weight: 700; font-variant-numeric: tabular-nums;
+  position: relative; display: inline-grid; place-items: center; min-width: 64px; height: 40px; padding: 0 18px;
+  background: var(--raised); color: var(--accent-ink); border: 1.5px solid var(--gold);
+  font-family: var(--quran); font-size: 1.15rem; font-weight: 700;
+  clip-path: polygon(14px 0, calc(100% - 14px) 0, 100% 50%, calc(100% - 14px) 100%, 14px 100%, 0 50%);
 }
 .page-nav { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .page-nav .btn { flex: 1; }
@@ -789,10 +792,45 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   font-weight: 700; line-height: 1; color: var(--accent-ink); direction: ltr;
 }
 
+/* The basmala stands on a line of its own, centred, between two gold hairs.
+   Its parent justifies its lines and starts its last one, so the last line,
+   which is the only one, is centred by name. */
 .basmala {
-  font-family: var(--quran); text-align: center; color: var(--accent-ink);
-  font-size: calc(1.4rem * var(--quran-scale)); padding: var(--s3) 0 var(--s4);
+  font-family: var(--quran); text-align: center; text-align-last: center; color: var(--accent-ink);
+  font-size: calc(1.55rem * var(--quran-scale)); line-height: 2; padding: var(--s3) 0; margin: var(--s2) 0 var(--s3);
+  position: relative;
 }
+.basmala::before, .basmala::after {
+  content: ''; position: absolute; left: 18%; right: 18%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold) 30%, var(--gold) 70%, transparent);
+}
+.basmala::before { top: 0; } .basmala::after { bottom: 0; }
+
+/* the sheet of a verse: its words, then a grid of what can be done with it,
+   then the four kinds of mark */
+.sheet-ayah { text-align: center; text-align-last: center; margin-bottom: 6px; }
+.service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: var(--s3); }
+.service {
+  display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: var(--r-sm);
+  background: var(--sunken); color: var(--ink); font-weight: 600; font-size: var(--step--1); text-align: start;
+}
+.service .icon { color: var(--accent-ink); flex: none; }
+.marks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: var(--s3); }
+.mark {
+  display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: var(--r-sm);
+  background: var(--sunken); color: var(--ink-2); font-size: .74rem; font-weight: 600; border: 2px solid transparent;
+}
+.mark .icon { width: 24px; height: 24px; }
+.mark-read .icon { color: #2f5fb3; } .mark-review .icon { color: #b3261e; } .mark-memo .icon { color: #2a8a4a; } .mark-ponder .icon { color: #c7911c; }
+.mark.is-on { border-color: currentColor; background: var(--raised); color: var(--ink); }
+.mark-read.is-on { border-color: #2f5fb3; } .mark-review.is-on { border-color: #b3261e; } .mark-memo.is-on { border-color: #2a8a4a; } .mark-ponder.is-on { border-color: #c7911c; }
+.mark.is-on .icon { fill: currentColor; }
+.mark-title { display: inline-flex; align-items: center; gap: 8px; }
+.mark-title .icon { width: 18px; height: 18px; fill: currentColor; }
+.search-hit.mark-read { border-inline-start: 4px solid #2f5fb3; }
+.search-hit.mark-review { border-inline-start: 4px solid #b3261e; }
+.search-hit.mark-memo { border-inline-start: 4px solid #2a8a4a; }
+.search-hit.mark-ponder { border-inline-start: 4px solid #c7911c; }
 
 .sajda-mark { color: var(--gold); font-size: .7em; }
 

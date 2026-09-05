@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.6.0';
+  var VERSION = '8.7.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1464,7 +1464,7 @@
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
-        esc(text) + sajda + '\u2060<span class="ayah-num" data-n="' + a + '" aria-label="آية ' + a + '"></span></span> ';
+        esc(text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span></span> ';
     }).join('');
 
     body.className = 'reader-body';
@@ -1556,31 +1556,41 @@
       icon('play') + 'ابدأ</button>');
   }
 
+  /* Inside the mushaf the figures are the mushaf's own: ١٢٣, not 123. The
+     rest of the app keeps the figures the reader chose. */
+  function mushafDigits(n) {
+    return String(n).replace(/\d/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[+d]; });
+  }
+
+  var BOOKMARK_NAMES = { read: 'قراءة', review: 'مراجعة', memo: 'حفظ', ponder: 'تدبر' };
+
   function verseSheet(s, a) {
     rememberPlace(s, a);
     var text = Mushaf.ayah(s, a);
     var meta = surahMeta(s);
-    var saved = Store.isBookmarked(s, a);
-    var html = '<p class="ayah-block" style="text-align:center;margin-bottom:6px">' + esc(text) + '</p>' +
+    var kind = Store.bookmarkKind(s, a);
+    var ref = s + ':' + a;
+    var service = function (act, iconName, label, extra) {
+      return '<button class="service" data-act="' + act + '" data-ref="' + ref + '"' + (extra || '') + '>' + icon(iconName) + '<span>' + label + '</span></button>';
+    };
+    var html = '<p class="ayah-block sheet-ayah">' + esc(text) + '</p>' +
       '<p class="source">سورة ' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) +
       '، الجزء ' + ar(Mushaf.juzOf(s, a)) + '، صفحة ' + ar(Mushaf.pageOf(s, a)) + '</p>' +
-      '<div class="btn-row" style="margin-top:14px">' +
-      '<button class="btn ' + (saved ? 'btn-primary' : 'btn-ghost') + '" data-act="bookmark" data-ref="' + s + ':' + a + '">' +
-      icon('bookmark') + (saved ? 'محفوظة' : 'احفظ') + '</button>' +
-      '<button class="btn btn-ghost" data-act="share" data-ref="' + s + ':' + a + '">' + icon('share') + 'مشاركة</button>' +
-      '<button class="btn btn-ghost" data-act="picture" data-ref="' + s + ':' + a + '">' + icon('star') + 'صورة</button>' +
+      '<div class="service-grid">' +
+      service('listen', 'play', 'الاستماع للآية') +
+      service('recite', 'play', 'التلاوة من هنا') +
+      service('tafsir', 'info', 'تفسير الآية') +
+      service('picture', 'star', 'صورة الآية') +
+      service('share', 'share', 'مشاركة الآية') +
+      service('copy', 'text', 'نسخ الآية') +
+      service('memorise', 'refresh', 'كرّر للحفظ') +
+      '<button class="service" data-page="' + Mushaf.pageOf(s, a) + '">' + icon('book') + '<span>أول الصفحة</span></button>' +
       '</div>' +
-      '<div class="btn-row" style="margin-top:8px">' +
-      '<button class="btn btn-ghost" data-act="copy" data-ref="' + s + ':' + a + '">' + icon('text') + 'نسخ</button>' +
-      '<button class="btn btn-ghost" data-page="' + Mushaf.pageOf(s, a) + '">' + icon('book') + 'أول الصفحة</button>' +
-      '</div>' +
-      '<button class="btn btn-ghost btn-block" data-act="memorise" data-ref="' + s + ':' + a +
-      '" style="margin-top:8px">' + icon('refresh') + 'كرّر للحفظ</button>' +
-      '<div class="btn-row" style="margin-top:8px">' +
-      '<button class="btn btn-ghost" data-act="listen" data-ref="' + s + ':' + a + '">' + icon('play') + 'استماع</button>' +
-      '<button class="btn btn-ghost" data-act="recite" data-ref="' + s + ':' + a + '">' + icon('play') + 'اقرأ من هنا</button>' +
-      '<button class="btn btn-ghost" data-act="tafsir" data-ref="' + s + ':' + a + '">' + icon('info') + 'تفسير</button>' +
-      '</div>' +
+      '<div class="marks" role="group" aria-label="علامة على الآية">' +
+      Store.BOOKMARK_KINDS.map(function (k) {
+        return '<button class="mark mark-' + k + (kind === k ? ' is-on' : '') + '" data-act="bookmark" data-ref="' + ref + '" data-kind="' + k + '" aria-pressed="' + (kind === k ? 'true' : 'false') + '">' +
+          icon('bookmark') + '<span>' + BOOKMARK_NAMES[k] + '</span></button>';
+      }).join('') + '</div>' +
       '<div id="tafsir-slot" style="margin-top:12px"></div>';
     openSheet('آية ' + ar(a), html);
   }
@@ -1815,7 +1825,8 @@
     var firstMeta = surahMeta(first.s), lastMeta = surahMeta(last.s);
     if ($('page-title')) $('page-title').textContent = 'صفحة ' + ar(n);
     if ($('page-meta')) {
-      $('page-meta').textContent = 'الجزء ' + ar(Mushaf.juzOf(first.s, first.a)) + '، ' +
+      /* a mushaf names the quarter reached by the end of the page */
+      $('page-meta').textContent = 'الجزء ' + ar(Mushaf.juzOf(first.s, first.a)) + '، ' + hizbLabel(last.s, last.a) + '، ' +
         (first.s === last.s ? 'سورة ' + firstMeta.ar : 'من ' + firstMeta.ar + ' إلى ' + lastMeta.ar);
     }
 
@@ -1835,16 +1846,27 @@
       var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
-        esc(v.text) + sajda + '\u2060<span class="ayah-num" data-n="' + v.a + '" aria-label="آية ' + v.a + '"></span></span> ';
+        esc(v.text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
     });
     body.innerHTML = '<div class="ayah-block">' + html + '</div>' +
-      '<div class="page-foot"><span class="page-foot-num">' + ar(n) + '</span></div>';
+      '<div class="page-foot"><span class="page-foot-num" aria-label="صفحة ' + n + '">' + mushafDigits(n) + '</span></div>';
 
     if ($('page-prev')) $('page-prev').disabled = n <= 1;
     if ($('page-next')) $('page-next').disabled = n >= PAGES_IN_MUSHAF;
     /* the place is remembered as a verse too, so تابع القراءة finds it */
     rememberPlace(first.s, first.a);
     if (window.scrollTo) window.scrollTo(0, 0);
+  }
+
+  /* The hizb and its quarter of a verse, from the two hundred and forty
+     quarter starts. */
+  function hizbLabel(s, a) {
+    if (typeof HIZB_QUARTERS === 'undefined') return '';
+    var g = Mushaf.globalIndex(s, a);
+    var q = 0;
+    for (var i = 0; i < HIZB_QUARTERS.length; i++) { if (HIZB_QUARTERS[i] <= g) q = i; else break; }
+    var hizb = Math.floor(q / 4) + 1, part = q % 4;
+    return 'الحزب ' + ar(hizb) + (part ? ' ' + ['', 'وربعه', 'ونصفه', 'وثلاثة أرباعه'][part] : '');
   }
 
   function turnPage(by) {
@@ -2317,15 +2339,21 @@
       host.innerHTML = empty('لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها', 'افتح المصحف', 'quran');
       return;
     }
-    host.innerHTML = list.map(function (b) {
-      var meta = surahMeta(b.s);
-      var text = Mushaf.ready() ? Mushaf.ayah(b.s, b.a) : '';
-      return '<button class="search-hit" data-hit="' + b.s + ':' + b.a + '">' +
-        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(b.a) + '</span>' +
-        esc(text) + '</button>';
+    /* the four kinds, each its own group with its colour, in the order of the marks */
+    var kinds = Store.BOOKMARK_KINDS.filter(function (k) { return list.some(function (b) { return (b.c || 'read') === k; }); });
+    host.innerHTML = kinds.map(function (k) {
+      var mine = list.filter(function (b) { return (b.c || 'read') === k; });
+      return '<h2 class="section-title mark-title mark-' + k + '">' + icon('bookmark') + BOOKMARK_NAMES[k] + ' <span class="fold-tally">' + ar(mine.length) + '</span></h2>' +
+        mine.map(function (b) {
+          var meta = surahMeta(b.s);
+          var text = Mushaf.ready() ? Mushaf.ayah(b.s, b.a) : '';
+          return '<button class="search-hit mark-' + k + '" data-hit="' + b.s + ':' + b.a + '">' +
+            '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(b.a) + '</span>' +
+            esc(text) + '</button>';
+        }).join('');
     }).join('') +
       '<button class="btn btn-ghost btn-block" data-act="clear-bookmarks" style="margin-top:14px">' +
-      'امسح كل المحفوظات</button>';
+      'امسح كل العلامات</button>';
   }
 
   /* ---------------- khatma ---------------- */
@@ -3498,11 +3526,12 @@
   };
 
   var ACTIONS = {
-    bookmark: function (ref) {
+    bookmark: function (ref, el) {
       var parts = ref.split(':');
       var s = +parts[0], a = +parts[1];
-      var added = Store.toggleBookmark(s, a);
-      toast(added ? 'حُفظت الآية' : 'أُزيلت من المحفوظات');
+      var kind = el && el.getAttribute ? (el.getAttribute('data-kind') || 'read') : 'read';
+      var added = Store.toggleBookmark(s, a, kind);
+      toast(added ? 'عُلّمت الآية: ' + BOOKMARK_NAMES[kind] : 'أُزيلت العلامة');
       verseSheet(s, a);
       if (state.view === 'reader') renderReader();
       if (state.view === 'bookmarks') renderBookmarks();
@@ -3613,7 +3642,7 @@
     var act = target.closest('[data-act]');
     if (act) {
       var fn = ACTIONS[act.getAttribute('data-act')];
-      if (fn) fn(act.getAttribute('data-ref') || '');
+      if (fn) fn(act.getAttribute('data-ref') || '', act);
       return;
     }
 
@@ -4192,7 +4221,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,

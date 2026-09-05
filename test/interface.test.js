@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -3549,7 +3549,7 @@ test('the verse number is placed by its own middle in the rosette', () => {
   const { win, doc } = boot();
   win.App.state.surah = 1; win.App.go('reader');
   const num = doc.querySelector('.ayah-num');
-  assert.strictEqual(num.getAttribute('data-n'), '1');
+  assert.strictEqual(num.getAttribute('data-n'), '١', 'the mushaf counts in its own figures');
   assert.strictEqual(num.textContent, '', 'the figure lives in the attribute, drawn by the stylesheet');
 });
 
@@ -4333,4 +4333,60 @@ test('the reciter is kept by id, the default is al minshawi, and the removed one
   assert.strictEqual(win.Store.get('reciter'), 'ar.minshawi', 'and is stored by id from then on');
   win.Store.set('reciter', 0);
   assert.strictEqual(win.App.helpers.reciterId(), 'ar.minshawi', 'zero was the removed reciter, so the default');
+});
+
+/* ---------------- the mushaf as a mushaf ---------------- */
+
+test('the basmala stands centred on its own line in the page view as well as the surah view', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.basmala \{[^}]*text-align-last:\s*center/, 'the parent starts its last line, so the basmala must centre its own by name');
+  const { win, doc } = boot();
+  win.App.helpers.openPage(249);
+  const b = doc.querySelector('#page-body .basmala');
+  assert.ok(b, 'الرعد opens on page 249 with its basmala');
+  win.App.helpers.openPage(1);
+  assert.ok(!doc.querySelector('#page-body .basmala'), 'الفاتحة has the basmala as its first verse, not a line above');
+  win.App.helpers.openPage(187);
+  assert.ok(!doc.querySelector('#page-body .basmala'), 'التوبة opens without one');
+});
+
+test('the page names its juz and the hizb reached by its end, as a mushaf does', () => {
+  const { win, doc } = boot();
+  win.App.helpers.openPage(249);
+  assert.strictEqual(doc.getElementById('page-meta').textContent, 'الجزء 13، الحزب 25 وثلاثة أرباعه، سورة الرعد');
+  win.App.helpers.openPage(248);
+  assert.ok(doc.getElementById('page-meta').textContent.indexOf('الحزب 25 ونصفه') !== -1, 'page 248 ends in the half');
+  assert.strictEqual(win.App.helpers.hizbLabel(1, 1), 'الحزب 1');
+  assert.strictEqual(win.App.helpers.hizbLabel(114, 6), 'الحزب 60 وثلاثة أرباعه');
+  assert.strictEqual(win.HIZB_QUARTERS.length, 240);
+});
+
+test('inside the mushaf the figures are its own: markers and the page foot in arabic indic', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.App.helpers.mushafDigits(249), '٢٤٩');
+  win.App.helpers.openPage(249);
+  assert.strictEqual(doc.querySelector('#page-body .ayah-num').getAttribute('data-n'), '١');
+  assert.strictEqual(doc.querySelector('.page-foot-num').textContent, '٢٤٩');
+  assert.strictEqual(doc.querySelector('.page-foot-num').getAttribute('aria-label'), 'صفحة 249', 'read aloud in the figures the reader chose');
+  /* the chrome around the page keeps the app's figures */
+  assert.ok(doc.getElementById('page-title').textContent.indexOf('249') !== -1);
+});
+
+test('a verse is marked as one of four kinds, and the marks screen groups them', () => {
+  const { win, doc } = boot();
+  win.App.state.surah = 13; win.App.go('reader');
+  click(win, doc.querySelector('[data-ayah="13:2"]'));
+  assert.strictEqual(doc.querySelectorAll('#sheet .service').length, 8, 'eight services in a grid');
+  assert.strictEqual(doc.querySelectorAll('#sheet .mark').length, 4, 'four kinds of mark');
+  click(win, doc.querySelector('#sheet .mark-memo'));
+  assert.strictEqual(win.Store.bookmarkKind(13, 2), 'memo');
+  click(win, doc.querySelector('#sheet .mark-ponder'));
+  assert.strictEqual(win.Store.bookmarkKind(13, 2), 'ponder', 'another kind changes it');
+  click(win, doc.querySelector('#sheet .mark-ponder'));
+  assert.strictEqual(win.Store.bookmarkKind(13, 2), null, 'the same kind again removes it');
+  win.Store.toggleBookmark(2, 255, 'review'); win.Store.toggleBookmark(1, 1, 'read'); win.Store.toggleBookmark(112, 1, 'read');
+  win.App.go('bookmarks');
+  const titles = [...doc.querySelectorAll('#bookmark-list .mark-title')].map((t) => t.textContent.trim().replace(/\s+\d+$/, ''));
+  assert.deepStrictEqual(titles.join('|'), 'قراءة|مراجعة', 'grouped by kind, in the order of the marks');
+  assert.strictEqual(doc.querySelectorAll('#bookmark-list .search-hit.mark-read').length, 2);
 });
