@@ -71,3 +71,17 @@ test('the wrapper can see a browser and hand it the splash, the two faults that 
   const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('try {') !== -1 && main.indexOf('AdhanScheduler.scheduleNext(this);') !== -1, 'the alarm must never keep the app from opening');
 });
+
+test('the splash the launcher inflates is a bitmap, not a layer list over an adaptive icon', () => {
+  const res = path.join(root, 'android/app/src/main/res');
+  assert.ok(!fs.existsSync(path.join(res, 'drawable', 'splash.xml')), 'a <bitmap> whose src is the adaptive icon xml throws on inflation and killed the app at launch');
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
+    const f = path.join(res, 'drawable-' + d, 'splash.png');
+    assert.ok(fs.existsSync(f), 'splash for ' + d);
+    const png = fs.readFileSync(f);
+    assert.strictEqual(png.toString('ascii', 1, 4), 'PNG');
+  });
+  const manifest = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert.ok(manifest.indexOf('android:theme="@style/Theme.Launcher"') !== -1, 'the launcher wears the translucent theme the library recommends');
+  assert.ok(manifest.indexOf('android:name=".App"') !== -1 && manifest.indexOf('.CrashActivity') !== -1, 'a crash shows its trace on screen');
+});

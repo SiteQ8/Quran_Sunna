@@ -8,8 +8,8 @@ android {
         applicationId "io.github.siteq8.sunnati"
         minSdk 26
         targetSdk 34
-        versionCode 85
-        versionName "8.4.1"
+        versionCode 86
+        versionName "8.4.2"
 
         /* The address the wrapper opens. Everything the app does lives there, so
            a fix published to the site reaches anyone who installed this without
@@ -46,8 +46,8 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release
         }
