@@ -2736,7 +2736,7 @@ test('the search reaches the azkar, the hadiths and the supplications', () => {
   const type = function (q) { const f = doc.getElementById('quran-search'); f.value = q; fire(win, f, 'input'); };
   const pick = function (s) { click(win, doc.querySelector('[data-scope="' + s + '"]')); };
 
-  assert.strictEqual(doc.querySelectorAll('#search-scope [data-scope]').length, 4);
+  assert.strictEqual(doc.querySelectorAll('#search-scope [data-scope]').length, 5);
   assert.strictEqual(doc.querySelector('[data-scope="quran"]').getAttribute('aria-checked'), 'true');
 
   pick('azkar'); type('أصبحنا');
@@ -3629,4 +3629,80 @@ test('the sunan of the hour agree with the book for every window', () => {
       k + ' should open with ' + expect[k] + ', got ' + win.CURRENT_SUNNAH[k].items[0]);
     assert.ok(win.CURRENT_SUNNAH[k].items.length >= 4);
   });
+});
+
+/* ---------------- the notification reminds, the sunan search, the boxes speak ---------------- */
+
+test('a prayer notification carries a sunnah of its hour from the book', () => {
+  const { win } = boot();
+  const shown = [];
+  win.navigator.serviceWorker = { ready: Promise.resolve({ showNotification: function (t, o) { shown.push(o.body); return Promise.resolve(); } }) };
+  win.Notification = function () {}; win.Notification.permission = 'granted';
+  win.Store.set('notify', true); win.Store.set('notified', {});
+  const c = win.App.clockState();
+  win.App.helpers.maybeNotify(Object.assign({}, c, { now: c.prev.at + 1 }));
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.strictEqual(shown.length, 1);
+      if (c.prev.key === 'sunrise') {
+        assert.ok(shown[0].indexOf('طلعت الشمس') === 0);
+      } else {
+        assert.ok(shown[0].indexOf('ومن سنن الوقت:') !== -1, 'it should name a sunnah, got ' + shown[0]);
+        const lead = win.App.helpers.windowSunnah(c.prev.key, new win.Date()).block.items[0].replace(/،.*$/, '');
+        assert.ok(shown[0].indexOf(lead) !== -1, 'the first sunnah of the window: ' + lead);
+      }
+      done();
+    }, 30);
+  });
+});
+
+test('the sunan of the book can be searched', () => {
+  const { win, doc } = boot();
+  win.App.go('search');
+  click(win, doc.querySelector('[data-scope="sunan"]'));
+  const f = doc.getElementById('quran-search'); f.value = 'المغرب'; fire(win, f, 'input');
+  const hits = doc.querySelectorAll('#search-results .search-hit');
+  assert.ok(hits.length >= 4, 'the maghrib sunan and their mentions, got ' + hits.length);
+  assert.ok(doc.querySelector('.search-hit-ref').textContent.indexOf('ص ') !== -1, 'each hit names its page in the book');
+  f.value = 'الوصية'; fire(win, f, 'input');
+  assert.ok(doc.querySelectorAll('#search-results .search-hit').length >= 1, 'the will is among the daily sunan');
+});
+
+test('every tick box says it is a checkbox and whether it is ticked', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const boxes = doc.querySelectorAll('#tracker-list [data-check]');
+  boxes.forEach(function (b) {
+    assert.strictEqual(b.getAttribute('role'), 'checkbox');
+    assert.strictEqual(b.getAttribute('aria-checked'), 'false');
+  });
+  click(win, boxes[3]);
+  assert.strictEqual(doc.querySelectorAll('#tracker-list [data-check]')[3].getAttribute('aria-checked'), 'true');
+  win.App.go('home');
+  doc.querySelectorAll('#now-sunnah [data-check]').forEach(function (b) {
+    assert.strictEqual(b.getAttribute('role'), 'checkbox', 'the home card too');
+  });
+});
+
+test('outside kuwait the app asks once where you are, and never again', () => {
+  const { win, doc } = boot();
+  win.Intl.DateTimeFormat = function () { return { resolvedOptions: function () { return { timeZone: 'Europe/London' }; } }; };
+  win.Store.set('placeAsked', false);
+  win.App.helpers.maybeAskPlace();
+  assert.ok(!doc.getElementById('banner').hidden, 'the first open in london should be asked');
+  assert.ok(doc.getElementById('banner-text').textContent.indexOf('للكويت') !== -1);
+  assert.strictEqual(doc.getElementById('banner-act').textContent, 'حدّد موقعي');
+  assert.strictEqual(win.Store.get('placeAsked'), true);
+  click(win, doc.getElementById('banner-close'));
+  win.App.helpers.maybeAskPlace();
+  assert.ok(doc.getElementById('banner').hidden, 'asked once, not twice');
+});
+
+test('a phone already set to kuwait time is not asked', () => {
+  const { win, doc } = boot();
+  win.Intl.DateTimeFormat = function () { return { resolvedOptions: function () { return { timeZone: 'Asia/Kuwait' }; } }; };
+  win.Store.set('placeAsked', false);
+  win.App.helpers.maybeAskPlace();
+  assert.ok(doc.getElementById('banner').hidden, 'a kuwaiti phone needs no prompt');
+  assert.strictEqual(win.Store.get('placeAsked'), true, 'and the question is spent');
 });

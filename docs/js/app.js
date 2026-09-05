@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.3.0';
+  var VERSION = '7.4.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -620,6 +620,7 @@
     maybeNotify(c);
     maybeSalawat(false);
     if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); }
+    if (!state.askedPlace) { state.askedPlace = true; window.setTimeout(maybeAskPlace, 1500); }
   }
 
   function renderWindows(c) {
@@ -679,7 +680,13 @@
     Store.set('notified', raised);
     var name = prayerName(c.prev.key, new Date());
     var sunrise = c.prev.key === 'sunrise';
-    notify('حان وقت ' + name, sunrise ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة', key);
+    /* the word carries a sunnah of the hour from the book, so it reminds
+       rather than only rings */
+    var block = windowSunnah(c.prev.key, new Date());
+    var lead = block && block.block && block.block.items && block.block.items[0];
+    var body = sunrise ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة';
+    if (lead) body += (sunrise ? '، ' : '، ومن سنن الوقت: ') + lead.replace(/،.*$/, '');
+    notify('حان وقت ' + name, body, key);
     if (!sunrise) speak('حان وقت صلاة ' + name.replace(/^أذان /, ''), 'adhan');
     maybeSalawat(true);
   }
@@ -818,6 +825,23 @@
     }).catch(function () {});
   }
 
+  /* On the first open the times are for الكويت, which is right for most who
+     install this and wrong for everyone else. Once, the app asks. The device's
+     own zone is a good hint: a phone set to Asia/Kuwait is not asked at all. */
+  function maybeAskPlace() {
+    if (Store.get('placeAsked')) return;
+    var p = place();
+    if (!p || p.n !== 'الكويت') { Store.set('placeAsked', true); return; }
+    var zone = '';
+    try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { zone = ''; }
+    Store.set('placeAsked', true);
+    if (zone === 'Asia/Kuwait') return;
+    showBanner('المواقيت الآن للكويت، فإن كنت في مكان آخر فحدّد موقعك', 'حدّد موقعي', function () {
+      go('settings');
+      locate();
+    });
+  }
+
   function scheduleForWorker() {
     if (!navigator.serviceWorker || !navigator.serviceWorker.controller) return;
     askPeriodicWake();
@@ -910,7 +934,7 @@
       block.items.map(function (item, i) {
         var id = ids[i];
         return '<button class="check' + (record.sunnah[id] ? ' is-done' : '') +
-          '" data-check="' + esc(id) + '">' +
+          '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (record.sunnah[id] ? 'true' : 'false') + '">' +
           '<span class="check-box">' + icon('check') + '</span>' +
           '<span class="check-label">' + esc(item) + '</span></button>';
       }).join('');
@@ -1730,7 +1754,12 @@
         out.push({ text: text, where: where, key: key });
       }
     }
-    if (scope === 'azkar' && typeof AZKAR_DB !== 'undefined') {
+    if (scope === 'sunan' && typeof SUNNAH_TRACKER !== 'undefined') {
+      SUNNAH_TRACKER.forEach(function (g) {
+        g.i.forEach(function (line) { take(line, g.s + '، ص ' + ar(g.p), 'tracker'); });
+      });
+      WIRD_ITEMS.forEach(function (w) { take(w.t + (w.n ? '، ' + w.n : ''), 'الورد اليومي', 'tracker'); });
+    } else if (scope === 'azkar' && typeof AZKAR_DB !== 'undefined') {
       Object.keys(AZKAR_DB).forEach(function (k) {
         AZKAR_DB[k].items.forEach(function (item, i) { take(item.t, AZKAR_DB[k].title, 'azkar:' + k); });
       });
@@ -2150,7 +2179,7 @@
         WIRD_ITEMS.map(function (item) {
           var id = 'wird:' + item.id;
           var done = !!record.sunnah[id];
-          return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '">' +
+          return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
             '<span class="check-box">' + icon('check') + '</span>' +
             '<span class="check-label">' + esc(item.t) +
             '<span class="check-note">' + esc(item.n) + '</span></span></button>';
@@ -2165,7 +2194,7 @@
           group.i.map(function (item, ii) {
             var id = 'sunnah:' + gi + ':' + ii;
             var done = !!record.sunnah[id];
-            return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '">' +
+            return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
               '<span class="check-box">' + icon('check') + '</span>' +
               '<span class="check-label">' + esc(item) + '</span></button>';
           }).join(''));
@@ -3580,7 +3609,8 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
+      maybeAskPlace: maybeAskPlace, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

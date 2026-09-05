@@ -826,7 +826,7 @@ button { background: none; border: none; cursor: pointer; }
 .dhikr:active { transform: scale(.995); }
 .dhikr-note { font-size: var(--step--1); color: var(--ink-3); margin-top: var(--s2); line-height: 1.8; }
 .dhikr-share {
-  position: relative; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
+  position: relative; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center;
   color: var(--ink-3); background: var(--sunken); flex: none; margin-inline-start: auto;
 }
 /* drawn at forty, reaching to forty eight without moving anything on screen */

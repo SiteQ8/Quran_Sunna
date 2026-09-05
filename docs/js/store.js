@@ -28,6 +28,7 @@
     salawatAt: 0,
     voice: 'none',
     voiceName: '',
+    placeAsked: false,
     lastPage: 1,
     notified: {},
     reciter: 0,
