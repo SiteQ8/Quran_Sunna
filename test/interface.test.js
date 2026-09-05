@@ -3896,3 +3896,20 @@ test('the real voice is the default, in front, and the phone voice row appears o
   /* the play button sits on the reminder row itself */
   assert.ok(doc.querySelector('#settings-voice-try').closest('.setting').querySelector('#settings-voice'), 'the button is beside the choice it plays');
 });
+
+/* ---------------- the store listing ---------------- */
+
+test('the store listing describes the app as it is, within the store limits', () => {
+  const listing = fs.readFileSync(path.join(__dirname, '..', 'play', 'README.md'), 'utf8');
+  const short = /### الوصف القصير\n```\n([^\n]+)\n```/.exec(listing);
+  assert.ok(short, 'a short description');
+  assert.ok(short[1].length <= 80, 'the store allows eighty characters, found ' + short[1].length);
+  const full = /### الوصف الكامل\n```\n([\s\S]*?)\n```/.exec(listing)[1];
+  assert.ok(full.length <= 4000, 'the store allows four thousand, found ' + full.length);
+  ['العجيري', 'صفحة صفحة', 'مئة واثنان وثلاثون باباً', 'المنح العلية', 'الصلاة الإبراهيمية', 'السدو'].forEach(function (k) {
+    assert.ok(full.indexOf(k) !== -1, 'the listing should mention ' + k);
+  });
+  assert.ok(full.indexOf('رفيق') === -1, 'no companion');
+  assert.ok(full.indexOf('ستة عشر قسماً') === -1, 'the sixteen sections are the whole book now');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs')), 'the graphic can be drawn again');
+});
