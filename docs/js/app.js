@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.7.2';
+  var VERSION = '8.7.3';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -723,7 +723,7 @@
       var total = stats.prayed + stats.missed;
       $('prayers-stats').innerHTML =
         stat(stats.inTime, 'في وقتها') + stat(stats.jamaah, 'في جماعة') + stat(stats.late, 'قضاء') + stat(stats.missed, 'فاتت') +
-        '<p class="setting-note" style="grid-column:1/-1">' + (total ? 'علّمت ' + count(total, 'صلاة واحدة', 'صلاتين', 'صلوات', 'صلاة') + ' في آخر ثلاثين يوماً، منها ' + ar(Math.round(stats.inTime / total * 100)) + '% في وقتها' : 'لم تُعلّم صلاة بعد، فاضغط أي صلاة في الأعلى أو في شريط المواقيت') + '</p>';
+        '<p class="setting-note" style="grid-column:1/-1">' + prayerSummary(stats, total) + '</p>';
     }
     var grid = $('prayers-grid');
     if (grid) {
@@ -742,6 +742,24 @@
       }
       grid.innerHTML = rows;
     }
+  }
+
+  /* The month in one sentence. Few prayers are told in words, a percentage
+     of one prayer being a nonsense; many are told with the share as well. */
+  function prayerSummary(stats, total) {
+    if (!total) return 'لم تُعلّم صلاة بعد، فاضغط أي صلاة في الأعلى أو في شريط المواقيت';
+    var inTime = stats.inTime;
+    if (total === 1) {
+      return 'علّمت صلاة واحدة في آخر ثلاثين يوماً، و' + (inTime ? 'كانت في وقتها' : (stats.late ? 'كانت قضاءً' : 'فاتت'));
+    }
+    if (total === 2) {
+      return 'علّمت صلاتين في آخر ثلاثين يوماً، ' + (inTime === 2 ? 'وكلتاهما في وقتها' : inTime === 1 ? 'إحداهما في وقتها' : 'ولا واحدة منهما في وقتها');
+    }
+    var head = 'علّمت ' + count(total, 'صلاة واحدة', 'صلاتين', 'صلوات', 'صلاة') + ' في آخر ثلاثين يوماً';
+    if (inTime === total) return head + '، وكلها في وقتها';
+    if (!inTime) return head + '، ولا واحدة منها في وقتها';
+    var words = inTime === 1 ? 'واحدة منها' : inTime === 2 ? 'اثنتان منها' : ar(inTime) + ' منها';
+    return head + '، ' + words + ' في وقتها' + (total >= 10 ? '، أي ' + ar(Math.round(inTime / total * 100)) + '%' : '');
   }
 
   function stat(n, label) {
@@ -4269,7 +4287,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, prayerSummary: prayerSummary, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

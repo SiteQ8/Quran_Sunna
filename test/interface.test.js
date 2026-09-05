@@ -4462,3 +4462,19 @@ test('the icon addresses carry a version, so a phone that kept the old mark fetc
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf("'./icons/icon-192.png?v=") !== -1, 'the worker keeps the versioned address, which is what the page asks for');
 });
+
+test('the month of prayers is told in words when few, and with the share only when many', () => {
+  const { win } = boot();
+  const sum = win.App.helpers.prayerSummary;
+  const st = function (inTime, late, missed) { return { inTime: inTime, late: late, missed: missed }; };
+  assert.strictEqual(sum(st(0, 0, 0), 0), 'لم تُعلّم صلاة بعد، فاضغط أي صلاة في الأعلى أو في شريط المواقيت');
+  assert.strictEqual(sum(st(1, 0, 0), 1), 'علّمت صلاة واحدة في آخر ثلاثين يوماً، وكانت في وقتها');
+  assert.strictEqual(sum(st(0, 1, 0), 1), 'علّمت صلاة واحدة في آخر ثلاثين يوماً، وكانت قضاءً');
+  assert.strictEqual(sum(st(0, 0, 1), 1), 'علّمت صلاة واحدة في آخر ثلاثين يوماً، وفاتت');
+  assert.strictEqual(sum(st(1, 1, 0), 2), 'علّمت صلاتين في آخر ثلاثين يوماً، إحداهما في وقتها');
+  assert.strictEqual(sum(st(5, 0, 0), 5), 'علّمت 5 صلوات في آخر ثلاثين يوماً، وكلها في وقتها');
+  assert.strictEqual(sum(st(3, 2, 0), 5), 'علّمت 5 صلوات في آخر ثلاثين يوماً، 3 منها في وقتها');
+  assert.strictEqual(sum(st(1, 6, 0), 7), 'علّمت 7 صلوات في آخر ثلاثين يوماً، واحدة منها في وقتها');
+  assert.strictEqual(sum(st(45, 3, 2), 50), 'علّمت 50 صلاة في آخر ثلاثين يوماً، 45 منها في وقتها، أي 90%');
+  assert.ok(sum(st(1, 0, 0), 1).indexOf('%') === -1, 'no percentage of one prayer');
+});
