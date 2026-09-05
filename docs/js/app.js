@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.5.0';
+  var VERSION = '7.6.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -591,7 +591,9 @@
     var secs = total % 60;
 
     $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
-    $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar : 'أذان ' + c.next.ar;
+    var fasting = Hijri.toHijri(new Date(), Store.get('hijriAdjust')).m === 9;
+    $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar
+      : (fasting && c.next.key === 'maghrib') ? 'الإفطار' : 'أذان ' + c.next.ar;
     $('arc-at').textContent = clockText(c.next.at);
     /* باقٍ على أذان العصر is how it is said. The sunrise has no adhan, so it
        is named on its own. */
@@ -2760,7 +2762,11 @@
       $('tt-today').hidden = (at.y === today.getFullYear() && at.m === today.getMonth());
     }
 
+    /* Through ramadan the table carries the imsak, ten minutes before the
+       fajr as the calendars print it, so a fasting reader has it in one place. */
+    var ramadan = rows.some(function (r) { return r.hijri.m === 9; });
     var head = '<thead><tr><th>اليوم</th>' +
+      (ramadan ? '<th>الإمساك</th>' : '') +
       TABLE_KEYS.map(function (k) { return '<th>' + esc(prayerName(k, rows[0].date)) + '</th>'; }).join('') +
       '</tr></thead>';
 
@@ -2776,6 +2782,7 @@
         '<th scope="row"><span class="tt-day">' + ar(row.date.getDate()) + '</span>' +
         '<span class="tt-hijri">' + ar(row.hijri.d) +
         (showName ? ' ' + esc(row.hijri.monthName) : '') + '</span></th>' +
+        (ramadan ? '<td>' + (row.hijri.m === 9 ? clockMarkup(row.times.fajr - 10) : '') + '</td>' : '') +
         TABLE_KEYS.map(function (k) {
           return '<td>' + clockMarkup(row.times[k]) + '</td>';
         }).join('') + '</tr>';

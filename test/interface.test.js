@@ -3783,3 +3783,55 @@ test('the voice list tells which of three cases the phone is in', () => {
   win.App.go('settings');
   assert.ok(doc.getElementById('settings-voice-note').textContent.indexOf('تحويل النص إلى كلام') !== -1);
 });
+
+/* ---------------- the store shots, and ramadan ---------------- */
+
+test('the store shots are the size the store accepts, one per screen', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  assert.strictEqual(manifest.screenshots.length, 8);
+  manifest.screenshots.forEach(function (shot) {
+    assert.strictEqual(shot.sizes, '1080x1920', shot.src + ' must be nine by sixteen; the store refuses more than two to one');
+    const file = path.join(DOCS, shot.src);
+    assert.ok(fs.existsSync(file), 'missing ' + shot.src);
+    const png = fs.readFileSync(file);
+    const w = png.readUInt32BE(16), h = png.readUInt32BE(20);
+    assert.strictEqual(w + 'x' + h, '1080x1920', shot.src + ' is ' + w + 'x' + h);
+    assert.ok(shot.label && /[\u0621-\u064A]/.test(shot.label));
+  });
+  assert.ok(!fs.existsSync(path.join(DOCS, 'screens', 'reader.png')), 'the old shot of a screen that no longer exists is gone');
+});
+
+test('through ramadan the clock counts to the iftar and the table carries the imsak', () => {
+  const { win, doc } = boot();
+  const Real = win.Date;
+  const fixed = new Real(2027, 1, 20, 16, 30);
+  /* a clock stopped at half past four on the thirteenth of ramadan */
+  win.Date = function () {
+    if (!arguments.length) return new Real(fixed.getTime());
+    return new (Function.prototype.bind.apply(Real, [null].concat(Array.prototype.slice.call(arguments))))();
+  };
+  win.Date.now = function () { return fixed.getTime(); };
+  win.Date.UTC = Real.UTC; win.Date.parse = Real.parse; win.Date.prototype = Real.prototype;
+  win.App.render.home();
+  assert.ok(doc.getElementById('hijri-date').textContent.indexOf('رمضان') !== -1, 'it is ramadan');
+  assert.strictEqual(doc.getElementById('arc-name').textContent, 'الإفطار');
+  win.App.go('timetable');
+  const heads = [...doc.querySelectorAll('#tt-table thead th')].map((t) => t.textContent);
+  assert.strictEqual(heads[1], 'الإمساك');
+  const row = doc.querySelector('#tt-table tr.is-today');
+  const cells = [...row.querySelectorAll('td')].map((t) => t.textContent.replace('\u2060', ' '));
+  assert.strictEqual(cells.length, 7, 'imsak plus the six');
+  const toMin = function (s) { const m = /(\d+):(\d+) (ص|م)/.exec(s); let h = +m[1] % 12; if (m[3] === 'م') h += 12; return h * 60 + +m[2]; };
+  assert.strictEqual(toMin(cells[1]) - toMin(cells[0]), 10, 'the imsak is ten minutes before the fajr');
+  win.Date = Real;
+});
+
+test('outside ramadan there is no imsak column and the clock says the adhan', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const heads = [...doc.querySelectorAll('#tt-table thead th')].map((t) => t.textContent);
+  if (win.Hijri.toHijri(new win.Date(), 0).m !== 9) {
+    assert.ok(heads.indexOf('الإمساك') === -1);
+    assert.ok(doc.getElementById('arc-name').textContent !== 'الإفطار');
+  }
+});
