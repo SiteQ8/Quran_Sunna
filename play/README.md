@@ -21,7 +21,7 @@
 ```bash
 npm install -g @bubblewrap/cli
 cd play
-bubblewrap init --manifest https://siteq8.github.io/Quran_Sunna/manifest.webmanifest
+bubblewrap init --manifest https://sunnati.3li.info/manifest.webmanifest
 # أجب بما في twa-manifest.json، أو انسخه مكان الملف الذي يولّده
 bubblewrap build
 ```
@@ -98,8 +98,8 @@ keytool -list -v -keystore android.keystore -alias sunnati | grep SHA256
 
 ### روابط
 ```
-سياسة الخصوصية : https://siteq8.github.io/Quran_Sunna/privacy.html
-موقع التطبيق   : https://siteq8.github.io/Quran_Sunna/
+سياسة الخصوصية : https://sunnati.3li.info/privacy.html
+موقع التطبيق   : https://sunnati.3li.info/
 الشيفرة        : https://github.com/SiteQ8/Quran_Sunna
 ```
 
