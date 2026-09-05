@@ -32,6 +32,7 @@
     <uses-feature android:name="android.hardware.location" android:required="false"/>
 
     <application
+        android:name=".App"
         android:label="@string/appName"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"
@@ -46,6 +47,7 @@
 
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.Launcher"
             android:exported="true"
             android:screenOrientation="portrait"
             android:label="@string/launcherName">
@@ -107,6 +109,14 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
         </receiver>
+        <!-- shows the reason when the app has stopped, in its own task -->
+        <activity
+            android:name=".CrashActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Material.Light.NoActionBar"
+            android:process=":crash"
+            android:excludeFromRecents="true"/>
+
         <!-- the long press shortcut that switches the adhan off or on -->
         <activity
             android:name=".AdhanToggleActivity"
