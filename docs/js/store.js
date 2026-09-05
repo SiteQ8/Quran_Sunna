@@ -327,12 +327,27 @@
     return bookmarks().some(function (b) { return b.s === s && b.a === a; });
   }
 
-  function toggleBookmark(s, a, note) {
+  /* A bookmark is of a kind: reading, review, memorising, or reflection. The
+     same kind pressed again removes it; another kind changes it. */
+  var BOOKMARK_KINDS = ['read', 'review', 'memo', 'ponder'];
+
+  function bookmarkKind(s, a) {
+    var hit = bookmarks().filter(function (b) { return b.s === s && b.a === a; })[0];
+    return hit ? (hit.c || 'read') : null;
+  }
+
+  function toggleBookmark(s, a, kind) {
+    var want = BOOKMARK_KINDS.indexOf(kind) !== -1 ? kind : 'read';
     var list = bookmarks();
     var at = -1;
     for (var i = 0; i < list.length; i++) if (list[i].s === s && list[i].a === a) { at = i; break; }
-    if (at >= 0) { list.splice(at, 1); writeJSON(PREFIX + 'bookmarks', list); return false; }
-    list.unshift({ s: s, a: a, note: note || '', at: Date.now() });
+    if (at >= 0) {
+      if ((list[at].c || 'read') === want) { list.splice(at, 1); writeJSON(PREFIX + 'bookmarks', list); return false; }
+      list[at].c = want; list[at].at = Date.now();
+      writeJSON(PREFIX + 'bookmarks', list);
+      return true;
+    }
+    list.unshift({ s: s, a: a, c: want, at: Date.now() });
     if (list.length > 300) list.pop();
     writeJSON(PREFIX + 'bookmarks', list);
     return true;
@@ -490,6 +505,8 @@
     bookmarks: bookmarks,
     isBookmarked: isBookmarked,
     toggleBookmark: toggleBookmark,
+    bookmarkKind: bookmarkKind,
+    BOOKMARK_KINDS: BOOKMARK_KINDS,
     clearBookmarks: clearBookmarks,
     progress: progress,
     addReadPages: addReadPages,
