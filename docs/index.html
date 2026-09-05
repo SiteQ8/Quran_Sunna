@@ -175,7 +175,7 @@
       </div>
     </div>
 
-    <div class="windows" id="windows" role="list" aria-label="مواقيت اليوم"></div>
+    <div class="windows" id="windows" role="list" aria-label="مواقيت اليوم، اضغط صلاة لتعلّمها"></div>
     <button class="place-line" id="place-line" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب"></button>
   </div>
 
@@ -272,6 +272,22 @@
 </section>
 
 <!-- ══════════ البحث ══════════ -->
+<section class="view" id="v-prayers" aria-labelledby="prayers-title">
+  <div class="view-head"><h1 id="prayers-title">صلاتي</h1><p>علّم كل صلاة كيف صلّيتها، ويحفظ لك التطبيق الشهر كله</p></div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>اليوم</h2><span class="badge" id="prayers-streak"></span></div>
+    <div id="prayers-today"></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg>آخر ثلاثين يوماً</h2></div>
+    <div class="prayer-stats" id="prayers-stats"></div>
+    <div class="prayer-grid" id="prayers-grid" role="table" aria-label="الصلوات في آخر ثلاثين يوماً"></div>
+    <p class="setting-note prayer-legend"><span class="pg jamaah"></span> جماعة <span class="pg ontime"></span> في الوقت <span class="pg late"></span> قضاء <span class="pg missed"></span> فاتت</p>
+    <label class="convert-field" style="margin-top:12px"><span class="setting-label">عدّل يوماً مضى</span>
+      <input class="field" id="prayers-day" type="date" aria-label="اختر يوماً لتعديل صلواته"></label>
+  </div>
+</section>
+
 <section class="view" id="v-page" aria-labelledby="page-title">
   <div class="reader-bar">
     <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
@@ -372,6 +388,15 @@
 <!-- ══════════ السنن ══════════ -->
 <section class="view" id="v-tracker" aria-labelledby="tracker-title">
   <div class="view-head"><h1 id="tracker-title">السنن اليومية</h1><p>على ترتيب كتاب المنح العلية في بيان السنن اليومية، من الاستيقاظ إلى النوم ثم ما لا يتقيد بوقت، فعلّم ما أدّيته اليوم</p></div>
+  <button class="now-azkar" data-go="prayers" style="margin-bottom:12px">
+    <span class="now-azkar-glyph"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg></span>
+    <span class="now-azkar-body">
+      <span class="now-azkar-kicker">الفرائض أولاً</span>
+      <span class="now-azkar-title">صلاتي</span>
+      <span class="now-azkar-note" id="tracker-prayers-note">علّم صلواتك الخمس وتابع شهرك</span>
+    </span>
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><use href="#i-next"/></svg>
+  </button>
 
   <div class="card">
     <div class="meter-head">

@@ -139,7 +139,7 @@
   }
 
   function emptyDay() {
-    return { azkar: {}, hisn: {}, sunnah: {}, wird: {}, tasbih: 0, pages: 0, ayahs: 0 };
+    return { azkar: {}, hisn: {}, sunnah: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0 };
   }
 
   function day(date) {
@@ -197,6 +197,56 @@
     var done = 0;
     Object.keys(counts).forEach(function (k) { if (counts[k] === 0) done++; });
     return { done: done, total: total, percent: total ? Math.round(done / total * 100) : 0 };
+  }
+
+  /* The five prayers of a day, each marked how it was prayed: in congregation,
+     on time, made up later, or not yet. A blank means nothing was said. */
+  var PRAYER_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  var PRAYER_STATES = ['jamaah', 'ontime', 'late', 'missed'];
+
+  function setPrayer(key, state, date) {
+    if (PRAYER_KEYS.indexOf(key) === -1) return;
+    var record = day(date);
+    if (!record.prayers) record.prayers = {};
+    if (!state || PRAYER_STATES.indexOf(state) === -1) delete record.prayers[key];
+    else record.prayers[key] = state;
+    saveDay(record, date);
+  }
+
+  function prayersOf(date) {
+    return (day(date).prayers) || {};
+  }
+
+  /* How the last so many days went: prayed in time (jamaah or ontime), made
+     up, missed, and the run of days with all five in time ending today. */
+  function prayerStats(days, from) {
+    var end = from ? new Date(from.getTime()) : new Date();
+    var out = { days: days, prayed: 0, inTime: 0, jamaah: 0, late: 0, missed: 0, full: 0, streak: 0 };
+    var streakAlive = true;
+    for (var i = 0; i < days; i++) {
+      var d = new Date(end.getFullYear(), end.getMonth(), end.getDate() - i);
+      var rec = prayersOf(d);
+      var inTimeToday = 0;
+      PRAYER_KEYS.forEach(function (k) {
+        var st = rec[k];
+        if (!st) return;
+        if (st === 'missed') { out.missed++; return; }
+        out.prayed++;
+        if (st === 'late') { out.late++; return; }
+        out.inTime++; inTimeToday++;
+        if (st === 'jamaah') out.jamaah++;
+      });
+      if (inTimeToday === 5) out.full++;
+      /* the run counts whole days with all five in time; today may still be
+         under way, so it joins the run only when full and breaks it only if a
+         prayer today was already late or missed */
+      if (streakAlive) {
+        var spoiled = PRAYER_KEYS.some(function (k) { return rec[k] === 'late' || rec[k] === 'missed'; });
+        if (inTimeToday === 5) out.streak++;
+        else if (spoiled || i > 0) streakAlive = false;
+      }
+    }
+    return out;
   }
 
   function azkarProgress(section, total, date) {
@@ -420,6 +470,11 @@
     toggleSunnah: toggleSunnah,
     setAzkarCount: setAzkarCount,
     azkarProgress: azkarProgress,
+    setPrayer: setPrayer,
+    prayersOf: prayersOf,
+    prayerStats: prayerStats,
+    PRAYER_KEYS: PRAYER_KEYS,
+    PRAYER_STATES: PRAYER_STATES,
     setHisnCount: setHisnCount,
     resetHisn: resetHisn,
     hisnProgress: hisnProgress,

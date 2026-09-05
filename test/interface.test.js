@@ -3913,3 +3913,116 @@ test('the store listing describes the app as it is, within the store limits', ()
   assert.ok(full.indexOf('ستة عشر قسماً') === -1, 'the sixteen sections are the whole book now');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs')), 'the graphic can be drawn again');
 });
+
+/* ---------------- the five prayers, marked ---------------- */
+
+test('a prayer whose time has come can be marked from the strip, one that has not cannot', () => {
+  const { win, doc } = boot();
+  const c = win.App.clockState();
+  const cells = [...doc.querySelectorAll('#windows .window')];
+  cells.forEach(function (cell) {
+    const key = c.marks[cells.indexOf(cell)].key;
+    const came = c.marks[cells.indexOf(cell)].at <= c.now;
+    const prayer = win.Store.PRAYER_KEYS.indexOf(key) !== -1;
+    assert.strictEqual(cell.hasAttribute('data-mark-prayer'), prayer && came, key + ' markable? came ' + came);
+  });
+  const first = doc.querySelector('#windows [data-mark-prayer]');
+  if (first) {
+    click(win, first);
+    assert.ok(doc.getElementById('sheet').classList.contains('is-open'));
+    assert.strictEqual(doc.querySelectorAll('[data-act="prayer-mark"]').length, 4, 'four ways it could have gone');
+    click(win, doc.querySelector('[data-act="prayer-mark"][data-ref^="' + first.getAttribute('data-mark-prayer') + ':jamaah"]'));
+    assert.strictEqual(win.Store.prayersOf()[first.getAttribute('data-mark-prayer')], 'jamaah');
+    assert.ok(doc.querySelector('#windows [data-mark-prayer="' + first.getAttribute('data-mark-prayer') + '"]').classList.contains('mark-jamaah'), 'the strip shows the mark');
+  }
+});
+
+test('the store counts the month: in time, in congregation, made up, missed, and the run', () => {
+  const { win } = boot();
+  const S = win.Store;
+  const day = function (n) { const d = new win.Date(); d.setDate(d.getDate() - n); return d; };
+  [1, 2, 3].forEach(function (n) { S.PRAYER_KEYS.forEach(function (k) { S.setPrayer(k, 'ontime', day(n)); }); });
+  S.setPrayer('fajr', 'jamaah'); S.setPrayer('dhuhr', 'late'); S.setPrayer('asr', 'missed');
+  const st = S.prayerStats(30);
+  assert.strictEqual(st.inTime, 16); assert.strictEqual(st.jamaah, 1); assert.strictEqual(st.late, 1); assert.strictEqual(st.missed, 1);
+  assert.strictEqual(st.full, 3);
+  assert.strictEqual(st.streak, 0, 'a late prayer today breaks the run');
+  S.setPrayer('dhuhr', 'ontime'); S.setPrayer('asr', null);
+  assert.strictEqual(S.prayerStats(30).streak, 3, 'a day under way in time keeps the run');
+});
+
+test('the prayers screen shows today, the month grid and the figures', () => {
+  const { win, doc } = boot();
+  win.App.go('prayers');
+  assert.strictEqual(doc.querySelectorAll('#prayers-today .prayer-row').length, 5);
+  assert.strictEqual(doc.querySelectorAll('#prayers-grid .pg-row').length, 31, 'a head and thirty days');
+  assert.strictEqual(doc.querySelectorAll('#prayers-grid .pg').length, 150, 'five cells a day');
+  assert.strictEqual(doc.querySelector('.tab[aria-current="page"]').getAttribute('data-go'), 'tracker');
+  /* the grid is a picture; a past day is edited through the date field */
+  assert.strictEqual(doc.querySelectorAll('#prayers-grid button').length, 0, 'cells too small for a thumb are not buttons');
+  const y = new win.Date(); y.setDate(y.getDate() - 3);
+  const stamp = y.getFullYear() + '-' + String(y.getMonth() + 1).padStart(2, '0') + '-' + String(y.getDate()).padStart(2, '0');
+  const field = doc.getElementById('prayers-day');
+  field.value = stamp; fire(win, field, 'change');
+  assert.ok(doc.getElementById('sheet').classList.contains('is-open'), 'a day sheet opens');
+  const selects = doc.querySelectorAll('#sheet [data-day-prayer]');
+  assert.strictEqual(selects.length, 5, 'one choice per prayer');
+  selects[2].value = 'ontime'; fire(win, selects[2], 'change');
+  assert.strictEqual(win.Store.prayersOf(y).asr, 'ontime', 'written the moment it changes');
+  /* a day that has not come is refused */
+  const t = new win.Date(); t.setDate(t.getDate() + 2);
+  field.value = t.getFullYear() + '-' + String(t.getMonth() + 1).padStart(2, '0') + '-' + String(t.getDate()).padStart(2, '0');
+  fire(win, field, 'change');
+  assert.strictEqual(field.value, '', 'tomorrow cannot be marked');
+});
+
+test('the sunnah screen leads to the prayers, with the day in a line', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const way = doc.querySelector('#v-tracker [data-go="prayers"]');
+  assert.ok(way, 'the obligatory prayers come before the sunan');
+  assert.ok(doc.getElementById('tracker-prayers-note').textContent.indexOf('لم تُعلَّم صلاة اليوم') !== -1);
+  win.Store.setPrayer('fajr', 'jamaah');
+  win.App.go('tracker');
+  assert.ok(doc.getElementById('tracker-prayers-note').textContent.indexOf('اليوم 1 من 5') !== -1);
+  click(win, way);
+  assert.ok(doc.getElementById('v-prayers').classList.contains('is-open'));
+});
+
+/* ---------------- the tafsir, offline ---------------- */
+
+test('the whole tafsir al muyassar ships with the app', () => {
+  const file = path.join(DOCS, 'data', 'tafsir-muyassar.json');
+  assert.ok(fs.existsSync(file));
+  const book = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.strictEqual(book.a.length, 114);
+  assert.strictEqual(book.a.reduce((n, s) => n + s.length, 0), 6236, 'a tafsir for every verse');
+  assert.ok(book.a[1][254].indexOf('الله الذي لا يستحق الألوهية') === 0, 'آية الكرسي explained');
+  assert.strictEqual(book.n, 'التفسير الميسر');
+  book.a.forEach(function (s, i) { s.forEach(function (t, j) { assert.ok(t.length > 10, (i + 1) + ':' + (j + 1) + ' is empty'); }); });
+});
+
+test('the tafsir opens from the app and asks the api for nothing', () => {
+  const { win, doc } = boot();
+  const asked = [];
+  const book = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'tafsir-muyassar.json'), 'utf8'));
+  win.fetch = function (url) {
+    asked.push(String(url));
+    if (/tafsir-muyassar\.json$/.test(String(url))) return Promise.resolve({ ok: true, json: function () { return Promise.resolve(book); } });
+    return Promise.reject(new Error('no network'));
+  };
+  win.App.go('quran');
+  click(win, doc.querySelector('[data-surah="2"]'));
+  click(win, doc.querySelector('[data-ayah="2:255"]'));
+  click(win, doc.querySelector('[data-act="tafsir"]'));
+  return new Promise(function (done) {
+    setTimeout(function () {
+      const slot = doc.getElementById('tafsir-slot').textContent;
+      assert.ok(slot.indexOf('الله الذي لا يستحق الألوهية') !== -1, 'got ' + slot.slice(0, 60));
+      assert.ok(slot.indexOf('التفسير الميسر') !== -1, 'and names its source');
+      assert.ok(asked.every((u) => u.indexOf('alquran.cloud') === -1), 'nothing went to the api: ' + asked.join(', '));
+      assert.ok(win.App.helpers.tafsirReady());
+      done();
+    }, 60);
+  });
+});

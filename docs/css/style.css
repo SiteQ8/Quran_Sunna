@@ -377,6 +377,49 @@ button { background: none; border: none; cursor: pointer; }
 .goto-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: var(--s3); }
 .goto-row .btn { justify-self: start; }
 
+/* ---------- the five prayers, marked ---------- */
+
+/* a marked prayer in the strip shows its mark on the cell */
+.window { position: relative; }
+button.window { cursor: pointer; font: inherit; background: none; border: 1px solid transparent; }
+.window.is-marked { background: var(--accent-wash); }
+.window.mark-jamaah, .window.mark-ontime { border-color: var(--accent-solid); }
+.window.mark-late { border-color: var(--gold); }
+.window.mark-missed { border-color: var(--danger, #b3261e); opacity: .8; }
+.window-mark { position: absolute; top: -6px; inset-inline-start: -6px; width: 18px; height: 18px; border-radius: 50%;
+  display: grid; place-items: center; background: var(--accent-solid); color: var(--on-accent); }
+.window.mark-late .window-mark { background: var(--gold); }
+.window.mark-missed .window-mark { background: var(--danger, #b3261e); }
+.window-mark .icon { width: 12px; height: 12px; stroke-width: 2.4; }
+
+.mark-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.mark-choices .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
+.prayer-row .row-mark { color: var(--ink-3); }
+.prayer-row.mark-jamaah .row-mark, .prayer-row.mark-ontime .row-mark { color: var(--accent-ink); }
+.prayer-row.mark-late .row-mark { color: var(--gold); }
+.prayer-row.mark-missed .row-mark { color: var(--danger, #b3261e); }
+.prayer-row[disabled] { opacity: .55; }
+
+.prayer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
+.prayer-stat { text-align: center; padding: 10px 4px; border-radius: var(--r-sm); background: var(--sunken); }
+.prayer-stat b { display: block; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
+.prayer-stat span { font-size: .62rem; color: var(--ink-3); }
+
+.prayer-grid { display: grid; gap: 3px; }
+.pg-row { display: grid; grid-template-columns: 34px repeat(5, 1fr); gap: 3px; align-items: center; }
+.pg-head span { font-size: .6rem; color: var(--ink-3); text-align: center; }
+.pg-day { font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; }
+.pg { display: block; width: 100%; height: 14px; border-radius: 4px; background: var(--sunken); border: 0; padding: 0; }
+.pg.jamaah { background: var(--accent-solid); }
+.pg.ontime { background: color-mix(in srgb, var(--accent-solid) 60%, var(--raised)); }
+.pg.late { background: var(--gold); }
+.pg.missed { background: var(--danger, #b3261e); }
+.pg-row.is-today .pg-day { color: var(--accent-ink); font-weight: 700; }
+.pg-row.is-today .pg { outline: 1px solid var(--accent-solid); outline-offset: 1px; }
+.prayer-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: var(--s3); }
+.prayer-legend .pg { width: 14px; display: inline-block; }
+
 /* ---------- the month timetable ---------- */
 
 .tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }

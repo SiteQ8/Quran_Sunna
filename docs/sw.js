@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v7.8.2';
+var VERSION = 'sunnati-v8.0.0';
 
 var SHELL = [
   './',
@@ -182,6 +182,17 @@ self.addEventListener('fetch', function (event) {
 
   /* Streams and verse audio stay on the network, since caching them would fill the device. */
   if (url.pathname.indexOf('.mp3') !== -1 || url.hostname.indexOf('Qurango') !== -1) return;
+
+  /* The tafsir: half a megabyte fetched once, on first use, and kept. */
+  if (url.origin === location.origin && /\/data\/tafsir-[a-z]+\.json$/.test(url.pathname)) {
+    event.respondWith(
+      caches.match(request).then(function (hit) {
+        if (hit) return hit;
+        return fetch(request).then(function (response) { return keep(request, response); });
+      })
+    );
+    return;
+  }
 
   /* The recorded salawat: kept once it has been heard, since it never changes. */
   if (url.hostname === 'www.hisnmuslim.com' && /\.mp3$/.test(url.pathname)) {
