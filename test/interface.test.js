@@ -4156,3 +4156,28 @@ test('the app and its worker carry the same version, and it is the version in th
   assert.strictEqual(sw, app, 'a new app with an old worker keeps stale caches on every installed copy');
   assert.strictEqual(gradle, app, 'the package must carry the version it wraps');
 });
+
+test('the mark lives in the app: the crown of the mihrab, the about page, the banner, the picture card', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(/<g class="mihrab-star"[^>]*>\s*<path d="M0 -15 L15 0 L0 15 L-15 0z"\/>/.test(html), 'the eye crowns the mihrab');
+  assert.ok(html.indexOf('class="mihrab-moon"') !== -1, 'with the crescent in it');
+  assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg"') !== -1, 'the about page opens with the mark');
+  assert.ok(html.indexOf('عين السدو الكويتي، وفي قلبها هلال') !== -1, 'and says what it is');
+  assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg"') !== -1, 'the banner carries it');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('function eyeMark(ctx, cx, cy, r)') !== -1 && app.indexOf('eyeMark(ctx, W / 2, footY, 22)') !== -1, 'the picture card closes with the eye');
+});
+
+test('the social set and the feature graphic are drawn from sadu bands, not photographs', () => {
+  const social = path.join(__dirname, '..', 'tools', 'social');
+  assert.ok(fs.existsSync(path.join(social, 'sadu.mjs')), 'the bands are drawn in code');
+  const bands = fs.readFileSync(path.join(social, 'sadu.mjs'), 'utf8');
+  ['export const runner', 'export const cushion', 'export const tree'].forEach((b) => assert.ok(bands.indexOf(b) !== -1, b));
+  const draw = fs.readFileSync(path.join(social, 'draw.mjs'), 'utf8');
+  assert.ok(draw.indexOf("from './sadu.mjs'") !== -1);
+  assert.ok(draw.indexOf('.jpg') === -1, 'no photograph in the set');
+  assert.ok(draw.indexOf("docs/icons/icon.svg") !== -1, 'the mark is read from the app, never redrawn by hand');
+  const fg = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs'), 'utf8');
+  assert.ok(fg.indexOf("from '../social/sadu.mjs'") !== -1, 'the store graphic shares the bands');
+  fs.readdirSync(path.join(DOCS, 'screens', 'social')).forEach((f) => assert.ok(!/\.jpe?g$/.test(f), 'a photograph is left in screens/social: ' + f));
+});

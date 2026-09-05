@@ -311,6 +311,15 @@ button { background: none; border: none; cursor: pointer; }
 
 .fold-source { font-size: .62rem; color: var(--ink-3); margin: 2px 0 var(--s2); }
 
+/* the mark beside its name, on the about page and the banner */
+.brand-card { display: flex; align-items: center; gap: var(--s3); }
+.brand-mark { border-radius: 20px; flex: none; box-shadow: 0 6px 18px rgba(90, 20, 20, .18); }
+.brand-words { display: grid; gap: 2px; min-width: 0; }
+.brand-name { font-size: var(--step-3); font-weight: 700; line-height: 1.1; }
+.brand-line { font-size: var(--step-0); color: var(--ink-2); }
+.brand-note { font-size: var(--step--1); color: var(--ink-3); }
+.banner-mark { border-radius: 8px; flex: none; margin-inline-end: 8px; }
+
 /* ---------- ornament ---------- */
 
 /* A niche, the shape a prayer hall points with. It sits behind the countdown
@@ -324,6 +333,7 @@ button { background: none; border: none; cursor: pointer; }
 .mihrab-line { fill: none; stroke: currentColor; stroke-width: 1.2; opacity: .42; }
 .mihrab-inner { opacity: .2; }
 .mihrab-star { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .5; }
+.mihrab-moon { fill: currentColor; stroke: none; }
 /* Tall enough that the whole countdown sits inside the niche rather than
    spilling out under its base. No padding, or the niche and the arc it frames
    start at different heights and the niche stretches to cover the difference. */

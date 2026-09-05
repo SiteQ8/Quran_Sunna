@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.3.0';
+  var VERSION = '8.4.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1822,6 +1822,17 @@
 
   /* Any words on the same card: a dhikr from the book, a supplication, a
      hadith. The heading names where it is from. */
+  /* the eye of the sadu with the crescent, as the icon draws it */
+  function eyeMark(ctx, cx, cy, r) {
+    var d = function (rr, fill) {
+      ctx.beginPath(); ctx.moveTo(cx, cy - rr); ctx.lineTo(cx + rr, cy); ctx.lineTo(cx, cy + rr); ctx.lineTo(cx - rr, cy); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+    };
+    d(r, '#b08833'); d(r * .8, '#f3e9d2'); d(r * .6, '#1a1412');
+    ctx.beginPath(); ctx.arc(cx + r * .03, cy, r * .28, 0, Math.PI * 2); ctx.fillStyle = '#f3e9d2'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * .14, cy - r * .04, r * .25, 0, Math.PI * 2); ctx.fillStyle = '#1a1412'; ctx.fill();
+  }
+
   function textCard(heading, text, face, source) {
     if (!text) return Promise.resolve(null);
 
@@ -1899,10 +1910,10 @@
       var top = PAD + 175;
       lines.forEach(function (line, i) { ctx.fillText(line, W / 2, top + i * lineHeight); });
 
-      /* the rosette that closes it, then where the words come from, then the
-         app and its maker */
+      /* the eye of the mark closes it, then where the words come from, then
+         the app and its maker */
       var footY = top + lines.length * lineHeight + 20;
-      star(ctx, W / 2, footY, 16);
+      eyeMark(ctx, W / 2, footY, 22);
       ctx.fillStyle = '#5e6c65';
       if (source) {
         ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
