@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.7.1';
+  var VERSION = '8.7.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -761,7 +761,7 @@
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
       body: body, tag: tag, lang: 'ar', dir: 'rtl',
-      icon: 'icons/icon-192.png', badge: 'icons/icon-96.png',
+      icon: 'icons/icon-192.png?v=eye', badge: 'icons/icon-96.png?v=eye',
       vibrate: Store.get('vibrate') ? [200, 100, 200] : undefined,
       data: { url: './' }
     };
