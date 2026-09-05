@@ -180,6 +180,7 @@ files.push(['js/hijri.js', stringsFrom(path.join(DOCS, 'js', 'hijri.js'))]);
 files.push(['js/store.js', stringsFrom(path.join(DOCS, 'js', 'store.js'))]);
 files.push(['README.md', textFromMarkdown(path.join(ROOT, 'README.md'))]);
 files.push(['play/README.md', textFromMarkdown(path.join(ROOT, 'play', 'README.md'))]);
+files.push(['android/README.md', textFromMarkdown(path.join(ROOT, 'android', 'README.md'))]);
 
 files.forEach(function (pair) {
   pair[1].forEach(function (entry) { check(pair[0], entry); });

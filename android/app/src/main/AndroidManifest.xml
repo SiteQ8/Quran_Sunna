@@ -3,6 +3,13 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- The adhan rings at the minute the calendar prints, so the alarm must be
+         exact; the older permission is asked for on the androids that want it
+         and the newer one is granted to an app that rings alarms. -->
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32"/>
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <!-- The compass and the location are asked for by the page itself when a
          person opens القبلة, and the times work from a chosen city without
@@ -24,7 +31,7 @@
             android:resource="@string/assetStatements"/>
 
         <activity
-            android:name="com.google.androidbrowserhelper.trusted.LauncherActivity"
+            android:name=".MainActivity"
             android:exported="true"
             android:screenOrientation="portrait"
             android:label="@string/launcherName">
@@ -70,6 +77,28 @@
                       android:pathPrefix="/"/>
             </intent-filter>
         </activity>
+
+        <!-- rings at the prayer, and arms the next -->
+        <receiver android:name=".AdhanReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="io.github.siteq8.sunnati.ADHAN"/>
+            </intent-filter>
+        </receiver>
+        <!-- a reboot or a change of the clock throws alarms away -->
+        <receiver android:name=".BootReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.TIME_SET"/>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
+        <!-- the long press shortcut that switches the adhan off or on -->
+        <activity
+            android:name=".AdhanToggleActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"/>
 
         <activity
             android:name="com.google.androidbrowserhelper.trusted.FocusActivity"

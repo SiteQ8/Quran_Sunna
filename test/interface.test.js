@@ -2344,8 +2344,8 @@ test('the wrapper asks for nothing it does not need', () => {
     path.join(__dirname, '..', 'android', 'app/src/main/AndroidManifest.xml'), 'utf8');
   const asked = [...manifest.matchAll(/uses-permission android:name="android\.permission\.([A-Z_]+)"/g)]
     .map((m) => m[1]);
-  assert.deepStrictEqual(asked.sort(), ['INTERNET', 'POST_NOTIFICATIONS'],
-    'an app that stores nothing off the device needs no more than these');
+  assert.deepStrictEqual(asked.sort(), ['INTERNET', 'POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'VIBRATE'],
+    'the network, the notification, and what an exact adhan alarm needs, nothing more');
   /* the compass and the location are asked for by the page, so neither may be
      required to install */
   [...manifest.matchAll(/uses-feature[^>]*required="(\w+)"/g)].forEach(function (m) {
