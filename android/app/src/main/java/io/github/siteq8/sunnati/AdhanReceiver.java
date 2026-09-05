@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.util.Log;
 
 /** Rings at the prayer, then arms the alarm for the one after. */
 public final class AdhanReceiver extends BroadcastReceiver {
@@ -19,11 +20,15 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        int index = intent.getIntExtra(AdhanScheduler.EXTRA_PRAYER, -1);
-        if (index >= 0 && index < NAMES.length && AdhanScheduler.enabled(context)) {
-            show(context, index);
+        try {
+            int index = intent.getIntExtra(AdhanScheduler.EXTRA_PRAYER, -1);
+            if (index >= 0 && index < NAMES.length && AdhanScheduler.enabled(context)) {
+                show(context, index);
+            }
+        } catch (Exception e) {
+            Log.w("sunnati", "adhan not shown", e);
         }
-        AdhanScheduler.scheduleNext(context);
+        try { AdhanScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next adhan not armed", e); }
     }
 
     static void ensureChannel(Context context) {

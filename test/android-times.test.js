@@ -59,3 +59,15 @@ test('the wrapper declares what an alarm needs and nothing it does not', () => {
   const shortcuts = fs.readFileSync(path.join(root, 'android/app/src/main/res/xml/shortcuts.xml'), 'utf8');
   assert.ok(shortcuts.indexOf('AdhanToggleActivity') !== -1, 'the adhan can be switched off from the icon');
 });
+
+test('the wrapper can see a browser and hand it the splash, the two faults that crashed the first build', () => {
+  const manifest = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert.ok(manifest.indexOf('<queries>') !== -1 && manifest.indexOf('android.support.customtabs.action.CustomTabsService') !== -1,
+    'without a query for custom tabs, android 11 and later hide every browser from the app');
+  const paths = fs.readFileSync(path.join(root, 'android/app/src/main/res/xml/filepaths.xml'), 'utf8');
+  assert.ok(/files-path[^>]*path="twa_splash\/"/.test(paths), 'the file provider must allow files/twa_splash, where the splash is written for chrome');
+  const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
+  assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings), 'the label the system shows is the name alone');
+  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('try {') !== -1 && main.indexOf('AdhanScheduler.scheduleNext(this);') !== -1, 'the alarm must never keep the app from opening');
+});
