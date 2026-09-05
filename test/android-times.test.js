@@ -85,3 +85,10 @@ test('the splash the launcher inflates is a bitmap, not a layer list over an ada
   assert.ok(manifest.indexOf('android:theme="@style/Theme.Launcher"') !== -1, 'the launcher wears the translucent theme the library recommends');
   assert.ok(manifest.indexOf('android:name=".App"') !== -1 && manifest.indexOf('.CrashActivity') !== -1, 'a crash shows its trace on screen');
 });
+
+test('the browser waits for the notification question instead of covering it', () => {
+  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('protected boolean shouldLaunchImmediately()') !== -1, 'the library hook that holds the launch');
+  assert.ok(main.indexOf('return !asking;') !== -1, 'held while the question is up');
+  assert.ok(main.indexOf('public void onRequestPermissionsResult(') !== -1 && main.indexOf('launchTwa();') !== -1, 'and launched once it is answered, either way');
+});
