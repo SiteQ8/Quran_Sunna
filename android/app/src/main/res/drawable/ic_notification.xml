@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The eight pointed star, in white, as the status bar wants a one colour mark. -->
+<!-- The eye of the Sadu weave, in white, as the status bar wants one colour. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
-    <path android:fillColor="#FFFFFFFF"
-        android:pathData="M12,2.5L14.2,6.3L18.5,5.5L17.7,9.8L21.5,12L17.7,14.2L18.5,18.5L14.2,17.7L12,21.5L9.8,17.7L5.5,18.5L6.3,14.2L2.5,12L6.3,9.8L5.5,5.5L9.8,6.3Z"/>
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M12,2L22,12L12,22L2,12Z M12,7.5L7.5,12L12,16.5L16.5,12Z"/>
+    <path android:fillColor="#FFFFFFFF" android:pathData="M12,9.5L14.5,12L12,14.5L9.5,12Z"/>
 </vector>

@@ -10,8 +10,8 @@
 
   var DEFAULTS = {
     theme: 'auto',
-    accent: 'auto',
-    pattern: 'star',
+    accent: 'sadu',
+    pattern: 'sadu',
     fontScale: 100,
     quranFont: 'amiri',
     method: 'Ojeiri',

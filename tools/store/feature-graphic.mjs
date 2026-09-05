@@ -1,25 +1,32 @@
+/* The feature graphic for the store, 1024 by 500, drawn from the mark and the
+   sadu weave. Run with the site served at localhost:8840. */
 import { chromium } from '/tmp/node_modules/playwright-core/index.mjs';
 import fs from 'fs';
+/* fonts do not load across origins, so the page is one of the site's own */
+async function sameOrigin(page, html) {
+  await page.goto('http://localhost:8840/privacy.html', { waitUntil: 'domcontentloaded' });
+  await page.evaluate((h) => { document.open(); document.write(h); document.close(); }, html);
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(250);
+}
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
-const logo = fs.readFileSync('docs/icons/icon.svg', 'utf8');
 const p = await (await b.newContext({ viewport: { width: 1024, height: 500 }, deviceScaleFactor: 1 })).newPage();
-await p.setContent(`<style>
-  html,body{margin:0;height:100%;background:linear-gradient(135deg,#268556,#11452c);
-    font-family:'IBM Plex Sans Arabic','Noto Naskh Arabic',system-ui,sans-serif;color:#f7f5ef}
-  .pat{position:absolute;inset:0;opacity:.16;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='none' stroke='%23f6f4ee' stroke-width='1'%3E%3Crect x='27' y='27' width='26' height='26'/%3E%3Crect x='27' y='27' width='26' height='26' transform='rotate(45 40 40)'/%3E%3Crect x='-13' y='-13' width='26' height='26'/%3E%3Crect x='-13' y='-13' width='26' height='26' transform='rotate(45 0 0)'/%3E%3Crect x='67' y='-13' width='26' height='26'/%3E%3Crect x='67' y='-13' width='26' height='26' transform='rotate(45 80 0)'/%3E%3Crect x='-13' y='67' width='26' height='26'/%3E%3Crect x='-13' y='67' width='26' height='26' transform='rotate(45 0 80)'/%3E%3Crect x='67' y='67' width='26' height='26'/%3E%3Crect x='67' y='67' width='26' height='26' transform='rotate(45 80 80)'/%3E%3C/g%3E%3C/svg%3E");background-size:80px 80px}
-  .row{position:relative;height:100%;display:flex;align-items:center;justify-content:center;gap:52px;direction:rtl}
-  .mark{width:210px;height:210px;filter:drop-shadow(0 18px 40px rgba(0,0,0,.35))}
-  .txt{max-width:520px}
-  h1{font-size:74px;margin:0 0 10px;letter-spacing:.01em}
-  p{font-size:27px;margin:0;color:#cfe3d7;line-height:1.7}
-  .line{margin-top:22px;font-size:20px;color:#d9b04a}
-</style><div class="pat"></div><div class="row">
-  <div class="txt"><h1>سُنّتي</h1><p>مصحف ومواقيت وأذكار وسنن في جهازك</p>
-  <div class="line">المصحف · العجيري · حصن المسلم · السنن · بلا إنترنت</div></div>
-  <div class="mark">${logo.replace('<svg ', '<svg width="100%" height="100%" ')}</div>
-</div>`);
+const mark = fs.readFileSync('docs/icons/icon.svg', 'utf8');
+const weave = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'><g fill='#f4ecdc' opacity='.14'><path d='M0 4h60v2H0z'/><path d='M0 54h60v2H0z'/><path d='M30 12 42 24 30 36 18 24z'/><path d='M0 12 6 24 0 36zM60 12 54 24 60 36z'/><path d='M10 44 16 50 4 50zM30 44 36 50 24 50zM50 44 56 50 44 50z'/></g><g fill='none' stroke='#f4ecdc' stroke-width='1.6' opacity='.14'><path d='M0 24h18M42 24h18'/></g></svg>`);
+await sameOrigin(p, `<link rel="stylesheet" href="http://localhost:8840/css/fonts.css"><style>
+  html,body{margin:0;width:1024px;height:500px;font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl}
+  .g{position:relative;width:1024px;height:500px;overflow:hidden;background:linear-gradient(135deg,#a83232,#7c1d1d 70%,#5e1414)}
+  .w{position:absolute;inset:0;background-image:url("data:image/svg+xml,${weave}");background-size:60px 60px}
+  .mark{position:absolute;left:96px;top:112px;width:276px;height:276px;filter:drop-shadow(0 18px 40px rgba(0,0,0,.35))}
+  .mark svg{width:276px;height:276px}
+  .t{position:absolute;right:96px;top:112px;width:560px;color:#f4ecdc;text-align:right}
+  h1{margin:0;font-size:118px;font-weight:700;line-height:1;letter-spacing:-.01em}
+  p{margin:18px 0 0;font-size:29px;font-weight:500;color:#f4ecdc;opacity:.95;white-space:nowrap}
+  .line{margin-top:30px;font-size:24px;font-weight:600;color:#e8c46e;line-height:1.6}
+</style><div class="g"><div class="w"></div><div class="mark">${mark}</div>
+<div class="t"><h1>سُنّتي</h1><p>مصحف ومواقيت وأذكار وسنن في جهازك</p><div class="line">المصحف · العجيري · حصن المسلم · السنن · بلا إنترنت</div></div></div>`);
+await p.evaluate(() => document.fonts.ready);
 await p.waitForTimeout(300);
 await p.screenshot({ path: 'play/feature-graphic-1024x500.png' });
-await b.close();
 console.log('feature graphic written');
+await b.close();

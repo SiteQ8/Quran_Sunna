@@ -40,8 +40,9 @@
   --w-isha-ink: #5b4a99;
 
   /* the active window paints this */
-  --accent: #1e6f47;
-  --accent-wash: rgba(30, 111, 71, .1);
+  --accent: #9c2b2b;
+  --accent-ink: #9c2b2b;
+  --accent-wash: rgba(156, 43, 43, .1);
 
   --danger: #b23c3c;
 
@@ -356,6 +357,9 @@ button { background: none; border: none; cursor: pointer; }
 .surah-frame::after { inset-inline-end: 8px; }
 .surah-frame h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; }
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
+
+/* on the tinted row of today the small hijri figure takes a darker grey */
+.tt tr.is-today .tt-hijri { color: var(--ink-2); }
 
 /* ---------- reading by the page ---------- */
 
