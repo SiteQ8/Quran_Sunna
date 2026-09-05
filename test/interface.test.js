@@ -4125,19 +4125,28 @@ test('a fresh device opens in the sadu red with the sadu weave, before and after
   assert.strictEqual(manifest.theme_color, '#9c2b2b');
 });
 
-test('the mark is the sadu weave: red field, cream bands, the crescent between', () => {
+test('the mark is the eye of the sadu holding the crescent', () => {
   const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
-  assert.ok(svg.indexOf('#7c1d1d') !== -1 && svg.indexOf('#a83232') !== -1, 'the red field');
-  assert.ok(svg.indexOf('#f4ecdc') !== -1, 'cream for the bands and the crescent');
-  assert.ok(svg.indexOf('#1a1a1a') !== -1, 'black hearts in the eyes of the weave');
+  assert.ok(svg.indexOf('#8f2323') !== -1 && svg.indexOf('#5a1414') !== -1, 'the red field, deepening downward');
+  assert.ok(svg.indexOf('#f3e9d2') !== -1, 'cream for the bands and the eye');
+  assert.ok(svg.indexOf('#1a1412') !== -1, 'black in the heart of the eye');
+  assert.ok(svg.indexOf('#d9a441') !== -1, 'the gold thread of the cushions');
   assert.ok(svg.indexOf('#1e6f47') === -1 && svg.indexOf('#268556') === -1, 'no green left in the mark');
+  /* the eye: four nested diamonds, and the crescent cut from two circles */
+  const diamonds = (svg.match(/<path d='M256 \d+ L\d+ 256 L256 \d+ L\d+ 256z'/g) || []).length;
+  assert.ok(diamonds >= 4, 'nested diamonds, found ' + diamonds);
+  assert.strictEqual((svg.match(/<circle /g) || []).length, 2, 'a moon cut from a moon');
+  const teeth = (svg.match(/l[\d.]+ -?\d+ l[\d.]+ -?\d+z/g) || []).length;
+  assert.ok(teeth >= 16, 'the sawtooth bands above and below, found ' + teeth);
   ['icon-192', 'icon-512', 'maskable-512', 'play-1024', 'icon-180'].forEach(function (n) {
     const png = fs.readFileSync(path.join(DOCS, 'icons', n + '.png'));
     assert.ok(png.length > 2000, n + ' is cut');
   });
   const android = path.join(__dirname, '..', 'android/app/src/main/res');
   assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
-  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#7c1d1d') !== -1);
+  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#8f2323') !== -1);
+  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_notification.xml'), 'utf8').indexOf('M12,1.5L22.5,12') !== -1, 'the status bar carries the eye');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/logo.py')), 'the mark is drawn by a script, so it can be drawn again');
 });
 
 test('the app and its worker carry the same version, and it is the version in the android package', () => {
