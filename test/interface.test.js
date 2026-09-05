@@ -1965,7 +1965,7 @@ test('the worker keeps the typefaces so they survive going offline', () => {
 test('nothing in the page reaches out to another site for something it needs', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });

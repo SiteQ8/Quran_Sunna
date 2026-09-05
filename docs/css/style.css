@@ -547,6 +547,10 @@ button { background: none; border: none; cursor: pointer; }
 .date-nudge::before { inset: -11px; }
 /* a line of small print is eighteen pixels tall, so its links reach further */
 .foot a::before, .about-links a::before, .setting-note a::before { inset-block: -14px; inset-inline: -8px; }
+/* a link in small print stands a full thumb tall, whatever the probe lands on */
+.foot a { display: inline-block; min-height: 44px; line-height: 44px; }
+/* a link inside a paragraph reads as one: the accent, underlined, and tall enough */
+.card p a { color: var(--accent-ink); text-decoration: underline; text-underline-offset: 3px; display: inline-block; min-height: 44px; line-height: 44px; margin-block: -13px; }
 .select { min-height: 44px; }
 
 /* ---------- buttons ---------- */
