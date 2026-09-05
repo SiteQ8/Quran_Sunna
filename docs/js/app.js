@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.8.2';
+  var VERSION = '8.0.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -37,7 +37,7 @@
   var TABS = ['home', 'quran', 'tasbih', 'tracker', 'more'];
 
   var OWNED_BY = {
-    reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran', page: 'quran',
+    reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran', page: 'quran', prayers: 'tracker',
     azkar: 'tasbih', 'azkar-list': 'tasbih', hisn: 'tasbih'
   };
 
@@ -629,16 +629,120 @@
   function renderWindows(c) {
     var host = $('windows');
     if (!host) return;
+    var marks = Store.prayersOf(new Date());
     host.innerHTML = c.marks.map(function (m) {
       var cls = 'window';
       if (m.key === c.prev.key) cls += ' is-now';
       else if (m.at < c.now) cls += ' is-past';
-      return '<div class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
-        (m.key === c.prev.key ? '، الوقت الحالي' : '') + '">' +
+      var prayer = Store.PRAYER_KEYS.indexOf(m.key) !== -1;
+      var came = m.at <= c.now;
+      var state = marks[m.key] || '';
+      if (state) cls += ' is-marked mark-' + state;
+      var tag = prayer && came ? 'button' : 'div';
+      return '<' + tag + ' class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
+        (m.key === c.prev.key ? '، الوقت الحالي' : '') + (state ? '، ' + esc(PRAYER_STATE_NAMES[state]) : '') +
+        (prayer && came ? '، اضغط لتعلّمها' : '') + '"' +
+        (prayer && came ? ' data-mark-prayer="' + m.key + '"' : '') + '>' +
         '<div class="window-name" aria-hidden="true">' + esc(m.ar) + '</div>' +
-        '<div class="window-time" aria-hidden="true">' + clockMarkup(m.at) + '</div></div>';
+        '<div class="window-time" aria-hidden="true">' + clockMarkup(m.at) + '</div>' +
+        (state ? '<div class="window-mark" aria-hidden="true">' + icon(state === 'missed' ? 'close' : 'check') + '</div>' : '') +
+        '</' + tag + '>';
     }).join('');
   }
+
+  /* ---------------- the five prayers, marked ---------------- */
+
+  var PRAYER_STATE_NAMES = { jamaah: 'في جماعة', ontime: 'في الوقت', late: 'قضاء', missed: 'فاتت' };
+  var PRAYER_ORDER = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+
+  function markPrayerSheet(key, date) {
+    var when = date || new Date();
+    var name = prayerName(key, when);
+    var current = Store.prayersOf(when)[key] || '';
+    var dayLabel = when.toDateString() === new Date().toDateString() ? 'اليوم' : Hijri.format(Hijri.toHijri(when, Store.get('hijriAdjust')));
+    var stamp = when.getFullYear() + '-' + pad(when.getMonth() + 1) + '-' + pad(when.getDate());
+    openSheet('صلاة ' + name + '، ' + dayLabel,
+      '<div class="mark-choices">' +
+      ['jamaah', 'ontime', 'late', 'missed'].map(function (st) {
+        return '<button class="btn ' + (current === st ? 'btn-primary' : 'btn-ghost') + '" data-act="prayer-mark" data-ref="' + key + ':' + st + ':' + stamp + '">' +
+          icon(st === 'missed' ? 'close' : 'check') + esc(PRAYER_STATE_NAMES[st]) + '</button>';
+      }).join('') +
+      (current ? '<button class="btn btn-ghost" data-act="prayer-mark" data-ref="' + key + '::' + stamp + '">امسح العلامة</button>' : '') +
+      '</div>' +
+      '<p class="setting-note" style="margin-top:12px">في جماعة وفي الوقت تُحسبان في وقتها، والقضاء ما صُلّي بعد خروج الوقت</p>');
+  }
+
+  /* A day gone by: the five prayers of that day, each with its own choice,
+     written the moment it changes. */
+  function markDaySheet(date) {
+    var rec = Store.prayersOf(date);
+    var stamp = date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+    var title = Hijri.WEEKDAYS[date.getDay()] + ' ' + ar(date.getDate()) + ' ' + GREG_MONTHS[date.getMonth()];
+    openSheet(title,
+      PRAYER_ORDER.map(function (k) {
+        return '<div class="setting"><span class="setting-label">' + esc(prayerName(k, date)) + '</span>' +
+          '<select class="select" data-day-prayer="' + k + '" data-date="' + stamp + '" aria-label="' + esc(prayerName(k, date)) + '">' +
+          '<option value=""' + (!rec[k] ? ' selected' : '') + '>بلا علامة</option>' +
+          ['jamaah', 'ontime', 'late', 'missed'].map(function (st) {
+            return '<option value="' + st + '"' + (rec[k] === st ? ' selected' : '') + '>' + esc(PRAYER_STATE_NAMES[st]) + '</option>';
+          }).join('') + '</select></div>';
+      }).join(''));
+  }
+
+  function dateOfStamp(stamp) {
+    var p = stamp.split('-').map(Number);
+    return new Date(p[0], p[1] - 1, p[2]);
+  }
+
+  function renderPrayers() {
+    var today = $('prayers-today');
+    if (!today) return;
+    var now = new Date();
+    var c = clockState();
+    var marks = Store.prayersOf(now);
+    today.innerHTML = PRAYER_ORDER.map(function (k) {
+      var m = c.marks.filter(function (x) { return x.key === k; })[0];
+      var came = m ? m.at <= c.now : true;
+      var st = marks[k] || '';
+      return '<button class="row prayer-row' + (st ? ' mark-' + st : '') + '"' + (came ? ' data-mark-prayer="' + k + '"' : ' disabled') + '>' +
+        '<span class="row-mark">' + icon(st ? (st === 'missed' ? 'close' : 'check') : 'clock') + '</span>' +
+        '<span class="row-body"><span class="row-title">' + esc(prayerName(k, now)) + '</span>' +
+        '<span class="row-note">' + (m ? clockText(m.at) : '') + (st ? '، ' + esc(PRAYER_STATE_NAMES[st]) : (came ? '، لم تُعلَّم بعد' : '، لم يدخل وقتها')) + '</span></span></button>';
+    }).join('');
+
+    var stats = Store.prayerStats(30);
+    if ($('prayers-streak')) {
+      $('prayers-streak').textContent = stats.streak ? daysOf(stats.streak) + ' متتابعة بالخمس' : 'لا تتابع بعد';
+    }
+    if ($('prayers-stats')) {
+      var total = stats.prayed + stats.missed;
+      $('prayers-stats').innerHTML =
+        stat(stats.inTime, 'في وقتها') + stat(stats.jamaah, 'في جماعة') + stat(stats.late, 'قضاء') + stat(stats.missed, 'فاتت') +
+        '<p class="setting-note" style="grid-column:1/-1">' + (total ? 'علّمت ' + count(total, 'صلاة واحدة', 'صلاتين', 'صلوات', 'صلاة') + ' في آخر ثلاثين يوماً، منها ' + ar(Math.round(stats.inTime / total * 100)) + '% في وقتها' : 'لم تُعلّم صلاة بعد، فاضغط أي صلاة في الأعلى أو في شريط المواقيت') + '</p>';
+    }
+    var grid = $('prayers-grid');
+    if (grid) {
+      var rows = '<div class="pg-row pg-head" role="row"><span role="columnheader"></span>' +
+        PRAYER_ORDER.map(function (k) { return '<span role="columnheader">' + esc(prayerName(k, now).replace('أذان ', '')) + '</span>'; }).join('') + '</div>';
+      for (var i = 29; i >= 0; i--) {
+        var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        var rec = Store.prayersOf(d);
+        var stamp = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        rows += '<div class="pg-row' + (i === 0 ? ' is-today' : '') + '" role="row"><span class="pg-day" role="rowheader">' + ar(d.getDate()) + '</span>' +
+          PRAYER_ORDER.map(function (k) {
+            var st = rec[k] || '';
+            return '<span class="pg ' + (st || 'none') + '" role="cell" aria-label="' +
+              esc(prayerName(k, d) + ' ' + ar(d.getDate()) + '، ' + (st ? PRAYER_STATE_NAMES[st] : 'بلا علامة')) + '"></span>';
+          }).join('') + '</div>';
+      }
+      grid.innerHTML = rows;
+    }
+  }
+
+  function stat(n, label) {
+    return '<div class="prayer-stat"><b>' + ar(n) + '</b><span>' + esc(label) + '</span></div>';
+  }
+
 
   /* On a phone a page may not raise a notification itself: android throws on
      new Notification and the old code swallowed the error, so nothing ever
@@ -1402,20 +1506,49 @@
     openSheet('آية ' + ar(a), html);
   }
 
+  /* The whole of التفسير الميسر ships with the app and is fetched once, the
+     first time any tafsir is asked for, then kept by the worker; after that it
+     opens at once and with the connection off. الجلالين still comes from the
+     api, a verse at a time. */
+  var tafsirBook = null, tafsirLoading = null;
+
+  function loadTafsirBook() {
+    if (tafsirBook) return Promise.resolve(tafsirBook);
+    if (tafsirLoading) return tafsirLoading;
+    tafsirLoading = window.fetch('data/tafsir-muyassar.json')
+      .then(function (r) { if (!r.ok) throw new Error('tafsir ' + r.status); return r.json(); })
+      .then(function (book) { tafsirBook = book; tafsirLoading = null; return book; })
+      .catch(function (e) { tafsirLoading = null; throw e; });
+    return tafsirLoading;
+  }
+
+  function tafsirReady() { return !!tafsirBook; }
+
   function loadTafsir(s, a) {
     var slot = $('tafsir-slot');
     if (!slot) return;
     slot.innerHTML = skeleton(2);
-    var index = Mushaf.globalIndex(s, a);
     var edition = Store.get('tafsir');
+    var show = function (body, name) {
+      slot.innerHTML = body
+        ? '<p class="naskh" style="font-size:.95rem;line-height:2">' + esc(body) + '</p>' +
+          (name ? '<p class="source">' + esc(name) + '</p>' : '')
+        : '<p class="setting-note">لم يصل التفسير</p>';
+    };
+    if (edition === 'ar.muyassar') {
+      if (!tafsirBook) slot.innerHTML = skeleton(2) + '<p class="setting-note">يُحمَّل التفسير الميسر كاملاً مرة واحدة، ثم يعمل بلا إنترنت</p>';
+      loadTafsirBook().then(function (book) {
+        var text = book.a[s - 1] && book.a[s - 1][a - 1];
+        show(text, book.n + '، ' + book.s);
+      }).catch(function () {
+        slot.innerHTML = '<p class="setting-note">تحميل التفسير أول مرة يحتاج اتصالاً بالإنترنت</p>';
+      });
+      return;
+    }
+    var index = Mushaf.globalIndex(s, a);
     window.fetch('https://api.alquran.cloud/v1/ayah/' + index + '/' + edition)
       .then(function (r) { return r.json(); })
-      .then(function (payload) {
-        var body = payload && payload.data && payload.data.text;
-        slot.innerHTML = body
-          ? '<p class="naskh" style="font-size:.95rem;line-height:2">' + esc(body) + '</p>'
-          : '<p class="setting-note">لم يصل التفسير</p>';
-      })
+      .then(function (payload) { show(payload && payload.data && payload.data.text, 'تفسير الجلالين'); })
       .catch(function () {
         slot.innerHTML = '<p class="setting-note">التفسير يحتاج اتصالاً بالإنترنت</p>';
       });
@@ -2210,7 +2343,17 @@
 
   /* ---------------- the sunnah tracker ---------------- */
 
+  function renderTrackerPrayersNote() {
+    var note = $('tracker-prayers-note');
+    if (!note) return;
+    var marks = Store.prayersOf(new Date());
+    var done = Store.PRAYER_KEYS.filter(function (k) { return marks[k] && marks[k] !== 'missed'; }).length;
+    var st = Store.prayerStats(30);
+    note.textContent = (done ? 'اليوم ' + ar(done) + ' من 5' : 'لم تُعلَّم صلاة اليوم') + (st.streak ? '، و' + daysOf(st.streak) + ' متتابعة بالخمس' : '');
+  }
+
   function renderTracker() {
+    renderTrackerPrayersNote();
     var host = $('tracker-list');
     if (!host) return;
     var record = Store.day();
@@ -2289,6 +2432,7 @@
 
   var MORE_LINKS = [
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
+    { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'علّم صلواتك الخمس وتابع شهرك' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
@@ -3049,9 +3193,11 @@
     if (!window.caches) { toast('المتصفح لا يتيح التخزين للعمل بلا إنترنت'); return; }
     toast('جارٍ التحميل');
     window.caches.open('sunnati-v' + VERSION).then(function (cache) {
-      return cache.addAll(['./', './index.html', './data/mushaf.json', './css/style.css']);
+      /* the tafsir and the recording go in too, so nothing needs the network later */
+      return cache.addAll(['./', './index.html', './data/mushaf.json', './css/style.css',
+        './data/tafsir-muyassar.json', './audio/salawat.mp3']);
     }).then(function () {
-      toast('صار كل شيء متاحاً بلا إنترنت');
+      toast('صار كل شيء متاحاً بلا إنترنت، ومعه التفسير');
     }).catch(function () {
       toast('تعذّر إكمال التحميل');
     });
@@ -3080,6 +3226,7 @@
     timetable: renderTimetable,
     page: renderPage,
     hisn: renderHisnChapter,
+    prayers: renderPrayers,
     settings: renderSettings,
     about: renderSettings
   };
@@ -3099,6 +3246,19 @@
       var s = +parts[0], a = +parts[1];
       var meta = surahMeta(s);
       shareText('سُنّتي', Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
+    },
+    'prayer-mark': function (ref) {
+      var parts = ref.split(':');
+      var when = dateOfStamp(parts[2]);
+      Store.setPrayer(parts[0], parts[1] || null, when);
+      closeSheet();
+      buzz(8);
+      if (parts[1] === 'jamaah' || parts[1] === 'ontime') {
+        var st = Store.prayerStats(30);
+        if (st.streak && st.streak % 7 === 0 && parts[0] === 'isha') toast(daysOf(st.streak) + ' بالخمس في وقتها، ثبّتك الله');
+      }
+      renderHome();
+      if (state.view === 'prayers') renderPrayers();
     },
     'goto-page': goToPage,
     'goto-juz': goToJuz,
@@ -3257,6 +3417,13 @@
       return;
     }
 
+    var markable = target.closest('[data-mark-prayer]');
+    if (markable) {
+      var at = markable.getAttribute('data-date');
+      markPrayerSheet(markable.getAttribute('data-mark-prayer'), at ? dateOfStamp(at) : new Date());
+      return;
+    }
+
     var chapter = target.closest('[data-hisn]');
     if (chapter) { state.hisn = +chapter.getAttribute('data-hisn'); go('hisn'); return; }
 
@@ -3330,6 +3497,20 @@
       Store.resetHisn(state.hisn);
       renderHisnChapter();
       toast('أُعيدت عدّادات هذا الباب');
+    });
+
+    bind('prayers-day', 'change', function (e) {
+      if (!e.target.value) return;
+      var when = dateOfStamp(e.target.value);
+      if (when.getTime() > Date.now()) { toast('لا تُعلَّم صلاة لم يأت يومها'); e.target.value = ''; return; }
+      markDaySheet(when);
+    });
+    document.addEventListener('change', function (e) {
+      var sel = e.target && e.target.closest ? e.target.closest('[data-day-prayer]') : null;
+      if (!sel) return;
+      Store.setPrayer(sel.getAttribute('data-day-prayer'), sel.value || null, dateOfStamp(sel.getAttribute('data-date')));
+      renderHome();
+      if (state.view === 'prayers') renderPrayers();
     });
 
     bind('page-prev', 'click', function () { turnPage(1 * -1); });
@@ -3704,7 +3885,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
+      maybeAskPlace: maybeAskPlace, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

@@ -59,9 +59,9 @@ function browserPath() {
   return null;
 }
 
-const VIEWS = ['home', 'quran', 'reader', 'search', 'bookmarks', 'khatma', 'azkar',
-  'azkar-list', 'tracker', 'more', 'qibla', 'tasbih', 'radio', 'hadith', 'dua',
-  'ruqyah', 'calendar', 'settings', 'about'];
+const VIEWS = ['home', 'quran', 'reader', 'page', 'search', 'bookmarks', 'khatma', 'azkar',
+  'azkar-list', 'hisn', 'tracker', 'prayers', 'more', 'qibla', 'tasbih', 'radio', 'hadith', 'dua',
+  'ruqyah', 'calendar', 'timetable', 'settings', 'about'];
 
 /* The reading contrast a body of text needs before it stops being readable on
    a phone held at arm's length in daylight. */
