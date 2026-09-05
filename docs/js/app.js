@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.4.0';
+  var VERSION = '7.4.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1608,12 +1608,12 @@
     var meta = surahMeta(s);
     var text = Mushaf.ayah(s, a);
     if (!text) return Promise.resolve(null);
-    return textCard('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), text, "'Amiri Quran', 'Amiri', serif");
+    return textCard('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), text, "'Amiri Quran', 'Amiri', serif", 'القرآن الكريم');
   }
 
   /* Any words on the same card: a dhikr from the book, a supplication, a
      hadith. The heading names where it is from. */
-  function textCard(heading, text, face) {
+  function textCard(heading, text, face, source) {
     if (!text) return Promise.resolve(null);
 
     var W = 1080, PAD = 96;
@@ -1662,7 +1662,7 @@
       ctx.direction = 'rtl';
       var lines = wrap(ctx, text.split(' '), W - PAD * 2 - 40);
       var lineHeight = Math.round(size * 2.2);
-      var H = PAD * 2 + 140 + lines.length * lineHeight + 160;
+      var H = PAD * 2 + 140 + lines.length * lineHeight + (source ? 220 : 160);
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
@@ -1690,12 +1690,17 @@
       var top = PAD + 175;
       lines.forEach(function (line, i) { ctx.fillText(line, W / 2, top + i * lineHeight); });
 
-      /* the rosette that closes it, and the app's name */
+      /* the rosette that closes it, then where the words come from, then the
+         app and its maker */
       var footY = top + lines.length * lineHeight + 20;
       star(ctx, W / 2, footY, 16);
       ctx.fillStyle = '#5e6c65';
-      ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('سُنّتي', W / 2, H - PAD + 10);
+      if (source) {
+        ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
+        ctx.fillText(source, W / 2, footY + 62);
+      }
+      ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('سُنّتي، 3li.info', W / 2, H - PAD + 10);
 
       return new Promise(function (resolve) {
         canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
@@ -1708,8 +1713,8 @@
     return sharePicture(verseCard(s, a), 'ayah-' + s + '-' + a + '.png', 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
   }
 
-  function shareTextCard(heading, text, filename) {
-    return sharePicture(textCard(heading, text), filename, heading);
+  function shareTextCard(heading, text, filename, source) {
+    return sharePicture(textCard(heading, text, null, source), filename, heading);
   }
 
   function sharePicture(drawing, name, title) {
@@ -3127,14 +3132,21 @@
       var index = +ref[1];
       if (ref[0] === 'dua') {
         var g = DUAS[+ref[1]], d = g && g.items[+ref[2]];
-        if (d) shareTextCard(g.cat + (d.r ? '، ' + d.r : ''), d.t, 'dua-' + ref[1] + '-' + ref[2] + '.png');
+        if (d) shareTextCard(g.cat, d.t, 'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat);
       } else if (ref[0] === 'hisn') {
         var chapter = null;
         HISN.forEach(function (c) { if (c.id === state.hisn) chapter = c; });
-        if (chapter && chapter.i[index]) shareTextCard(chapter.t, chapter.i[index].t, 'dhikr-' + chapter.id + '-' + index + '.png');
+        if (chapter && chapter.i[index]) {
+          shareTextCard(chapter.t, chapter.i[index].t, 'dhikr-' + chapter.id + '-' + index + '.png',
+            'حصن المسلم، الباب ' + ar(chapter.id) + (chapter.i[index].r > 1 ? '، ' + count(chapter.i[index].r, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''));
+        }
       } else {
         var def = AZKAR_DB[state.azkarKey || 'morning'];
-        if (def && def.items[index]) shareTextCard(def.title, def.items[index].t, 'dhikr-' + (state.azkarKey || 'morning') + '-' + index + '.png');
+        if (def && def.items[index]) {
+          var it = def.items[index];
+          shareTextCard(def.title, it.t, 'dhikr-' + (state.azkarKey || 'morning') + '-' + index + '.png',
+            (it.r ? it.r + '، ' : '') + 'حصن المسلم' + (it.c > 1 ? '، ' + count(it.c, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''));
+        }
       }
       return;
     }

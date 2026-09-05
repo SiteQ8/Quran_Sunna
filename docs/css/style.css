@@ -297,10 +297,12 @@ button { background: none; border: none; cursor: pointer; }
 
 .voice-pick { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 0; justify-content: flex-end; }
 .voice-pick .select { flex: 1; min-width: 0; max-width: 100%; }
-/* A row whose control is wide drops the control under the label rather than
-   squeezing both against the edges. */
-.setting > span:first-child { flex: 1 1 140px; min-width: 0; }
-.setting .select, .setting .voice-pick { flex: 0 1 auto; max-width: 100%; }
+/* Label and control share the one line: the label yields first, wrapping its
+   own note, and the control never takes more than two thirds. Dropping the
+   control to a second line left half a row empty. */
+.setting > span:first-child { flex: 1 1 0; min-width: 0; }
+.setting .select, .setting .voice-pick { flex: 0 1 auto; min-width: 0; max-width: 66%; }
+.setting .select { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setting-note { display: block; line-height: 1.7; }
 .card > .setting-note { padding: var(--s2) 0 0; }
 
@@ -888,7 +890,7 @@ button { background: none; border: none; cursor: pointer; }
 .player-sub { font-size: .6rem; opacity: .7; }
 .player button { color: var(--paper); display: grid; place-items: center; }
 
-.setting { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
+.setting { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
 .setting:last-child { border-bottom: none; }
 .setting-label { font-size: var(--step-0); }
 .setting-note { font-size: var(--step--1); color: var(--ink-3); }
