@@ -114,7 +114,7 @@ test('every asset the page references exists on disk', () => {
     .filter((u) => !/^https?:|^data:|^#/.test(u));
   assert.ok(refs.length >= 12, 'expected the page to reference its assets');
   refs.forEach(function (rel) {
-    assert.ok(fs.existsSync(path.join(DOCS, rel)), 'missing asset ' + rel);
+    assert.ok(fs.existsSync(path.join(DOCS, rel.split('?')[0])), 'missing asset ' + rel);
   });
 });
 
@@ -1142,7 +1142,7 @@ test('the manifest describes an installable app', () => {
   assert.ok(sizes.indexOf('192x192') !== -1 && sizes.indexOf('512x512') !== -1);
   assert.ok(manifest.icons.some((i) => i.purpose === 'maskable'), 'android wants a maskable icon');
   manifest.icons.forEach(function (i) {
-    assert.ok(fs.existsSync(path.join(DOCS, i.src)), 'missing icon ' + i.src);
+    assert.ok(fs.existsSync(path.join(DOCS, i.src.split('?')[0])), 'missing icon ' + i.src);
   });
 });
 
@@ -1795,10 +1795,10 @@ test('the manifest carries everything an install needs', () => {
 test('every icon, screenshot and splash the manifest names is on disk', () => {
   const m = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
   m.icons.concat(m.screenshots).forEach(function (entry) {
-    assert.ok(fs.existsSync(path.join(DOCS, entry.src)), 'missing ' + entry.src);
+    assert.ok(fs.existsSync(path.join(DOCS, entry.src.split('?')[0])), 'missing ' + entry.src);
   });
   m.shortcuts.forEach(function (s) {
-    s.icons.forEach(function (i) { assert.ok(fs.existsSync(path.join(DOCS, i.src)), 'missing ' + i.src); });
+    s.icons.forEach(function (i) { assert.ok(fs.existsSync(path.join(DOCS, i.src.split('?')[0])), 'missing ' + i.src); });
   });
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const splash = [...html.matchAll(/apple-touch-startup-image" href="([^"]+)"/g)].map((x) => x[1]);
@@ -4165,9 +4165,9 @@ test('the mark lives in the app: the crown of the mihrab, the about page, the ba
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(/<g class="mihrab-star"[^>]*>\s*<path d="M0 -15 L15 0 L0 15 L-15 0z"\/>/.test(html), 'the eye crowns the mihrab');
   assert.ok(html.indexOf('class="mihrab-moon"') !== -1, 'with the crescent in it');
-  assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg"') !== -1, 'the about page opens with the mark');
+  assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg?v=') !== -1, 'the about page opens with the mark');
   assert.ok(html.indexOf('عين السدو الكويتي، وفي قلبها هلال') !== -1, 'and says what it is');
-  assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg"') !== -1, 'the banner carries it');
+  assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg?v=') !== -1, 'the banner carries it');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(app.indexOf('function eyeMark(ctx, cx, cy, r)') !== -1 && app.indexOf('eyeMark(ctx, W / 2, footY, 22)') !== -1, 'the picture card closes with the eye');
 });
@@ -4452,4 +4452,13 @@ test('a note on a verse is written, shown in the sheet, and removed when emptied
   doc.getElementById('note-field').value = '   ';
   click(win, doc.querySelector('#sheet [data-act="note-save"]'));
   assert.strictEqual(win.Store.note(2, 255), '', 'emptied is removed');
+});
+
+test('the icon addresses carry a version, so a phone that kept the old mark fetches the eye', () => {
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  manifest.icons.forEach(function (i) { assert.ok(/\?v=/.test(i.src), i.src + ' should be versioned'); });
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('href="icons/icon.svg?v=') !== -1 && html.indexOf('href="icons/icon-180.png?v=') !== -1);
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'./icons/icon-192.png?v=") !== -1, 'the worker keeps the versioned address, which is what the page asks for');
 });
