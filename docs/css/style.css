@@ -809,6 +809,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* the sheet of a verse: its words, then a grid of what can be done with it,
    then the four kinds of mark */
 .sheet-ayah { text-align: center; text-align-last: center; margin-bottom: 6px; }
+.verse-note { margin: var(--s2) 0 0; padding: var(--s2) var(--s3); border-inline-start: 3px solid var(--gold); background: var(--sunken); border-radius: var(--r-sm); font-size: var(--step--1); color: var(--ink-2); line-height: 1.7; white-space: pre-wrap; }
+.note-field { width: 100%; min-height: 100px; resize: vertical; line-height: 1.7; margin-top: 6px; }
 .service-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: var(--s3); }
 .service {
   display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 0 14px; border-radius: var(--r-sm);

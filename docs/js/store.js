@@ -323,6 +323,15 @@
 
   function bookmarks() { return readJSON(PREFIX + 'bookmarks', []); }
 
+  /* a note the reader wrote on a verse, kept by surah and verse */
+  function notes() { return readJSON(PREFIX + 'notes', {}); }
+  function note(s, a) { return notes()[s + ':' + a] || ''; }
+  function setNote(s, a, text) {
+    var all = notes();
+    if (text && text.trim()) all[s + ':' + a] = text.trim(); else delete all[s + ':' + a];
+    writeJSON(PREFIX + 'notes', all);
+  }
+
   function isBookmarked(s, a) {
     return bookmarks().some(function (b) { return b.s === s && b.a === a; });
   }
@@ -506,6 +515,9 @@
     isBookmarked: isBookmarked,
     toggleBookmark: toggleBookmark,
     bookmarkKind: bookmarkKind,
+    notes: notes,
+    note: note,
+    setNote: setNote,
     BOOKMARK_KINDS: BOOKMARK_KINDS,
     clearBookmarks: clearBookmarks,
     progress: progress,
