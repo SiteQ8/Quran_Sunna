@@ -4139,3 +4139,11 @@ test('the mark is the sadu weave: red field, cream bands, the crescent between',
   assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
   assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#7c1d1d') !== -1);
 });
+
+test('the app and its worker carry the same version, and it is the version in the android package', () => {
+  const app = /var VERSION = '([^']+)'/.exec(fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8'))[1];
+  const sw = /var VERSION = 'sunnati-v([^']+)'/.exec(fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8'))[1];
+  const gradle = /versionName "([^"]+)"/.exec(fs.readFileSync(path.join(__dirname, '..', 'android/app/build.gradle'), 'utf8'))[1];
+  assert.strictEqual(sw, app, 'a new app with an old worker keeps stale caches on every installed copy');
+  assert.strictEqual(gradle, app, 'the package must carry the version it wraps');
+});
