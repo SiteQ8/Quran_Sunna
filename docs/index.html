@@ -542,11 +542,9 @@
     <div class="convert-row" style="margin-top:12px">
       <label class="convert-field"><span class="setting-label">هجري</span>
         <span class="convert-hijri">
+          <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم">
           <select class="select" id="conv-hm" aria-label="الشهر الهجري"></select>
-          <span class="convert-pair">
-            <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم">
-            <input class="field" id="conv-hy" type="number" min="1300" max="1600" inputmode="numeric" aria-label="السنة الهجرية" placeholder="السنة">
-          </span>
+          <input class="field" id="conv-hy" type="number" min="1300" max="1600" inputmode="numeric" aria-label="السنة الهجرية" placeholder="السنة">
         </span></label>
     </div>
     <p class="convert-out" id="conv-hijri-out"></p>
@@ -593,7 +591,9 @@
         <select class="select" id="settings-voice-name" aria-label="اختيار صوت الهاتف"></select>
         <span class="voice-plain" id="settings-voice-plain" hidden>صوت الهاتف</span>
       </span></div>
-    <p class="setting-note">تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.</p>
+    <div class="setting" id="settings-adhan-row" hidden><span><span class="setting-label">تنبيه الأذان</span><br><span class="setting-note">من التطبيق نفسه في وقت كل صلاة لموقعك، ويرنّ والتطبيق مغلق</span></span>
+      <button class="switch" id="settings-adhan" role="switch" aria-checked="true" aria-label="تنبيه الأذان"></button></div>
+    <p class="setting-note" id="settings-notify-note">تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.</p>
   </div>
 
   <div class="card">

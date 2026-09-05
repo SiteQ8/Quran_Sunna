@@ -25,8 +25,12 @@ public final class R {
   public static final class drawable { public static final int ic_notification = 2; }
 }
 R
+cat > "$SDK/gen/io/github/siteq8/sunnati/BuildConfig.java" <<'B'
+package io.github.siteq8.sunnati;
+public final class BuildConfig { public static final String VERSION_NAME = "check"; }
+B
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
 javac -Xlint:all -Werror -d "$SDK/out" --release 17 \
   -cp "$SDK/android-34/android.jar:$SDK/abh.jar:$SDK/browser.jar" \
-  "$SDK/gen/io/github/siteq8/sunnati/R.java" "$HERE"/android/app/src/main/java/io/github/siteq8/sunnati/*.java 2>&1 | grep -v "^warning: \[options\]" || true
+  "$SDK/gen/io/github/siteq8/sunnati/R.java" "$SDK/gen/io/github/siteq8/sunnati/BuildConfig.java" "$HERE"/android/app/src/main/java/io/github/siteq8/sunnati/*.java 2>&1 | grep -v "^warning: \[options\]" || true
 echo "wrapper classes compile"
