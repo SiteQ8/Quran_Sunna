@@ -16,14 +16,14 @@ import android.util.Log;
 public final class AdhanReceiver extends BroadcastReceiver {
 
     public static final String CHANNEL = "adhan";
-    private static final String[] NAMES = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
+    public static final String CHANNEL_REMINDERS = "reminders";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
-            int index = intent.getIntExtra(AdhanScheduler.EXTRA_PRAYER, -1);
-            if (index >= 0 && index < NAMES.length && AdhanScheduler.enabled(context)) {
-                show(context, index);
+            String name = intent.getStringExtra(AdhanScheduler.EXTRA_NAME);
+            if (name != null && !name.isEmpty() && AdhanScheduler.enabled(context)) {
+                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan", CHANNEL);
             }
         } catch (Exception e) {
             Log.w("sunnati", "adhan not shown", e);
@@ -31,36 +31,43 @@ public final class AdhanReceiver extends BroadcastReceiver {
         try { AdhanScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next adhan not armed", e); }
     }
 
-    static void ensureChannel(Context context) {
+    static void ensureChannels(Context context) {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
-        if (manager == null || manager.getNotificationChannel(CHANNEL) != null) return;
-        NotificationChannel channel = new NotificationChannel(CHANNEL, "أوقات الصلاة", NotificationManager.IMPORTANCE_HIGH);
-        channel.setDescription("تنبيه عند دخول وقت كل صلاة، بحسب تقويم العجيري للكويت");
-        Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        channel.setSound(sound, new AudioAttributes.Builder()
-            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-        channel.enableVibration(true);
-        manager.createNotificationChannel(channel);
+        if (manager == null) return;
+        if (manager.getNotificationChannel(CHANNEL) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL, "أوقات الصلاة", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("تنبيه عند دخول وقت كل صلاة");
+            Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+            channel.setSound(sound, new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
+        }
+        if (manager.getNotificationChannel(CHANNEL_REMINDERS) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_REMINDERS, "تذكيرات", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("الصلاة على النبي وما تطلبه من التطبيق");
+            manager.createNotificationChannel(channel);
+        }
     }
 
-    private void show(Context context, int index) {
-        ensureChannel(context);
+    /** A notification under the app's own name, on the given channel. */
+    static void post(Context context, String title, String body, String tag, String channel) {
+        ensureChannels(context);
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
         Intent open = new Intent(context, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        int flags = PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE;
-        PendingIntent tap = PendingIntent.getActivity(context, 0, open, flags);
-        String title = "حان وقت " + NAMES[index];
-        String body = "الله أكبر، حيّ على الصلاة";
-        Notification.Builder builder = new Notification.Builder(context, CHANNEL)
+        PendingIntent tap = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Notification n = new Notification.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
             .setContentText(body)
+            .setStyle(new Notification.BigTextStyle().bigText(body))
             .setContentIntent(tap)
             .setAutoCancel(true)
-            .setCategory(Notification.CATEGORY_REMINDER);
-        manager.notify(100 + index, builder.build());
+            .setCategory(Notification.CATEGORY_REMINDER)
+            .build();
+        manager.notify(tag, 100, n);
     }
 }

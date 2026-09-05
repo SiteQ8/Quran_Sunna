@@ -60,35 +60,22 @@ test('the wrapper declares what an alarm needs and nothing it does not', () => {
   assert.ok(shortcuts.indexOf('AdhanToggleActivity') !== -1, 'the adhan can be switched off from the icon');
 });
 
-test('the wrapper can see a browser and hand it the splash, the two faults that crashed the first build', () => {
+test('the wrapper owns its page: a web view with a bridge, no browser helper', () => {
   const manifest = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
-  assert.ok(manifest.indexOf('<queries>') !== -1 && manifest.indexOf('android.support.customtabs.action.CustomTabsService') !== -1,
-    'without a query for custom tabs, android 11 and later hide every browser from the app');
-  const paths = fs.readFileSync(path.join(root, 'android/app/src/main/res/xml/filepaths.xml'), 'utf8');
-  assert.ok(/files-path[^>]*path="twa_splash\/"/.test(paths), 'the file provider must allow files/twa_splash, where the splash is written for chrome');
-  const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
-  assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings), 'the label the system shows is the name alone');
+  assert.ok(manifest.indexOf('browserhelper') === -1 && manifest.indexOf('customtabs') === -1, 'nothing of the trusted web activity is left');
+  assert.ok(manifest.indexOf('android:name=".MainActivity"') !== -1 && manifest.indexOf('android:name=".App"') !== -1);
+  assert.ok(manifest.indexOf('ACCESS_FINE_LOCATION') !== -1, 'the page may locate the reader through the app');
+  const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
+  assert.ok(gradle.indexOf('androidbrowserhelper') === -1, 'no browser helper dependency');
   const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
-  assert.ok(main.indexOf('try {') !== -1 && main.indexOf('AdhanScheduler.scheduleNext(this);') !== -1, 'the alarm must never keep the app from opening');
-});
-
-test('the splash the launcher inflates is a bitmap, not a layer list over an adaptive icon', () => {
-  const res = path.join(root, 'android/app/src/main/res');
-  assert.ok(!fs.existsSync(path.join(res, 'drawable', 'splash.xml')), 'a <bitmap> whose src is the adaptive icon xml throws on inflation and killed the app at launch');
-  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
-    const f = path.join(res, 'drawable-' + d, 'splash.png');
-    assert.ok(fs.existsSync(f), 'splash for ' + d);
-    const png = fs.readFileSync(f);
-    assert.strictEqual(png.toString('ascii', 1, 4), 'PNG');
+  assert.ok(main.indexOf('new WebView(this)') !== -1 && main.indexOf('addJavascriptInterface(new Bridge(this), "SunnatiApp")') !== -1);
+  assert.ok(main.indexOf('SunnatiApp/') !== -1, 'the user agent names the app');
+  const bridge = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/Bridge.java'), 'utf8');
+  ['setPrayerTimes', 'isAdhanEnabled', 'setAdhanEnabled', 'canNotify', 'notify', 'shareImage'].forEach(function (m) {
+    assert.ok(new RegExp('@JavascriptInterface\\s+public [a-zA-Z]+ ' + m + '\\(').test(bridge), 'the bridge offers ' + m);
   });
-  const manifest = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
-  assert.ok(manifest.indexOf('android:theme="@style/Theme.Launcher"') !== -1, 'the launcher wears the translucent theme the library recommends');
-  assert.ok(manifest.indexOf('android:name=".App"') !== -1 && manifest.indexOf('.CrashActivity') !== -1, 'a crash shows its trace on screen');
-});
-
-test('the browser waits for the notification question instead of covering it', () => {
-  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
-  assert.ok(main.indexOf('protected boolean shouldLaunchImmediately()') !== -1, 'the library hook that holds the launch');
-  assert.ok(main.indexOf('return !asking;') !== -1, 'held while the question is up');
-  assert.ok(main.indexOf('public void onRequestPermissionsResult(') !== -1 && main.indexOf('launchTwa();') !== -1, 'and launched once it is answered, either way');
+  const sched = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/AdhanScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('public static void setTimes(') !== -1 && sched.indexOf('builtIn(') !== -1, "the page's times first, الكويت's table when nothing else is known");
+  const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
+  assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings));
 });

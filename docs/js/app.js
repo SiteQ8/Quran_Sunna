@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.4.4';
+  var VERSION = '8.5.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -461,6 +461,7 @@
 
   function refreshTimes() {
     state.times = computeTimes(new Date());
+    handTimesToApp();
     return state.times;
   }
 
@@ -753,6 +754,10 @@
      appeared. The worker can, so it is asked to, and the direct call is kept
      for a desktop browser without one. */
   function notify(title, body, tag) {
+    var app = bridge();
+    if (app && app.notify) {
+      try { app.notify(title, body, tag || 'page'); return Promise.resolve(true); } catch (e) { /* fall through */ }
+    }
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
       body: body, tag: tag, lang: 'ar', dir: 'rtl',
@@ -1007,11 +1012,37 @@
   /* True inside the android package: the page is then opened by the app, and
      the first open arrives with the app's own referrer. Remembered, since a
      later navigation loses the referrer. */
+  /* The android package hands the page a bridge named SunnatiApp; through it
+     the app notifies, rings and shares by itself, with no browser between. */
+  function bridge() {
+    return typeof window.SunnatiApp !== 'undefined' ? window.SunnatiApp : null;
+  }
+
   function inAndroidApp() {
+    if (bridge()) { if (!Store.get('inApp')) Store.set('inApp', true); return true; }
     if (Store.get('inApp')) return true;
     var fromApp = (document.referrer || '').indexOf('android-app://io.github.siteq8.sunnati') === 0;
     if (fromApp) Store.set('inApp', true);
     return fromApp;
+  }
+
+  /* The days ahead, for the reader's own place and method, handed to the app
+     so its alarm rings at the right minute anywhere, not only in الكويت. */
+  function handTimesToApp() {
+    var app = bridge();
+    if (!app || !app.setPrayerTimes) return false;
+    var list = [];
+    var now = new Date();
+    for (var d = 0; d < 7; d++) {
+      var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+      var t = computeTimes(day);
+      ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (k) {
+        if (typeof t[k] !== 'number' || isNaN(t[k])) return;
+        var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, t[k], 0, 0).getTime();
+        if (at > Date.now()) list.push({ at: at, name: prayerName(k, day) });
+      });
+    }
+    try { app.setPrayerTimes(JSON.stringify(list)); return true; } catch (e) { return false; }
   }
 
   /* Inside the package the phone has already been asked about notifications,
@@ -1029,9 +1060,7 @@
   /* Chrome tells the reader once that the app runs in chrome; a word from the
      app itself, once, keeps that from alarming anyone. */
   function maybeExplainChrome() {
-    if (!inAndroidApp() || Store.get('chromeExplained')) return;
-    Store.set('chromeExplained', true);
-    showBanner('يعمل سُنّتي في هذا الجهاز داخل كروم، وقد يخبرك كروم بذلك مرة واحدة، وهذا طبيعي ولا يُرسل عنك شيئاً', null, null);
+    /* the page runs in the app's own web view now; there is no browser to explain */
   }
 
   function maybeAskPlace() {
@@ -1975,6 +2004,20 @@
     toast('جارٍ تجهيز الصورة');
     return drawing.then(function (blob) {
       if (!blob) { toast('تعذّر رسم الصورة'); return false; }
+      var app = bridge();
+      if (app && app.shareImage) {
+        return new Promise(function (resolve) {
+          var reader = new window.FileReader();
+          reader.onload = function () {
+            var ok = false;
+            try { ok = app.shareImage(String(reader.result), name); } catch (e) { ok = false; }
+            if (!ok) toast('تعذّرت المشاركة من التطبيق');
+            resolve(!!ok);
+          };
+          reader.onerror = function () { resolve(false); };
+          reader.readAsDataURL(blob);
+        });
+      }
       var file = null;
       try { file = new window.File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
       if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
@@ -2091,6 +2134,25 @@
   function megabytes(bytes) {
     var mb = bytes / 1048576;
     return (mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
+  }
+
+  /* Inside the android package the app rings by itself, so the row about the
+     browser's permission goes and the app's own switch takes its place. */
+  function renderAdhanRow() {
+    var app = bridge();
+    var row = $('settings-adhan-row');
+    var webRow = $('settings-notify') ? $('settings-notify').closest('.setting') : null;
+    var note = $('settings-notify-note');
+    if (!row) return;
+    if (!app || !app.isAdhanEnabled) { row.hidden = true; return; }
+    row.hidden = false;
+    if (webRow) webRow.hidden = true;
+    if (note) note.textContent = app.canNotify && !app.canNotify()
+      ? 'الإشعارات مغلقة لسُنّتي في إعدادات الهاتف، فافتحها ليصلك الأذان'
+      : 'التنبيه يصل من التطبيق نفسه، بلا متصفح، وفي دقيقته';
+    var on = false;
+    try { on = !!app.isAdhanEnabled(); } catch (e) { on = true; }
+    setSwitch($('settings-adhan'), on);
   }
 
   function renderSavedAudio() {
@@ -3241,6 +3303,7 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     renderSavedAudio();
+    renderAdhanRow();
     fillSelect($('settings-voice'), [
       { value: 'recording', label: 'صوت قارئ' },
       { value: 'tone', label: 'نغمة' },
@@ -3698,6 +3761,17 @@
       toast('صُفّر العدّاد');
     });
 
+    bind('settings-adhan', 'click', function () {
+      var app = bridge();
+      if (!app || !app.setAdhanEnabled) return;
+      var on = $('settings-adhan').getAttribute('aria-checked') !== 'true';
+      try { app.setAdhanEnabled(on); } catch (e) { /* the app will say */ }
+      setSwitch($('settings-adhan'), on);
+      if (on) handTimesToApp();
+      toast(on ? 'يرنّ الأذان في وقته' : 'أوقفت تنبيه الأذان');
+    });
+    window.addEventListener('sunnati:permission', function () { if (state.view === 'settings') renderAdhanRow(); });
+
     bind('hisn-filter', 'input', renderHisn);
     bind('hisn-reset', 'click', function () {
       Store.resetHisn(state.hisn);
@@ -4091,7 +4165,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

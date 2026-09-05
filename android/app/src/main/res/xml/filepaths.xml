@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- The browser helper writes the splash image to files/twa_splash and hands
-     chrome a uri for it, so the provider must be allowed that folder. -->
-<paths>
-    <files-path name="twa_splash" path="twa_splash/"/>
-    <files-path name="downloads" path="downloads/"/>
-    <cache-path name="cache" path="/"/>
-</paths>

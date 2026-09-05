@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- What the window shows in the instant before the page paints: the mark on the paper. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/backgroundColor"/>
+    <item android:drawable="@drawable/splash" android:gravity="center" android:width="120dp" android:height="120dp"/>
+</layer-list>

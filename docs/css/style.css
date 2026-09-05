@@ -466,10 +466,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 .convert-field { display: block; }
 .convert-field .setting-label { display: block; margin-bottom: 6px; }
-/* The month name is the widest thing here, so it takes a whole line and the day
-   and year share the next. Cut to fit it read ربيع الأو, which is no month. */
-.convert-hijri { display: grid; gap: 8px; }
-.convert-pair { display: grid; grid-template-columns: 1fr 1.4fr; gap: 8px; }
+/* Day, month and year on one line, as a date is read: the month takes the
+   room it needs and the two numbers take the rest, so nothing is cut. */
+.convert-hijri { display: grid; grid-template-columns: 76px 1fr 100px; gap: 8px; align-items: stretch; }
+.convert-hijri .select, .convert-hijri .field { min-width: 0; width: 100%; max-width: none; }
+.convert-hijri .select { padding-inline-start: 8px; }
 .convert-out {
   margin-top: 8px; font-weight: 600; color: var(--accent-ink); min-height: 1.4em;
   font-variant-numeric: tabular-nums;

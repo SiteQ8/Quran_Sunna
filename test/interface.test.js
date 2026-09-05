@@ -2344,8 +2344,8 @@ test('the wrapper asks for nothing it does not need', () => {
     path.join(__dirname, '..', 'android', 'app/src/main/AndroidManifest.xml'), 'utf8');
   const asked = [...manifest.matchAll(/uses-permission android:name="android\.permission\.([A-Z_]+)"/g)]
     .map((m) => m[1]);
-  assert.deepStrictEqual(asked.sort(), ['INTERNET', 'POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'VIBRATE'],
-    'the network, the notification, and what an exact adhan alarm needs, nothing more');
+  assert.deepStrictEqual(asked.sort(), ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'INTERNET', 'POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'VIBRATE'],
+    'the network, the notification, the location the page asks for, and what an exact adhan alarm needs, nothing more');
   /* the compass and the location are asked for by the page, so neither may be
      required to install */
   [...manifest.matchAll(/uses-feature[^>]*required="(\w+)"/g)].forEach(function (m) {
@@ -3262,13 +3262,13 @@ test('a nudged hijri date is marked as such and one tap puts it back', () => {
   assert.ok(doc.getElementById('hijri-reset').hidden);
 });
 
-test('the converter gives the hijri month a line of its own', () => {
+test('the converter shows a hijri date on one line, day then month then year, with room for the month', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  assert.ok(!/\.convert-hijri \{[^}]*grid-template-columns:\s*1fr 1\.6fr/.test(css),
-    'three columns cut ربيع الأول to ربيع الأو');
+  assert.match(css, /\.convert-hijri \{[^}]*grid-template-columns:\s*76px 1fr 100px/, 'the month takes the middle, the numbers their own columns');
+  assert.match(css, /\.convert-hijri \.select, \.convert-hijri \.field \{[^}]*max-width:\s*none/, 'the general cap on a select would narrow the month');
   const { doc } = boot();
   const row = doc.querySelector('.convert-hijri');
-  assert.strictEqual(row.firstElementChild.id, 'conv-hm', 'the month comes first, on its own');
+  assert.deepStrictEqual([...row.children].map((e) => e.id), ['conv-hd', 'conv-hm', 'conv-hy'], 'read as a date is read');
 });
 
 /* ---------------- a man's voice, and one you can choose ---------------- */
@@ -4207,21 +4207,79 @@ test('the app knows it runs in its own package by the referrer, and remembers', 
   assert.strictEqual(win.App.helpers.inAndroidApp(), true, 'remembered after the referrer is gone');
 });
 
-test("chrome's own notice about running in chrome is explained once, only inside the package", () => {
-  const { win, doc } = boot();
-  win.App.helpers.maybeExplainChrome();
-  assert.ok(doc.getElementById('banner').hidden, 'nothing to explain in a plain browser');
-  win.Store.set('inApp', true);
-  win.App.helpers.maybeExplainChrome();
-  assert.ok(!doc.getElementById('banner').hidden);
-  assert.ok(doc.getElementById('banner-text').textContent.indexOf('داخل كروم') !== -1);
-  click(win, doc.getElementById('banner-close'));
-  win.App.helpers.maybeExplainChrome();
-  assert.ok(doc.getElementById('banner').hidden, 'once');
+
+
+/* ---------------- the bridge to the android package ---------------- */
+
+function fakeBridge(win) {
+  const calls = { times: [], notes: [], images: [], adhan: true };
+  win.SunnatiApp = {
+    version: function () { return 'test'; },
+    setPrayerTimes: function (json) { calls.times.push(JSON.parse(json)); },
+    isAdhanEnabled: function () { return calls.adhan; },
+    setAdhanEnabled: function (on) { calls.adhan = on; },
+    canNotify: function () { return true; },
+    notify: function (t, b, tag) { calls.notes.push([t, b, tag]); },
+    shareImage: function (dataUrl, name) { calls.images.push([dataUrl.slice(0, 22), name]); return true; }
+  };
+  return calls;
+}
+
+test('inside the app a notification goes through the app, not the browser', () => {
+  const { win } = boot();
+  const calls = fakeBridge(win);
+  win.Notification = undefined;
+  return win.App.helpers.notify('حان وقت العصر', 'الله أكبر', 'adhan').then(function (ok) {
+    assert.strictEqual(ok, true);
+    assert.deepStrictEqual(calls.notes[0], ['حان وقت العصر', 'الله أكبر', 'adhan']);
+  });
 });
 
-test('the delegation service is open to chrome, or the app never learns it may notify', () => {
-  const manifest = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/AndroidManifest.xml'), 'utf8');
-  const block = /<service[^>]*DelegationService[\s\S]*?<\/service>/.exec(manifest)[0];
-  assert.ok(block.indexOf('android:exported="true"') !== -1, 'chrome binds this service from outside the app');
+test('the page hands the app a week of prayer times for the reader\'s own place', () => {
+  const { win } = boot();
+  const calls = fakeBridge(win);
+  win.App.helpers.handTimesToApp();
+  assert.strictEqual(calls.times.length, 1);
+  const list = calls.times[0];
+  assert.ok(list.length >= 30 && list.length <= 35, 'five prayers a day for seven days, minus those gone: ' + list.length);
+  list.forEach(function (row) { assert.ok(row.at > Date.now() && typeof row.name === 'string' && row.name.length > 1); });
+  const names = list.map((r) => r.name);
+  assert.ok(names.indexOf('الشروق') === -1, 'the sunrise is a time, not a prayer');
+  for (let i = 1; i < list.length; i++) assert.ok(list[i].at >= list[i - 1].at, 'in order');
+  /* a change of place hands a fresh list */
+  win.App.helpers.setPlace({ n: 'القاهرة', lat: 30.04, lng: 31.24, tz: 2, z: 'Africa/Cairo', method: 'Egypt' }, true);
+  assert.ok(calls.times.length >= 2, 'new times after a new place');
+});
+
+test('inside the app the settings show the app\'s own adhan switch and hide the browser row', () => {
+  const { win, doc } = boot();
+  const calls = fakeBridge(win);
+  win.App.go('settings');
+  assert.ok(!doc.getElementById('settings-adhan-row').hidden);
+  assert.ok(doc.getElementById('settings-notify').closest('.setting').hidden, 'no browser permission to ask for');
+  assert.strictEqual(doc.getElementById('settings-adhan').getAttribute('aria-checked'), 'true');
+  click(win, doc.getElementById('settings-adhan'));
+  assert.strictEqual(calls.adhan, false, 'the app is told');
+  click(win, doc.getElementById('settings-adhan'));
+  assert.strictEqual(calls.adhan, true);
+  assert.ok(calls.times.length >= 1, 'and given the times when switched on');
+});
+
+test('without the app the settings are as before', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  assert.ok(doc.getElementById('settings-adhan-row').hidden);
+  assert.ok(!doc.getElementById('settings-notify').closest('.setting').hidden);
+});
+
+test('inside the app a picture is shared by the app', () => {
+  const { win } = boot();
+  const calls = fakeBridge(win);
+  const blob = new win.Blob([new Uint8Array([137, 80, 78, 71])], { type: 'image/png' });
+  return win.App.helpers.sharePicture(Promise.resolve(blob), 'ayah-1-1.png', 'x').then(function (ok) {
+    assert.strictEqual(ok, true);
+    assert.strictEqual(calls.images.length, 1);
+    assert.ok(calls.images[0][0].indexOf('data:image/png;base64') === 0);
+    assert.strictEqual(calls.images[0][1], 'ayah-1-1.png');
+  });
 });
