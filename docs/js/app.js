@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.4.0';
+  var VERSION = '8.4.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -623,7 +623,11 @@
     maybeNotify(c);
     maybeSalawat(false);
     if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); }
-    if (!state.askedPlace) { state.askedPlace = true; window.setTimeout(maybeAskPlace, 1500); }
+    if (!state.askedPlace) {
+      state.askedPlace = true;
+      adoptGrantedNotifications();
+      window.setTimeout(function () { maybeExplainChrome(); maybeAskPlace(); }, 1500);
+    }
   }
 
   function renderWindows(c) {
@@ -1000,6 +1004,36 @@
   /* On the first open the times are for الكويت, which is right for most who
      install this and wrong for everyone else. Once, the app asks. The device's
      own zone is a good hint: a phone set to Asia/Kuwait is not asked at all. */
+  /* True inside the android package: the page is then opened by the app, and
+     the first open arrives with the app's own referrer. Remembered, since a
+     later navigation loses the referrer. */
+  function inAndroidApp() {
+    if (Store.get('inApp')) return true;
+    var fromApp = (document.referrer || '').indexOf('android-app://io.github.siteq8.sunnati') === 0;
+    if (fromApp) Store.set('inApp', true);
+    return fromApp;
+  }
+
+  /* Inside the package the phone has already been asked about notifications,
+     so a granted permission means the reader wants them: the switch goes on
+     by itself the first time, rather than waiting to be found in the settings. */
+  function adoptGrantedNotifications() {
+    if (!window.Notification || Store.get('notifyAsked')) return;
+    if (window.Notification.permission === 'granted' && !Store.get('notify')) {
+      Store.set('notify', true);
+      Store.set('notifyAsked', true);
+      scheduleForWorker();
+    }
+  }
+
+  /* Chrome tells the reader once that the app runs in chrome; a word from the
+     app itself, once, keeps that from alarming anyone. */
+  function maybeExplainChrome() {
+    if (!inAndroidApp() || Store.get('chromeExplained')) return;
+    Store.set('chromeExplained', true);
+    showBanner('يعمل سُنّتي في هذا الجهاز داخل كروم، وقد يخبرك كروم بذلك مرة واحدة، وهذا طبيعي ولا يُرسل عنك شيئاً', null, null);
+  }
+
   function maybeAskPlace() {
     if (Store.get('placeAsked')) return;
     var p = place();
@@ -2292,14 +2326,14 @@
     var c = clockState();
     var key = c.prev.key;
     if (key === 'fajr' || key === 'sunrise' || key === 'duha') return 'morning';
-    if (key === 'dhuhr') return 'afterPrayer';
+    if (key === 'dhuhr') return 'afterprayer';
     if (key === 'asr' || key === 'maghrib') return 'evening';
     return 'sleep';
   }
 
   var NOW_NOTES = {
     morning: 'من بعد الفجر إلى الضحى',
-    afterPrayer: 'بعد كل صلاة مكتوبة',
+    afterprayer: 'بعد كل صلاة مكتوبة',
     evening: 'من بعد العصر إلى العشاء',
     sleep: 'قبل أن تنام'
   };
@@ -3260,7 +3294,8 @@
       var granted = result === 'granted';
       Store.set('notify', granted);
       setSwitch($('settings-notify'), granted);
-      toast(granted ? 'ستصلك تنبيهات الصلاة' : 'لم يُسمح بالإشعارات');
+      toast(granted ? 'ستصلك تنبيهات الصلاة' : (inAndroidApp() ? 'اسمح بالإشعارات لسُنّتي من إعدادات الهاتف، ثم أعد المحاولة' : 'لم يُسمح بالإشعارات'));
+      Store.set('notifyAsked', true);
       if (granted) {
         notify('سُنّتي', 'هكذا يصلك التنبيه عند دخول الوقت', 'welcome');
         scheduleForWorker();
@@ -4056,7 +4091,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
