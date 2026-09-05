@@ -295,6 +295,9 @@ button { background: none; border: none; cursor: pointer; }
 .pill { display: table; margin-inline: auto; padding: 4px 12px; border-radius: 999px;
   background: color-mix(in srgb, var(--raised) 85%, transparent); }
 
+.voice-pick { display: flex; gap: 6px; align-items: center; }
+.voice-pick .select { max-width: 150px; }
+
 /* ---------- ornament ---------- */
 
 /* A niche, the shape a prayer hall points with. It sits behind the countdown
@@ -737,14 +740,14 @@ button { background: none; border: none; cursor: pointer; }
 /* ---------- counter ---------- */
 
 .counter {
-  text-align: center; padding: var(--s5) var(--s3);
+  text-align: center; padding: var(--s4) var(--s3) var(--s4);
   margin: 0 calc(var(--s2) * -1); border-radius: var(--r-md);
   background: color-mix(in srgb, var(--raised) 88%, transparent);
   box-shadow: var(--shadow);
 }
 .counter-value { font-size: 4.6rem; font-weight: 200; color: var(--accent); direction: ltr; line-height: 1; font-variant-numeric: tabular-nums; }
 .counter-target { font-size: var(--step--1); color: var(--ink-3); }
-.counter-phrase { font-family: var(--naskh); font-size: var(--step-2); margin: var(--s3) 0 var(--s5); }
+.counter-phrase { font-family: var(--naskh); font-size: var(--step-2); margin: var(--s2) 0 var(--s4); }
 .counter-btn {
   width: 168px; height: 168px; border-radius: 50%; margin: 0 auto;
   background: var(--accent-solid); color: var(--on-accent); font-size: var(--step-1); font-weight: 600;
@@ -822,7 +825,7 @@ button { background: none; border: none; cursor: pointer; }
 .player-sub { font-size: .6rem; opacity: .7; }
 .player button { color: var(--paper); display: grid; place-items: center; }
 
-.setting { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s3) 0; border-bottom: 1px solid var(--line-soft); }
+.setting { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
 .setting:last-child { border-bottom: none; }
 .setting-label { font-size: var(--step-0); }
 .setting-note { font-size: var(--step--1); color: var(--ink-3); }

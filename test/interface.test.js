@@ -3249,3 +3249,70 @@ test('the converter gives the hijri month a line of its own', () => {
   const row = doc.querySelector('.convert-hijri');
   assert.strictEqual(row.firstElementChild.id, 'conv-hm', 'the month comes first, on its own');
 });
+
+/* ---------------- a man's voice, and one you can choose ---------------- */
+
+test('the voice prefers a man and sits low, and a chosen name wins', () => {
+  const { win, doc } = boot();
+  const spoken = [];
+  win.AudioContext = function () {
+    return { currentTime: 0, destination: {},
+      createOscillator: function () { return { frequency: {}, connect: function () { return { connect: function () {} }; }, start: function () {}, stop: function () {} }; },
+      createGain: function () { return { gain: { setValueAtTime: function () {}, exponentialRampToValueAtTime: function () {} }, connect: function () { return { connect: function () {} }; } }; } };
+  };
+  win.SpeechSynthesisUtterance = function (t) { this.text = t; };
+  const voices = [{ lang: 'ar-XA', name: 'ar-xa-x-arc-local' }, { lang: 'ar-XA', name: 'ar-xa-x-ard-local' }, { lang: 'en-US', name: 'English' }];
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
+    getVoices: function () { return voices; }, addEventListener: function () {},
+    speak: function (u) { spoken.push({ voice: u.voice && u.voice.name, pitch: u.pitch }); } } });
+
+  win.Store.set('voice', 'speech'); win.Store.set('voiceName', '');
+  assert.strictEqual(win.App.helpers.pickVoice().name, 'ar-xa-x-ard-local', 'the voice google names ard is the man');
+  win.App.helpers.speak('x', 't');
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.strictEqual(spoken.length, 1);
+      assert.ok(spoken[0].pitch < 0.9, 'pitched low, found ' + spoken[0].pitch);
+      win.Store.set('voiceName', 'ar-xa-x-arc-local');
+      assert.strictEqual(win.App.helpers.pickVoice().name, 'ar-xa-x-arc-local', 'a name the reader chose wins');
+      done();
+    }, 800);
+  });
+});
+
+test('the settings list the arabic voices on the phone, numbered, with a try button', () => {
+  const { win, doc } = boot();
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
+    getVoices: function () { return [{ lang: 'ar-XA', name: 'ar-xa-x-arc-local' }, { lang: 'ar-XA', name: 'ar-xa-x-ard-network' }, { lang: 'fr-FR', name: 'French' }]; },
+    addEventListener: function () {}, speak: function () {} } });
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-voice-name');
+  assert.ok(sel);
+  const labels = [...sel.options].map((o) => o.text);
+  assert.strictEqual(labels.length, 3, 'a default plus the two arabic voices, the french one left out');
+  assert.ok(labels[1].indexOf('الصوت 1') === 0 && labels[2].indexOf('الصوت 2') === 0, 'numbered, got ' + labels.join(' | '));
+  assert.ok(labels[2].indexOf('network') === -1, 'the noise in the code is trimmed');
+  assert.ok(doc.getElementById('settings-voice-try'), 'a button to hear it');
+});
+
+test('with no arabic voice the picker says so rather than sitting empty', () => {
+  const { win, doc } = boot();
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
+    getVoices: function () { return [{ lang: 'en-US', name: 'English' }]; }, addEventListener: function () {}, speak: function () {} } });
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-voice-name');
+  assert.ok(sel.disabled);
+  assert.ok(sel.options[0].text.indexOf('لا صوت عربي') !== -1);
+});
+
+/* ---------------- room, but not too much ---------------- */
+
+test('the counter and the settings rows no longer breathe a hall of air', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const counter = /\.counter \{([^}]*)\}/.exec(css)[1];
+  assert.ok(!/padding:\s*var\(--s5\)/.test(counter), 'the counter panel is padded to s4, not s5');
+  const phrase = /\.counter-phrase \{([^}]*)\}/.exec(css)[1];
+  assert.ok(!/var\(--s5\)/.test(phrase), 'the phrase does not push the button down by s5');
+  const setting = /\.setting \{([^}]*)\}/.exec(css)[1];
+  assert.match(setting, /padding:\s*var\(--s2\) 0/, 'a settings row is padded s2, not s3');
+});
