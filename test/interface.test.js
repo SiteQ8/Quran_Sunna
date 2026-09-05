@@ -4026,3 +4026,83 @@ test('the tafsir opens from the app and asks the api for nothing', () => {
     }, 60);
   });
 });
+
+/* ---------------- a surah kept for listening offline ---------------- */
+
+function fakeCaches(win) {
+  const stores = {};
+  win.caches = {
+    open: function (name) {
+      if (!stores[name]) stores[name] = new Map();
+      const m = stores[name];
+      return Promise.resolve({
+        match: function (u) { return Promise.resolve(m.get(String(u)) || undefined); },
+        put: function (u, r) { m.set(String(u), r); return Promise.resolve(); },
+        delete: function (u) { return Promise.resolve(m.delete(String(u))); },
+        keys: function () { return Promise.resolve([...m.keys()].map((u) => ({ url: u }))); }
+      });
+    },
+    keys: function () { return Promise.resolve(Object.keys(stores)); }
+  };
+  return stores;
+}
+
+test('a surah is fetched verse by verse into a store of its own and marked kept', () => {
+  const { win, doc } = boot();
+  const stores = fakeCaches(win);
+  const asked = [];
+  win.fetch = function (url, opts) { asked.push({ url: String(url), mode: opts && opts.mode }); return Promise.resolve({ type: 'opaque' }); };
+  win.App.state.surah = 112; win.App.go('reader');
+  assert.strictEqual(doc.getElementById('reader-save').textContent.trim(), 'حفظ الصوت');
+  return win.App.helpers.downloadSurah(112).then(function (ok) {
+    assert.strictEqual(ok, true);
+    assert.strictEqual(asked.length, 4, 'the four verses of al ikhlas');
+    assert.ok(asked.every((a) => a.mode === 'no-cors'), 'kept opaque, since the cdn sends no cors headers');
+    assert.ok(asked[0].url.indexOf('cdn.islamic.network/quran/audio/128/') !== -1);
+    assert.strictEqual(stores['sunnati-audio'].size, 4, 'in a store apart from the app cache');
+    assert.ok(win.App.helpers.isSurahSaved(112));
+    assert.strictEqual(doc.getElementById('reader-save').textContent.trim(), 'محفوظة');
+    assert.ok(doc.getElementById('reader-save').classList.contains('is-kept'));
+  });
+});
+
+test('a kept surah is listed in the settings with its size, and can be removed', () => {
+  const { win, doc } = boot();
+  const stores = fakeCaches(win);
+  win.fetch = function () { return Promise.resolve({ type: 'opaque' }); };
+  return win.App.helpers.downloadSurah(112).then(function () {
+    win.App.go('settings');
+    const list = doc.getElementById('saved-audio').textContent;
+    assert.ok(list.indexOf('الإخلاص') !== -1 && list.indexOf('4 آيات') !== -1 && list.indexOf('م.ب') !== -1, list);
+    return win.App.helpers.removeSurahAudio(win.App.helpers.reciterId(), 112);
+  }).then(function () {
+    assert.strictEqual(stores['sunnati-audio'].size, 0);
+    assert.ok(!win.App.helpers.isSurahSaved(112));
+    win.App.go('settings');
+    assert.ok(doc.getElementById('saved-audio').textContent.indexOf('لم تحفظ سورة بعد') !== -1);
+  });
+});
+
+test('the worker answers a kept verse from the audio store and keeps the store across updates', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("var AUDIO_STORE = 'sunnati-audio'") !== -1);
+  assert.ok(sw.indexOf("url.hostname === 'cdn.islamic.network'") !== -1, 'verse audio is looked up in the store first');
+  assert.ok(sw.indexOf("(name === VERSION || name === AUDIO_STORE) ? null : caches.delete(name)") !== -1,
+    'an update of the app must not throw the recitations away');
+});
+
+test('a download can be stopped, and what came stays', () => {
+  const { win } = boot();
+  const stores = fakeCaches(win);
+  let n = 0;
+  win.fetch = function () {
+    n++;
+    if (n === 2) win.App.state.downloading.stop = true;
+    return Promise.resolve({ type: 'opaque' });
+  };
+  return win.App.helpers.downloadSurah(112).then(function (ok) {
+    assert.strictEqual(ok, false, 'stopped short is not finished');
+    assert.ok(stores['sunnati-audio'].size >= 2 && stores['sunnati-audio'].size < 4, 'what came stays, ' + stores['sunnati-audio'].size);
+    assert.ok(!win.App.helpers.isSurahSaved(112), 'and it is not marked kept');
+  });
+});

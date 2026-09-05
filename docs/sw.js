@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.0.0';
+var VERSION = 'sunnati-v8.1.0';
 
 var SHELL = [
   './',
@@ -70,6 +70,7 @@ function isSettled(pathname) {
 /* The page hands over the day's prayer times and the reminder interval, and
    the worker keeps them in the cache since it has no store of its own. */
 var SCHEDULE_KEY = './__schedule';
+var AUDIO_STORE = 'sunnati-audio';
 
 function keepSchedule(data) {
   return caches.open(VERSION).then(function (cache) {
@@ -161,7 +162,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (names) {
       return Promise.all(names.map(function (name) {
-        return name === VERSION ? null : caches.delete(name);
+        return (name === VERSION || name === AUDIO_STORE) ? null : caches.delete(name);
       }));
     }).then(function () { return self.clients.claim(); })
   );
@@ -180,7 +181,17 @@ self.addEventListener('fetch', function (event) {
 
   var url = new URL(request.url);
 
-  /* Streams and verse audio stay on the network, since caching them would fill the device. */
+  /* A verse the reader chose to keep is answered from the audio store, which
+     lives outside the versioned cache so an update of the app does not throw
+     the recitations away. Anything not kept stays on the network. */
+  if (url.hostname === 'cdn.islamic.network' && url.pathname.indexOf('/quran/audio/') === 0) {
+    event.respondWith(
+      caches.open(AUDIO_STORE).then(function (store) { return store.match(request.url); }).then(function (hit) {
+        return hit || fetch(request);
+      })
+    );
+    return;
+  }
   if (url.pathname.indexOf('.mp3') !== -1 || url.hostname.indexOf('Qurango') !== -1) return;
 
   /* The tafsir: half a megabyte fetched once, on first use, and kept. */

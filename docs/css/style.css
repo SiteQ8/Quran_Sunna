@@ -420,6 +420,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .prayer-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: var(--s3); }
 .prayer-legend .pg { width: 14px; display: inline-block; }
 
+#reader-save.is-kept { color: var(--accent-ink); border-color: var(--accent-solid); }
+/* on a narrow phone the bar has room for the icon alone; the state shows by
+   the icon and the colour, and the label reads it out */
+@media (max-width: 430px) { .reader-save-word { display: none; } #reader-save { min-width: 44px; padding-inline: 10px; } }
+
 /* ---------- the month timetable ---------- */
 
 .tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }
