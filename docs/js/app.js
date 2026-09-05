@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.4.1';
+  var VERSION = '7.5.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -777,12 +777,21 @@
     return male || list[0];
   }
 
+  /* Chrome on a phone speaks through the system's voice but hands the page
+     no list of voices at all, so an empty list means the phone chooses, not
+     that it has no arabic. The words say which of the two it is, and where
+     on the phone the voice is changed. */
   function fillVoiceList() {
     var sel = $('settings-voice-name');
     if (!sel) return;
+    var every = window.speechSynthesis ? (window.speechSynthesis.getVoices() || []) : [];
     var list = arabicVoices();
     var current = Store.get('voiceName') || '';
-    var options = [{ value: '', label: list.length ? 'أنسب صوت يجده التطبيق' : 'لا صوت عربي في هذا الجهاز' }]
+    var first;
+    if (list.length) first = 'الأنسب من أصوات جهازك';
+    else if (every.length) first = 'لا صوت عربي في جهازك، ويُنطق بالصوت المتاح';
+    else first = 'صوت الجهاز، والمتصفح لا يعرض قائمته هنا';
+    var options = [{ value: '', label: first }]
       .concat(list.map(function (v, i) {
         /* the codes google gives its voices mean nothing to a listener, so
            each is numbered and the code kept small beside it */
@@ -791,6 +800,12 @@
       }));
     fillSelect(sel, options, current);
     sel.disabled = !list.length;
+    var note = $('settings-voice-note');
+    if (note) {
+      note.textContent = list.length
+        ? 'اضغط زر السماع بعد كل اختيار'
+        : 'تغيّر الصوت من إعدادات الهاتف: اللغة والإدخال، ثم تحويل النص إلى كلام، ثم العربية';
+    }
   }
 
   /* A reminder to send blessings on the Prophet, every so many minutes that
@@ -1899,7 +1914,7 @@
     if (status.finished) aheadLine = 'أتممت الختمة، فتقبل الله منك';
     else if (status.ahead > 0) aheadLine = 'أنت متقدم ' + pages(status.ahead);
     else if (status.ahead < 0) aheadLine = 'عليك ' + pages(Math.abs(status.ahead)) + ' لتلحق بخطتك';
-    else aheadLine = 'أنت في الموعد تماماً';
+    else aheadLine = 'أنت في الموعد';
 
     var today = status.today || { from: null, to: null, pages: 0 };
     host.innerHTML =
@@ -3493,13 +3508,13 @@
       state.installOffer = null;
       hideBanner();
       renderSettings();
-      toast('تم التثبيت، فتجده الآن مع تطبيقاتك');
+      toast('ثُبّت سُنّتي، وتجده الآن مع تطبيقاتك');
     });
   }
 
   function install() {
     var offer = state.installOffer;
-    if (!offer) { toast('التثبيت يجري من قائمة المتصفح'); return; }
+    if (!offer) { toast('من قائمة المتصفح اختر: إضافة إلى الشاشة الرئيسية'); return; }
     offer.prompt();
     Promise.resolve(offer.userChoice).then(function (choice) {
       state.installOffer = null;
