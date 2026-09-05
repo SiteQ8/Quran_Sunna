@@ -8,4 +8,5 @@
     <string name="shortcutAzkar">الأذكار</string>
     <string name="shortcutQibla">القبلة</string>
     <string name="shortcutTimetable">جدول الشهر</string>
+    <string name="shortcutAdhan">تشغيل أو إيقاف تنبيه الأذان</string>
 </resources>
