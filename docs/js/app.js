@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.6.0';
+  var VERSION = '7.6.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -380,6 +380,7 @@
   }
 
   function go(name, silent) {
+    if (state.view === 'settings' && name !== 'settings') stopSpeaking();
     var target = $('v-' + name);
     if (!target) return;
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
@@ -724,9 +725,38 @@
     try {
       var clip = new window.Audio();
       clip.src = url;
-      clip.play().catch(function () { chime(); });
+      state.voiceClip = clip;
+      clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); } };
+      clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
+      markVoiceButton(true);
       return true;
     } catch (e) { return chime(); }
+  }
+
+  /* Whatever the sample is, a clip or the phone's own speech, one call ends it. */
+  function stopSpeaking() {
+    if (state.voiceClip) {
+      try { state.voiceClip.pause(); state.voiceClip.removeAttribute('src'); state.voiceClip.load(); } catch (e) { /* gone */ }
+      state.voiceClip = null;
+    }
+    if (window.speechSynthesis && window.speechSynthesis.cancel) {
+      try { window.speechSynthesis.cancel(); } catch (e2) { /* nothing speaking */ }
+    }
+    state.speaking = false;
+    markVoiceButton(false);
+  }
+
+  function isSpeaking() {
+    return !!state.voiceClip || !!state.speaking;
+  }
+
+  /* The one button starts the sample and, while it plays, stops it. */
+  function markVoiceButton(playing) {
+    var btn = $('settings-voice-try');
+    if (!btn) return;
+    btn.innerHTML = icon(playing ? 'pause' : 'play');
+    btn.setAttribute('aria-label', playing ? 'أوقف الصوت' : 'اسمع الصوت');
+    btn.classList.toggle('is-playing', playing);
   }
 
   function speak(text, why) {
@@ -745,8 +775,12 @@
       var chosen = pickVoice();
       if (chosen) line.voice = chosen;
       else if ((window.speechSynthesis.getVoices() || []).length) return chime();
+      line.onend = function () { state.speaking = false; markVoiceButton(false); };
+      line.onerror = line.onend;
+      state.speaking = true;
+      markVoiceButton(true);
       chime();
-      window.setTimeout(function () { window.speechSynthesis.speak(line); }, 700);
+      window.setTimeout(function () { if (state.speaking) window.speechSynthesis.speak(line); }, 700);
       return true;
     } catch (e) { return chime(); }
   }
@@ -786,27 +820,28 @@
   function fillVoiceList() {
     var sel = $('settings-voice-name');
     if (!sel) return;
-    var every = window.speechSynthesis ? (window.speechSynthesis.getVoices() || []) : [];
     var list = arabicVoices();
     var current = Store.get('voiceName') || '';
-    var first;
-    if (list.length) first = 'الأنسب من أصوات جهازك';
-    else if (every.length) first = 'لا صوت عربي في جهازك، ويُنطق بالصوت المتاح';
-    else first = 'صوت الجهاز، والمتصفح لا يعرض قائمته هنا';
-    var options = [{ value: '', label: first }]
-      .concat(list.map(function (v, i) {
-        /* the codes google gives its voices mean nothing to a listener, so
-           each is numbered and the code kept small beside it */
-        var short = v.name.replace(/^ar[-_]/i, '').replace(/-(local|network)$/i, '');
-        return { value: v.name, label: 'الصوت ' + ar(i + 1) + '، ' + short };
-      }));
-    fillSelect(sel, options, current);
-    sel.disabled = !list.length;
+    var plain = $('settings-voice-plain');
     var note = $('settings-voice-note');
-    if (note) {
-      note.textContent = list.length
-        ? 'اضغط زر السماع بعد كل اختيار'
-        : 'تغيّر الصوت من إعدادات الهاتف: اللغة والإدخال، ثم تحويل النص إلى كلام، ثم العربية';
+    if (list.length) {
+      var options = [{ value: '', label: 'الأنسب من أصوات جهازك' }]
+        .concat(list.map(function (v, i) {
+          /* the codes google gives its voices mean nothing to a listener, so
+             each is numbered and the code kept small beside it */
+          var short = v.name.replace(/^ar[-_]/i, '').replace(/-(local|network)$/i, '');
+          return { value: v.name, label: 'الصوت ' + ar(i + 1) + '، ' + short };
+        }));
+      fillSelect(sel, options, current);
+      sel.hidden = false;
+      if (plain) plain.hidden = true;
+      if (note) note.textContent = 'اختر صوتاً واضغط زر السماع';
+    } else {
+      /* a sentence does not fit in a list, so with nothing to choose from
+         the list goes and two plain words take its place */
+      sel.hidden = true;
+      if (plain) { plain.hidden = false; plain.textContent = 'صوت الهاتف'; }
+      if (note) note.textContent = 'لتغييره افتح إعدادات الهاتف، ثم تحويل النص إلى كلام، ثم اللغة العربية';
     }
   }
 
@@ -3379,15 +3414,18 @@
     });
     bind('settings-voice', 'change', function (e) {
       Store.set('voice', e.target.value);
+      stopSpeaking();
       if (e.target.value !== 'none') speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
     bind('settings-voice-name', 'change', function (e) {
       Store.set('voiceName', e.target.value);
       Store.set('voice', 'speech');
       if ($('settings-voice')) $('settings-voice').value = 'speech';
+      stopSpeaking();
       speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
     bind('settings-voice-try', 'click', function () {
+      if (isSpeaking()) { stopSpeaking(); return; }
       if ((Store.get('voice') || 'none') === 'none') { Store.set('voice', 'speech'); if ($('settings-voice')) $('settings-voice').value = 'speech'; }
       speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
@@ -3642,7 +3680,7 @@
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
-      notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
+      notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,

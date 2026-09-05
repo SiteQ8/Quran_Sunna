@@ -3314,15 +3314,6 @@ test('the settings list the arabic voices on the phone, numbered, with a try but
   assert.ok(doc.getElementById('settings-voice-try'), 'a button to hear it');
 });
 
-test('with no arabic voice the picker says so rather than sitting empty', () => {
-  const { win, doc } = boot();
-  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: {
-    getVoices: function () { return [{ lang: 'en-US', name: 'English' }]; }, addEventListener: function () {}, speak: function () {} } });
-  win.App.go('settings');
-  const sel = doc.getElementById('settings-voice-name');
-  assert.ok(sel.disabled);
-  assert.ok(sel.options[0].text.indexOf('لا صوت عربي') !== -1);
-});
 
 /* ---------------- room, but not too much ---------------- */
 
@@ -3765,23 +3756,47 @@ test('the interface no longer says تم التثبيت or promises a companion',
   assert.ok(app.indexOf('أنت في الموعد تماماً') === -1, 'the empty emphasis is gone');
 });
 
-test('the voice list tells which of three cases the phone is in', () => {
+test('with nothing to choose the row says صوت الهاتف, with voices it lists them', () => {
   const { win, doc } = boot();
   const cases = [
-    [[], 'صوت الجهاز، والمتصفح لا يعرض قائمته هنا'],
-    [[{ lang: 'en-US', name: 'English' }], 'لا صوت عربي في جهازك، ويُنطق بالصوت المتاح'],
-    [[{ lang: 'ar-XA', name: 'ar-xa-x-ard-local' }], 'الأنسب من أصوات جهازك']
+    [[], true], [[{ lang: 'en-US', name: 'English' }], true], [[{ lang: 'ar-XA', name: 'ar-xa-x-ard-local' }], false]
   ];
   cases.forEach(function (c) {
-    Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return c[0]; }, addEventListener: function () {}, speak: function () {} } });
+    Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return c[0]; }, addEventListener: function () {}, speak: function () {}, cancel: function () {} } });
     win.App.go('settings');
     const sel = doc.getElementById('settings-voice-name');
-    assert.strictEqual(sel.options[0].text, c[1]);
+    const plain = doc.getElementById('settings-voice-plain');
+    assert.strictEqual(sel.hidden, c[1], 'a sentence does not belong in a list');
+    assert.strictEqual(plain.hidden, !c[1]);
+    if (c[1]) {
+      assert.strictEqual(plain.textContent, 'صوت الهاتف');
+      assert.ok(doc.getElementById('settings-voice-note').textContent.indexOf('تحويل النص إلى كلام') !== -1, 'and says where it changes');
+    } else {
+      assert.strictEqual(sel.options[0].text, 'الأنسب من أصوات جهازك');
+    }
   });
-  /* with no list at all, the note says where on the phone the voice is changed */
-  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return []; }, addEventListener: function () {}, speak: function () {} } });
+});
+
+test('the sample can be stopped by the same button, and stops when you leave', () => {
+  const { win, doc } = boot();
+  let paused = 0, cancelled = 0;
+  win.Audio = function () { return { play: function () { return Promise.resolve(); }, pause: function () { paused++; }, removeAttribute: function () {}, load: function () {}, src: '' }; };
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return []; }, addEventListener: function () {}, speak: function () {}, cancel: function () { cancelled++; } } });
   win.App.go('settings');
-  assert.ok(doc.getElementById('settings-voice-note').textContent.indexOf('تحويل النص إلى كلام') !== -1);
+  win.Store.set('voice', 'recording');
+  const btn = doc.getElementById('settings-voice-try');
+  click(win, btn);
+  assert.ok(win.App.helpers.isSpeaking(), 'the recording plays');
+  assert.strictEqual(btn.getAttribute('aria-label'), 'أوقف الصوت');
+  assert.strictEqual(btn.querySelector('use').getAttribute('href'), '#i-pause');
+  click(win, btn);
+  assert.ok(!win.App.helpers.isSpeaking(), 'the same button stops it');
+  assert.strictEqual(paused, 1);
+  assert.strictEqual(btn.getAttribute('aria-label'), 'اسمع الصوت');
+  click(win, btn);
+  win.App.go('home');
+  assert.ok(!win.App.helpers.isSpeaking(), 'leaving the settings ends it');
+  assert.ok(cancelled >= 1, 'the phone speech is cancelled too');
 });
 
 /* ---------------- the store shots, and ramadan ---------------- */

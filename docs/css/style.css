@@ -297,6 +297,8 @@ button { background: none; border: none; cursor: pointer; }
 
 .voice-pick { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 0; justify-content: flex-end; }
 .voice-pick .select { flex: 1; min-width: 0; max-width: 100%; }
+.voice-plain { color: var(--ink-2); font-weight: 600; padding-inline: 4px; white-space: nowrap; }
+.btn.is-playing { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
 /* Label and control share the one line: the label yields first, wrapping its
    own note, and the control never takes more than two thirds. Dropping the
    control to a second line left half a row empty. */
