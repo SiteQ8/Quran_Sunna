@@ -232,32 +232,24 @@
     <h1 id="quran-title">المصحف</h1>
     <p>114 سورة و6236 آية محفوظة في جهازك</p>
   </div>
-
-  <div class="btn-row" style="margin-bottom:12px">
+  <button class="btn btn-ghost btn-block btn-search" data-go="search"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
+  <div class="grid grid-2 btn-grid">
     <button class="btn btn-ghost" data-go="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-layers"/></svg>بالصفحات</button>
     <button class="btn btn-ghost" id="quran-goto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg>اذهب إلى</button>
+    <button class="btn btn-ghost" data-go="bookmarks"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bookmark"/></svg>المحفوظات</button>
+    <button class="btn btn-ghost" data-go="khatma"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg>خطة الختمة</button>
   </div>
-  <button class="btn btn-ghost btn-block" data-go="search" style="margin-bottom:12px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg>ابحث في كلمات القرآن</button>
-
   <div class="card" id="resume-card" hidden>
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>تابع القراءة</h2></div>
     <button class="row" id="resume-btn"><span class="row-mark" id="resume-num"></span><span class="row-body"><span class="row-title" id="resume-name"></span><span class="row-note" id="resume-note"></span></span></button>
   </div>
-
-  <div class="btn-row" style="margin-bottom:12px">
-    <button class="btn btn-ghost" data-go="bookmarks"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bookmark"/></svg>المحفوظات</button>
-    <button class="btn btn-ghost" data-go="khatma"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-target"/></svg>خطة الختمة</button>
+  <div class="segment" id="browse-mode" role="tablist" aria-label="تصفح المصحف">
+    <button class="chip is-on" data-browse="surah" role="tab" aria-selected="true">السور</button>
+    <button class="chip" data-browse="juz" role="tab" aria-selected="false">الأجزاء</button>
   </div>
-
-  <div class="chip-scroll" id="browse-mode">
-    <button class="chip is-on" data-browse="surah">السور</button>
-    <button class="chip" data-browse="juz">الأجزاء</button>
-  </div>
-
-  <input class="field" id="surah-filter" type="search" placeholder="اسم السورة أو رقمها" aria-label="ابحث عن سورة" style="margin-bottom:12px">
+  <input class="field" id="surah-filter" type="search" placeholder="اسم السورة أو رقمها" aria-label="تصفية السور بالاسم أو الرقم">
   <div id="surah-list"></div>
 </section>
-
 <!-- ══════════ القارئ ══════════ -->
 <section class="view" id="v-reader" aria-labelledby="reader-title">
   <div class="reader-bar">

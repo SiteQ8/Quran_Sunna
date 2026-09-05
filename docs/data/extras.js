@@ -2,7 +2,6 @@
 
 /* معرّفات القرّاء مأخوذة من فهرس alquran.cloud الصوتي */
 var RECITERS = [
-  { id: 'ar.alafasy', name: 'مشاري العفاسي', country: 'الكويت' },
   { id: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', country: 'مصر' },
   { id: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', country: 'السعودية' },
   { id: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', country: 'السعودية' },
