@@ -27,6 +27,10 @@
     Tehran: { id: 7, name: 'معهد الجيوفيزياء بجامعة طهران', fajr: 17.7, isha: 14, maghrib: 4.5 },
     Jafari: { id: 0, name: 'الشيعة الاثنا عشرية', fajr: 16, isha: 14, maghrib: 4 },
     Kuwait: { id: 9, name: 'وزارة الأوقاف الكويتية', fajr: 18, isha: 17.5 },
+    /* The printed calendar the country actually follows. Its published days are
+       read from a table and any day beyond it falls back to the ministry's
+       parameters with the two minutes on isha that the table showed. */
+    Ojeiri: { id: 0, name: 'العجيري، الكويت', fajr: 18, isha: 17.5, table: 'OJEIRI', offsets: { isha: 2 } },
     Qatar: { id: 10, name: 'وزارة الأوقاف القطرية', fajr: 18, ishaMin: 90 },
     Singapore: { id: 11, name: 'المجلس الإسلامي بسنغافورة', fajr: 20, isha: 18 },
     Turkey: { id: 13, name: 'رئاسة الشؤون الدينية التركية', fajr: 18, isha: 17,
@@ -152,7 +156,29 @@
   };
 
   /* Returns prayer times as minutes after local midnight for the given Date. */
+  /* A published table beats any formula for the days it covers. */
+  function fromTable(name, date) {
+    var root = typeof globalThis !== 'undefined' ? globalThis : (typeof window !== 'undefined' ? window : {});
+    var table = root[name];
+    if (!table) return null;
+    var key = date.getFullYear() + '-' + two(date.getMonth() + 1) + '-' + two(date.getDate());
+    var row = table[key];
+    if (!row || row.length !== 6) return null;
+    return {
+      fajr: row[0], sunrise: row[1], dhuhr: row[2], asr: row[3], sunset: row[4], maghrib: row[4], isha: row[5],
+      imsak: row[0] - 10, midnight: Math.round(row[4] + ((1440 - (row[4] - row[0])) / 2)) % 1440,
+      published: true
+    };
+  }
+
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+
   Calculator.prototype.timesFor = function (date, tzOffsetHours) {
+    var method = METHODS[this.method] || {};
+    var published = method.table ? fromTable(method.table, date) : null;
+    /* the printed table gives the asr of the majority, so a hanafi reader keeps
+       the formula's later asr while taking the rest from the table */
+    if (published && this.asrFactor === 1) return published;
     var jd = julian(date.getFullYear(), date.getMonth() + 1, date.getDate()) - this.lng / (15 * 24);
     var tz = typeof tzOffsetHours === 'number' ? tzOffsetHours : -date.getTimezoneOffset() / 60;
     var raw = this.adjustHighLat(this.computePortions(jd));
@@ -169,6 +195,7 @@
     out.midnight = out.sunset + (24 - (out.sunset - out.fajr)) / 2;
     var mins = {};
     for (var key in out) mins[key] = isNaN(out[key]) ? NaN : Math.round(fixHour(out[key]) * 60);
+    if (published) { published.asr = mins.asr; return published; }
     return mins;
   };
 

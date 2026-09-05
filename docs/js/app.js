@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.1.0';
+  var VERSION = '7.2.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -34,11 +34,11 @@
   /* Which slice of the day we are in decides the accent colour. */
   var WINDOWS = ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'];
 
-  var TABS = ['home', 'quran', 'azkar', 'tracker', 'more'];
+  var TABS = ['home', 'quran', 'tasbih', 'tracker', 'more'];
 
   var OWNED_BY = {
     reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran', page: 'quran',
-    'azkar-list': 'azkar', hisn: 'azkar'
+    azkar: 'tasbih', 'azkar-list': 'tasbih', hisn: 'tasbih'
   };
 
   var state = {
@@ -283,6 +283,9 @@
     root.style.setProperty('--accent-wash', hexToWash(fill));
     root.setAttribute('data-window', windowKey);
     applyPattern();
+    /* the bar the browser paints above the app follows the app's colour */
+    var meta = document.querySelector('meta[name="theme-color"]');
+    if (meta) meta.setAttribute('content', darkTheme() ? '#10161a' : ink);
   }
 
   /* Two patterns to lay under the app, both drawn here so each takes the colour
@@ -704,10 +707,24 @@
 
   /* The phone's own arabic voice speaks the line, where it has one. Nothing is
      downloaded and it works with the connection off. */
+  /* The book's own recording of الصلاة على النبي, a man reciting it, which
+     needs no speech engine at all. Fetched once and kept by the worker. */
+  var SALAWAT_RECORDING = 'https://www.hisnmuslim.com/audio/ar/53.mp3';
+
+  function playRecording(url) {
+    try {
+      var clip = new window.Audio();
+      clip.src = url;
+      clip.play().catch(function () { chime(); });
+      return true;
+    } catch (e) { return chime(); }
+  }
+
   function speak(text, why) {
     var mode = Store.get('voice') || 'none';
     if (mode === 'none') return false;
     if (mode === 'tone') return chime();
+    if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(SALAWAT_RECORDING);
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
     try {
       var line = new window.SpeechSynthesisUtterance(text);
@@ -731,7 +748,16 @@
      they do, a voice whose name says male is preferred, then the deepest set. */
   function arabicVoices() {
     if (!window.speechSynthesis) return [];
-    return (window.speechSynthesis.getVoices() || []).filter(function (v) { return /^ar/i.test(v.lang); });
+    return (window.speechSynthesis.getVoices() || []).filter(function (v) {
+      return /^ar/i.test(v.lang || '') || /arab|عرب/i.test(v.name || '');
+    });
+  }
+
+  /* A phone hands its voices over late, sometimes seconds after the page
+     asks, so the list is asked for again a few times before giving up. */
+  function fillVoiceListSoon() {
+    fillVoiceList();
+    [300, 1200, 3000].forEach(function (wait) { window.setTimeout(fillVoiceList, wait); });
   }
 
   function pickVoice() {
@@ -1163,7 +1189,7 @@
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
-        esc(text) + sajda + '\u2060<span class="ayah-num">' + ar(a) + '</span></span> ';
+        esc(text) + sajda + '\u2060<span class="ayah-num" data-n="' + a + '" aria-label="آية ' + a + '"></span></span> ';
     }).join('');
 
     body.className = 'reader-body';
@@ -1348,7 +1374,11 @@
   function stopAudio() {
     if (state.audio) {
       state.audio.onended = null;
+      state.audio.oncanplay = null;
+      state.audio.onerror = null;
       try { state.audio.pause(); } catch (e) { /* already stopped */ }
+      /* a clip still loading would start on its own once it arrived */
+      try { state.audio.removeAttribute('src'); state.audio.load(); } catch (e2) { /* not an element */ }
     }
     state.audio = null;
     state.playing = null;
@@ -1410,8 +1440,16 @@
     reciteVerse();
   }
 
+  /* The stop on the player bar stops whatever is running: a walk through the
+     surah, a repeat run for memorising, or a single clip. Stopping one while
+     another kept going was how the sound went on after the button was pressed. */
   function stopRecite() {
     state.recite = null;
+    if (state.repeat) {
+      state.repeat = null;
+      var body = $('reader-body');
+      if (body) body.classList.remove('is-hidden');
+    }
     releaseAwake();
     $$('.ayah').forEach(function (el) { el.classList.remove('is-reciting'); });
     stopAudio();
@@ -1477,7 +1515,7 @@
       var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
-        esc(v.text) + sajda + '\u2060<span class="ayah-num">' + ar(v.a) + '</span></span> ';
+        esc(v.text) + sajda + '\u2060<span class="ayah-num" data-n="' + v.a + '" aria-label="آية ' + v.a + '"></span></span> ';
     });
     body.innerHTML = '<div class="ayah-block">' + html + '</div>' +
       '<div class="page-foot"><span class="page-foot-num">' + ar(n) + '</span></div>';
@@ -1546,6 +1584,13 @@
     var meta = surahMeta(s);
     var text = Mushaf.ayah(s, a);
     if (!text) return Promise.resolve(null);
+    return textCard('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), text, "'Amiri Quran', 'Amiri', serif");
+  }
+
+  /* Any words on the same card: a dhikr from the book, a supplication, a
+     hadith. The heading names where it is from. */
+  function textCard(heading, text, face) {
+    if (!text) return Promise.resolve(null);
 
     var W = 1080, PAD = 96;
     var canvas = document.createElement('canvas');
@@ -1587,10 +1632,12 @@
     }
 
     return ready().then(function () {
-      ctx.font = "400 60px 'Amiri Quran', 'Amiri', serif";
+      var quranFace = face || "'Amiri', serif";
+      var size = text.length > 400 ? 44 : (text.length > 220 ? 52 : 60);
+      ctx.font = '400 ' + size + 'px ' + quranFace;
       ctx.direction = 'rtl';
       var lines = wrap(ctx, text.split(' '), W - PAD * 2 - 40);
-      var lineHeight = 134;
+      var lineHeight = Math.round(size * 2.2);
       var H = PAD * 2 + 140 + lines.length * lineHeight + 160;
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
@@ -1611,11 +1658,11 @@
       ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = fill;
       ctx.font = "700 40px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), W / 2, PAD + 40);
+      ctx.fillText(heading, W / 2, PAD + 40);
 
-      /* the verse, line by line */
+      /* the words, line by line */
       ctx.fillStyle = '#16241c';
-      ctx.font = "400 60px 'Amiri Quran', 'Amiri', serif";
+      ctx.font = '400 ' + size + 'px ' + quranFace;
       var top = PAD + 175;
       lines.forEach(function (line, i) { ctx.fillText(line, W / 2, top + i * lineHeight); });
 
@@ -1633,15 +1680,22 @@
   }
 
   function shareVerseCard(s, a) {
+    var meta = surahMeta(s);
+    return sharePicture(verseCard(s, a), 'ayah-' + s + '-' + a + '.png', 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
+  }
+
+  function shareTextCard(heading, text, filename) {
+    return sharePicture(textCard(heading, text), filename, heading);
+  }
+
+  function sharePicture(drawing, name, title) {
     toast('جارٍ تجهيز الصورة');
-    return verseCard(s, a).then(function (blob) {
-      if (!blob) { toast('تعذّر رسم الآية'); return false; }
-      var meta = surahMeta(s);
-      var name = 'ayah-' + s + '-' + a + '.png';
+    return drawing.then(function (blob) {
+      if (!blob) { toast('تعذّر رسم الصورة'); return false; }
       var file = null;
       try { file = new window.File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
       if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a) })
+        return navigator.share({ files: [file], title: title })
           .then(function () { return true; }, function () { return false; });
       }
       /* no sharing on this device, so the picture is handed over as a download */
@@ -1650,7 +1704,7 @@
       link.href = url; link.download = name;
       document.body.appendChild(link); link.click(); link.remove();
       window.setTimeout(function () { window.URL.revokeObjectURL(url); }, 2000);
-      toast('نُزّلت صورة الآية');
+      toast('نُزّلت الصورة');
       return true;
     });
   }
@@ -1964,6 +2018,7 @@
       '<p class="dhikr-text">' + esc(item.t) + '</p>' +
       (item.n ? '<p class="dhikr-note">' + esc(item.n) + '</p>' : '') +
       '<div class="dhikr-foot"><span class="source">' + foot + '</span>' +
+      '<button class="dhikr-share" data-picture="' + kind + ':' + i + '" aria-label="صورة للمشاركة">' + icon('share') + '</button>' +
       '<span class="dhikr-count' + (isDone ? ' is-done' : '') + '">' +
       ring(said, target) + '<span class="dhikr-left">' + (isDone ? icon('check') : ar(left)) + '</span></span></div></div>';
   }
@@ -2131,7 +2186,7 @@
 
   var MORE_LINKS = [
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
-    { nav: 'tasbih', icon: 'beads', name: 'المسبحة', note: 'عدّاد بأهداف محفوظة' },
+    { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
     { nav: 'hadith', icon: 'text', name: 'من الأربعين النووية', note: 'عشرون حديثاً جامعاً' },
@@ -2276,7 +2331,18 @@
     return typeof TASBIH_PHRASES !== 'undefined' ? TASBIH_PHRASES : [{ t: 'سبحان الله', target: 33 }];
   }
 
+  function renderTasbihAzkarCard() {
+    var note = $('tasbih-azkar-note');
+    if (!note || typeof AZKAR_DB === 'undefined') return;
+    var key = azkarForNow();
+    var def = AZKAR_DB[key];
+    if (!def) return;
+    var p = Store.azkarProgress(key, def.items.length);
+    note.textContent = 'أذكار هذا الوقت: ' + def.title + '، ' + ar(p.done) + ' من ' + ar(def.items.length) + '، وحصن المسلم كاملاً';
+  }
+
   function renderTasbih() {
+    renderTasbihAzkarCard();
     if (!$('tasbih-value')) return;
     var list = phraseList();
     var current = list[state.tasbih.index] || list[0];
@@ -2369,11 +2435,12 @@
   function renderDua() {
     var host = $('dua-list');
     if (!host || typeof DUAS === 'undefined') return;
-    host.innerHTML = DUAS.map(function (group) {
+    host.innerHTML = DUAS.map(function (group, gi) {
       return '<h2 class="section-title">' + esc(group.cat) + '</h2>' +
-        group.items.map(function (d) {
+        group.items.map(function (d, di) {
           return '<div class="card"><p class="naskh" style="font-size:1.02rem;line-height:2.1">' +
-            esc(d.t) + '</p><p class="source">' + esc(d.r) + '</p></div>';
+            esc(d.t) + '</p><div class="dhikr-foot"><p class="source">' + esc(d.r) + '</p>' +
+            '<button class="dhikr-share" data-picture="dua:' + gi + ':' + di + '" aria-label="صورة للمشاركة">' + icon('share') + '</button></div></div>';
         }).join('');
     }).join('');
   }
@@ -2743,11 +2810,12 @@
       { value: '180', label: 'كل ثلاث ساعات' },
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
-    fillVoiceList();
+    fillVoiceListSoon();
     fillSelect($('settings-voice'), [
       { value: 'none', label: 'بلا صوت' },
       { value: 'tone', label: 'نغمة' },
-      { value: 'speech', label: 'صوت ينطق الصلاة على النبي' }
+      { value: 'recording', label: 'تسجيل بصوت قارئ' },
+      { value: 'speech', label: 'صوت الجهاز ينطقها' }
     ], s.voice || 'none');
     fillSelect($('settings-accent'),
       [{ value: 'auto', label: 'يتبع وقت الصلاة' }].concat(
@@ -3022,6 +3090,24 @@
 
     var azkar = target.closest('[data-azkar]');
     if (azkar) { openAzkar(azkar.getAttribute('data-azkar')); return; }
+
+    var picture = target.closest('[data-picture]');
+    if (picture) {
+      var ref = picture.getAttribute('data-picture').split(':');
+      var index = +ref[1];
+      if (ref[0] === 'dua') {
+        var g = DUAS[+ref[1]], d = g && g.items[+ref[2]];
+        if (d) shareTextCard(g.cat + (d.r ? '، ' + d.r : ''), d.t, 'dua-' + ref[1] + '-' + ref[2] + '.png');
+      } else if (ref[0] === 'hisn') {
+        var chapter = null;
+        HISN.forEach(function (c) { if (c.id === state.hisn) chapter = c; });
+        if (chapter && chapter.i[index]) shareTextCard(chapter.t, chapter.i[index].t, 'dhikr-' + chapter.id + '-' + index + '.png');
+      } else {
+        var def = AZKAR_DB[state.azkarKey || 'morning'];
+        if (def && def.items[index]) shareTextCard(def.title, def.items[index].t, 'dhikr-' + (state.azkarKey || 'morning') + '-' + index + '.png');
+      }
+      return;
+    }
 
     var dhikr = target.closest('[data-dhikr]');
     if (dhikr) { countDhikr(+dhikr.getAttribute('data-dhikr'), dhikr.getAttribute('data-kind') === 'hisn'); return; }
@@ -3493,7 +3579,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
-      verseCard: verseCard, openPage: openPage, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },

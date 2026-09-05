@@ -35,7 +35,7 @@ var RADIO_STATIONS = [
 
 /* المدن مع إحداثياتها وفارق التوقيت، ليعمل حساب المواقيت دون إنترنت */
 var CITIES = [
-  { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' },
+  { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Ojeiri' },
   { n: 'الرياض', lat: 24.7136, lng: 46.6753, tz: 3, z: 'Asia/Riyadh', method: 'Makkah' },
   { n: 'مكة المكرمة', lat: 21.4225, lng: 39.8262, tz: 3, z: 'Asia/Riyadh', method: 'Makkah' },
   { n: 'المدينة المنورة', lat: 24.4686, lng: 39.6142, tz: 3, z: 'Asia/Riyadh', method: 'Makkah' },

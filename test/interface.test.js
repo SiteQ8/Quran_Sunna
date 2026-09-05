@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -641,7 +641,7 @@ test('settings are populated from the modules and persist changes', () => {
   assert.ok(doc.getElementById('settings-method').options.length >= 10);
   assert.ok(doc.getElementById('settings-reciter').options.length >= 15);
   assert.ok(doc.getElementById('settings-city').options.length >= 20);
-  assert.strictEqual(doc.getElementById('settings-method').value, 'Kuwait');
+  assert.strictEqual(doc.getElementById('settings-method').value, 'Ojeiri');
 
   const method = doc.getElementById('settings-method');
   method.value = 'Makkah';
@@ -697,7 +697,7 @@ test('the vibrate switch toggles and reports its state', () => {
 
 test('every tab in the bar opens its view', () => {
   const { win, doc } = boot();
-  ['quran', 'azkar', 'tracker', 'more', 'home'].forEach(function (name) {
+  ['quran', 'tasbih', 'tracker', 'more', 'home'].forEach(function (name) {
     click(win, tab(doc, name));
     assert.ok(doc.getElementById('v-' + name).classList.contains('is-open'), name + ' did not open');
     assert.strictEqual(doc.querySelectorAll('.view.is-open').length, 1, 'only one view at a time');
@@ -709,7 +709,7 @@ test('sub views keep their parent tab lit', () => {
   const { win, doc } = boot();
   const owners = {
     reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran',
-    'azkar-list': 'azkar', qibla: 'more', tasbih: 'more', radio: 'more',
+    azkar: 'tasbih', 'azkar-list': 'tasbih', hisn: 'tasbih', qibla: 'more', radio: 'more',
     hadith: 'more', dua: 'more', ruqyah: 'more', calendar: 'more',
     settings: 'more', about: 'more'
   };
@@ -755,7 +755,7 @@ test('a backup round trips through export and import', () => {
   const dump = win.Store.exportAll();
 
   win.Store.clearAll();
-  assert.strictEqual(win.Store.get('method'), 'Kuwait');
+  assert.strictEqual(win.Store.get('method'), 'Ojeiri');
   const res = win.Store.importAll(dump);
   assert.strictEqual(res.ok, true);
   assert.strictEqual(win.Store.get('method'), 'Qatar');
@@ -1960,7 +1960,7 @@ test('the worker keeps the typefaces so they survive going offline', () => {
 test('nothing in the page reaches out to another site for something it needs', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com/.test(u));
+    .filter((u) => !/github\.com|3li\.info/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });
@@ -2001,8 +2001,9 @@ test('the times line names the place and the reckoning without stuttering', () =
   const how = line.querySelector('.place-how').textContent.trim();
   assert.strictEqual(where, 'الكويت');
   assert.ok(how.indexOf('تقويم') === 0, 'got ' + how);
-  assert.ok(how.indexOf('وزارة الأوقاف') !== -1,
+  assert.ok(how.indexOf('العجيري') !== -1,
     'a method should name the body that issues it, got ' + how);
+  assert.ok(!/تقويم تقويم/.test(how), 'the word must not be doubled');
   /* محسوبة للكويت بطريقة الكويت said the same word twice and named no authority */
   assert.notStrictEqual(how.replace('تقويم ', ''), where, 'the two must not read as the same word');
   assert.strictEqual(line.getAttribute('data-go'), 'settings', 'and it should lead to the settings');
@@ -2719,7 +2720,7 @@ test('a verse number stays on the line of the word it closes', () => {
   win.App.go('reader');
   const verse = doc.querySelector('.ayah[data-a="7"]');
   const html = verse.innerHTML;
-  const at = html.indexOf('<span class="ayah-num">');
+  const at = html.indexOf('<span class="ayah-num"');
   assert.ok(at > 0);
   assert.strictEqual(html.charCodeAt(at - 1), 0x2060,
     'a word joiner binds the number to the last word, or it can fall onto a line of its own');
@@ -2981,7 +2982,7 @@ test('the verse sheet offers a picture as well as text', () => {
 
 test('the picture is drawn on a canvas in the mushaf typeface', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function verseCard\(s, a\) \{([\s\S]*?)\n  \}\n/.exec(app);
+  const fn = /function textCard\(heading, text, face\) \{([\s\S]*?)\n  \}\n/.exec(app);
   assert.ok(fn, 'the card drawer should exist');
   assert.ok(fn[1].indexOf("'Amiri Quran'") !== -1, 'the verse is set in the mushaf face');
   assert.ok(fn[1].indexOf("direction = 'rtl'") !== -1, 'and drawn from the right');
@@ -3146,7 +3147,7 @@ test('the voice is offered in the settings', () => {
   win.App.go('settings');
   const sel = doc.getElementById('settings-voice');
   assert.ok(sel);
-  assert.deepStrictEqual([...sel.options].map((o) => o.value), ['none', 'tone', 'speech']);
+  assert.deepStrictEqual([...sel.options].map((o) => o.value), ['none', 'tone', 'recording', 'speech']);
 });
 
 /* ---------------- reading by the page ---------------- */
@@ -3436,4 +3437,135 @@ test('the note under the refetch button says plainly what it does and what stays
   const fn = /function refetchEverything\(\) \{([\s\S]*?)\n  \}/.exec(app)[1];
   assert.ok(fn.indexOf('localStorage') === -1 && fn.indexOf('Store.clear') === -1 && fn.indexOf('wipe') === -1,
     'the button must not touch the reader\'s data');
+});
+
+/* ---------------- the printed calendar of kuwait ---------------- */
+
+test('kuwait follows the ojeiri calendar, served from its published table', () => {
+  const { win } = boot();
+  assert.strictEqual(win.Store.get('method'), 'Ojeiri');
+  const t = win.App.helpers.computeTimes(new Date(2026, 8, 5));
+  assert.ok(t.published, 'a day of 2026 comes from the table');
+  assert.deepStrictEqual([t.fajr, t.sunrise, t.dhuhr, t.asr, t.maghrib, t.isha], [246, 327, 707, 919, 1086, 1165],
+    'the sixth of september two thousand and twenty six, as the calendar prints it');
+  assert.strictEqual(Object.keys(win.OJEIRI).length, 364, 'a year of days');
+});
+
+test('beyond the table the ojeiri method falls back with its isha calibration', () => {
+  const { win } = boot();
+  const t = win.App.helpers.computeTimes(new Date(2027, 8, 5));
+  assert.ok(!t.published, 'no table for two thousand and twenty seven');
+  const ministry = new win.PrayerEngine.Calculator({ lat: 29.3759, lng: 47.9774, method: 'Kuwait' }).timesFor(new Date(2027, 8, 5), 3);
+  assert.strictEqual(t.isha - ministry.isha, 2, 'isha sits two minutes later, as the table showed all year');
+  assert.strictEqual(t.fajr, ministry.fajr);
+});
+
+test('a hanafi reader keeps the later asr even on a published day', () => {
+  const { win } = boot();
+  win.Store.set('asr', 'hanafi');
+  const t = win.App.helpers.computeTimes(new Date(2026, 8, 5));
+  assert.ok(t.published);
+  assert.ok(t.asr > 919, 'the table gives the majority asr, the hanafi one comes later: ' + t.asr);
+  win.Store.set('asr', 'standard');
+});
+
+test('the hijri reckoning agrees with the ojeiri calendar on every day of the year', () => {
+  const rows = JSON.parse(fs.readFileSync(path.join(__dirname, 'fixtures', 'ojeiri-2026.json'), 'utf8'));
+  const { win } = boot();
+  let off = 0;
+  rows.forEach(function (r) {
+    const parts = r.d.split('-').map(Number);
+    const h = win.Hijri.toHijri(new win.Date(parts[0], parts[1] - 1, parts[2]), 0);
+    if (h.d !== r.h[0] || h.m !== r.h[1] || h.y !== r.h[2]) off++;
+  });
+  assert.strictEqual(off, 0, 'days where the two disagree: ' + off);
+});
+
+/* ---------------- what changed on the bar and the tasbih ---------------- */
+
+test('the tasbih sits on the bar and carries the way to the azkar', () => {
+  const { win, doc } = boot();
+  const tabs = [...doc.querySelectorAll('.tab')].map((t) => t.getAttribute('data-go'));
+  assert.deepStrictEqual(tabs, ['home', 'quran', 'tasbih', 'tracker', 'more']);
+  win.App.go('tasbih');
+  const route = doc.getElementById('tasbih-azkar');
+  assert.ok(route, 'a way to the azkar inside the tasbih');
+  assert.ok(doc.getElementById('tasbih-azkar-note').textContent.indexOf('أذكار هذا الوقت') !== -1);
+  click(win, route);
+  assert.ok(doc.getElementById('v-azkar').classList.contains('is-open'));
+  /* the more list offers the azkar too */
+  win.App.go('more');
+  assert.ok(doc.querySelector('#more-list [data-go="azkar"]'), 'the azkar are also reachable from المزيد');
+});
+
+test('the tasbih head says plainly what a tap does', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('اضغط للعد، والمجموع محفوظ ليومك') === -1, 'the old line was not clear');
+  assert.ok(html.indexOf('كل ضغطة على الدائرة تسبيحة') !== -1);
+});
+
+test('a dhikr and a supplication can be sent as a picture', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-hisn="27"]'));
+  assert.ok(doc.querySelectorAll('#hisn-list [data-picture^="hisn:"]').length >= 20, 'every dhikr in a chapter has the button');
+  win.App.go('dua');
+  assert.ok(doc.querySelectorAll('#dua-list [data-picture^="dua:"]').length >= 10, 'and every supplication');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('function textCard(heading, text, face)') !== -1, 'one drawer serves them all');
+});
+
+test('the app opens in the colour that was chosen, not in green', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const boot_ = /<script>\s*\/\* Before anything paints[\s\S]*?<\/script>/.exec(html);
+  assert.ok(boot_, 'an inline script must run before first paint');
+  assert.ok(boot_[0].indexOf("localStorage.getItem('sunnati.settings')") !== -1, 'it reads the stored choice');
+  assert.ok(boot_[0].indexOf("setProperty('--accent'") !== -1, 'and applies the accent');
+  assert.ok(boot_[0].indexOf('theme-color') !== -1, 'and the bar the browser paints');
+  assert.ok(boot_[0].indexOf("'#9c2b2b'") !== -1, 'with the same palette the controller uses');
+});
+
+test('the link beside the name goes to the author, and the repository stays in about', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(/<span id="version-line"><\/span><br><a href="https:\/\/3li\.info">/.test(html));
+  assert.ok(html.indexOf('github.com/SiteQ8/Quran_Sunna">المستودع على GitHub') !== -1);
+});
+
+test('one stop halts a repeat run as well as a walk', () => {
+  const { win, doc } = boot();
+  reciteHarness(win);
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  win.App.repeat.start(1, 2, 3, false);
+  assert.ok(win.App.state.repeat);
+  click(win, doc.getElementById('player-stop'));
+  assert.strictEqual(win.App.state.repeat, null, 'the repeat run must stop too, or the sound goes on');
+  assert.strictEqual(win.App.state.audio, null);
+  assert.ok(!doc.getElementById('reader-body').classList.contains('is-hidden'), 'the words come back');
+});
+
+test('the verse number is placed by its own middle in the rosette', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.ayah-num::before \{[^}]*transform:\s*translate\(-50%, -50%\)/,
+    'a baseline shifts with the phone\'s fallback font; a translate does not');
+  const { win, doc } = boot();
+  win.App.state.surah = 1; win.App.go('reader');
+  const num = doc.querySelector('.ayah-num');
+  assert.strictEqual(num.getAttribute('data-n'), '1');
+  assert.strictEqual(num.textContent, '', 'the figure lives in the attribute, drawn by the stylesheet');
+});
+
+test('the voice list is filled at once and again as the phone hands voices over', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function fillVoiceListSoon\(\) \{([\s\S]*?)\n  \}/.exec(app)[1];
+  assert.ok(/^\s*fillVoiceList\(\);/.test(fn), 'once at once');
+  assert.ok(fn.indexOf('3000') !== -1, 'and again seconds later');
+  assert.ok(app.indexOf("/arab|عرب/i.test(v.name") !== -1, 'a voice named arabic counts even with an odd language tag');
+});
+
+test('a recorded human voice is offered, and the worker keeps it', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("SALAWAT_RECORDING = 'https://www.hisnmuslim.com/audio/ar/53.mp3'") !== -1);
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("url.hostname === 'www.hisnmuslim.com'") !== -1, 'kept once heard');
 });

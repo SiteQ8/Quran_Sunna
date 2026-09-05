@@ -14,7 +14,7 @@
     pattern: 'star',
     fontScale: 100,
     quranFont: 'amiri',
-    method: 'Kuwait',
+    method: 'Ojeiri',
     asr: 'shafi',
     highLat: 'angleBased',
     hijriAdjust: 0,

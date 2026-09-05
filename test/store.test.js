@@ -24,7 +24,7 @@ function fresh(seed) {
 
 test('settings fall back to defaults and persist once changed', () => {
   fresh();
-  assert.strictEqual(S.get('method'), 'Kuwait');
+  assert.strictEqual(S.get('method'), 'Ojeiri');
   assert.strictEqual(S.get('fontScale'), 100);
   S.set('method', 'Makkah');
   S.set('fontScale', 130);
@@ -45,7 +45,7 @@ test('settings survive a reload of the module cache', () => {
 
 test('broken json in storage does not take the app down', () => {
   fresh({ 'sunnati.settings': '{not json', 'sunnati.bookmarks': 'oops' });
-  assert.strictEqual(S.get('method'), 'Kuwait');
+  assert.strictEqual(S.get('method'), 'Ojeiri');
   assert.deepStrictEqual(S.bookmarks(), []);
 });
 
@@ -189,7 +189,7 @@ test('export and import round trip every key the app owns', () => {
   const target = fakeStorage();
   S.attach(target);
   S.resetSettings();
-  assert.strictEqual(S.get('method'), 'Kuwait', 'the new storage starts empty');
+  assert.strictEqual(S.get('method'), 'Ojeiri', 'the new storage starts empty');
   const result = S.importAll(dump);
   assert.strictEqual(result.ok, true);
   assert.ok(result.count >= 3);
@@ -232,7 +232,7 @@ test('clearing removes only keys the app owns', () => {
   S.toggleBookmark(1, 1);
   S.clearAll();
   assert.strictEqual(st._map['unrelated'], 'keep me');
-  assert.strictEqual(S.get('method'), 'Kuwait');
+  assert.strictEqual(S.get('method'), 'Ojeiri');
 });
 
 test('a storage backend that refuses writes does not throw', () => {
