@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.5.0';
+var VERSION = 'sunnati-v8.5.1';
 
 var SHELL = [
   './',
@@ -144,8 +144,11 @@ self.addEventListener('periodicsync', function (event) {
 self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(VERSION).then(function (cache) {
+      /* each file is asked for past the browser's own cache, which the host
+         lets hold a file for ten minutes; without this a new version could be
+         put together from files of two deployments */
       return Promise.all(SHELL.map(function (url) {
-        return cache.add(url).catch(function () { return null; });
+        return cache.add(new Request(url, { cache: 'reload' })).catch(function () { return null; });
       }));
     })
   );
@@ -238,16 +241,25 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* Everything else is code or markup, so the network has the last word and the
-     cache is only there for when the network is not. */
+  /* Code and markup are served from this version's own cache, all of one
+     piece. A new version comes as a new worker that has already fetched every
+     file, so the page never mixes a fresh page with an old stylesheet, which
+     the file by file network first way did. Anything not in the cache is
+     fetched past the browser's cache and kept. */
   event.respondWith(
-    fetch(request).then(function (response) {
-      return keep(request, response);
-    }).catch(function () {
-      return caches.match(request).then(function (hit) {
-        if (hit) return hit;
-        if (request.mode === 'navigate') return caches.match('./index.html');
-        return new Response('', { status: 504, statusText: 'offline' });
+    caches.match(request, { cacheName: VERSION }).then(function (hit) {
+      if (hit) return hit;
+      if (request.mode === 'navigate') {
+        return caches.match('./index.html', { cacheName: VERSION }).then(function (page) {
+          return page || fetch(new Request(request.url, { cache: 'reload' }));
+        });
+      }
+      return fetch(new Request(request.url, { cache: 'reload' })).then(function (response) {
+        return keep(request, response);
+      }).catch(function () {
+        return caches.match(request).then(function (any) {
+          return any || new Response('', { status: 504, statusText: 'offline' });
+        });
       });
     })
   );
