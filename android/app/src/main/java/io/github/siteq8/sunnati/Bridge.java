@@ -56,6 +56,12 @@ public final class Bridge {
     /** A picture the page drew, saved to the gallery and offered to share. */
     @JavascriptInterface
     public boolean shareImage(String dataUrl, String name) {
+        return shareImageWithText(dataUrl, name, "");
+    }
+
+    /** The same, with the words that go with the picture. */
+    @JavascriptInterface
+    public boolean shareImageWithText(String dataUrl, String name, String text) {
         try {
             int comma = dataUrl.indexOf(',');
             byte[] bytes = Base64.decode(dataUrl.substring(comma + 1), Base64.DEFAULT);
@@ -72,6 +78,7 @@ public final class Bridge {
             Intent share = new Intent(Intent.ACTION_SEND);
             share.setType("image/png");
             share.putExtra(Intent.EXTRA_STREAM, uri);
+            if (text != null && !text.isEmpty()) share.putExtra(Intent.EXTRA_TEXT, text);
             share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             host.startActivity(Intent.createChooser(share, null));
             return true;

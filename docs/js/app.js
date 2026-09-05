@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.7.0';
+  var VERSION = '8.7.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1564,6 +1564,17 @@
 
   var BOOKMARK_NAMES = { read: 'قراءة', review: 'مراجعة', memo: 'حفظ', ponder: 'تدبر' };
 
+  function openNote(s, a) {
+    var slot = $('tafsir-slot');
+    if (!slot) return;
+    var current = Store.note(s, a);
+    slot.innerHTML = '<label class="setting-label" for="note-field">ملاحظتك على الآية</label>' +
+      '<textarea class="field note-field" id="note-field" rows="4" placeholder="ما وقفت عنده في هذه الآية">' + esc(current) + '</textarea>' +
+      '<button class="btn btn-primary btn-block" data-act="note-save" data-ref="' + s + ':' + a + '" style="margin-top:8px">احفظ الملاحظة</button>';
+    var field = $('note-field');
+    if (field) field.focus();
+  }
+
   function verseSheet(s, a) {
     rememberPlace(s, a);
     var text = Mushaf.ayah(s, a);
@@ -1576,11 +1587,12 @@
     var html = '<p class="ayah-block sheet-ayah">' + esc(text) + '</p>' +
       '<p class="source">سورة ' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) +
       '، الجزء ' + ar(Mushaf.juzOf(s, a)) + '، صفحة ' + ar(Mushaf.pageOf(s, a)) + '</p>' +
+      (Store.note(s, a) ? '<p class="verse-note">' + esc(Store.note(s, a)) + '</p>' : '') +
       '<div class="service-grid">' +
       service('listen', 'play', 'الاستماع للآية') +
       service('recite', 'play', 'التلاوة من هنا') +
       service('tafsir', 'info', 'تفسير الآية') +
-      service('picture', 'star', 'صورة الآية') +
+      service('note', 'text', Store.note(s, a) ? 'ملاحظتك' : 'ملاحظة') +
       service('share', 'share', 'مشاركة الآية') +
       service('copy', 'text', 'نسخ الآية') +
       service('memorise', 'refresh', 'كرّر للحفظ') +
@@ -1677,9 +1689,11 @@
     var audio = new window.Audio();
     audio.src = url;
     state.audio = audio;
+    watchClip(audio);
     state.playing = { title: title, sub: sub };
     var player = $('player');
     if (player) player.classList.add('is-open');
+    markPlayerToggle();
     if ($('player-title')) $('player-title').textContent = title;
     if ($('player-sub')) $('player-sub').textContent = sub || '';
     var play = audio.play();
@@ -1701,6 +1715,23 @@
     state.wakeLock = null;
   }
 
+  /* The button on the bar shows what pressing it will do: pause while the
+     sound plays, play while it is paused. Any clip the app starts reports its
+     pauses and plays back here, so the button is never stale. */
+  function markPlayerToggle() {
+    var btn = $('player-toggle');
+    if (!btn) return;
+    var paused = !state.audio || state.audio.paused;
+    btn.innerHTML = icon(paused ? 'play' : 'pause');
+    btn.setAttribute('aria-label', paused ? 'تشغيل' : 'إيقاف مؤقت');
+  }
+
+  function watchClip(clip) {
+    clip.onplay = markPlayerToggle;
+    clip.onpause = markPlayerToggle;
+    clip.onplaying = markPlayerToggle;
+  }
+
   function stopAudio() {
     if (state.audio) {
       state.audio.onended = null;
@@ -1714,6 +1745,7 @@
     state.playing = null;
     var player = $('player');
     if (player) player.classList.remove('is-open');
+    markPlayerToggle();
   }
 
   /* ---------------- reciting along ---------------- */
@@ -2046,7 +2078,7 @@
     return sharePicture(textCard(heading, text, null, source), filename, heading);
   }
 
-  function sharePicture(drawing, name, title) {
+  function sharePicture(drawing, name, title, words) {
     toast('جارٍ تجهيز الصورة');
     return drawing.then(function (blob) {
       if (!blob) { toast('تعذّر رسم الصورة'); return false; }
@@ -2056,7 +2088,9 @@
           var reader = new window.FileReader();
           reader.onload = function () {
             var ok = false;
-            try { ok = app.shareImage(String(reader.result), name); } catch (e) { ok = false; }
+            try {
+              ok = app.shareImageWithText ? app.shareImageWithText(String(reader.result), name, words || '') : app.shareImage(String(reader.result), name);
+            } catch (e) { ok = false; }
             if (!ok) toast('تعذّرت المشاركة من التطبيق');
             resolve(!!ok);
           };
@@ -2067,7 +2101,7 @@
       var file = null;
       try { file = new window.File([blob], name, { type: 'image/png' }); } catch (e) { file = null; }
       if (file && navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-        return navigator.share({ files: [file], title: title })
+        return navigator.share({ files: [file], title: title, text: words || undefined })
           .then(function () { return true; }, function () { return false; });
       }
       /* no sharing on this device, so the picture is handed over as a download */
@@ -3540,7 +3574,19 @@
       var parts = ref.split(':');
       var s = +parts[0], a = +parts[1];
       var meta = surahMeta(s);
-      shareText('سُنّتي', Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
+      var words = Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a) + '\nsunnati.3li.info';
+      sharePicture(verseCard(s, a), 'ayah-' + s + '-' + a + '.png', 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a), words);
+    },
+    note: function (ref) {
+      var parts = ref.split(':');
+      openNote(+parts[0], +parts[1]);
+    },
+    'note-save': function (ref) {
+      var parts = ref.split(':');
+      var field = $('note-field');
+      Store.setNote(+parts[0], +parts[1], field ? field.value : '');
+      toast(field && field.value.trim() ? 'حُفظت الملاحظة' : 'أُزيلت الملاحظة');
+      verseSheet(+parts[0], +parts[1]);
     },
     'download-stop': function () { if (state.downloading) state.downloading.stop = true; },
     'audio-remove-confirm': function (ref) {
@@ -4008,6 +4054,7 @@
     bind('player-toggle', 'click', function () {
       if (!state.audio) return;
       if (state.audio.paused) { state.audio.play(); } else { state.audio.pause(); }
+      markPlayerToggle();
     });
 
     if (window.matchMedia) {
@@ -4221,7 +4268,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,

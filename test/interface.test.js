@@ -2977,13 +2977,17 @@ test('every icon a section or an occasion names is in the sprite', () => {
 
 /* ---------------- a verse as a picture ---------------- */
 
-test('the verse sheet offers a picture as well as text', () => {
+test('the verse sheet shares a verse as its picture, with the words alongside', () => {
   const { win, doc } = boot();
   win.App.go('quran');
   click(win, doc.querySelector('[data-surah="2"]'));
   click(win, doc.querySelector('[data-ayah="2:255"]'));
-  assert.ok(doc.querySelector('[data-act="picture"]'), 'a verse can be sent as a picture');
-  assert.ok(doc.querySelector('[data-act="share"]'), 'and still as text');
+  assert.ok(doc.querySelector('[data-act="share"]'), 'one share');
+  assert.ok(!doc.querySelector('[data-act="picture"]'), 'no second button for the picture, the share is the picture');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const share = /    share: function \(ref\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(share.indexOf('sharePicture(verseCard(s, a)') !== -1, 'the picture');
+  assert.ok(share.indexOf("sunnati.3li.info") !== -1, 'with the words and the address');
 });
 
 test('the picture is drawn on a canvas in the mushaf typeface', () => {
@@ -4389,4 +4393,63 @@ test('a verse is marked as one of four kinds, and the marks screen groups them',
   const titles = [...doc.querySelectorAll('#bookmark-list .mark-title')].map((t) => t.textContent.trim().replace(/\s+\d+$/, ''));
   assert.deepStrictEqual(titles.join('|'), 'قراءة|مراجعة', 'grouped by kind, in the order of the marks');
   assert.strictEqual(doc.querySelectorAll('#bookmark-list .search-hit.mark-read').length, 2);
+});
+
+/* ---------------- the player's button, the share as a picture, the note ---------------- */
+
+test('the pause button becomes a play button when the sound is paused, and back', () => {
+  const { win, doc } = boot();
+  const clips = [];
+  win.Audio = function () {
+    const clip = { paused: true, src: '', play: function () { clip.paused = false; if (clip.onplay) clip.onplay(); return Promise.resolve(); }, pause: function () { clip.paused = true; if (clip.onpause) clip.onpause(); }, removeAttribute: function () {}, load: function () {} };
+    clips.push(clip); return clip;
+  };
+  win.App.state.surah = 112; win.App.go('reader');
+  click(win, doc.getElementById('reader-play'));
+  const btn = doc.getElementById('player-toggle');
+  assert.strictEqual(btn.querySelector('use').getAttribute('href'), '#i-pause', 'playing: the button offers to pause');
+  click(win, btn);
+  assert.strictEqual(btn.querySelector('use').getAttribute('href'), '#i-play', 'paused: the button offers to play');
+  assert.strictEqual(btn.getAttribute('aria-label'), 'تشغيل');
+  click(win, btn);
+  assert.strictEqual(btn.querySelector('use').getAttribute('href'), '#i-pause');
+});
+
+test('sharing a verse shares its picture with its words', () => {
+  const { win, doc } = boot();
+  const calls = fakeBridge(win);
+  win.SunnatiApp.shareImageWithText = function (dataUrl, name, text) { calls.images.push([dataUrl.slice(0, 22), name, text]); return true; };
+  win.App.state.surah = 1; win.App.go('reader');
+  click(win, doc.querySelector('[data-ayah="1:7"]'));
+  const services = [...doc.querySelectorAll('#sheet .service')].map((b) => b.textContent.trim());
+  assert.ok(services.indexOf('مشاركة الآية') !== -1 && services.indexOf('صورة الآية') === -1, 'one share, and it is the picture');
+  assert.ok(services.indexOf('ملاحظة') !== -1, 'the freed slot is the note');
+  const verseCard = win.App.helpers.verseCard;
+  win.App.helpers.sharePicture(Promise.resolve(new win.Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })), 'ayah-1-7.png', 'x', 'كلمات الآية\nsunnati.3li.info');
+  return new Promise(function (done) {
+    setTimeout(function () {
+      assert.strictEqual(calls.images.length, 1);
+      assert.strictEqual(calls.images[0][2], 'كلمات الآية\nsunnati.3li.info', 'the words go with the picture');
+      void verseCard;
+      done();
+    }, 60);
+  });
+});
+
+test('a note on a verse is written, shown in the sheet, and removed when emptied', () => {
+  const { win, doc } = boot();
+  win.App.state.surah = 2; win.App.go('reader');
+  click(win, doc.querySelector('[data-ayah="2:255"]'));
+  click(win, doc.querySelector('#sheet [data-act="note"]'));
+  const field = doc.getElementById('note-field');
+  assert.ok(field, 'a field to write in');
+  field.value = 'أعظم آية في القرآن';
+  click(win, doc.querySelector('#sheet [data-act="note-save"]'));
+  assert.strictEqual(win.Store.note(2, 255), 'أعظم آية في القرآن');
+  assert.ok(doc.querySelector('#sheet .verse-note').textContent.indexOf('أعظم آية') !== -1, 'shown under the verse');
+  assert.ok([...doc.querySelectorAll('#sheet .service')].some((b) => b.textContent.trim() === 'ملاحظتك'), 'the service says there is one');
+  click(win, doc.querySelector('#sheet [data-act="note"]'));
+  doc.getElementById('note-field').value = '   ';
+  click(win, doc.querySelector('#sheet [data-act="note-save"]'));
+  assert.strictEqual(win.Store.note(2, 255), '', 'emptied is removed');
 });
