@@ -8,6 +8,6 @@ import android.content.Intent;
 public final class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        AdhanScheduler.scheduleNext(context);
+        try { AdhanScheduler.scheduleNext(context); } catch (Exception e) { /* the next open arms it */ }
     }
 }
