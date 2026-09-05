@@ -1,6 +1,6 @@
 {
   "packageId": "io.github.siteq8.sunnati",
-  "host": "siteq8.github.io",
+  "host": "sunnati.3li.info",
   "name": "سُنّتي، مصحف ومواقيت وأذكار وسنن في جهازك",
   "launcherName": "سُنّتي",
   "display": "standalone",
@@ -13,27 +13,27 @@
   "navigationDividerColorDark": "#1a2126",
   "backgroundColor": "#f4f2ec",
   "enableNotifications": true,
-  "startUrl": "/Quran_Sunna/",
-  "iconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-512.png",
-  "maskableIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/maskable-512.png",
+  "startUrl": "/",
+  "iconUrl": "https://sunnati.3li.info/icons/icon-512.png",
+  "maskableIconUrl": "https://sunnati.3li.info/icons/maskable-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": { "path": "./android.keystore", "alias": "sunnati" },
   "appVersionName": "6.3.0",
   "appVersionCode": 63,
   "shortcuts": [
-    { "name": "المصحف", "shortName": "المصحف", "url": "/Quran_Sunna/#quran", "chosenIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-192.png" },
-    { "name": "أذكار الصباح", "shortName": "الأذكار", "url": "/Quran_Sunna/#azkar", "chosenIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-192.png" },
-    { "name": "القبلة", "shortName": "القبلة", "url": "/Quran_Sunna/#qibla", "chosenIconUrl": "https://siteq8.github.io/Quran_Sunna/icons/icon-192.png" }
+    { "name": "المصحف", "shortName": "المصحف", "url": "/#quran", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" },
+    { "name": "أذكار الصباح", "shortName": "الأذكار", "url": "/#azkar", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" },
+    { "name": "القبلة", "shortName": "القبلة", "url": "/#qibla", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" }
   ],
   "generatorApp": "bubblewrap-cli",
-  "webManifestUrl": "https://siteq8.github.io/Quran_Sunna/manifest.webmanifest",
+  "webManifestUrl": "https://sunnati.3li.info/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
   "alphaDependencies": { "enabled": false },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
-  "fullScopeUrl": "https://siteq8.github.io/Quran_Sunna/",
+  "fullScopeUrl": "https://sunnati.3li.info/",
   "minSdkVersion": 23,
   "appVersion": "6.3.0"
 }

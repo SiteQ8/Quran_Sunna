@@ -5,7 +5,7 @@
         android:icon="@mipmap/ic_launcher"
         android:shortcutShortLabel="@string/shortcutQuran">
         <intent android:action="android.intent.action.VIEW"
-            android:data="https://siteq8.github.io/Quran_Sunna/#quran"
+            android:data="https://sunnati.3li.info/#quran"
             android:targetPackage="io.github.siteq8.sunnati"
             android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
     </shortcut>
@@ -14,7 +14,7 @@
         android:icon="@mipmap/ic_launcher"
         android:shortcutShortLabel="@string/shortcutAzkar">
         <intent android:action="android.intent.action.VIEW"
-            android:data="https://siteq8.github.io/Quran_Sunna/#azkar"
+            android:data="https://sunnati.3li.info/#azkar"
             android:targetPackage="io.github.siteq8.sunnati"
             android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
     </shortcut>
@@ -23,7 +23,7 @@
         android:icon="@mipmap/ic_launcher"
         android:shortcutShortLabel="@string/shortcutQibla">
         <intent android:action="android.intent.action.VIEW"
-            android:data="https://siteq8.github.io/Quran_Sunna/#qibla"
+            android:data="https://sunnati.3li.info/#qibla"
             android:targetPackage="io.github.siteq8.sunnati"
             android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
     </shortcut>
@@ -32,7 +32,7 @@
         android:icon="@mipmap/ic_launcher"
         android:shortcutShortLabel="@string/shortcutTimetable">
         <intent android:action="android.intent.action.VIEW"
-            android:data="https://siteq8.github.io/Quran_Sunna/#timetable"
+            android:data="https://sunnati.3li.info/#timetable"
             android:targetPackage="io.github.siteq8.sunnati"
             android:targetClass="com.google.androidbrowserhelper.trusted.LauncherActivity"/>
     </shortcut>

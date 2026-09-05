@@ -8,7 +8,7 @@
 [![الرخصة](https://img.shields.io/badge/الرخصة-MIT-b08833?style=flat-square)](LICENSE)
 [![بلا اعتماديات](https://img.shields.io/badge/بلا_اعتماديات-0-1e6f47?style=flat-square)]()
 
-[افتح التطبيق](https://siteq8.github.io/Quran_Sunna/)
+[افتح التطبيق](https://sunnati.3li.info/)
 
 </div>
 

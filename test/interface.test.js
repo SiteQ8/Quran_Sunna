@@ -2328,9 +2328,9 @@ test('the wrapper opens the same address the site is published at', () => {
   const manifest = fs.readFileSync(path.join(root, 'app/src/main/AndroidManifest.xml'), 'utf8');
   const site = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
 
-  assert.ok(strings.indexOf('https://siteq8.github.io/Quran_Sunna/') !== -1,
+  assert.ok(strings.indexOf('https://sunnati.3li.info/') !== -1,
     'the wrapper should open the published address');
-  assert.ok(manifest.indexOf('android:host="siteq8.github.io"') !== -1,
+  assert.ok(manifest.indexOf('android:host="sunnati.3li.info"') !== -1,
     'and claim links to it');
   assert.ok(manifest.indexOf('autoVerify="true"') !== -1,
     'so a link opens the app rather than a browser');
@@ -3849,4 +3849,31 @@ test('outside ramadan there is no imsak column and the clock says the adhan', ()
     assert.ok(heads.indexOf('الإمساك') === -1);
     assert.ok(doc.getElementById('arc-name').textContent !== 'الإفطار');
   }
+});
+
+/* ---------------- the app's own address ---------------- */
+
+test('the site is published at sunnati.3li.info and nothing still points at the old path', () => {
+  assert.strictEqual(fs.readFileSync(path.join(DOCS, 'CNAME'), 'utf8').trim(), 'sunnati.3li.info');
+  const root = path.join(__dirname, '..');
+  const walk = function (dir) {
+    return fs.readdirSync(dir, { withFileTypes: true }).reduce(function (all, e) {
+      if (['node_modules', '.git', 'test', 'build', '.gradle', 'fonts', 'icons', 'splash', 'screens'].indexOf(e.name) !== -1) return all;
+      const full = path.join(dir, e.name);
+      return all.concat(e.isDirectory() ? walk(full) : [full]);
+    }, []);
+  };
+  const stale = [];
+  walk(root).forEach(function (file) {
+    if (!/\.(html|js|json|md|xml|gradle|webmanifest)$/.test(file)) return;
+    const text = fs.readFileSync(file, 'utf8');
+    if (/siteq8\.github\.io/.test(text) || /Quran_Sunna\/(?!\b)/.test(text.replace(/github\.com\/SiteQ8\/Quran_Sunna/g, ''))) stale.push(path.relative(root, file));
+  });
+  assert.deepStrictEqual(stale, [], 'the old address lingers in: ' + stale.join(', '));
+  /* the wrapper claims the new host at its root, since the app no longer lives under a path */
+  const manifest = fs.readFileSync(path.join(root, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert.ok(manifest.indexOf('android:pathPrefix="/"') !== -1);
+  const twa = JSON.parse(fs.readFileSync(path.join(root, 'play/twa-manifest.json'), 'utf8'));
+  assert.strictEqual(twa.host, 'sunnati.3li.info');
+  assert.strictEqual(twa.startUrl, '/');
 });

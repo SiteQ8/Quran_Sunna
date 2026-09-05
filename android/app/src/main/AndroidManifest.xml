@@ -66,8 +66,8 @@
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="https"
-                      android:host="siteq8.github.io"
-                      android:pathPrefix="/Quran_Sunna"/>
+                      android:host="sunnati.3li.info"
+                      android:pathPrefix="/"/>
             </intent-filter>
         </activity>
 
