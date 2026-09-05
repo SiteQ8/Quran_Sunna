@@ -2984,7 +2984,7 @@ test('the verse sheet offers a picture as well as text', () => {
 
 test('the picture is drawn on a canvas in the mushaf typeface', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function textCard\(heading, text, face\) \{([\s\S]*?)\n  \}\n/.exec(app);
+  const fn = /function textCard\(heading, text, face, source\) \{([\s\S]*?)\n  \}\n/.exec(app);
   assert.ok(fn, 'the card drawer should exist');
   assert.ok(fn[1].indexOf("'Amiri Quran'") !== -1, 'the verse is set in the mushaf face');
   assert.ok(fn[1].indexOf("direction = 'rtl'") !== -1, 'and drawn from the right');
@@ -3514,7 +3514,7 @@ test('a dhikr and a supplication can be sent as a picture', () => {
   win.App.go('dua');
   assert.ok(doc.querySelectorAll('#dua-list [data-picture^="dua:"]').length >= 10, 'and every supplication');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf('function textCard(heading, text, face)') !== -1, 'one drawer serves them all');
+  assert.ok(app.indexOf('function textCard(heading, text, face, source)') !== -1, 'one drawer serves them all');
 });
 
 test('the app opens in the colour that was chosen, not in green', () => {
@@ -3705,4 +3705,27 @@ test('a phone already set to kuwait time is not asked', () => {
   win.App.helpers.maybeAskPlace();
   assert.ok(doc.getElementById('banner').hidden, 'a kuwaiti phone needs no prompt');
   assert.strictEqual(win.Store.get('placeAsked'), true, 'and the question is spent');
+});
+
+/* ---------------- no half empty rows, and a picture that names its source ---------------- */
+
+test('a settings row keeps its label and its control on one line', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const row = /\.setting \{([^}]*)\}/.exec(css)[1];
+  assert.match(row, /flex-wrap:\s*nowrap/, 'wrapping dropped the control and left half a row empty');
+  assert.match(css, /\.setting > span:first-child \{[^}]*flex:\s*1 1 0/, 'the label yields first');
+  assert.match(css, /\.setting \.select, \.setting \.voice-pick \{[^}]*max-width:\s*66%/, 'and the control never takes more than two thirds');
+});
+
+test('a shared picture names where its words come from, and the maker', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function textCard\(heading, text, face, source\) \{([\s\S]*?)\n  \}\n/.exec(app);
+  assert.ok(fn, 'the drawer takes a source');
+  assert.ok(fn[1].indexOf("ctx.fillText(source, W / 2, footY + 62)") !== -1, 'and writes it under the rosette');
+  assert.ok(fn[1].indexOf("'سُنّتي، 3li.info'") !== -1, 'the foot carries the maker');
+  /* each caller says what its source is */
+  assert.ok(app.indexOf("'حصن المسلم، الباب ' + ar(chapter.id)") !== -1, 'a dhikr from the book names its chapter');
+  assert.ok(app.indexOf("(it.r ? it.r + '، ' : '') + 'حصن المسلم'") !== -1, 'a daily dhikr names its narrator and the book');
+  assert.ok(app.indexOf("'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat") !== -1, 'a supplication names its reference');
+  assert.ok(app.indexOf("\"'Amiri Quran', 'Amiri', serif\", 'القرآن الكريم'") !== -1, 'a verse names the mushaf');
 });
