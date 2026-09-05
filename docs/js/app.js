@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.0.0';
+  var VERSION = '7.0.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -712,14 +712,51 @@
       var line = new window.SpeechSynthesisUtterance(text);
       line.lang = 'ar-SA';
       line.rate = 0.85;
-      var voices = window.speechSynthesis.getVoices() || [];
-      var arabic = voices.filter(function (v) { return /^ar/i.test(v.lang); })[0];
-      if (arabic) line.voice = arabic;
-      else if (voices.length) return chime();
+      /* pitched low, so that whatever voice the phone offers sits nearer a
+         man's register */
+      line.pitch = 0.75;
+      var chosen = pickVoice();
+      if (chosen) line.voice = chosen;
+      else if ((window.speechSynthesis.getVoices() || []).length) return chime();
       chime();
       window.setTimeout(function () { window.speechSynthesis.speak(line); }, 700);
       return true;
     } catch (e) { return chime(); }
+  }
+
+  /* The arabic voices the phone carries. Google names its arabic voices
+     ar-xa-x-arc, ar-xa-x-ard and so on without saying which is a man, so the
+     reader picks by ear from the list and the app remembers the name. Until
+     they do, a voice whose name says male is preferred, then the deepest set. */
+  function arabicVoices() {
+    if (!window.speechSynthesis) return [];
+    return (window.speechSynthesis.getVoices() || []).filter(function (v) { return /^ar/i.test(v.lang); });
+  }
+
+  function pickVoice() {
+    var list = arabicVoices();
+    if (!list.length) return null;
+    var wanted = Store.get('voiceName');
+    var named = list.filter(function (v) { return v.name === wanted; })[0];
+    if (named) return named;
+    var male = list.filter(function (v) { return /male|man|رجل|ard|ar-xa-x-ar[bdfh]/i.test(v.name) && !/female/i.test(v.name); })[0];
+    return male || list[0];
+  }
+
+  function fillVoiceList() {
+    var sel = $('settings-voice-name');
+    if (!sel) return;
+    var list = arabicVoices();
+    var current = Store.get('voiceName') || '';
+    var options = [{ value: '', label: list.length ? 'أنسب صوت يجده التطبيق' : 'لا صوت عربي في هذا الجهاز' }]
+      .concat(list.map(function (v, i) {
+        /* the codes google gives its voices mean nothing to a listener, so
+           each is numbered and the code kept small beside it */
+        var short = v.name.replace(/^ar[-_]/i, '').replace(/-(local|network)$/i, '');
+        return { value: v.name, label: 'الصوت ' + ar(i + 1) + '، ' + short };
+      }));
+    fillSelect(sel, options, current);
+    sel.disabled = !list.length;
   }
 
   /* A reminder to send blessings on the Prophet, every so many minutes that
@@ -2573,6 +2610,7 @@
       { value: '180', label: 'كل ثلاث ساعات' },
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
+    fillVoiceList();
     fillSelect($('settings-voice'), [
       { value: 'none', label: 'بلا صوت' },
       { value: 'tone', label: 'نغمة' },
@@ -3049,6 +3087,19 @@
       Store.set('voice', e.target.value);
       if (e.target.value !== 'none') speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
+    bind('settings-voice-name', 'change', function (e) {
+      Store.set('voiceName', e.target.value);
+      Store.set('voice', 'speech');
+      if ($('settings-voice')) $('settings-voice').value = 'speech';
+      speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
+    });
+    bind('settings-voice-try', 'click', function () {
+      if ((Store.get('voice') || 'none') === 'none') { Store.set('voice', 'speech'); if ($('settings-voice')) $('settings-voice').value = 'speech'; }
+      speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
+    });
+    if (window.speechSynthesis && window.speechSynthesis.addEventListener) {
+      window.speechSynthesis.addEventListener('voiceschanged', fillVoiceList);
+    }
     bind('settings-accent', 'change', function (e) {
       Store.set('accent', e.target.value);
       applyAccent(currentWindowKey());
@@ -3298,7 +3349,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
-      verseCard: verseCard, openPage: openPage, windowSunnah: windowSunnah, withLam: withLam,
+      verseCard: verseCard, openPage: openPage, pickVoice: pickVoice, arabicVoices: arabicVoices, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
