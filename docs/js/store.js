@@ -138,7 +138,7 @@
   }
 
   function emptyDay() {
-    return { azkar: {}, sunnah: {}, wird: {}, tasbih: 0, pages: 0, ayahs: 0 };
+    return { azkar: {}, hisn: {}, sunnah: {}, wird: {}, tasbih: 0, pages: 0, ayahs: 0 };
   }
 
   function day(date) {
@@ -173,6 +173,29 @@
     rec.azkar[section][itemIndex] = count;
     saveDay(rec, date);
     return count;
+  }
+
+  /* The counters of the book's chapters, kept beside the daily ones and reset
+     with the day like them. */
+  function setHisnCount(chapter, itemIndex, count, date) {
+    var record = day(date);
+    if (!record.hisn) record.hisn = {};
+    if (!record.hisn[chapter]) record.hisn[chapter] = {};
+    record.hisn[chapter][itemIndex] = Math.max(0, count);
+    saveDay(record, date);
+  }
+
+  function resetHisn(chapter, date) {
+    var record = day(date);
+    if (record.hisn) delete record.hisn[chapter];
+    saveDay(record, date);
+  }
+
+  function hisnProgress(chapter, total, date) {
+    var counts = (day(date).hisn || {})[chapter] || {};
+    var done = 0;
+    Object.keys(counts).forEach(function (k) { if (counts[k] === 0) done++; });
+    return { done: done, total: total, percent: total ? Math.round(done / total * 100) : 0 };
   }
 
   function azkarProgress(section, total, date) {
@@ -396,6 +419,9 @@
     toggleSunnah: toggleSunnah,
     setAzkarCount: setAzkarCount,
     azkarProgress: azkarProgress,
+    setHisnCount: setHisnCount,
+    resetHisn: resetHisn,
+    hisnProgress: hisnProgress,
     addPages: addPages,
     completion: completion,
     wasActive: wasActive,

@@ -307,7 +307,29 @@
 <!-- ══════════ الأذكار ══════════ -->
 <section class="view" id="v-azkar" aria-labelledby="azkar-title">
   <div class="view-head"><h1 id="azkar-title">الأذكار</h1><p>من حصن المسلم، مع عدّاد يحفظ تقدمك في يومك</p></div>
+  <button class="now-azkar" id="azkar-now" data-azkar="morning">
+    <span class="now-azkar-glyph" id="azkar-now-glyph"></span>
+    <span class="now-azkar-body">
+      <span class="now-azkar-kicker">أذكار هذا الوقت</span>
+      <span class="now-azkar-title" id="azkar-now-title">أذكار الصباح</span>
+      <span class="now-azkar-note" id="azkar-now-note"></span>
+    </span>
+    <span class="now-azkar-ring" id="azkar-now-ring"></span>
+  </button>
+  <h2 class="section-title">الأذكار اليومية</h2>
   <div class="grid grid-2" id="azkar-groups"></div>
+  <h2 class="section-title">حصن المسلم كاملاً</h2>
+  <input class="field" id="hisn-filter" type="search" placeholder="ابحث في أبواب الكتاب" aria-label="ابحث في أبواب حصن المسلم" style="margin-bottom:12px">
+  <div id="hisn-groups"></div>
+</section>
+
+<section class="view" id="v-hisn" aria-labelledby="hisn-title">
+  <div class="reader-bar">
+    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <div class="page-head"><h1 id="hisn-title" class="page-num">…</h1><p id="hisn-meta" class="page-meta"></p></div>
+    <button class="btn btn-ghost" id="hisn-reset" aria-label="أعد عدّادات هذا الباب"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+  </div>
+  <div id="hisn-list"></div>
 </section>
 
 <section class="view" id="v-azkar-list" aria-labelledby="azkar-list-title">
@@ -550,7 +572,7 @@
     <button class="btn btn-primary btn-block" id="settings-install" style="margin-top:10px" hidden>ثبّت التطبيق على جهازك</button>
     <button class="btn btn-ghost btn-block" id="offline-cache" style="margin-top:10px">حمّل كل شيء للعمل بلا إنترنت</button>
     <button class="btn btn-ghost btn-block" id="offline-refresh" style="margin-top:10px">أعد تحميل التطبيق</button>
-    <p class="setting-note" style="margin-top:8px">إن بدا شيء قديماً أو لم يظهر إصلاح تعرف أنه صدر، فهذا يمسح النسخة المخزّنة في جهازك ويجلبها كاملة من جديد.</p>
+    <p class="setting-note" style="margin-top:8px">إذا رأيت التطبيق لا يتحدّث، أو ظهر لك شيء قديم، فاضغط هذا الزر، فهو يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة من الموقع، وتبقى بياناتك وأذكارك وعلاماتك كما هي.</p>
   </div>
 </section>
 
@@ -615,6 +637,7 @@
 
 <script src="data/surahs.js"></script>
 <script src="data/azkar.js"></script>
+<script src="data/hisn.js"></script>
 <script src="data/content.js"></script>
 <script src="data/extras.js"></script>
 <script src="js/prayer-engine.js"></script>
