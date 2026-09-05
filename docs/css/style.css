@@ -456,6 +456,34 @@ button { background: none; border: none; cursor: pointer; }
 }
 .occasion:last-child { margin-bottom: 0; }
 
+/* ---------- the azkar of this hour ---------- */
+
+.now-azkar {
+  width: 100%; display: flex; align-items: center; gap: var(--s3); text-align: right;
+  padding: var(--s4); margin-bottom: var(--s4); border-radius: var(--r-md);
+  /* a solid colour under the gradient, so a browser without color-mix inside a
+     gradient still paints the card, and so the contrast of the words on it can
+     be measured */
+  background-color: var(--accent-solid);
+  background-image: linear-gradient(135deg, var(--accent-solid), color-mix(in srgb, var(--accent-solid) 70%, #000 30%));
+  color: var(--on-accent); box-shadow: var(--shadow-lift);
+}
+.now-azkar-glyph {
+  width: 52px; height: 52px; border-radius: 16px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, #fff 18%, transparent);
+}
+.now-azkar-glyph .icon { width: 26px; height: 26px; }
+.now-azkar-body { flex: 1; display: grid; gap: 2px; }
+.now-azkar-kicker { font-size: .62rem; font-weight: 600; opacity: .85; letter-spacing: .02em; }
+.now-azkar-title { font-size: var(--step-1); font-weight: 700; }
+.now-azkar-note { font-size: var(--step--1); opacity: .9; }
+.now-azkar-ring { width: 48px; height: 48px; flex: none; }
+.now-azkar-ring .ring { width: 100%; height: 100%; transform: rotate(-90deg); }
+.now-azkar .ring-track { stroke: color-mix(in srgb, #fff 25%, transparent); }
+.now-azkar .ring-fill { stroke: var(--on-accent); }
+.now-azkar.is-complete .now-azkar-ring .ring-fill { stroke: var(--on-accent); }
+.fold-static { cursor: default; }
+
 /* ---------- folding groups ---------- */
 
 .fold {
@@ -763,13 +791,24 @@ button { background: none; border: none; cursor: pointer; }
 .dhikr.is-done { opacity: .5; border-inline-start-color: var(--accent); }
 .dhikr-text { font-family: var(--naskh); font-size: calc(1.05rem * var(--quran-scale)); line-height: 2.1; }
 .dhikr-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s3); }
+/* The count sits inside a ring that fills as the dhikr is said. */
 .dhikr-count {
-  min-width: 46px; height: 40px; border-radius: var(--r-sm); background: var(--accent-solid);
-  color: var(--on-accent); font-weight: 700; font-size: var(--step-1); display: grid; place-items: center;
+  position: relative; width: 52px; height: 52px; border-radius: 50%;
+  display: grid; place-items: center; color: var(--accent-ink); font-weight: 700;
+  font-size: var(--step-0); font-variant-numeric: tabular-nums; flex: none;
   direction: ltr; transition: transform .07s;
 }
 .dhikr-count:active { transform: scale(.92); }
-.dhikr-count[disabled] { background: var(--sunken); color: var(--ink-3); }
+.dhikr-count .ring { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: var(--sunken); stroke-width: 3.5; }
+.ring-fill { fill: none; stroke: var(--accent-solid); stroke-width: 3.5; stroke-linecap: round; transition: stroke-dasharray .25s ease; }
+.dhikr-count.is-done { background: var(--accent-solid); color: var(--on-accent); }
+.dhikr-count.is-done .ring { display: none; }
+.dhikr-left { position: relative; }
+.dhikr { cursor: pointer; }
+.dhikr:active { transform: scale(.995); }
+.dhikr-note { font-size: var(--step--1); color: var(--ink-3); margin-top: var(--s2); line-height: 1.8; }
+.dhikr.is-done { opacity: .6; }
 
 /* ---------- qibla ---------- */
 

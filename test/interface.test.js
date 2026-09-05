@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -27,6 +27,18 @@ function memoryStorage() {
     clear: () => { Object.keys(map).forEach((k) => delete map[k]); }
   };
 }
+
+/* Every window that was booted is closed once its test is over, or two
+   hundred of them pile up with their clocks still ticking until the heap
+   gives out. */
+const opened = [];
+const { afterEach } = require('node:test');
+afterEach(function () {
+  while (opened.length) {
+    const dom = opened.pop();
+    try { dom.window.close(); } catch (e) { /* already gone */ }
+  }
+});
 
 function boot(options) {
   const opts = options || {};
@@ -63,6 +75,7 @@ function boot(options) {
      the reader tests deterministic while boot still runs its real path. */
   if (opts.withMushaf !== false) win.Mushaf.init(mushafPayload);
   win.document.dispatchEvent(new win.Event('DOMContentLoaded'));
+  opened.push(dom);
 
   return { dom, win, doc: win.document };
 }
@@ -3315,4 +3328,112 @@ test('the counter and the settings rows no longer breathe a hall of air', () => 
   assert.ok(!/var\(--s5\)/.test(phrase), 'the phrase does not push the button down by s5');
   const setting = /\.setting \{([^}]*)\}/.exec(css)[1];
   assert.match(setting, /padding:\s*var\(--s2\) 0/, 'a settings row is padded s2, not s3');
+});
+
+/* ---------------- the whole book, and the azkar of this hour ---------------- */
+
+test('the whole of حصن المسلم is in the app, cleaned and counted', () => {
+  const { win } = boot();
+  assert.strictEqual(win.HISN.length, 132, 'the book has one hundred and thirty two chapters');
+  const all = win.HISN.reduce((n, c) => n + c.i.length, 0);
+  assert.ok(all >= 260, 'and some two hundred and sixty adhkar, found ' + all);
+  win.HISN.forEach(function (c) {
+    assert.ok(c.t && c.i.length, 'chapter ' + c.id + ' is empty');
+    c.i.forEach(function (it) {
+      assert.ok(!/\(\(|\)\)|\[|\]/.test(it.t), 'markers left in ' + c.t + ': ' + it.t.slice(0, 40));
+      assert.ok(it.r >= 1, 'every dhikr says how often it is said');
+    });
+  });
+  const placed = new Set(win.HISN_GROUPS.reduce((a, g) => a.concat(g.ids), []));
+  win.HISN.forEach(function (c) { assert.ok(placed.has(c.id), 'chapter ' + c.id + ' belongs to no group'); });
+});
+
+test('the morning and evening chapter carries the counts the book gives', () => {
+  const { win } = boot();
+  const ch = win.HISN.filter((c) => c.id === 27)[0];
+  assert.strictEqual(ch.t, 'أذكار الصباح والمساء');
+  assert.strictEqual(ch.i.length, 24);
+  const counts = ch.i.map((i) => i.r);
+  assert.ok(counts.indexOf(3) !== -1 && counts.indexOf(100) !== -1 && counts.indexOf(10) !== -1,
+    'the three, ten and hundred fold adhkar are there');
+  assert.ok(ch.i[2].t.indexOf('أَصْبَحْنَا') === 0, 'the third opens with أصبحنا');
+});
+
+test('the book is browsed by group and searched by word', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  assert.strictEqual(doc.querySelectorAll('#hisn-groups [data-hisn]').length, 132);
+  assert.strictEqual(doc.querySelectorAll('#hisn-groups .fold').length, 13);
+  const f = doc.getElementById('hisn-filter'); f.value = 'السفر'; fire(win, f, 'input');
+  const hits = doc.querySelectorAll('#hisn-groups [data-hisn]').length;
+  assert.ok(hits >= 3 && hits < 20, 'a word narrows the list, got ' + hits);
+});
+
+test('a chapter opens with a ring counter on every dhikr, and a tap on the card counts', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-hisn="27"]'));
+  assert.ok(doc.getElementById('v-hisn').classList.contains('is-open'));
+  assert.strictEqual(doc.querySelectorAll('#hisn-list .dhikr').length, 24);
+  assert.strictEqual(doc.querySelectorAll('#hisn-list .ring').length, 24, 'every dhikr has its ring');
+
+  const card = doc.querySelector('#hisn-list .dhikr[data-dhikr="3"]');
+  const target = win.HISN.filter((c) => c.id === 27)[0].i[3].r;
+  assert.strictEqual(card.querySelector('.dhikr-left').textContent, String(target));
+  click(win, card.querySelector('.dhikr-text'));
+  const after = doc.querySelector('#hisn-list .dhikr[data-dhikr="3"]');
+  if (target > 1) {
+    assert.strictEqual(after.querySelector('.dhikr-left').textContent, String(target - 1), 'one tap, one less');
+    assert.ok(after.querySelector('.ring-fill'), 'and the ring begins to fill');
+  } else {
+    assert.ok(after.classList.contains('is-done'));
+  }
+  assert.ok(win.Store.day().hisn[27], 'the count is kept for the day');
+});
+
+test('the counters of the book and of the daily lists do not mix', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-hisn="27"]'));
+  click(win, doc.querySelector('#hisn-list .dhikr[data-dhikr="2"] .dhikr-text'));
+  assert.ok(win.Store.day().hisn[27]);
+  assert.strictEqual(Object.keys(win.Store.day().azkar).length, 0, 'the daily morning list is untouched');
+});
+
+test('a chapter reset clears its counters', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-hisn="27"]'));
+  click(win, doc.querySelector('#hisn-list .dhikr[data-dhikr="2"] .dhikr-text'));
+  click(win, doc.getElementById('hisn-reset'));
+  assert.ok(!win.Store.day().hisn[27]);
+  assert.strictEqual(doc.querySelectorAll('#hisn-list .dhikr.is-done').length, 0);
+});
+
+test('the azkar of this hour follow the prayer windows', () => {
+  const { win, doc } = boot();
+  const key = win.App.helpers.azkarForNow();
+  const window_ = win.App.clockState().prev.key;
+  const expect = { fajr: 'morning', sunrise: 'morning', duha: 'morning', dhuhr: 'afterPrayer', asr: 'evening', maghrib: 'evening', isha: 'sleep' }[window_];
+  assert.strictEqual(key, expect, 'in the ' + window_ + ' window the app should offer ' + expect);
+  win.App.go('azkar');
+  const card = doc.getElementById('azkar-now');
+  assert.ok(!card.hidden);
+  assert.strictEqual(card.getAttribute('data-azkar'), key);
+  assert.strictEqual(doc.getElementById('azkar-now-title').textContent, win.AZKAR_DB[key].title);
+  assert.ok(doc.getElementById('azkar-now-ring').querySelector('.ring'), 'with a ring of what is done');
+  click(win, card);
+  assert.ok(doc.getElementById('v-azkar-list').classList.contains('is-open'), 'a tap opens that section');
+});
+
+test('the note under the refetch button says plainly what it does and what stays', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('إن بدا شيء قديماً') === -1, 'the old wording was not clear');
+  assert.ok(html.indexOf('يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة') !== -1);
+  assert.ok(html.indexOf('وتبقى بياناتك وأذكارك وعلاماتك كما هي') !== -1, 'and it promises the data stays');
+  /* which it must, since the button touches only the caches and the worker */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function refetchEverything\(\) \{([\s\S]*?)\n  \}/.exec(app)[1];
+  assert.ok(fn.indexOf('localStorage') === -1 && fn.indexOf('Store.clear') === -1 && fn.indexOf('wipe') === -1,
+    'the button must not touch the reader\'s data');
 });

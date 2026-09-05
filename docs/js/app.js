@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.0.1';
+  var VERSION = '7.1.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -38,7 +38,7 @@
 
   var OWNED_BY = {
     reader: 'quran', search: 'quran', bookmarks: 'quran', khatma: 'quran', page: 'quran',
-    'azkar-list': 'azkar'
+    'azkar-list': 'azkar', hisn: 'azkar'
   };
 
   var state = {
@@ -65,6 +65,7 @@
     recite: null,
     scope: 'quran',
     page: 1,
+    hisn: 27,
     dailyAyah: null
   };
 
@@ -1852,7 +1853,124 @@
     });
   }
 
+  /* Which of the daily sections belongs to this hour, read from the prayer
+     windows rather than the clock alone, so it follows the day wherever the
+     reader is. */
+  function azkarForNow() {
+    var c = clockState();
+    var key = c.prev.key;
+    if (key === 'fajr' || key === 'sunrise' || key === 'duha') return 'morning';
+    if (key === 'dhuhr') return 'afterPrayer';
+    if (key === 'asr' || key === 'maghrib') return 'evening';
+    return 'sleep';
+  }
+
+  var NOW_NOTES = {
+    morning: 'من بعد الفجر إلى الضحى',
+    afterPrayer: 'بعد كل صلاة مكتوبة',
+    evening: 'من بعد العصر إلى العشاء',
+    sleep: 'قبل أن تنام'
+  };
+
+  /* A ring that fills as a thing is done, drawn small enough to sit beside a
+     number. */
+  function ring(done, total) {
+    var r = 17, c = 2 * Math.PI * r;
+    var share = total ? Math.min(1, done / total) : 0;
+    return '<svg viewBox="0 0 40 40" class="ring" aria-hidden="true">' +
+      '<circle cx="20" cy="20" r="' + r + '" class="ring-track"/>' +
+      /* a zero length dash with round caps still draws a dot, so at zero the
+         fill is left out altogether */
+      (share > 0 ? '<circle cx="20" cy="20" r="' + r + '" class="ring-fill" stroke-dasharray="' + (c * share).toFixed(1) + ' ' + c.toFixed(1) + '"/>' : '') +
+      '</svg>';
+  }
+
+  function renderAzkarNow() {
+    var card = $('azkar-now');
+    if (!card || typeof AZKAR_DB === 'undefined') return;
+    var key = azkarForNow();
+    var def = AZKAR_DB[key];
+    if (!def) { card.hidden = true; return; }
+    var p = Store.azkarProgress(key, def.items.length);
+    card.hidden = false;
+    card.setAttribute('data-azkar', key);
+    if ($('azkar-now-glyph')) $('azkar-now-glyph').innerHTML = icon(def.icon);
+    if ($('azkar-now-title')) $('azkar-now-title').textContent = def.title;
+    if ($('azkar-now-note')) {
+      $('azkar-now-note').textContent = (p.done >= def.items.length ? 'أتممتها اليوم، ' : ar(p.done) + ' من ' + ar(def.items.length) + '، ') + NOW_NOTES[key];
+    }
+    if ($('azkar-now-ring')) $('azkar-now-ring').innerHTML = ring(p.done, def.items.length);
+    card.classList.toggle('is-complete', p.done >= def.items.length);
+  }
+
+  /* The whole book, in its own order, each chapter a row that opens it. */
+  function renderHisn() {
+    var host = $('hisn-groups');
+    if (!host || typeof HISN === 'undefined') return;
+    var needle = Mushaf.normalize(($('hisn-filter') || {}).value || '');
+    var byId = {};
+    HISN.forEach(function (c) { byId[c.id] = c; });
+    var html = HISN_GROUPS.map(function (g) {
+      var rows = g.ids.map(function (id) { return byId[id]; }).filter(function (c) {
+        return c && (!needle || Mushaf.normalize(c.t).indexOf(needle) !== -1 ||
+          c.i.some(function (it) { return Mushaf.normalize(it.t).indexOf(needle) !== -1; }));
+      });
+      if (!rows.length) return '';
+      return '<section class="fold is-open"><div class="fold-head fold-static">' +
+        '<span class="fold-title">' + esc(g.t) + '</span>' +
+        '<span class="fold-tally">' + ar(rows.length) + '</span></div><div class="fold-body">' +
+        rows.map(function (c) {
+          var p = Store.hisnProgress(c.id, c.i.length);
+          return '<button class="row" data-hisn="' + c.id + '"><span class="row-mark">' + ar(c.id) + '</span>' +
+            '<span class="row-body"><span class="row-title">' + esc(c.t) + '</span>' +
+            '<span class="row-note">' + count(c.i.length, 'ذكر واحد', 'ذكران', 'أذكار', 'ذكراً') +
+            (p.done ? '، أدّيت ' + ar(p.done) : '') + '</span></span>' +
+            (p.done >= c.i.length ? '<span class="row-meta">' + icon('check') + '</span>' : '') + '</button>';
+        }).join('') + '</div></section>';
+    }).join('');
+    host.innerHTML = html || empty('لا باب بهذا الاسم');
+  }
+
+  function renderHisnChapter() {
+    var host = $('hisn-list');
+    if (!host || typeof HISN === 'undefined') return;
+    var chapter = null;
+    HISN.forEach(function (c) { if (c.id === state.hisn) chapter = c; });
+    if (!chapter) { host.innerHTML = empty('لم نجد هذا الباب'); return; }
+    if ($('hisn-title')) $('hisn-title').textContent = chapter.t;
+    var counts = (Store.day().hisn || {})[chapter.id] || {};
+    var done = 0;
+    var html = chapter.i.map(function (item, i) {
+      var target = item.r || 1;
+      var left = Object.prototype.hasOwnProperty.call(counts, i) ? counts[i] : target;
+      var isDone = left <= 0;
+      if (isDone) done++;
+      return dhikrCard({ t: item.t, n: item.n }, i, target, left, isDone, 'hisn');
+    }).join('');
+    if ($('hisn-meta')) {
+      $('hisn-meta').textContent = 'الباب ' + ar(chapter.id) + '، ' + ar(done) + ' من ' + ar(chapter.i.length);
+    }
+    host.innerHTML = html;
+  }
+
+  /* One dhikr on a card: the words, how often it is said, and a ring that
+     fills as it is counted. Tapping anywhere on the card counts it. */
+  function dhikrCard(item, i, target, left, isDone, kind) {
+    var said = target - left;
+    var foot = item.r ? esc(item.r) : '';
+    if (target > 1) foot += (foot ? '، ' : '') + count(target, 'مرة واحدة', 'مرتان', 'مرات', 'مرة');
+    return '<div class="dhikr' + (isDone ? ' is-done' : '') + '" data-dhikr="' + i + '"' +
+      (kind === 'hisn' ? ' data-kind="hisn"' : '') + ' role="button" tabindex="0">' +
+      '<p class="dhikr-text">' + esc(item.t) + '</p>' +
+      (item.n ? '<p class="dhikr-note">' + esc(item.n) + '</p>' : '') +
+      '<div class="dhikr-foot"><span class="source">' + foot + '</span>' +
+      '<span class="dhikr-count' + (isDone ? ' is-done' : '') + '">' +
+      ring(said, target) + '<span class="dhikr-left">' + (isDone ? icon('check') : ar(left)) + '</span></span></div></div>';
+  }
+
   function renderAzkar() {
+    renderAzkarNow();
+    renderHisn();
     var host = $('azkar-groups');
     if (!host) return;
     host.innerHTML = azkarSections().map(function (row) {
@@ -1879,17 +1997,32 @@
       var target = item.c || 1;
       var left = Object.prototype.hasOwnProperty.call(counts, i) ? counts[i] : target;
       var done = left === 0;
-      return '<div class="dhikr' + (done ? ' is-done' : '') + '" data-dhikr="' + i + '">' +
-        '<p class="dhikr-text">' + esc(item.t) + '</p>' +
-        '<div class="dhikr-foot"><span class="source">' + esc(item.r || '') + '</span>' +
-        '<span class="dhikr-count">' + (done ? icon('check') : ar(left)) + '</span></div></div>';
+      return dhikrCard({ t: item.t, r: item.r, n: item.n }, i, target, left, done, 'daily');
     }).join('');
 
     var p = Store.azkarProgress(key, def.items.length);
     if ($('azkar-meter')) $('azkar-meter').style.width = p.percent + '%';
   }
 
-  function countDhikr(index) {
+  function countHisn(index) {
+    var chapter = null;
+    HISN.forEach(function (c) { if (c.id === state.hisn) chapter = c; });
+    if (!chapter || !chapter.i[index]) return;
+    var target = chapter.i[index].r || 1;
+    var counts = (Store.day().hisn || {})[chapter.id] || {};
+    var left = Object.prototype.hasOwnProperty.call(counts, index) ? counts[index] : target;
+    if (left <= 0) return;
+    Store.setHisnCount(chapter.id, index, left - 1);
+    buzz(left - 1 === 0 ? 24 : 8);
+    renderHisnChapter();
+    if (left - 1 === 0) {
+      var p = Store.hisnProgress(chapter.id, chapter.i.length);
+      if (p.done === chapter.i.length) toast('أتممت ' + chapter.t);
+    }
+  }
+
+  function countDhikr(index, inBook) {
+    if (inBook) return countHisn(index);
     var key = state.azkarKey || 'morning';
     var def = AZKAR_DB[key];
     if (!def || !def.items[index]) return;
@@ -2769,6 +2902,7 @@
     calendar: renderCalendar,
     timetable: renderTimetable,
     page: renderPage,
+    hisn: renderHisnChapter,
     settings: renderSettings,
     about: renderSettings
   };
@@ -2890,7 +3024,7 @@
     if (azkar) { openAzkar(azkar.getAttribute('data-azkar')); return; }
 
     var dhikr = target.closest('[data-dhikr]');
-    if (dhikr) { countDhikr(+dhikr.getAttribute('data-dhikr')); return; }
+    if (dhikr) { countDhikr(+dhikr.getAttribute('data-dhikr'), dhikr.getAttribute('data-kind') === 'hisn'); return; }
 
     var scope = target.closest('[data-scope]');
     if (scope) { state.scope = scope.getAttribute('data-scope'); renderSearch(); return; }
@@ -2920,6 +3054,9 @@
       if (s) playAudio(s.url, s.name, s.note);
       return;
     }
+
+    var chapter = target.closest('[data-hisn]');
+    if (chapter) { state.hisn = +chapter.getAttribute('data-hisn'); go('hisn'); return; }
 
     var day = target.closest('[data-day]');
     if (day) { pickCalendarDay(+day.getAttribute('data-day')); return; }
@@ -2984,6 +3121,13 @@
       state.tasbih.count = 0;
       renderTasbih();
       toast('صُفّر العدّاد');
+    });
+
+    bind('hisn-filter', 'input', renderHisn);
+    bind('hisn-reset', 'click', function () {
+      Store.resetHisn(state.hisn);
+      renderHisnChapter();
+      toast('أُعيدت عدّادات هذا الباب');
     });
 
     bind('page-prev', 'click', function () { turnPage(1 * -1); });
@@ -3349,7 +3493,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime,
-      verseCard: verseCard, openPage: openPage, pickVoice: pickVoice, arabicVoices: arabicVoices, windowSunnah: windowSunnah, withLam: withLam,
+      verseCard: verseCard, openPage: openPage, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
