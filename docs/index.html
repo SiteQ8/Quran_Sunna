@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#f6f4ee">
+<meta name="theme-color" content="#9c2b2b">
 <script>
 /* Before anything paints: the colour the reader chose and the theme they set,
    read straight from the store, so the app opens in its own colours rather
@@ -23,9 +23,12 @@
       root.style.setProperty('--accent-ink', dark ? c[2] : c[1]);
       var m = document.querySelector('meta[name="theme-color"]');
       if (m) m.setAttribute('content', dark ? '#10161a' : c[1]);
-    } else if (dark) {
-      var m2 = document.querySelector('meta[name="theme-color"]');
-      if (m2) m2.setAttribute('content', '#10161a');
+    } else {
+      /* nothing chosen yet, so the sadu red, which is the default */
+      var m3 = document.querySelector('meta[name="theme-color"]');
+      if (m3) m3.setAttribute('content', dark ? '#10161a' : '#9c2b2b');
+      root.style.setProperty('--accent', dark ? '#ff6969' : '#9c2b2b');
+      root.style.setProperty('--accent-ink', dark ? '#ff6969' : '#9c2b2b');
     }
   } catch (e) { /* a fresh device, nothing chosen yet */ }
 })();

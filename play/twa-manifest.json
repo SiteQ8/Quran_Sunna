@@ -5,7 +5,7 @@
   "launcherName": "سُنّتي",
   "display": "standalone",
   "orientation": "portrait",
-  "themeColor": "#1e6f47",
+  "themeColor": "#9c2b2b",
   "themeColorDark": "#10161a",
   "navigationColor": "#f4f2ec",
   "navigationColorDark": "#10161a",
@@ -17,23 +17,44 @@
   "iconUrl": "https://sunnati.3li.info/icons/icon-512.png",
   "maskableIconUrl": "https://sunnati.3li.info/icons/maskable-512.png",
   "splashScreenFadeOutDuration": 300,
-  "signingKey": { "path": "./android.keystore", "alias": "sunnati" },
+  "signingKey": {
+    "path": "./android.keystore",
+    "alias": "sunnati"
+  },
   "appVersionName": "6.3.0",
   "appVersionCode": 63,
   "shortcuts": [
-    { "name": "المصحف", "shortName": "المصحف", "url": "/#quran", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" },
-    { "name": "أذكار الصباح", "shortName": "الأذكار", "url": "/#azkar", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" },
-    { "name": "القبلة", "shortName": "القبلة", "url": "/#qibla", "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png" }
+    {
+      "name": "المصحف",
+      "shortName": "المصحف",
+      "url": "/#quran",
+      "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png"
+    },
+    {
+      "name": "أذكار الصباح",
+      "shortName": "الأذكار",
+      "url": "/#azkar",
+      "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png"
+    },
+    {
+      "name": "القبلة",
+      "shortName": "القبلة",
+      "url": "/#qibla",
+      "chosenIconUrl": "https://sunnati.3li.info/icons/icon-192.png"
+    }
   ],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://sunnati.3li.info/manifest.webmanifest",
   "fallbackType": "customtabs",
   "features": {},
-  "alphaDependencies": { "enabled": false },
+  "alphaDependencies": {
+    "enabled": false
+  },
   "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://sunnati.3li.info/",
   "minSdkVersion": 23,
-  "appVersion": "6.3.0"
+  "appVersion": "6.3.0",
+  "splashScreenColor": "#f6f4ee"
 }

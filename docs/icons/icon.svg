@@ -1,20 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="سُنّتي">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- سُنّتي: the Sadu weave of Kuwait on its red, with the crescent in cream -->
   <defs>
     <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#26855699"/>
-      <stop offset="0" stop-color="#268556"/>
-      <stop offset="1" stop-color="#11452c"/>
+      <stop offset="0" stop-color="#a83232"/>
+      <stop offset="1" stop-color="#7c1d1d"/>
     </linearGradient>
+    <clipPath id="round"><rect width="512" height="512" rx="112"/></clipPath>
   </defs>
-  <rect width="512" height="512" rx="112" fill="url(#field)"/>
-  <g opacity=".13" fill="none" stroke="#f6f4ee" stroke-width="3">
-    <path d="M256 16 496 256 256 496 16 256Z"/>
-    <path d="M76 76h360v360H76Z"/>
-    <circle cx="256" cy="256" r="168"/>
+  <g clip-path="url(#round)">
+    <rect width="512" height="512" fill="url(#field)"/>
+    <!-- the upper band: stripes and a row of triangles -->
+    <rect x="0" y="66" width="512" height="10" fill="#f4ecdc"/>
+    <rect x="0" y="84" width="512" height="6" fill="#1a1a1a"/>
+    <g fill="#f4ecdc">
+      <path d="M16 134l24-32 24 32zM80 134l24-32 24 32zM144 134l24-32 24 32zM208 134l24-32 24 32zM272 134l24-32 24 32zM336 134l24-32 24 32zM400 134l24-32 24 32zM464 134l24-32 24 32z"/>
+    </g>
+    <!-- the lower band: the eyes of the weave, diamonds in cream with black hearts -->
+    <rect x="0" y="422" width="512" height="6" fill="#1a1a1a"/>
+    <rect x="0" y="436" width="512" height="10" fill="#f4ecdc"/>
+    <g fill="#f4ecdc">
+      <path d="M40 388l32-30 32 30-32 30zM136 388l32-30 32 30-32 30zM232 388l32-30 32 30-32 30zM328 388l32-30 32 30-32 30zM424 388l32-30 32 30-32 30z"/>
+    </g>
+    <g fill="#1a1a1a">
+      <path d="M58 388l14-13 14 13-14 13zM154 388l14-13 14 13-14 13zM250 388l14-13 14 13-14 13zM346 388l14-13 14 13-14 13zM442 388l14-13 14 13-14 13z"/>
+    </g>
+    <!-- between the bands, the crescent -->
+    <path transform="translate(256 248)" d="M32 -98a102 102 0 1 0 0 196 117 117 0 0 1 0-196Z" fill="#f4ecdc"/>
   </g>
-  <g fill="none" stroke="#d9b04a" stroke-width="18" stroke-linejoin="round">
-    <rect x="138" y="138" width="236" height="236" rx="18"/>
-    <rect x="138" y="138" width="236" height="236" rx="18" transform="rotate(45 256 256)"/>
-  </g>
-  <path d="M286 168a92 92 0 1 0 0 176 104 104 0 0 1 0-176Z" fill="#f7f5ef"/>
 </svg>

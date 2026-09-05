@@ -1860,12 +1860,12 @@ test('the review can actually fail, so a clean run means something', () => {
   const os = require('node:os');
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'arabic-'));
   const root = path.join(__dirname, '..');
-  ['docs/js', 'docs/data', 'docs/css', 'tools', 'play'].forEach(function (d) {
+  ['docs/js', 'docs/data', 'docs/css', 'tools', 'play', 'android'].forEach(function (d) {
     fs.mkdirSync(path.join(dir, d), { recursive: true });
   });
   ['docs/index.html', 'docs/privacy.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
    'docs/js/hijri.js', 'docs/js/store.js', 'docs/data/surahs.js', 'docs/data/azkar.js',
-   'docs/data/content.js', 'docs/data/extras.js', 'README.md', 'play/README.md',
+   'docs/data/content.js', 'docs/data/extras.js', 'README.md', 'play/README.md', 'android/README.md',
    'tools/review-arabic.js'].forEach(function (f) {
     fs.copyFileSync(path.join(root, f), path.join(dir, f));
   });
@@ -2573,6 +2573,8 @@ test('a colour can be chosen, or left to follow the hour', () => {
   assert.ok(picker.options[0].text.indexOf('وقت الصلاة') !== -1,
     'the first choice is the one that follows the hour');
 
+  /* the app opens in the sadu red; the colour of the hour is what auto gives */
+  picker.value = 'auto'; fire(win, picker, 'change');
   const byHour = doc.documentElement.style.getPropertyValue('--accent');
   picker.value = 'sadu';
   fire(win, picker, 'change');
@@ -4105,4 +4107,35 @@ test('a download can be stopped, and what came stays', () => {
     assert.ok(stores['sunnati-audio'].size >= 2 && stores['sunnati-audio'].size < 4, 'what came stays, ' + stores['sunnati-audio'].size);
     assert.ok(!win.App.helpers.isSurahSaved(112), 'and it is not marked kept');
   });
+});
+
+/* ---------------- the sadu is the identity ---------------- */
+
+test('a fresh device opens in the sadu red with the sadu weave, before and after the controller wakes', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.Store.get('accent'), 'sadu');
+  assert.strictEqual(win.Store.get('pattern'), 'sadu');
+  assert.strictEqual(doc.documentElement.style.getPropertyValue('--accent'), '#9c2b2b');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /--accent: #9c2b2b;/, 'the stylesheet itself starts red, for the instant before any script');
+  assert.ok(!/--accent: #1e6f47/.test(css), 'the green is no longer the fallback');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<meta name="theme-color" content="#9c2b2b">') !== -1);
+  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
+  assert.strictEqual(manifest.theme_color, '#9c2b2b');
+});
+
+test('the mark is the sadu weave: red field, cream bands, the crescent between', () => {
+  const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
+  assert.ok(svg.indexOf('#7c1d1d') !== -1 && svg.indexOf('#a83232') !== -1, 'the red field');
+  assert.ok(svg.indexOf('#f4ecdc') !== -1, 'cream for the bands and the crescent');
+  assert.ok(svg.indexOf('#1a1a1a') !== -1, 'black hearts in the eyes of the weave');
+  assert.ok(svg.indexOf('#1e6f47') === -1 && svg.indexOf('#268556') === -1, 'no green left in the mark');
+  ['icon-192', 'icon-512', 'maskable-512', 'play-1024', 'icon-180'].forEach(function (n) {
+    const png = fs.readFileSync(path.join(DOCS, 'icons', n + '.png'));
+    assert.ok(png.length > 2000, n + ' is cut');
+  });
+  const android = path.join(__dirname, '..', 'android/app/src/main/res');
+  assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
+  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#7c1d1d') !== -1);
 });

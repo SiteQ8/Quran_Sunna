@@ -275,7 +275,7 @@
       ink = darkTheme() ? chosen.dark : chosen.lightInk;
     } else {
       var name = ACCENT_TOKEN[windowKey];
-      fill = token(name, ACCENT_FALLBACK[windowKey] || '#1e6f47');
+      fill = token(name, ACCENT_FALLBACK[windowKey] || '#9c2b2b');
       ink = token(name ? name + '-ink' : null, ACCENT_INK_FALLBACK[windowKey] || fill);
     }
     root.style.setProperty('--accent', fill);
@@ -333,7 +333,7 @@
   function applyPattern() {
     var key = Store.get('pattern');
     var def = PATTERNS[key] || PATTERNS.star;
-    var colour = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#1e6f47';
+    var colour = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#9c2b2b';
     var stamp = key + colour;
     if (stamp === patternStamp) return;
     patternStamp = stamp;
@@ -347,7 +347,7 @@
 
   function hexToWash(hex) {
     var m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(String(hex).trim());
-    if (!m) return 'rgba(30,111,71,.1)';
+    if (!m) return 'rgba(156,43,43,.1)';
     return 'rgba(' + parseInt(m[1], 16) + ',' + parseInt(m[2], 16) + ',' + parseInt(m[3], 16) + ',.12)';
   }
 
