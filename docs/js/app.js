@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.5.1';
+  var VERSION = '8.6.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1340,8 +1340,9 @@
     if (!host) return;
 
     $$('#browse-mode .chip').forEach(function (chip) {
-      if (chip.getAttribute('data-browse') === state.browse) chip.classList.add('is-on');
-      else chip.classList.remove('is-on');
+      var on = chip.getAttribute('data-browse') === state.browse;
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-selected', on ? 'true' : 'false');
     });
 
     if (state.browse === 'juz') {
@@ -1632,16 +1633,32 @@
       });
   }
 
-  function reciterId() {
+  /* The reciter is kept by id. A number stored by an older version counted
+     into a list that began with a reciter since removed, so it is carried
+     over: the first became the default, the rest moved up one. */
+  var OLD_RECITER_IDS = ['ar.alafasy', 'ar.abdulsamad', 'ar.abdurrahmaansudais', 'ar.mahermuaiqly', 'ar.saoodshuraym',
+    'ar.husary', 'ar.husarymujawwad', 'ar.minshawi', 'ar.shaatree', 'ar.ahmedajamy', 'ar.hudhaify', 'ar.hanirifai',
+    'ar.ibrahimakhbar', 'ar.muhammadayyoub', 'ar.muhammadjibreel', 'ar.abdullahbasfar', 'ar.aymanswoaid'];
+
+  function reciter() {
     var list = typeof RECITERS !== 'undefined' ? RECITERS : [];
-    var idx = Store.get('reciter');
-    var pick = list[idx] || list[0];
-    return pick ? pick.id : 'ar.alafasy';
+    var stored = Store.get('reciter');
+    if (typeof stored === 'number') {
+      var carried = OLD_RECITER_IDS[stored];
+      stored = list.some(function (r) { return r.id === carried; }) ? carried : 'ar.minshawi';
+      Store.set('reciter', stored);
+    }
+    return list.filter(function (r) { return r.id === stored; })[0] ||
+      list.filter(function (r) { return r.id === 'ar.minshawi'; })[0] || list[0] || null;
+  }
+
+  function reciterId() {
+    var pick = reciter();
+    return pick ? pick.id : 'ar.minshawi';
   }
 
   function reciterName() {
-    var list = typeof RECITERS !== 'undefined' ? RECITERS : [];
-    var pick = list[Store.get('reciter')] || list[0];
+    var pick = reciter();
     return pick ? pick.name : '';
   }
 
@@ -3328,9 +3345,9 @@
     if ($('settings-tafsir')) $('settings-tafsir').value = s.tafsir;
     if ($('settings-font')) $('settings-font').value = String(s.fontScale);
 
-    fillSelect($('settings-reciter'), (typeof RECITERS !== 'undefined' ? RECITERS : []).map(function (r, i) {
-      return { value: String(i), label: r.name + '، ' + r.country };
-    }), String(s.reciter));
+    fillSelect($('settings-reciter'), (typeof RECITERS !== 'undefined' ? RECITERS : []).map(function (r) {
+      return { value: r.id, label: r.name + '، ' + r.country };
+    }), reciterId());
 
     setSwitch($('settings-notify'), !!s.notify);
     setSwitch($('settings-vibrate'), !!s.vibrate);
@@ -3931,7 +3948,7 @@
       patternStamp = '';
       applyPattern();
     });
-    bind('settings-reciter', 'change', function (e) { Store.set('reciter', +e.target.value); });
+    bind('settings-reciter', 'change', function (e) { Store.set('reciter', e.target.value); });
     bind('settings-tafsir', 'change', function (e) { Store.set('tafsir', e.target.value); });
     bind('settings-font', 'input', function (e) {
       Store.set('fontScale', +e.target.value);

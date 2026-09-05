@@ -35,7 +35,7 @@
     audioSaved: {},
     lastPage: 1,
     notified: {},
-    reciter: 0,
+    reciter: 'ar.minshawi',
     tafsir: 'ar.muyassar',
     khatmaDays: 30,
     khatmaStart: null,

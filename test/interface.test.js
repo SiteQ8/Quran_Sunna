@@ -1441,7 +1441,7 @@ test('every small control reaches out a touch area', () => {
   assert.match(css, /\.select\s*\{[^}]*min-height:\s*44px/, 'a select must be tall enough to hit');
   /* a chip is drawn at full size instead, which also stops one chip stealing
      the tap meant for the chip beside it */
-  assert.match(css, /\.chip \{[^}]*padding:\s*14px/, 'a chip should be tall enough on its own');
+  assert.match(css, /\.chip \{[^}]*height:\s*44px/, 'a chip should be tall enough on its own');
 });
 
 test('every icon carries the square the sprite is drawn in', () => {
@@ -4305,4 +4305,32 @@ test('inside the app the about page names the package version beside the page ve
   win.SunnatiApp = { version: function () { return '8.5.1'; } };
   win.App.go('about');
   assert.ok(doc.getElementById('about-version').textContent.indexOf('وحزمة أندرويد 8.5.1') !== -1);
+});
+
+/* ---------------- one size for every button ---------------- */
+
+test('every button stands forty eight tall, an icon button is a square, and buttons in a row share the width', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.btn \{[^}]*height:\s*48px/, 'one height');
+  assert.match(css, /\.btn-row > \.btn \{[^}]*flex:\s*1 1 0/, 'equal widths in a row');
+  assert.match(css, /\.segment \{[^}]*display:\s*flex/, 'a segmented control for a choice of one');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<div class="segment" id="browse-mode" role="tablist"') !== -1, 'the surah or juz choice is a segment');
+  assert.strictEqual((html.match(/<div class="grid grid-2 btn-grid">/g) || []).length, 1, 'the four mushaf actions sit in one grid');
+});
+
+test('the reciter is kept by id, the default is al minshawi, and the removed one is gone', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.Store.get('reciter'), 'ar.minshawi');
+  assert.strictEqual(win.App.helpers.reciterId(), 'ar.minshawi');
+  assert.ok(!win.RECITERS.some((r) => r.id === 'ar.alafasy'), 'removed from the list');
+  win.App.go('settings');
+  const opts = [...doc.getElementById('settings-reciter').options];
+  assert.ok(!opts.some((o) => o.value === 'ar.alafasy') && opts.every((o) => /^ar\./.test(o.value)), 'the select works by id');
+  /* a number from an older version is carried over, not misread */
+  win.Store.set('reciter', 7);
+  assert.strictEqual(win.App.helpers.reciterId(), 'ar.minshawi', 'seven in the old list was al minshawi');
+  assert.strictEqual(win.Store.get('reciter'), 'ar.minshawi', 'and is stored by id from then on');
+  win.Store.set('reciter', 0);
+  assert.strictEqual(win.App.helpers.reciterId(), 'ar.minshawi', 'zero was the removed reciter, so the default');
 });
