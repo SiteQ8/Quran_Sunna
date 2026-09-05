@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.7.0';
+  var VERSION = '7.8.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -719,7 +719,7 @@
      downloaded and it works with the connection off. */
   /* The book's own recording of الصلاة على النبي, a man reciting it, which
      needs no speech engine at all. Fetched once and kept by the worker. */
-  var SALAWAT_RECORDING = 'https://www.hisnmuslim.com/audio/ar/53.mp3';
+  var SALAWAT_RECORDING = 'audio/salawat.mp3';
 
   function playRecording(url) {
     try {
@@ -760,7 +760,7 @@
   }
 
   function speak(text, why) {
-    var mode = Store.get('voice') || 'none';
+    var mode = Store.get('voice') || 'recording';
     if (mode === 'none') return false;
     if (mode === 'tone') return chime();
     if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(SALAWAT_RECORDING);
@@ -798,6 +798,22 @@
 
   /* A phone hands its voices over late, sometimes seconds after the page
      asks, so the list is asked for again a few times before giving up. */
+  function showDeviceVoiceRow() {
+    var row = $('settings-device-voice');
+    if (!row) return;
+    var mode = Store.get('voice') || 'recording';
+    row.hidden = mode !== 'speech';
+    var hint = $('settings-voice-hint');
+    if (hint) {
+      hint.textContent = {
+        recording: 'صوت قارئ يتلو الصلاة الإبراهيمية، ويُسمع ما دام التطبيق مفتوحاً',
+        tone: 'نغمة قصيرة من الجهاز',
+        speech: 'الهاتف ينطق الصلاة على النبي بصوته',
+        none: 'يصل التنبيه صامتاً'
+      }[mode] || '';
+    }
+  }
+
   function fillVoiceListSoon() {
     fillVoiceList();
     [300, 1200, 3000].forEach(function (wait) { window.setTimeout(fillVoiceList, wait); });
@@ -2904,11 +2920,12 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     fillSelect($('settings-voice'), [
-      { value: 'none', label: 'بلا صوت' },
+      { value: 'recording', label: 'صوت قارئ' },
       { value: 'tone', label: 'نغمة' },
-      { value: 'recording', label: 'تسجيل بصوت قارئ' },
-      { value: 'speech', label: 'صوت الجهاز ينطقها' }
-    ], s.voice || 'none');
+      { value: 'speech', label: 'صوت الهاتف ينطقها' },
+      { value: 'none', label: 'بلا صوت' }
+    ], s.voice || 'recording');
+    showDeviceVoiceRow();
     fillSelect($('settings-accent'),
       [{ value: 'auto', label: 'يتبع وقت الصلاة' }].concat(
         Object.keys(PALETTES).map(function (k) { return { value: k, label: PALETTES[k].name }; })),
@@ -3415,6 +3432,7 @@
     bind('settings-voice', 'change', function (e) {
       Store.set('voice', e.target.value);
       stopSpeaking();
+      showDeviceVoiceRow();
       if (e.target.value !== 'none') speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
     bind('settings-voice-name', 'change', function (e) {
@@ -3426,7 +3444,11 @@
     });
     bind('settings-voice-try', 'click', function () {
       if (isSpeaking()) { stopSpeaking(); return; }
-      if ((Store.get('voice') || 'none') === 'none') { Store.set('voice', 'speech'); if ($('settings-voice')) $('settings-voice').value = 'speech'; }
+      if ((Store.get('voice') || 'recording') === 'none') {
+        Store.set('voice', 'recording');
+        if ($('settings-voice')) $('settings-voice').value = 'recording';
+        showDeviceVoiceRow();
+      }
       speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });
     if (window.speechSynthesis && window.speechSynthesis.addEventListener) {

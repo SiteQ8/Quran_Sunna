@@ -3152,7 +3152,7 @@ test('the voice is offered in the settings', () => {
   win.App.go('settings');
   const sel = doc.getElementById('settings-voice');
   assert.ok(sel);
-  assert.deepStrictEqual([...sel.options].map((o) => o.value), ['none', 'tone', 'recording', 'speech']);
+  assert.deepStrictEqual([...sel.options].map((o) => o.value), ['recording', 'tone', 'speech', 'none'], 'the reciter first');
 });
 
 /* ---------------- reading by the page ---------------- */
@@ -3561,9 +3561,11 @@ test('the voice list is filled at once and again as the phone hands voices over'
 
 test('a recorded human voice is offered, and the worker keeps it', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf("SALAWAT_RECORDING = 'https://www.hisnmuslim.com/audio/ar/53.mp3'") !== -1);
+  assert.ok(app.indexOf("SALAWAT_RECORDING = 'audio/salawat.mp3'") !== -1, 'the recording ships with the app');
+  assert.ok(fs.existsSync(path.join(DOCS, 'audio', 'salawat.mp3')), 'and is really there');
+  assert.ok(fs.statSync(path.join(DOCS, 'audio', 'salawat.mp3')).size > 500000, 'a real recording, not a stub');
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
-  assert.ok(sw.indexOf("url.hostname === 'www.hisnmuslim.com'") !== -1, 'kept once heard');
+  assert.ok(sw.indexOf("'./audio/salawat.mp3'") !== -1, 'kept by the worker for offline');
 });
 
 /* ---------------- the daily sunan, on the book ---------------- */
@@ -3876,4 +3878,21 @@ test('the site is published at sunnati.3li.info and nothing still points at the 
   const twa = JSON.parse(fs.readFileSync(path.join(root, 'play/twa-manifest.json'), 'utf8'));
   assert.strictEqual(twa.host, 'sunnati.3li.info');
   assert.strictEqual(twa.startUrl, '/');
+});
+
+test('the real voice is the default, in front, and the phone voice row appears only when chosen', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  assert.strictEqual(win.Store.get('voice'), 'recording', 'a reciter by default');
+  assert.strictEqual(doc.getElementById('settings-voice').value, 'recording');
+  assert.strictEqual(doc.getElementById('settings-voice').options[0].text, 'صوت قارئ');
+  assert.ok(doc.getElementById('settings-device-voice').hidden, 'no talk of the phone voice unless asked');
+  assert.ok(doc.getElementById('settings-voice-hint').textContent.indexOf('الصلاة الإبراهيمية') !== -1, 'the hint says what the voice recites');
+  const sel = doc.getElementById('settings-voice');
+  sel.value = 'speech'; fire(win, sel, 'change');
+  assert.ok(!doc.getElementById('settings-device-voice').hidden, 'choosing the phone voice shows its row');
+  sel.value = 'recording'; fire(win, sel, 'change');
+  assert.ok(doc.getElementById('settings-device-voice').hidden);
+  /* the play button sits on the reminder row itself */
+  assert.ok(doc.querySelector('#settings-voice-try').closest('.setting').querySelector('#settings-voice'), 'the button is beside the choice it plays');
 });

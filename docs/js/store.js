@@ -26,7 +26,7 @@
     notify: false,
     salawat: 0,
     salawatAt: 0,
-    voice: 'none',
+    voice: 'recording',
     voiceName: '',
     placeAsked: false,
     lastPage: 1,
