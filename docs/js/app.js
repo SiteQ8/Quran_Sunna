@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.5.0';
+  var VERSION = '8.5.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1016,6 +1016,13 @@
      the app notifies, rings and shares by itself, with no browser between. */
   function bridge() {
     return typeof window.SunnatiApp !== 'undefined' ? window.SunnatiApp : null;
+  }
+
+  /* The package version beside the page's, so one screenshot shows both. */
+  function packageLine() {
+    var app = bridge();
+    if (!app || !app.version) return '';
+    try { return '، وحزمة أندرويد ' + ar(app.version()); } catch (e) { return ''; }
   }
 
   function inAndroidApp() {
@@ -2694,7 +2701,7 @@
         '<span class="row-body"><span class="row-title">' + esc(l.name) + '</span>' +
         '<span class="row-note">' + esc(l.note) + '</span></span></button>';
     }).join('');
-    if ($('version-line')) $('version-line').textContent = 'النسخة ' + ar(VERSION);
+    if ($('version-line')) $('version-line').textContent = 'النسخة ' + ar(VERSION) + packageLine();
   }
 
   /* ---------------- qibla ---------------- */
@@ -3338,7 +3345,7 @@
         ? 'نص المصحف محمّل في جهازك، فالقراءة تعمل بلا إنترنت'
         : 'نص المصحف لم يكتمل تحميله بعد';
     }
-    if ($('about-version')) $('about-version').textContent = 'النسخة ' + ar(VERSION);
+    if ($('about-version')) $('about-version').textContent = 'النسخة ' + ar(VERSION) + packageLine();
   }
 
   function chooseCity(index) {
@@ -4119,6 +4126,10 @@
     window.navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (state.updateOffered) return;
       state.updateOffered = true;
+      /* at the front screen with nothing playing, the new version is simply
+         taken; mid reading or mid recitation it is offered instead */
+      var atRest = (state.view === 'home' || state.view === 'more' || state.view === 'settings') && !state.audio && !state.recite;
+      if (atRest) { window.location.reload(); return; }
       showBanner('وصلت نسخة جديدة من التطبيق', 'تحديث', function () { window.location.reload(); });
     });
 

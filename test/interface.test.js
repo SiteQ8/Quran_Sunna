@@ -1204,17 +1204,17 @@ test('the worker hands over only when the page asks', () => {
   assert.match(code, /clients\.claim\(\)/, 'and it should take charge of the page already open');
 });
 
-test('a new version is offered rather than forced on the reader', () => {
+test('a new version is taken only when nothing would be lost, and offered otherwise', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const handler = /controllerchange'[\s\S]{0,400}?\}\);/.exec(app);
+  const handler = /controllerchange'[\s\S]{0,700}?\n    \}\);/.exec(app);
   assert.ok(handler, 'the page should notice when a new worker takes charge');
   assert.match(handler[0], /showBanner/, 'it should offer the new version');
-  /* A reload may only sit inside what the offer runs when it is pressed, never
-     before it, or a reader is thrown out of the middle of an ayah unasked. */
+  /* A reload before the offer is allowed only behind the guard that says the
+     reader is at the front with nothing playing; mid ayah it is never forced. */
   const offerAt = handler[0].indexOf('showBanner');
   const before = handler[0].slice(0, offerAt);
-  assert.ok(!/location\.reload/.test(before),
-    'the page reloaded before anyone was asked');
+  assert.ok(/atRest\) \{ window\.location\.reload\(\); return; \}/.test(before), 'a reload at rest is the only reload before the offer');
+  assert.ok(/!state\.audio && !state\.recite/.test(before), 'and only with nothing playing');
 });
 
 test('the browser is told never to serve the worker from its own cache', () => {
@@ -1568,19 +1568,18 @@ test('the worker names the same version the app does', () => {
     'and every device that has visited once keeps running the old code for good');
 });
 
-test('the shell is fetched from the network first', () => {
+test('the shell is served from one version, and a fix still arrives as a whole new version', () => {
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
-  /* The last respondWith in the file handles code and markup. It must reach for
-     the network before the cache, or a fix can be published and never arrive. */
+  /* The last respondWith handles code and markup: from this version's cache,
+     so a page is never mixed with an older stylesheet; the network is reached
+     past the browser cache only for what the version does not hold. */
   const tail = sw.slice(sw.lastIndexOf('event.respondWith'));
-  const network = tail.indexOf('fetch(request)');
-  const cache = tail.indexOf('caches.match');
-  assert.ok(network !== -1 && cache !== -1, 'it should try both');
-  assert.ok(network < cache,
-    'the cache must be the fallback for code, not the first answer');
-  assert.match(sw, /isSettled/, 'the mushaf and the icons may still come from the cache first');
-  assert.match(sw, /take-over[\s\S]{0,120}skipWaiting/,
-    'and it should hand over as soon as the page asks');
+  assert.ok(tail.indexOf("caches.match(request, { cacheName: VERSION })") !== -1, 'this version first');
+  assert.ok(tail.indexOf("cache: 'reload'") !== -1, 'the network past the browser cache when needed');
+  /* the fix arrives because the browser checks sw.js itself past its cache */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("register('sw.js', { updateViaCache: 'none' })") !== -1);
+  assert.ok(sw.indexOf('self.skipWaiting();') !== -1, 'and the new worker steps forward at once');
 });
 
 test('the worker still keeps everything the app needs offline', () => {
@@ -4282,4 +4281,28 @@ test('inside the app a picture is shared by the app', () => {
     assert.ok(calls.images[0][0].indexOf('data:image/png;base64') === 0);
     assert.strictEqual(calls.images[0][1], 'ayah-1-1.png');
   });
+});
+
+/* ---------------- a version is served whole ---------------- */
+
+test('the worker serves the shell from one version, fetched past the browser cache', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("cache.add(new Request(url, { cache: 'reload' }))") !== -1, 'a version must not be assembled from files of two deployments');
+  assert.ok(sw.indexOf("caches.match(request, { cacheName: VERSION })") !== -1, 'code and markup come from this version\'s cache, whole');
+  assert.ok(sw.indexOf("fetch(request).then(function (response) {\n      return keep(request, response);\n    }).catch") === -1, 'the file by file network first path is gone');
+});
+
+test('a new version is taken at once when the reader is at rest, and offered otherwise', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /addEventListener\('controllerchange', function \(\) \{([\s\S]*?)\n    \}\);/.exec(app)[1];
+  assert.ok(fn.indexOf("state.view === 'home'") !== -1 && fn.indexOf('!state.audio && !state.recite') !== -1);
+  assert.ok(fn.indexOf('window.location.reload(); return;') !== -1, 'taken at rest');
+  assert.ok(fn.indexOf("showBanner('وصلت نسخة جديدة من التطبيق'") !== -1, 'offered otherwise');
+});
+
+test('inside the app the about page names the package version beside the page version', () => {
+  const { win, doc } = boot();
+  win.SunnatiApp = { version: function () { return '8.5.1'; } };
+  win.App.go('about');
+  assert.ok(doc.getElementById('about-version').textContent.indexOf('وحزمة أندرويد 8.5.1') !== -1);
 });

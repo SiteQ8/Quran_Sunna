@@ -8,8 +8,8 @@ android {
         applicationId "io.github.siteq8.sunnati"
         minSdk 26
         targetSdk 34
-        versionCode 89
-        versionName "8.5.0"
+        versionCode 90
+        versionName "8.5.1"
 
         /* The address the wrapper opens. Everything the app does lives there, so
            a fix published to the site reaches anyone who installed this without
