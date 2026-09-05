@@ -260,6 +260,7 @@
     <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-next"/></svg></button>
+    <button class="btn btn-ghost" id="reader-save" data-surah-audio="1" aria-label="احفظ تلاوة السورة للاستماع بلا إنترنت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg><span class="reader-save-word">حفظ الصوت</span></button>
     <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
   </div>
   <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
@@ -617,6 +618,11 @@
       </select></div>
     <div class="setting"><span class="setting-label">الاهتزاز عند العد</span>
       <button class="switch" id="settings-vibrate" role="switch" aria-checked="true" aria-label="الاهتزاز"></button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>التلاوة المحفوظة</h2></div>
+    <div id="saved-audio"></div>
   </div>
 
   <div class="card">

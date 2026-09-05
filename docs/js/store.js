@@ -29,6 +29,7 @@
     voice: 'recording',
     voiceName: '',
     placeAsked: false,
+    audioSaved: {},
     lastPage: 1,
     notified: {},
     reciter: 0,

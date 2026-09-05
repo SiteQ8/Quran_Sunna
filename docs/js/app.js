@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.0.0';
+  var VERSION = '8.1.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1360,6 +1360,14 @@
     var n = state.surah;
     var meta = surahMeta(n);
     if ($('reader-title')) $('reader-title').textContent = meta ? 'سورة ' + meta.ar : '';
+    var keep = $('reader-save');
+    if (keep) {
+      var kept = isSurahSaved(n);
+      keep.innerHTML = icon(kept ? 'check' : 'download') + '<span class="reader-save-word">' + (kept ? 'محفوظة' : 'حفظ الصوت') + '</span>';
+      keep.classList.toggle('is-kept', kept);
+      keep.setAttribute('aria-label', kept ? 'السورة محفوظة للاستماع بلا إنترنت، اضغط للحذف' : 'احفظ تلاوة السورة للاستماع بلا إنترنت');
+      keep.setAttribute('data-surah-audio', n);
+    }
     if ($('reader-meta')) {
       var virtue = typeof SURAH_VIRTUES !== 'undefined' ? SURAH_VIRTUES[n] : null;
       var where = Mushaf.ready()
@@ -1937,6 +1945,130 @@
       toast('نُزّلت الصورة');
       return true;
     });
+  }
+
+  /* ---------------- a surah kept for listening offline ---------------- */
+
+  /* Every verse of the surah, in the current reciter's voice, fetched and put
+     in a store the worker answers from. The store is separate from the app's
+     cache so it survives updates. The files come without cors headers, so they
+     are kept opaque, which an audio element plays as it would from the net. */
+  var AUDIO_STORE = 'sunnati-audio';
+  var BYTES_PER_VERSE = 90000;
+
+  function verseUrl(s, a) {
+    return 'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + Mushaf.globalIndex(s, a) + '.mp3';
+  }
+
+  function savedAudio() { return Store.get('audioSaved') || {}; }
+
+  function isSurahSaved(n) {
+    var by = savedAudio()[reciterId()] || {};
+    return !!by[n];
+  }
+
+  function rememberSaved(n, verses) {
+    var all = savedAudio();
+    if (!all[reciterId()]) all[reciterId()] = {};
+    all[reciterId()][n] = { v: verses, at: Date.now() };
+    Store.set('audioSaved', all);
+  }
+
+  function forgetSaved(reciter, n) {
+    var all = savedAudio();
+    if (all[reciter]) delete all[reciter][n];
+    if (all[reciter] && !Object.keys(all[reciter]).length) delete all[reciter];
+    Store.set('audioSaved', all);
+  }
+
+  function downloadSurah(n) {
+    if (!window.caches) { toast('المتصفح لا يتيح حفظ الصوت'); return Promise.resolve(false); }
+    var verses = Mushaf.surah(n).length;
+    var meta = surahMeta(n);
+    if (!verses) return Promise.resolve(false);
+    state.downloading = { s: n, done: 0, total: verses, stop: false };
+    openSheet('حفظ سورة ' + (meta ? meta.ar : ''),
+      '<p class="setting-note">بصوت ' + esc(reciterName()) + '، نحو ' + megabytes(verses * BYTES_PER_VERSE) + '، وتبقى في جهازك حتى تحذفها</p>' +
+      '<div class="meter" style="margin:12px 0"><div class="meter-fill" id="dl-meter" style="width:0%"></div></div>' +
+      '<p class="setting-note" id="dl-count">0 من ' + ar(verses) + '</p>' +
+      '<button class="btn btn-ghost btn-block" data-act="download-stop">أوقف</button>');
+    var urls = [];
+    for (var a = 1; a <= verses; a++) urls.push(verseUrl(n, a));
+    return window.caches.open(AUDIO_STORE).then(function (store) {
+      var next = 0;
+      function worker() {
+        if (state.downloading.stop || next >= urls.length) return Promise.resolve();
+        var url = urls[next++];
+        return store.match(url).then(function (hit) {
+          if (hit) return null;
+          return window.fetch(url, { mode: 'no-cors' }).then(function (res) { return store.put(url, res); });
+        }).then(function () {
+          state.downloading.done++;
+          if ($('dl-meter')) $('dl-meter').style.width = Math.round(state.downloading.done / verses * 100) + '%';
+          if ($('dl-count')) $('dl-count').textContent = ar(state.downloading.done) + ' من ' + ar(verses);
+          return worker();
+        });
+      }
+      return Promise.all([worker(), worker(), worker()]);
+    }).then(function () {
+      var finished = !state.downloading.stop && state.downloading.done >= verses;
+      state.downloading = null;
+      closeSheet();
+      if (finished) {
+        rememberSaved(n, verses);
+        toast('حُفظت سورة ' + (meta ? meta.ar : '') + ' للاستماع بلا إنترنت');
+      } else {
+        toast('توقف الحفظ، وما نُزّل يبقى');
+      }
+      renderReader();
+      return finished;
+    }).catch(function () {
+      state.downloading = null;
+      closeSheet();
+      toast('تعذّر الحفظ، فتأكد من الاتصال');
+      return false;
+    });
+  }
+
+  function removeSurahAudio(reciter, n) {
+    if (!window.caches) return Promise.resolve();
+    var saved = reciterId();
+    var verses = Mushaf.surah(n).length;
+    return window.caches.open(AUDIO_STORE).then(function (store) {
+      var jobs = [];
+      for (var a = 1; a <= verses; a++) {
+        jobs.push(store.delete('https://cdn.islamic.network/quran/audio/128/' + reciter + '/' + Mushaf.globalIndex(n, a) + '.mp3'));
+      }
+      return Promise.all(jobs);
+    }).then(function () { forgetSaved(reciter, n); void saved; });
+  }
+
+  function megabytes(bytes) {
+    var mb = bytes / 1048576;
+    return (mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
+  }
+
+  function renderSavedAudio() {
+    var host = $('saved-audio');
+    if (!host) return;
+    var all = savedAudio();
+    var reciters = Object.keys(all);
+    var rows = [];
+    var totalVerses = 0;
+    reciters.forEach(function (rid) {
+      var who = (typeof RECITERS !== 'undefined' ? RECITERS : []).filter(function (r) { return r.id === rid; })[0];
+      Object.keys(all[rid]).map(Number).sort(function (a, b) { return a - b; }).forEach(function (n) {
+        var meta = surahMeta(n);
+        totalVerses += all[rid][n].v;
+        rows.push('<div class="row"><span class="row-mark">' + ar(n) + '</span>' +
+          '<span class="row-body"><span class="row-title">' + esc(meta ? meta.ar : '') + '</span>' +
+          '<span class="row-note">' + esc(who ? who.name : rid) + '، ' + ayat(all[rid][n].v) + '، نحو ' + megabytes(all[rid][n].v * BYTES_PER_VERSE) + '</span></span>' +
+          '<button class="btn btn-ghost" data-remove-audio="' + esc(rid) + ':' + n + '" aria-label="احذف">' + icon('close') + '</button></div>');
+      });
+    });
+    host.innerHTML = rows.length
+      ? rows.join('') + '<p class="setting-note" style="margin-top:8px">المجموع نحو ' + megabytes(totalVerses * BYTES_PER_VERSE) + '</p>'
+      : '<p class="setting-note">لم تحفظ سورة بعد، وفي المصحف عند كل سورة زر يحفظها</p>';
   }
 
   /* ---------------- search ---------------- */
@@ -3063,6 +3195,7 @@
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
     fillVoiceListSoon();
+    renderSavedAudio();
     fillSelect($('settings-voice'), [
       { value: 'recording', label: 'صوت قارئ' },
       { value: 'tone', label: 'نغمة' },
@@ -3247,6 +3380,13 @@
       var meta = surahMeta(s);
       shareText('سُنّتي', Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a));
     },
+    'download-stop': function () { if (state.downloading) state.downloading.stop = true; },
+    'audio-remove-confirm': function (ref) {
+      var parts = ref.split(':');
+      removeSurahAudio(parts[0], +parts[1]).then(function () {
+        closeSheet(); toast('حُذف الصوت'); renderReader(); renderSavedAudio();
+      });
+    },
     'prayer-mark': function (ref) {
       var parts = ref.split(':');
       var when = dateOfStamp(parts[2]);
@@ -3414,6 +3554,26 @@
     if (station && typeof RADIO_STATIONS !== 'undefined') {
       var s = RADIO_STATIONS[+station.getAttribute('data-station')];
       if (s) playAudio(s.url, s.name, s.note);
+      return;
+    }
+
+    var keepBtn = target.closest('[data-surah-audio]');
+    if (keepBtn) {
+      var sn = +keepBtn.getAttribute('data-surah-audio');
+      if (isSurahSaved(sn)) {
+        var sm = surahMeta(sn);
+        openSheet('سورة ' + (sm ? sm.ar : '') + ' محفوظة',
+          '<p class="setting-note">تلاوتها بصوت ' + esc(reciterName()) + ' في جهازك، وتعمل بلا إنترنت</p>' +
+          '<button class="btn btn-ghost btn-block" data-act="audio-remove-confirm" data-ref="' + esc(reciterId()) + ':' + sn + '" style="margin-top:12px">احذفها من الجهاز</button>');
+      } else if (!state.downloading) {
+        downloadSurah(sn);
+      }
+      return;
+    }
+    var removeAudio = target.closest('[data-remove-audio]');
+    if (removeAudio) {
+      var ra = removeAudio.getAttribute('data-remove-audio').split(':');
+      removeSurahAudio(ra[0], +ra[1]).then(function () { toast('حُذف الصوت'); renderSavedAudio(); });
       return;
     }
 
@@ -3885,7 +4045,8 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
+      maybeAskPlace: maybeAskPlace, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
