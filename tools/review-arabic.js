@@ -99,9 +99,36 @@ function startsWithJoiner(clause) {
   return JOINERS.some(function (j) { return first.indexOf(j) === 0; });
 }
 
+/* The writing guide's own lists, read from the files it came with: phrases
+   that a model writes and a person does not, and the misspellings that recur.
+   A marker is only a marker when it stands as a whole word or phrase. */
+const GUIDE = JSON.parse(fs.readFileSync(path.join(__dirname, 'arabic', 'rules.json'), 'utf8'));
+const EDGE = '(^|[\\s،؛:.!؟"«»()])';
+const END = '(?=$|[\\s،؛:.!؟"«»()])';
+const MARKERS = GUIDE.markers.map((m) => ({ m, re: new RegExp(EDGE + m.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + END) }));
+const SPELLING = GUIDE.misspellings.map((p) => ({ wrong: p[0], right: p[1], re: new RegExp(EDGE + p[0] + END) }));
+
+function transmitted(t) {
+  /* a verse, a hadith or a dhikr carries its own wording and is not edited */
+  return /[\u064B-\u0652]{2}/.test(t) || /ﷺ|رواه|متفق عليه|صحيح|سنن|قال رسول|اللهم/.test(t);
+}
+
 function check(where, entry) {
   const t = entry.text;
   const at = where + ':' + entry.line;
+
+  if (!transmitted(t)) {
+    MARKERS.forEach(function (x) {
+      if (x.re.test(t)) flag(at, 'بصمة آلية: ' + x.m, t, 'احذفها أو قل الشيء المحدد بدلها');
+    });
+    SPELLING.forEach(function (x) {
+      if (x.re.test(t)) flag(at, 'إملاء: ' + x.wrong, t, 'الصواب ' + x.right);
+    });
+    /* a verb ordered through قم بـ is a translation, the verb itself is the arabic */
+    if (/(^|\s)قم ب/.test(t)) flag(at, 'قم بـ', t, 'استعمل الفعل نفسه: حمّل، افتح، اضغط');
+    /* the reader is one person, addressed as one */
+    if (/(^|\s)(المستخدمون|المستخدمين|المتابعون|المتابعين)(\s|$)/.test(t)) flag(at, 'الراوي البعيد', t, 'خاطب القارئ: أنت');
+  }
 
   /* Latin punctuation inside arabic */
   if (/[\u0621-\u064A]\s*,/.test(t)) flag(at, 'فاصلة لاتينية', t, 'استعمل ، بدل ,');

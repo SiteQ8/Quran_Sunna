@@ -1869,6 +1869,9 @@ test('the review can actually fail, so a clean run means something', () => {
    'tools/review-arabic.js'].forEach(function (f) {
     fs.copyFileSync(path.join(root, f), path.join(dir, f));
   });
+  /* the reviewer reads the guide's lists beside it */
+  fs.mkdirSync(path.join(dir, 'tools', 'arabic'), { recursive: true });
+  fs.copyFileSync(path.join(root, 'tools', 'arabic', 'rules.json'), path.join(dir, 'tools', 'arabic', 'rules.json'));
   /* a sentence cut in two where a joiner belongs */
   const spoiled = fs.readFileSync(path.join(dir, 'docs/index.html'), 'utf8')
     .replace('<p>أدوات ومحتوى إضافي</p>',
@@ -3728,4 +3731,55 @@ test('a shared picture names where its words come from, and the maker', () => {
   assert.ok(app.indexOf("(it.r ? it.r + '، ' : '') + 'حصن المسلم'") !== -1, 'a daily dhikr names its narrator and the book');
   assert.ok(app.indexOf("'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat") !== -1, 'a supplication names its reference');
   assert.ok(app.indexOf("\"'Amiri Quran', 'Amiri', serif\", 'القرآن الكريم'") !== -1, 'a verse names the mushaf');
+});
+
+/* ---------------- the writing guide, kept by the reviewer ---------------- */
+
+test('the arabic reviewer carries the guide: its markers and its misspellings', () => {
+  const rules = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'arabic', 'rules.json'), 'utf8'));
+  assert.ok(rules.markers.length >= 100, 'the marker phrases of the guide');
+  ['في الختام', 'بشكل كبير', 'لا شك أن', 'يلعب دوراً', 'قم بتحميل'].forEach(function (m) {
+    assert.ok(rules.markers.indexOf(m) !== -1, 'missing marker ' + m);
+  });
+  assert.ok(rules.misspellings.some((p) => p[0] === 'الى' && p[1] === 'إلى'));
+  assert.ok(rules.misspellings.some((p) => p[0] === 'ذالك' && p[1] === 'ذلك'), 'the table that runs right to wrong is read the right way round');
+  assert.ok(!rules.misspellings.some((p) => p[0] === 'ذلك'), 'ذلك is not a fault');
+});
+
+test('the reviewer flags a model phrase and lets a hadith be', () => {
+  const src = fs.readFileSync(path.join(__dirname, '..', 'tools', 'review-arabic.js'), 'utf8');
+  assert.ok(src.indexOf("'بصمة آلية: '") !== -1);
+  assert.ok(src.indexOf('function transmitted(t)') !== -1, 'a verse or a dhikr carries its own wording');
+  assert.ok(src.indexOf('(المستخدمون|المستخدمين|المتابعون|المتابعين)') !== -1);
+  assert.ok(src.indexOf('الجمهور') === -1, 'the majority school is not a distant narrator');
+});
+
+test('the interface no longer says تم التثبيت or promises a companion', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(html.indexOf('رفيقك اليومي') === -1, 'the tagline names what is inside instead');
+  assert.ok(html.indexOf('مصحف ومواقيت وأذكار وسنن في جهازك') !== -1);
+  assert.ok(app.indexOf('تم التثبيت') === -1, 'تم plus a noun is the passive a person does not say');
+  assert.ok(app.indexOf('ثُبّت سُنّتي') !== -1);
+  assert.ok(app.indexOf('إضافة إلى الشاشة الرئيسية') !== -1, 'the button is named, not the fact of a menu');
+  assert.ok(app.indexOf('أنت في الموعد تماماً') === -1, 'the empty emphasis is gone');
+});
+
+test('the voice list tells which of three cases the phone is in', () => {
+  const { win, doc } = boot();
+  const cases = [
+    [[], 'صوت الجهاز، والمتصفح لا يعرض قائمته هنا'],
+    [[{ lang: 'en-US', name: 'English' }], 'لا صوت عربي في جهازك، ويُنطق بالصوت المتاح'],
+    [[{ lang: 'ar-XA', name: 'ar-xa-x-ard-local' }], 'الأنسب من أصوات جهازك']
+  ];
+  cases.forEach(function (c) {
+    Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return c[0]; }, addEventListener: function () {}, speak: function () {} } });
+    win.App.go('settings');
+    const sel = doc.getElementById('settings-voice-name');
+    assert.strictEqual(sel.options[0].text, c[1]);
+  });
+  /* with no list at all, the note says where on the phone the voice is changed */
+  Object.defineProperty(win, 'speechSynthesis', { configurable: true, value: { getVoices: function () { return []; }, addEventListener: function () {}, speak: function () {} } });
+  win.App.go('settings');
+  assert.ok(doc.getElementById('settings-voice-note').textContent.indexOf('تحويل النص إلى كلام') !== -1);
 });

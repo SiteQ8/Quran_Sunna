@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="appName">سُنّتي، رفيقك اليومي في العبادة</string>
+    <string name="appName">سُنّتي، مصحف ومواقيت وأذكار وسنن في جهازك</string>
     <string name="launcherName">سُنّتي</string>
     <string name="defaultUrl">https://siteq8.github.io/Quran_Sunna/</string>
     <string name="assetStatements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://siteq8.github.io\" }}]</string>
