@@ -460,7 +460,9 @@ test('the sunnah tracker records ticks and updates the meter', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
   const boxes = doc.querySelectorAll('#tracker-list [data-check]');
-  assert.strictEqual(boxes.length, 40, 'the wird and the five groups together');
+  const expected = win.WIRD_ITEMS.length + win.SUNNAH_TRACKER.reduce((n, g) => n + g.i.length, 0);
+  assert.strictEqual(boxes.length, expected, 'the wird and every group of the book together');
+  assert.ok(expected >= 100, 'the book gives a hundred and more, found ' + expected);
   assert.strictEqual(doc.getElementById('tracker-done').textContent, '0');
 
   click(win, boxes[0]);
@@ -3568,4 +3570,63 @@ test('a recorded human voice is offered, and the worker keeps it', () => {
   assert.ok(app.indexOf("SALAWAT_RECORDING = 'https://www.hisnmuslim.com/audio/ar/53.mp3'") !== -1);
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf("url.hostname === 'www.hisnmuslim.com'") !== -1, 'kept once heard');
+});
+
+/* ---------------- the daily sunan, on the book ---------------- */
+
+test('the tracker follows the book from waking to sleep, then what has no time', () => {
+  const { win } = boot();
+  const names = Array.from(win.SUNNAH_TRACKER, (g) => g.s);
+  assert.strictEqual(names.slice(0, 10).join('|'), [
+    'الاستيقاظ وقيام الليل', 'الوضوء', 'الفجر والأذان والمسجد', 'في الصلاة', 'بعد الصلاة',
+    'الضحى', 'الظهر', 'العصر والمساء', 'المغرب', 'العشاء والنوم'
+  ].join('|'), 'the timed sunan run through the day in order');
+  assert.strictEqual(names.slice(10).join('|'), ['الطعام والشراب', 'السلام واللقاء والمجلس', 'اللباس والزينة والعطاس', 'سنن يومية أخرى'].join('|'));
+  win.SUNNAH_TRACKER.forEach(function (g) {
+    assert.ok(g.p >= 25 && g.p <= 253, g.s + ' should name its page in the book');
+    assert.ok(g.icon, g.s + ' needs an icon');
+    assert.ok(g.i.length >= 3, g.s + ' is too thin');
+  });
+  const pages = Array.from(win.SUNNAH_TRACKER, (g) => g.p);
+  assert.strictEqual(pages.join(','), pages.slice().sort((a, b) => a - b).join(','), 'the groups keep the order of the pages');
+  assert.strictEqual(win.SUNNAH_SOURCE.a, 'عبدالله بن حمود الفريح');
+});
+
+test('what the book corrects in the old list is corrected', () => {
+  const { win } = boot();
+  const all = win.SUNNAH_TRACKER.reduce((a, g) => a.concat(g.i), []);
+  const text = all.join(' ');
+  /* the hadith names four before and four after, not four alone */
+  assert.ok(text.indexOf('أربع ركعات قبل الظهر وأربع بعدها') !== -1);
+  assert.ok(!all.some((i) => /^4 ركعات قبل الظهر$/.test(i)), 'the bare four is gone');
+  /* the evening azkar belong to the asr window, not the maghrib */
+  assert.ok(win.CURRENT_SUNNAH.asr.items[0].indexOf('أذكار المساء') === 0, 'evening azkar open the asr window');
+  /* the two before maghrib, the closing of doors, and the children kept in */
+  assert.ok(win.CURRENT_SUNNAH.maghrib.items.some((i) => i.indexOf('ركعتان قبل المغرب') === 0));
+  assert.ok(win.CURRENT_SUNNAH.maghrib.items.some((i) => i.indexOf('كفّ الصبيان') === 0));
+  /* the sleep count the book gives */
+  assert.ok(text.indexOf('التكبير أربعاً وثلاثين') !== -1 || text.indexOf('والله أكبر أربعاً وثلاثين') !== -1);
+  /* no weak four before asr offered as a sunnah */
+  assert.ok(!win.CURRENT_SUNNAH.asr.items.some((i) => /أربع ركعات قبل العصر/.test(i)));
+});
+
+test('every group of the tracker shows its page from the book', () => {
+  const { win, doc } = boot();
+  win.App.go('tracker');
+  const sources = [...doc.querySelectorAll('#tracker-list .fold-source')].map((e) => e.textContent);
+  assert.strictEqual(sources.length, win.SUNNAH_TRACKER.length);
+  assert.ok(sources[0].indexOf('المنح العلية') !== -1 && sources[0].indexOf('ص 25') !== -1, sources[0]);
+});
+
+test('the sunan of the hour agree with the book for every window', () => {
+  const { win } = boot();
+  const expect = {
+    fajr: 'السواك عند الاستيقاظ', duha: 'صلاة الضحى', dhuhr: 'أربع ركعات قبل الظهر',
+    asr: 'أذكار المساء', maghrib: 'ركعتان قبل المغرب', isha: 'ركعتان بعد العشاء'
+  };
+  Object.keys(expect).forEach(function (k) {
+    assert.ok(win.CURRENT_SUNNAH[k].items[0].indexOf(expect[k]) === 0,
+      k + ' should open with ' + expect[k] + ', got ' + win.CURRENT_SUNNAH[k].items[0]);
+    assert.ok(win.CURRENT_SUNNAH[k].items.length >= 4);
+  });
 });

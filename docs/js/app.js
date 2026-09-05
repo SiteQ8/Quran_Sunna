@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '7.2.0';
+  var VERSION = '7.3.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2161,6 +2161,7 @@
       html += SUNNAH_TRACKER.map(function (group, gi) {
         var ids = group.i.map(function (_, ii) { return 'sunnah:' + gi + ':' + ii; });
         return fold('sunnah:' + gi, group.s, group.icon || null, ids,
+          (group.p ? '<p class="fold-source">' + esc(SUNNAH_SOURCE.t) + '، ص ' + ar(group.p) + '</p>' : '') +
           group.i.map(function (item, ii) {
             var id = 'sunnah:' + gi + ':' + ii;
             var done = !!record.sunnah[id];

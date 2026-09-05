@@ -304,6 +304,8 @@ button { background: none; border: none; cursor: pointer; }
 .setting-note { display: block; line-height: 1.7; }
 .card > .setting-note { padding: var(--s2) 0 0; }
 
+.fold-source { font-size: .62rem; color: var(--ink-3); margin: 2px 0 var(--s2); }
+
 /* ---------- ornament ---------- */
 
 /* A niche, the shape a prayer hall points with. It sits behind the countdown
