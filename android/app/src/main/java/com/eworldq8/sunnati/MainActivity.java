@@ -87,6 +87,7 @@ public class MainActivity extends Activity {
             AdhanReceiver.ensureChannels(this);
             AdhanScheduler.scheduleNext(this);
             SalawatScheduler.scheduleNext(this);
+            QiyamScheduler.scheduleNext(this);
         } catch (Exception e) {
             Log.w("sunnati", "adhan setup skipped", e);
         }

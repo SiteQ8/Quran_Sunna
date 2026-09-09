@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.12.0';
+  var VERSION = '8.13.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -464,6 +464,7 @@
   function refreshTimes() {
     state.times = computeTimes(new Date());
     handTimesToApp();
+    handQiyamToApp();
     return state.times;
   }
 
@@ -629,7 +630,7 @@
     if (!state.askedPlace) {
       state.askedPlace = true;
       adoptGrantedNotifications();
-      window.setTimeout(function () { maybeExplainChrome(); maybeAskPlace(); }, 1500);
+      window.setTimeout(function () { maybeExplainChrome(); if (!maybeFridaySheet()) maybeAskPlace(); }, 1500);
     }
   }
 
@@ -2468,6 +2469,62 @@
     try { app.setSalawatEvery(+Store.get('salawat') || 0); return true; } catch (e) { return false; }
   }
 
+  /* The last third of the night: from maghrib the night runs to the next
+     fajr, and its last third begins two thirds of the way through. Worked out
+     for the reader's own place, for the days ahead, and handed to the app. */
+  function qiyamAt(day) {
+    var t = computeTimes(day);
+    var next = computeTimes(new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1));
+    if (typeof t.maghrib !== 'number' || typeof next.fajr !== 'number') return null;
+    var nightMinutes = (24 * 60 - t.maghrib) + next.fajr;
+    var minutes = t.maghrib + Math.round(nightMinutes * 2 / 3);
+    return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minutes, 0, 0);
+  }
+
+  /* the note says the hour it will call tonight, so the reader knows */
+  function showQiyamTime() {
+    var note = $('settings-qiyam-note');
+    if (!note) return;
+    var at = qiyamAt(new Date());
+    note.textContent = at
+      ? 'تنبيه عند دخول الثلث الأخير من الليل، وهو الليلة عند ' + clockText(at.getHours() * 60 + at.getMinutes())
+      : 'تنبيه عند دخول الثلث الأخير من الليل';
+  }
+
+  function handQiyamToApp() {
+    var app = bridge();
+    if (!app || !app.setQiyamTimes) return false;
+    if (!Store.get('qiyam')) { try { app.setQiyamTimes('[]'); } catch (e) { /* older package */ } return true; }
+    var out = [];
+    var now = new Date();
+    for (var d = 0; d < 7; d++) {
+      var at = qiyamAt(new Date(now.getFullYear(), now.getMonth(), now.getDate() + d));
+      if (at && at.getTime() > Date.now()) out.push(at.getTime());
+    }
+    try { app.setQiyamTimes(JSON.stringify(out)); return true; } catch (e) { return false; }
+  }
+
+  /* On a friday the app opens with the two sunnahs of the day before it: the
+     prayers upon the Prophet ﷺ, and the reading of al-Kahf. Shown once a day,
+     and only if the reader has left it on. */
+  function maybeFridaySheet() {
+    if (!Store.get('friday')) return false;
+    var now = new Date();
+    if (now.getDay() !== 5) return false;
+    var key = now.toDateString();
+    if (Store.get('fridayShown') === key) return false;
+    Store.set('fridayShown', key);
+    openSheet('يوم الجمعة',
+      '<p class="setting-note">من سنن هذا اليوم</p>' +
+      '<div class="dua-line"><span class="dua-text">أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه</span>' +
+      '<button class="btn btn-ghost dua-share" data-act="hear-salawat" aria-label="اسمع الصلاة على النبي">' + icon('play') + '</button></div>' +
+      '<div class="dua-line"><span class="dua-text">واقرأ سورة الكهف، فمن قرأها أضاء له من النور ما بين الجمعتين</span>' +
+      '<button class="btn btn-ghost dua-share" data-act="open-kahf" aria-label="افتح سورة الكهف">' + icon('book') + '</button></div>' +
+      '<p class="naskh salawat-text">' + esc(salawatText()) + '</p>' +
+      '<button class="btn btn-ghost btn-block" data-act="friday-off" style="margin-top:10px">لا تُذكّرني يوم الجمعة</button>');
+    return true;
+  }
+
   function handAdhanSoundToApp() {
     var app = bridge();
     if (!app || !app.setAdhanSound) return;
@@ -3724,8 +3781,12 @@
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
     fillVoiceListSoon();
+    setSwitch($('settings-friday'), !!Store.get('friday'));
+    setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
+    showQiyamTime();
     fillAdhanVoices();
     handSalawatToApp();
+    handQiyamToApp();
     renderSavedAudio();
     renderAdhanRow();
     fillSelect($('settings-salawat-voice'), (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).map(function (v) {
@@ -3944,6 +4005,14 @@
       if (!topic) return;
       var text = topic.i[+parts[1]];
       if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', ''), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
+    },
+    'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
+    'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
+    'friday-off': function () {
+      Store.set('friday', false);
+      closeSheet();
+      toast('أُوقف تذكير الجمعة، وتعيده من الإعدادات');
+      renderSettings();
     },
     'read-pace': function (ref) {
       Store.set('readPace', ref);
@@ -4404,6 +4473,21 @@
       if (document.visibilityState === 'visible') tick();
     });
 
+    bind('settings-friday', 'click', function () {
+      var on = !Store.get('friday');
+      Store.set('friday', on);
+      setSwitch($('settings-friday'), on);
+      toast(on ? 'سيفتح التطبيق يوم الجمعة بسننه' : 'أُوقف تذكير الجمعة');
+    });
+    bind('settings-qiyam', 'click', function () {
+      var on = !Store.get('qiyam');
+      Store.set('qiyam', on);
+      setSwitch($('settings-qiyam'), on);
+      handQiyamToApp();
+      showQiyamTime();
+      toast(on ? 'سيصلك تنبيه عند الثلث الأخير' : 'أُوقف تذكير القيام');
+    });
+
     bind('settings-salawat', 'change', function (e) {
       Store.set('salawat', +e.target.value);
       if (+e.target.value && window.Notification && window.Notification.permission !== 'granted') {
@@ -4697,7 +4781,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

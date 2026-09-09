@@ -51,6 +51,17 @@ function boot(options) {
   const win = dom.window;
 
   Object.defineProperty(win, 'localStorage', { value: memoryStorage(), configurable: true });
+  if (opts.now) {
+    /* the app asks the window for the date, so a fixed day can be handed to it */
+    const fixed = opts.now.getTime();
+    const Real = win.Date;
+    function Fixed(...args) { return args.length ? new Real(...args) : new Real(fixed); }
+    Fixed.prototype = Real.prototype;
+    Fixed.now = () => fixed;
+    Fixed.parse = Real.parse;
+    Fixed.UTC = Real.UTC;
+    win.Date = Fixed;
+  }
   win.matchMedia = win.matchMedia || function () {
     return { matches: !!opts.dark, addEventListener() {}, removeEventListener() {} };
   };
@@ -5058,4 +5069,71 @@ test('the app does not repeat its own name and address at the foot of every scre
   assert.ok(html.indexOf('المستودع على GitHub') === -1, 'the repository is not linked from the app');
   assert.ok(html.indexOf('التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.') !== -1);
   assert.ok(html.indexOf('ونص حصن المسلم وتسجيلات') === -1, 'the sources are named in المصادر, not twice');
+});
+
+test('the sections fill their rows, leaving no hole at the end', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.grid > \.tile:last-child:nth-child\(3n \+ 1\) \{ grid-column: 1 \/ -1; \}/,
+    'a tile left alone on the last row stretches across it');
+  assert.match(css, /\.grid > \.tile:nth-last-child\(2\):nth-child\(3n \+ 1\) \{ grid-column: span 2; \}/,
+    'and two left over take half each');
+});
+
+test('a friday opens with its sunnahs, once, and can be turned off', () => {
+  const { win, doc } = boot({ now: new Date('2026-09-11T08:30:00+03:00') });
+  win.Store.set('placeAsked', true);
+  assert.strictEqual(win.App.helpers.maybeFridaySheet(), true, 'friday');
+  assert.strictEqual(doc.getElementById('sheet-title').textContent, 'يوم الجمعة');
+  const body = doc.getElementById('sheet-body').textContent;
+  assert.ok(body.indexOf('أكثِر من الصلاة على النبي') !== -1);
+  assert.ok(body.indexOf('سورة الكهف') !== -1, 'and al-kahf');
+  /* the whole salawat is written out, from the book */
+  assert.ok(doc.querySelector('#sheet .salawat-text').textContent.length > 100);
+  /* only once in a day */
+  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false);
+  /* the reader may end it from the sheet itself */
+  click(win, doc.querySelector('#sheet [data-act="friday-off"]'));
+  assert.strictEqual(win.Store.get('friday'), false);
+  win.Store.set('fridayShown', '');
+  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false, 'and it stays off');
+});
+
+test('no friday sheet on any other day', () => {
+  const { win } = boot({ now: new Date('2026-09-09T08:30:00+03:00') });
+  assert.strictEqual(new win.Date().getDay(), 3, 'a wednesday');
+  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false);
+});
+
+test('the call to rise falls at the last third of the night, and the app is told', () => {
+  const { win, doc } = boot();
+  const at = win.App.helpers.qiyamAt(new win.Date());
+  assert.ok(at && typeof at.getHours === 'function', 'a time is worked out');
+  assert.ok(at.getHours() >= 21 || at.getHours() <= 5, 'in the depth of the night, got ' + at.getHours());
+  const given = [];
+  win.SunnatiApp = { setQiyamTimes: function (j) { given.push(JSON.parse(j)); } };
+  win.Store.set('qiyam', false);
+  win.App.helpers.handQiyamToApp();
+  assert.strictEqual(given[given.length - 1].length, 0, 'off means the app stops calling');
+  win.Store.set('qiyam', true);
+  win.App.helpers.handQiyamToApp();
+  const nights = given[given.length - 1];
+  assert.ok(nights.length >= 6 && nights.length <= 7, 'a week of nights, got ' + nights.length);
+  nights.forEach(function (ms) { assert.ok(ms > Date.now(), 'every one still ahead'); });
+  for (let i = 1; i < nights.length; i++) assert.ok(nights[i] > nights[i - 1], 'in order');
+  /* the switch shows the hour it will call tonight */
+  win.App.go('settings');
+  assert.ok(doc.getElementById('settings-qiyam-note').textContent.indexOf('الليلة عند') !== -1);
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/QiyamScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
+});
+
+test('both reminders are the reader\'s to turn on and off', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  assert.strictEqual(doc.getElementById('settings-friday').getAttribute('aria-checked'), 'true', 'friday on by default');
+  assert.strictEqual(doc.getElementById('settings-qiyam').getAttribute('aria-checked'), 'false', 'and the night call off until asked');
+  click(win, doc.getElementById('settings-friday'));
+  assert.strictEqual(win.Store.get('friday'), false);
+  click(win, doc.getElementById('settings-qiyam'));
+  assert.strictEqual(win.Store.get('qiyam'), true);
 });
