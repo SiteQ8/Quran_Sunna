@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.11.6';
+  var VERSION = '8.12.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1309,6 +1309,12 @@
     }
   }
 
+  /* The day an occasion falls on, in the reckoning the reader lives by, so
+     «بعد 152 يوماً» is answered with the date itself. */
+  function whenItFalls(g) {
+    return Hijri.WEEKDAYS[g.getDay()] + ' ' + ar(g.getDate()) + ' ' + GREG_MONTHS[g.getMonth()] + ' ' + ar(g.getFullYear());
+  }
+
   function renderUpcoming() {
     var host = $('home-upcoming');
     if (!host) return;
@@ -1317,7 +1323,8 @@
     host.innerHTML = list.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) + '</span></span></div>';
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
+        '، ' + whenItFalls(o.date) + '</span></span></div>';
     }).join('');
   }
 
@@ -2453,6 +2460,14 @@
   }
 
   /* the app keeps the chosen adhan beside it, so it sounds with the app closed */
+  /* A web page is only woken by periodic sync, which a web view never fires,
+     so the reminder is handed to the app, which keeps its own alarm for it. */
+  function handSalawatToApp() {
+    var app = bridge();
+    if (!app || !app.setSalawatEvery) return false;
+    try { app.setSalawatEvery(+Store.get('salawat') || 0); return true; } catch (e) { return false; }
+  }
+
   function handAdhanSoundToApp() {
     var app = bridge();
     if (!app || !app.setAdhanSound) return;
@@ -3470,7 +3485,7 @@
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
-        '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
+        '<br>' + whenItFalls(o.date) + '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
     }).join('');
   }
 
@@ -3710,6 +3725,7 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     fillAdhanVoices();
+    handSalawatToApp();
     renderSavedAudio();
     renderAdhanRow();
     fillSelect($('settings-salawat-voice'), (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).map(function (v) {
@@ -4397,6 +4413,7 @@
       } else if (+e.target.value) {
         toast('سيصلك تذكير بالصلاة على النبي ﷺ');
       }
+      handSalawatToApp();
       scheduleForWorker();
     });
     bind('settings-voice', 'change', function (e) {
@@ -4680,7 +4697,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

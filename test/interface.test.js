@@ -1593,7 +1593,8 @@ test('the worker still keeps everything the app needs offline', () => {
 test('the version the app shows is the version it is', () => {
   const { win, doc } = boot();
   win.App.go('more');
-  const shown = doc.getElementById('version-line').textContent;
+  win.App.go('about');
+  const shown = doc.getElementById('about-version').textContent;
   const digits = shown.replace(/[0-9]/g, (d) => '0123456789'.indexOf(d));
   assert.ok(digits.indexOf(win.App.version) !== -1,
     'the screen says ' + shown + ' but the app is ' + win.App.version);
@@ -3529,8 +3530,10 @@ test('the app opens in the colour that was chosen, not in green', () => {
 
 test('the link beside the name goes to the author, and the repository stays in about', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  assert.ok(/<span id="version-line"><\/span><br><a href="https:\/\/3li\.info">/.test(html));
-  assert.ok(html.indexOf('github.com/SiteQ8/Quran_Sunna">المستودع على GitHub') !== -1);
+  /* the app names its author once, on the about page, and links nothing else */
+  assert.strictEqual((html.match(/class="foot"/g) || []).length, 1);
+  assert.ok(html.indexOf('<a href="privacy.html">سياسة الخصوصية</a>') !== -1, 'the policy is reachable');
+  assert.ok(html.indexOf('المستودع على GitHub') === -1, 'and the repository is not linked from the app');
 });
 
 test('one stop halts a repeat run as well as a walk', () => {
@@ -5010,4 +5013,49 @@ test('the button that sends a verse sits inside its card', () => {
   assert.match(line, /background:\s*var\(--raised\)/, 'the card is the row, so the button is within it');
   assert.match(line, /border:\s*1px solid var\(--line\)/);
   assert.match(css, /\.verse-line \.search-hit \{[^}]*background:\s*transparent/, 'and the words inside it carry no second card');
+});
+
+test('the reminder to send prayers upon the prophet is held by the app, not the page', () => {
+  /* a web page is only woken by periodic sync, which a web view never fires,
+     so the page must hand the interval to the app */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('app.setSalawatEvery(+Store.get(\'salawat\') || 0)') !== -1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(/@JavascriptInterface\s+public void setSalawatEvery\(int minutes\)/.test(bridge));
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1, 'an alarm of its own');
+  const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context)') !== -1, 'and it re-arms itself after each one');
+  const onBoot = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/BootReceiver.java'), 'utf8');
+  assert.ok(onBoot.indexOf('SalawatScheduler.scheduleNext(context)') !== -1, 'and survives a reboot');
+  /* the reader's choice reaches the app */
+  const { win, doc } = boot();
+  const given = [];
+  win.SunnatiApp = { setSalawatEvery: function (m) { given.push(m); } };
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-salawat');
+  sel.value = '60'; fire(win, sel, 'change');
+  assert.strictEqual(given[given.length - 1], 60, 'sixty minutes, as chosen');
+});
+
+test('an upcoming occasion says the very day it falls on', () => {
+  const { win, doc } = boot();
+  const list = win.Hijri.upcoming(new Date(), 0);
+  assert.ok(list.length, 'there is always something ahead');
+  const note = doc.querySelector('#home-upcoming .row-note').textContent;
+  const first = list[0];
+  assert.ok(note.indexOf(win.App.helpers.whenItFalls(first.date)) !== -1,
+    'the countdown alone does not tell a reader when to prepare');
+  /* the day, the date, the month and the year, in the words the app uses */
+  const written = win.App.helpers.whenItFalls(first.date);
+  assert.ok(win.Hijri.WEEKDAYS.some(function (d) { return written.indexOf(d) === 0; }), 'the weekday first');
+  assert.ok(written.indexOf(String(first.date.getFullYear())) !== -1, 'and the year');
+});
+
+test('the app does not repeat its own name and address at the foot of every screen', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.strictEqual((html.match(/class="foot"/g) || []).length, 1, 'one foot, on the about page');
+  assert.ok(html.indexOf('المستودع على GitHub') === -1, 'the repository is not linked from the app');
+  assert.ok(html.indexOf('التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.') !== -1);
+  assert.ok(html.indexOf('ونص حصن المسلم وتسجيلات') === -1, 'the sources are named in المصادر, not twice');
 });
