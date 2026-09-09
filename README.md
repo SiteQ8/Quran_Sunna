@@ -179,6 +179,6 @@ MIT، انظر [LICENSE](LICENSE).
 التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.
 
 <div align="center">
-  <sub>سُنّتي، صنع في الكويت</sub><br>
+  <sub>سُنّتي</sub><br>
   <sub><a href="https://github.com/SiteQ8">@SiteQ8</a>، علي العنزي</sub>
 </div>
