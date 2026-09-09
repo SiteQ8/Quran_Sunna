@@ -8,11 +8,12 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.7.5';
+var VERSION = 'sunnati-v8.7.6';
 
 var SHELL = [
   './',
   './index.html',
+  './privacy.html',
   './css/style.css',
   './js/prayer-engine.js',
   './js/hijri.js',
@@ -251,8 +252,18 @@ self.addEventListener('fetch', function (event) {
     caches.match(request, { cacheName: VERSION }).then(function (hit) {
       if (hit) return hit;
       if (request.mode === 'navigate') {
-        return caches.match('./index.html', { cacheName: VERSION }).then(function (page) {
-          return page || fetch(new Request(request.url, { cache: 'reload' }));
+        /* The app is one page, so a navigation to anything under it is the app
+           itself, offline or not. But the site also serves real pages of its
+           own beside the app, and answering those with the app would hide
+           them: the privacy policy is one, and the store reads it. So the
+           network is asked first for them, and only the app's own address
+           falls back to the cached page. */
+        return fetch(new Request(request.url, { cache: 'reload' })).then(function (fresh) {
+          return keep(request, fresh);
+        }).catch(function () {
+          return caches.match(request).then(function (any) {
+            return any || caches.match('./index.html', { cacheName: VERSION });
+          });
         });
       }
       return fetch(new Request(request.url, { cache: 'reload' })).then(function (response) {
