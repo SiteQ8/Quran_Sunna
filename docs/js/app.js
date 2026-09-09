@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.8.1';
+  var VERSION = '8.8.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3061,7 +3061,7 @@
         '<span class="row-mark">' + icon('radio') + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(s.name) + '</span>' +
         '<span class="row-note">' + esc(s.note) + '</span></span>' +
-        '<span class="row-meta">' + icon('play') + '</span></button>';
+        '<span class="row-play" aria-hidden="true">' + icon('play') + '</span></button>';
     }).join('');
 
     var chips = $('sleep-timer');

@@ -3056,14 +3056,14 @@ test('a previous button points right and a next button points left, as arabic re
   const { doc } = boot();
   const arrow = function (id) { return doc.querySelector('#' + id + ' use').getAttribute('href'); };
   ['reader', 'tt', 'cal', 'player'].forEach(function (pair) {
-    assert.strictEqual(arrow(pair + '-prev'), '#i-back', pair + '-prev should point right, back along the reading');
-    assert.strictEqual(arrow(pair + '-next'), '#i-next', pair + '-next should point left, onward');
+    assert.strictEqual(arrow(pair + '-prev'), '#i-step-prev', pair + '-prev should point right, back along the reading');
+    assert.strictEqual(arrow(pair + '-next'), '#i-step-next', pair + '-next should point left, onward');
   });
   /* and the sprite really draws them that way */
-  const back = doc.querySelector('#i-back path').getAttribute('d');
-  const next = doc.querySelector('#i-next path').getAttribute('d');
-  assert.ok(/m14 5 7 7/.test(back), 'i-back is the right pointing arrow');
-  assert.ok(/m10 5-7 7/.test(next), 'i-next is the left pointing arrow');
+  const prev = doc.querySelector('#i-step-prev path').getAttribute('d');
+  const next = doc.querySelector('#i-step-next path').getAttribute('d');
+  assert.ok(/m10 5 7 7/.test(prev), 'i-step-prev is the right pointing chevron');
+  assert.ok(/m14 5-7 7/.test(next), 'i-step-next is the left pointing chevron');
 });
 
 test('a time in the month table keeps its suffix on the line', () => {
@@ -4614,4 +4614,53 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
   assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
   assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 2, 'one colour only, as the status bar draws it');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the artwork every size is drawn from');
+});
+
+/* ---------------- every arrow points the way the language runs ---------------- */
+
+test('the play mark points the way arabic runs, and every step arrow agrees with its label', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the triangle opens toward the left, as the reading does */
+  assert.match(html, /<g id="i-play"><path d="M17 4\.5 5 12 17 19\.5z"\/><\/g>/, 'a play mark pointing right reads backwards in an arabic interface');
+  /* the step before and after are plain chevrons; the return arrow keeps its
+     tail, so two arrows side by side in the reader bar are told apart */
+  assert.match(html, /<g id="i-step-prev"><path d="m10 5 7 7-7 7"\/><\/g>/, 'the step before points right');
+  assert.match(html, /<g id="i-step-next"><path d="m14 5-7 7 7 7"\/><\/g>/, 'the step after points left');
+  assert.match(html, /<g id="i-back">.*M21 12H3/, 'the return arrow has a tail');
+
+  const { win, doc } = boot();
+  const drawn = { 'i-back': 'right', 'i-step-prev': 'right', 'i-step-next': 'left', 'i-next': 'left', 'i-play': 'left' };
+  const wanted = function (label) {
+    if (/سابق|رجوع|السابقة/.test(label)) return 'right';
+    if (/تالي|التالية/.test(label)) return 'left';
+    if (/اسمع|تشغيل|استماع/.test(label)) return 'left';
+    return null;
+  };
+  const views = ['home', 'quran', 'reader', 'page', 'azkar', 'hisn', 'tracker', 'prayers', 'more', 'radio', 'calendar', 'timetable', 'settings'];
+  let checked = 0;
+  views.forEach(function (v) {
+    win.App.go(v);
+    doc.querySelectorAll('#v-' + v + ' [aria-label]').forEach(function (el) {
+      const use = el.querySelector('use');
+      if (!use) return;
+      const href = use.getAttribute('href').slice(1);
+      if (!drawn[href]) return;
+      const want = wanted(el.getAttribute('aria-label'));
+      if (!want) return;
+      checked++;
+      assert.strictEqual(drawn[href], want, v + ': «' + el.getAttribute('aria-label') + '» draws ' + drawn[href] + ' but means ' + want);
+    });
+  });
+  assert.ok(checked >= 10, 'every screen with arrows should have been walked, checked ' + checked);
+});
+
+test('a station carries a filled play control, not a stray hairline', () => {
+  const { win, doc } = boot();
+  win.App.go('radio');
+  const play = doc.querySelector('#radio-list .row-play');
+  assert.ok(play, 'each station has one');
+  assert.strictEqual(play.querySelector('use').getAttribute('href'), '#i-play');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.row-play \{[^}]*border-radius:\s*50%/, 'drawn as a round button');
+  assert.match(css, /i-play'\]\), \.icon:has\(use\[href='#i-pause'\]\) \{ fill: currentColor; stroke: none/, 'the triangle is a shape, so it is filled not outlined');
 });
