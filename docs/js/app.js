@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.11.2';
+  var VERSION = '8.11.3';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1881,9 +1881,7 @@
     var tally = $('dua-book-tally');
     if (tally) tally.textContent = ar(topics.reduce(function (n, t) { return n + t.i.length; }, 0)) + ' دعاء';
     var src = $('dua-themes-source');
-    if (src && typeof DUA_BOOK_SOURCE !== 'undefined') {
-      src.textContent = DUA_BOOK_SOURCE.n + ' على كتيّب ' + DUA_BOOK_SOURCE.b + '، وآيات القرآن تُقرأ من المصحف';
-    }
+    if (src) src.textContent = 'أدعية مختارة من القرآن والسنة';
   }
 
   function openDuaTheme(id) {
