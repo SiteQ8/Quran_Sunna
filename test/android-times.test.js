@@ -10,7 +10,7 @@ const path = require('path');
 const { execFileSync, spawnSync } = require('child_process');
 
 const root = path.join(__dirname, '..');
-const src = path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/PrayerTimes.java');
+const src = path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/PrayerTimes.java');
 const hasJdk = spawnSync('javac', ['-version']).status === 0;
 
 test('the wrapper carries the ojeiri table the app carries', () => {
@@ -23,7 +23,7 @@ test('the wrapper carries the ojeiri table the app carries', () => {
 test('the java port gives the same minute as the js engine for a year the table does not hold', { skip: !hasJdk && 'no jdk here' }, () => {
   const dir = fs.mkdtempSync(path.join(require('os').tmpdir(), 'sunnati-java-'));
   fs.writeFileSync(path.join(dir, 'Check.java'), `
-import io.github.siteq8.sunnati.PrayerTimes;
+import com.eworldq8.sunnati.PrayerTimes;
 import java.util.*;
 public class Check { public static void main(String[] a) {
   Calendar c = Calendar.getInstance(TimeZone.getTimeZone("Asia/Kuwait")); c.set(2027,0,1,12,0,0);
@@ -67,14 +67,14 @@ test('the wrapper owns its page: a web view with a bridge, no browser helper', (
   assert.ok(manifest.indexOf('ACCESS_FINE_LOCATION') !== -1, 'the page may locate the reader through the app');
   const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
   assert.ok(gradle.indexOf('androidbrowserhelper') === -1, 'no browser helper dependency');
-  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/MainActivity.java'), 'utf8');
+  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('new WebView(this)') !== -1 && main.indexOf('addJavascriptInterface(new Bridge(this), "SunnatiApp")') !== -1);
   assert.ok(main.indexOf('SunnatiApp/') !== -1, 'the user agent names the app');
-  const bridge = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/Bridge.java'), 'utf8');
+  const bridge = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   ['setPrayerTimes', 'isAdhanEnabled', 'setAdhanEnabled', 'canNotify', 'notify', 'shareImage'].forEach(function (m) {
     assert.ok(new RegExp('@JavascriptInterface\\s+public [a-zA-Z]+ ' + m + '\\(').test(bridge), 'the bridge offers ' + m);
   });
-  const sched = fs.readFileSync(path.join(root, 'android/app/src/main/java/io/github/siteq8/sunnati/AdhanScheduler.java'), 'utf8');
+  const sched = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/AdhanScheduler.java'), 'utf8');
   assert.ok(sched.indexOf('public static void setTimes(') !== -1 && sched.indexOf('builtIn(') !== -1, "the page's times first, الكويت's table when nothing else is known");
   const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
   assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings));

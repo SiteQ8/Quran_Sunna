@@ -4204,7 +4204,7 @@ test('inside the package a granted notification permission switches the reminder
 test('the app knows it runs in its own package by the referrer, and remembers', () => {
   const { win } = boot();
   assert.strictEqual(win.App.helpers.inAndroidApp(), false);
-  Object.defineProperty(win.document, 'referrer', { configurable: true, value: 'android-app://io.github.siteq8.sunnati/' });
+  Object.defineProperty(win.document, 'referrer', { configurable: true, value: 'android-app://com.eworldq8.sunnati/' });
   assert.strictEqual(win.App.helpers.inAndroidApp(), true);
   Object.defineProperty(win.document, 'referrer', { configurable: true, value: '' });
   assert.strictEqual(win.App.helpers.inAndroidApp(), true, 'remembered after the referrer is gone');

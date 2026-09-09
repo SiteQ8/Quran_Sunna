@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.7.3';
+  var VERSION = '8.7.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1046,7 +1046,7 @@
   function inAndroidApp() {
     if (bridge()) { if (!Store.get('inApp')) Store.set('inApp', true); return true; }
     if (Store.get('inApp')) return true;
-    var fromApp = (document.referrer || '').indexOf('android-app://io.github.siteq8.sunnati') === 0;
+    var fromApp = (document.referrer || '').indexOf('android-app://com.eworldq8.sunnati') === 0;
     if (fromApp) Store.set('inApp', true);
     return fromApp;
   }

@@ -6,8 +6,8 @@
         android:shortcutShortLabel="@string/shortcutQuran">
         <intent android:action="android.intent.action.VIEW"
             android:data="https://sunnati.3li.info/#quran"
-            android:targetPackage="io.github.siteq8.sunnati"
-            android:targetClass="io.github.siteq8.sunnati.MainActivity"/>
+            android:targetPackage="com.eworldq8.sunnati"
+            android:targetClass="com.eworldq8.sunnati.MainActivity"/>
     </shortcut>
     <shortcut android:shortcutId="azkar"
         android:enabled="true"
@@ -15,8 +15,8 @@
         android:shortcutShortLabel="@string/shortcutAzkar">
         <intent android:action="android.intent.action.VIEW"
             android:data="https://sunnati.3li.info/#azkar"
-            android:targetPackage="io.github.siteq8.sunnati"
-            android:targetClass="io.github.siteq8.sunnati.MainActivity"/>
+            android:targetPackage="com.eworldq8.sunnati"
+            android:targetClass="com.eworldq8.sunnati.MainActivity"/>
     </shortcut>
     <shortcut android:shortcutId="qibla"
         android:enabled="true"
@@ -24,8 +24,8 @@
         android:shortcutShortLabel="@string/shortcutQibla">
         <intent android:action="android.intent.action.VIEW"
             android:data="https://sunnati.3li.info/#qibla"
-            android:targetPackage="io.github.siteq8.sunnati"
-            android:targetClass="io.github.siteq8.sunnati.MainActivity"/>
+            android:targetPackage="com.eworldq8.sunnati"
+            android:targetClass="com.eworldq8.sunnati.MainActivity"/>
     </shortcut>
     <shortcut android:shortcutId="timetable"
         android:enabled="true"
@@ -33,15 +33,15 @@
         android:shortcutShortLabel="@string/shortcutTimetable">
         <intent android:action="android.intent.action.VIEW"
             android:data="https://sunnati.3li.info/#timetable"
-            android:targetPackage="io.github.siteq8.sunnati"
-            android:targetClass="io.github.siteq8.sunnati.MainActivity"/>
+            android:targetPackage="com.eworldq8.sunnati"
+            android:targetClass="com.eworldq8.sunnati.MainActivity"/>
     </shortcut>
     <shortcut android:shortcutId="adhan"
         android:enabled="true"
         android:icon="@mipmap/ic_launcher"
         android:shortcutShortLabel="@string/shortcutAdhan">
         <intent android:action="android.intent.action.VIEW"
-            android:targetPackage="io.github.siteq8.sunnati"
-            android:targetClass="io.github.siteq8.sunnati.AdhanToggleActivity"/>
+            android:targetPackage="com.eworldq8.sunnati"
+            android:targetClass="com.eworldq8.sunnati.AdhanToggleActivity"/>
     </shortcut>
 </shortcuts>

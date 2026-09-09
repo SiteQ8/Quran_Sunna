@@ -67,7 +67,7 @@
         <!-- rings at the prayer, and arms the next -->
         <receiver android:name=".AdhanReceiver" android:exported="false">
             <intent-filter>
-                <action android:name="io.github.siteq8.sunnati.ADHAN"/>
+                <action android:name="com.eworldq8.sunnati.ADHAN"/>
             </intent-filter>
         </receiver>
         <!-- a reboot or a change of the clock throws alarms away -->
