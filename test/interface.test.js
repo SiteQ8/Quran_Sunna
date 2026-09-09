@@ -4821,7 +4821,9 @@ test("the booklet's supplications are gathered by topic beside the qur'an's", ()
     assert.ok(t.id && /^[a-z]+$/.test(t.id), t.n + ' should have a plain id');
     assert.ok(t.i.length, t.n + ' should not be empty');
     t.i.forEach(function (line) {
-      assert.ok(line.length > 15, t.n + ': a line too short to be a supplication');
+      /* «رب اصلح لي قلبي» is a whole supplication in fifteen letters, so the
+         floor is on words rather than length */
+      assert.ok(line.split(' ').length >= 3, t.n + ': a line too short to be a supplication: ' + line);
       assert.ok(!/[\u064B-\u0655\u0670]/.test(line), t.n + ': a stray mark survived: ' + line.slice(0, 40));
       line.split(' ').forEach(function (w) {
         assert.ok(w.length <= 11, t.n + ': two words ran together: ' + w);
