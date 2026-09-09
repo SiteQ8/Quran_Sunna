@@ -12,6 +12,7 @@ import android.graphics.Insets;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowInsets;
+import android.view.WindowInsetsController;
 import android.window.OnBackInvokedCallback;
 import android.window.OnBackInvokedDispatcher;
 import android.webkit.GeolocationPermissions;
@@ -73,12 +74,14 @@ public class MainActivity extends Activity {
                 requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, ASK_LOCATION);
             }
         });
-        /* From android 15 the window is drawn edge to edge and cannot opt out,
-           so the page is inset by the bars itself; without this the top of the
-           app would sit under the status bar. */
+        /* The app fills the screen: the status bar and the navigation bar are
+           hidden, and a swipe from an edge brings them back for a moment. What
+           the system still keeps, a camera cutout for instance, is given its
+           room so no word of the page is lost under it. */
         setContentView(web);
         web.setFitsSystemWindows(false);
-        ViewCompat_setOnApplyWindowInsetsListener(web);
+        goFullScreen();
+        insetForWhatRemains(web);
 
         try {
             AdhanReceiver.ensureChannels(this);
@@ -154,14 +157,23 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
-    /* the bars of the system are given their room, and the page keeps the rest */
-    private void ViewCompat_setOnApplyWindowInsetsListener(final View view) {
+    private void goFullScreen() {
+        getWindow().setDecorFitsSystemWindows(false);
+        WindowInsetsController bars = getWindow().getInsetsController();
+        if (bars != null) {
+            bars.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            bars.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+        }
+    }
+
+    /* A hidden bar takes no room, so only a cutout and the keyboard are inset. */
+    private void insetForWhatRemains(final View view) {
         view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                Insets cutout = insets.getInsets(WindowInsets.Type.displayCutout());
                 Insets keyboard = insets.getInsets(WindowInsets.Type.ime());
-                v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, keyboard.bottom));
+                v.setPadding(cutout.left, cutout.top, cutout.right, Math.max(cutout.bottom, keyboard.bottom));
                 return WindowInsets.CONSUMED;
             }
         });
@@ -170,7 +182,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        goFullScreen();
         if (web != null) web.onResume();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) goFullScreen();
     }
 
     @Override

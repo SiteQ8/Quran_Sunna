@@ -33,6 +33,15 @@ public final class Bridge {
     @JavascriptInterface
     public boolean isAdhanEnabled() { return AdhanScheduler.enabled(host); }
 
+    /** The chosen adhan, fetched once and kept beside the app so it sounds with
+     *  the app closed. An empty pair goes back to the phone's own tone. */
+    @JavascriptInterface
+    public void setAdhanSound(final String url, final String fajrUrl) {
+        new Thread(new Runnable() {
+            @Override public void run() { AdhanSound.choose(host, url, fajrUrl); }
+        }).start();
+    }
+
     @JavascriptInterface
     public void setAdhanEnabled(boolean on) { AdhanScheduler.setEnabled(host, on); }
 

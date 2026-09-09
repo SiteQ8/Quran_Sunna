@@ -26,6 +26,8 @@
     notify: false,
     salawat: 0,
     salawatAt: 0,
+    adhanVoice: 'none',
+    salawatVoice: 'ibrahimiyya',
     voice: 'recording',
     voiceName: '',
     placeAsked: false,
