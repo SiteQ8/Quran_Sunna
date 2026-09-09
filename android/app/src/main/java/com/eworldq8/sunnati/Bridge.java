@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
+import android.provider.CalendarContract;
 import android.provider.MediaStore;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
@@ -107,6 +108,26 @@ public final class Bridge {
             if (text != null && !text.isEmpty()) share.putExtra(Intent.EXTRA_TEXT, text);
             share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             host.startActivity(Intent.createChooser(share, null));
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** Hands an occasion to whatever calendar the phone keeps, as a day-long
+     *  entry the reader confirms. Nothing is written without them seeing it. */
+    @JavascriptInterface
+    public boolean addToCalendar(String title, String note, long startMillis, long endMillis) {
+        try {
+            Intent add = new Intent(Intent.ACTION_INSERT)
+                .setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.Events.TITLE, title)
+                .putExtra(CalendarContract.Events.DESCRIPTION, note)
+                .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startMillis)
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            host.startActivity(add);
             return true;
         } catch (Exception e) {
             return false;

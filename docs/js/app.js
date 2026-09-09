@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.13.0';
+  var VERSION = '8.13.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1325,7 +1325,9 @@
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
-        '، ' + whenItFalls(o.date) + '</span></span></div>';
+        '، ' + whenItFalls(o.date) + '</span></span>' +
+        '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
+        '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');
   }
 
@@ -2491,6 +2493,49 @@
       : 'تنبيه عند دخول الثلث الأخير من الليل';
   }
 
+  /* An occasion handed to whatever calendar the reader keeps: inside the app
+     the phone's own calendar opens with it filled in, and in a browser it is
+     an .ics file, which every calendar understands. Nothing is written
+     anywhere without the reader confirming it. */
+  function icsStamp(d) {
+    var p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
+  }
+
+  function addToCalendar(name, date) {
+    var next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    var note = 'من تطبيق سُنّتي';
+    var app = bridge();
+    if (app && app.addToCalendar) {
+      var ok = false;
+      try { ok = app.addToCalendar(name, note, date.getTime(), next.getTime()); } catch (e) { ok = false; }
+      if (ok) { toast('افتح تقويمك لتحفظه'); return true; }
+    }
+    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//sunnati//ar', 'BEGIN:VEVENT',
+      'UID:' + icsStamp(date) + '-sunnati@3li.info',
+      'DTSTAMP:' + icsStamp(new Date()) + 'T000000Z',
+      'DTSTART;VALUE=DATE:' + icsStamp(date),
+      'DTEND;VALUE=DATE:' + icsStamp(next),
+      'SUMMARY:' + name, 'DESCRIPTION:' + note,
+      'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + name, 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    try {
+      var url = URL.createObjectURL(new window.Blob([ics], { type: 'text/calendar' }));
+      var link = document.createElement('a');
+      link.href = url;
+      link.download = name + '.ics';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      toast('نُزّل الموعد، فافتحه ليُضاف إلى تقويمك');
+      return true;
+    } catch (e) {
+      toast('تعذّرت الإضافة إلى التقويم');
+      return false;
+    }
+  }
+
   function handQiyamToApp() {
     var app = bridge();
     if (!app || !app.setQiyamTimes) return false;
@@ -3075,7 +3120,7 @@
   var MORE_LINKS = [
     { nav: 'umrah', icon: 'kaaba', name: 'صفة العمرة', note: 'من الميقات إلى التحلل، على دليل المعتمر' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
-    { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'علّم صلواتك الخمس وتابع شهرك' },
+    { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
@@ -3542,7 +3587,9 @@
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
-        '<br>' + whenItFalls(o.date) + '، ' + ar(o.hijriYear) + ' هـ</span></span></div>';
+        '<br>' + whenItFalls(o.date) + '</span></span>' +
+        '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
+        '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');
   }
 
@@ -4013,6 +4060,10 @@
       closeSheet();
       toast('أُوقف تذكير الجمعة، وتعيده من الإعدادات');
       renderSettings();
+    },
+    'to-calendar': function (ref) {
+      var at = ref.lastIndexOf('|');
+      addToCalendar(ref.slice(0, at), new Date(+ref.slice(at + 1)));
     },
     'read-pace': function (ref) {
       Store.set('readPace', ref);
@@ -4781,7 +4832,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
