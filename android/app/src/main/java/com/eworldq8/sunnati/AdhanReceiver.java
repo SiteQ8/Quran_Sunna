@@ -17,13 +17,20 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     public static final String CHANNEL = "adhan";
     public static final String CHANNEL_REMINDERS = "reminders";
+    /* when the app sounds the adhan itself, the notification keeps quiet */
+    public static final String CHANNEL_SILENT = "adhan_quiet";
 
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
             String name = intent.getStringExtra(AdhanScheduler.EXTRA_NAME);
             if (name != null && !name.isEmpty() && AdhanScheduler.enabled(context)) {
-                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan", CHANNEL);
+                boolean fajr = name.indexOf("الفجر") >= 0;
+                /* the chosen adhan is sounded through the alarm stream, and the
+                   channel is told to keep quiet so the two do not overlap */
+                boolean own = AdhanSound.have(context, fajr);
+                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan", own ? CHANNEL_SILENT : CHANNEL);
+                if (own) AdhanSound.play(context, fajr);
             }
         } catch (Exception e) {
             Log.w("sunnati", "adhan not shown", e);
@@ -41,6 +48,13 @@ public final class AdhanReceiver extends BroadcastReceiver {
             channel.setSound(sound, new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
                 .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
+        }
+        if (manager.getNotificationChannel(CHANNEL_SILENT) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_SILENT, "أوقات الصلاة، بصوت الأذان", NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription("التنبيه صامت لأن التطبيق يرفع الأذان بنفسه");
+            channel.setSound(null, null);
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
         }

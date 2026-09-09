@@ -573,10 +573,19 @@
       <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
     <div class="setting"><span><span class="setting-label">الصلاة على النبي ﷺ</span><br><span class="setting-note">تذكير كل فترة تختارها</span></span>
       <select class="select" id="settings-salawat" aria-label="تذكير بالصلاة على النبي"></select></div>
+    <div class="setting"><span><span class="setting-label">صوت الأذان</span><br><span class="setting-note" id="settings-adhan-note">يُسمع عند دخول الوقت، وللفجر أذانه</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-adhan-voice" aria-label="صوت الأذان"></select>
+        <button class="btn btn-ghost" id="settings-adhan-try" aria-label="اسمع الأذان"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </span></div>
     <div class="setting"><span><span class="setting-label">صوت التذكير</span><br><span class="setting-note" id="settings-voice-hint">صوت قارئ يتلو الصلاة الإبراهيمية، ويُسمع ما دام التطبيق مفتوحاً</span></span>
       <span class="voice-pick">
         <select class="select" id="settings-voice" aria-label="صوت التذكير"></select>
         <button class="btn btn-ghost" id="settings-voice-try" aria-label="اسمع الصوت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </span></div>
+    <div class="setting"><span><span class="setting-label">أي صلاة على النبي ﷺ</span><br><span class="setting-note">تُتلى بصوت قارئ من حصن المسلم</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-salawat-voice" aria-label="اختيار الصلاة على النبي"></select>
       </span></div>
     <div class="setting" id="settings-device-voice" hidden><span><span class="setting-label">صوت الهاتف</span><br><span class="setting-note" id="settings-voice-note">اختر صوتاً واضغط زر السماع</span></span>
       <span class="voice-pick">
@@ -662,7 +671,7 @@
   </div>
   <div class="card">
     <div class="card-head"><h2>صدقة جارية</h2></div>
-    <p class="setting-note">التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه، ونص حصن المسلم وتسجيل الصلاة الإبراهيمية من <a href="https://www.hisnmuslim.com">موقع الكتاب</a>، ومواقيت الكويت من <a href="https://alojeiri.com">تقويم العجيري</a>.</p>
+    <p class="setting-note">التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه، ونص حصن المسلم وتسجيلات الصلاة على النبي ﷺ من <a href="https://www.hisnmuslim.com">موقع الكتاب</a>، وأصوات الأذان من <a href="https://audio.islamweb.net">إسلام ويب</a>، ومواقيت الكويت من <a href="https://alojeiri.com">تقويم العجيري</a>.</p>
   </div>
   <p class="foot"><a href="privacy.html">سياسة الخصوصية</a> · <a href="https://github.com/SiteQ8/Quran_Sunna">المستودع على GitHub</a><br>علي العنزي · <a href="https://3li.info">3li.info</a><br><span id="about-version"></span></p>
 </section>
@@ -711,6 +720,7 @@
 <script src="data/hisn.js"></script>
 <script src="data/ojeiri.js"></script>
 <script src="data/marks.js"></script>
+<script src="data/adhan.js"></script>
 <script src="data/content.js"></script>
 <script src="data/extras.js"></script>
 <script src="js/prayer-engine.js"></script>

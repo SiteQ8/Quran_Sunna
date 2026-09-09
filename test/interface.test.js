@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -3567,11 +3567,15 @@ test('the voice list is filled at once and again as the phone hands voices over'
 
 test('a recorded human voice is offered, and the worker keeps it', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf("SALAWAT_RECORDING = 'audio/salawat.mp3'") !== -1, 'the recording ships with the app');
-  assert.ok(fs.existsSync(path.join(DOCS, 'audio', 'salawat.mp3')), 'and is really there');
-  assert.ok(fs.statSync(path.join(DOCS, 'audio', 'salawat.mp3')).size > 500000, 'a real recording, not a stub');
+  assert.ok(app.indexOf("function salawatUrl()") !== -1, 'the recordings ship with the app');
+  const { win } = boot();
+  win.SALAWAT_VOICES.forEach(function (v) {
+    const f = path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
+    assert.ok(fs.existsSync(f), 'missing ' + v.id);
+    assert.ok(fs.statSync(f).size > 100000, v.id + ' is a stub');
+  });
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
-  assert.ok(sw.indexOf("'./audio/salawat.mp3'") !== -1, 'kept by the worker for offline');
+  assert.ok(sw.indexOf("'./audio/salawat/ibrahimiyya.mp3'") !== -1, 'kept by the worker for offline');
 });
 
 /* ---------------- the daily sunan, on the book ---------------- */
@@ -4502,4 +4506,49 @@ test('the privacy policy covers the android app and is reachable from it', () =>
   asked.forEach(function (p) { assert.ok(spokenFor[p], 'the policy says nothing about ' + p); });
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(html.indexOf('<a href="privacy.html">سياسة الخصوصية</a>') !== -1, 'and the app links to it');
+});
+
+/* ---------------- the adhan in its own voice ---------------- */
+
+test('the adhan has voices, and the fajr keeps its own recording', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.Store.get('adhanVoice'), 'none', 'the phone tone until the reader chooses');
+  win.App.go('settings');
+  const opts = [...doc.getElementById('settings-adhan-voice').options].map((o) => o.value);
+  assert.strictEqual(opts[0], 'none');
+  assert.ok(opts.length >= 6, 'the tone and five voices');
+  /* the fajr adhan carries الصلاة خير من النوم, so it is used at fajr alone */
+  assert.strictEqual(win.App.helpers.adhanUrl('assaf', false), 'audio/adhan/assaf.mp3');
+  assert.ok(/-fajr\.mp3$/.test(win.App.helpers.adhanUrl('assaf', true)), 'at fajr, a fajr recording');
+  assert.ok(!/-fajr\.mp3$/.test(win.App.helpers.adhanUrl('mujallad', false)), 'and not at the other prayers');
+  win.ADHAN_VOICES.forEach(function (v) {
+    const f = path.join(DOCS, 'audio', 'adhan', v.id + (v.fajr ? '-fajr' : '') + '.mp3');
+    assert.ok(fs.existsSync(f), 'missing ' + v.id);
+    assert.ok(fs.statSync(f).size > 300000 && fs.statSync(f).size < 4000000, v.id + ' is the wrong size');
+  });
+  assert.strictEqual(win.ADHAN_SOURCE.n, 'إسلام ويب');
+});
+
+test('the chosen adhan is handed to the app so it sounds with the app closed', () => {
+  const { win } = boot();
+  const given = [];
+  win.SunnatiApp = { setAdhanSound: function (a, b) { given.push([a, b]); } };
+  win.Store.set('adhanVoice', 'bilal');
+  win.App.go('settings');
+  assert.ok(given.length >= 1);
+  assert.ok(/audio\/adhan\/bilal\.mp3$/.test(given[given.length - 1][0]), 'the ordinary one');
+  assert.ok(/-fajr\.mp3$/.test(given[given.length - 1][1]), 'and the fajr one beside it');
+  const sound = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanSound.java'), 'utf8');
+  assert.ok(sound.indexOf('USAGE_ALARM') !== -1, 'sounded on the alarm stream, so it is heard while the phone rests');
+  const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(receiver.indexOf('CHANNEL_SILENT') !== -1, 'the notification keeps quiet when the app raises the adhan itself');
+});
+
+test('the app fills the screen and hides the system bars', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('bars.hide(WindowInsets.Type.statusBars()') !== -1);
+  assert.ok(main.indexOf('BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE') !== -1, 'a swipe brings them back');
+  assert.ok(main.indexOf('onWindowFocusChanged') !== -1, 'and they stay hidden after a dialog');
+  /* a hidden bar takes no room, so only a cutout is inset */
+  assert.ok(main.indexOf('WindowInsets.Type.displayCutout()') !== -1);
 });
