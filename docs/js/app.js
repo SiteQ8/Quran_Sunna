@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.9.0';
+  var VERSION = '8.10.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -380,6 +380,8 @@
   }
 
   function go(name, silent) {
+    /* the page walks only while the reader is on the screen that walks */
+    if (state.autoScroll && name !== state.view) stopAutoScroll(true);
     if (state.view === 'settings' && name !== 'settings') stopSpeaking();
     var target = $('v-' + name);
     if (!target) return;
@@ -1772,6 +1774,110 @@
     var id = Store.get('adhanVoice') || 'none';
     if (id === 'none') return false;
     return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try');
+  }
+
+  /* ---------------- وضع القراءة ---------------- */
+
+  /* The page walks down by itself so the eye can stay on the line. Three
+     paces, kept between visits, and any touch gives the reader the page back. */
+  var SCROLL_PACES = [
+    { id: 'slow', n: 'متمهّل', px: 14 },
+    { id: 'mid', n: 'متوسط', px: 26 },
+    { id: 'fast', n: 'سريع', px: 44 }
+  ];
+
+  function autoScrolling() { return !!state.autoScroll; }
+
+  function startAutoScroll() {
+    stopAutoScroll(true);
+    var pace = SCROLL_PACES.filter(function (p) { return p.id === (Store.get('readPace') || 'mid'); })[0] || SCROLL_PACES[1];
+    var last = null;
+    state.autoScroll = { pace: pace.id, frame: 0 };
+    keepAwake();
+    markAutoScroll(true);
+    var step = function (now) {
+      if (!state.autoScroll) return;
+      if (last === null) last = now;
+      var moved = (now - last) / 1000 * pace.px;
+      if (moved >= 1) {
+        last = now;
+        var before = window.scrollY;
+        window.scrollBy(0, moved);
+        /* at the foot of the page there is nowhere left to go */
+        if (window.scrollY <= before) { stopAutoScroll(true); toast('بلغت آخر الصفحة'); return; }
+      }
+      state.autoScroll.frame = window.requestAnimationFrame(step);
+    };
+    state.autoScroll.frame = window.requestAnimationFrame(step);
+  }
+
+  function stopAutoScroll(quiet) {
+    if (!state.autoScroll) { markAutoScroll(false); return; }
+    window.cancelAnimationFrame(state.autoScroll.frame);
+    state.autoScroll = null;
+    releaseAwake();
+    markAutoScroll(false);
+    if (!quiet) toast('توقفت القراءة');
+  }
+
+  function markAutoScroll(on) {
+    ['reader-autoscroll', 'page-autoscroll'].forEach(function (id) {
+      var btn = $(id);
+      if (!btn) return;
+      btn.classList.toggle('is-on', on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  function paceSheet() {
+    openSheet('وضع القراءة',
+      '<p class="setting-note">تتحرك الصفحة وحدها بالسرعة التي تختارها، فتقرأ بلا أن ترفع يدك، وتقف بلمسة على الشاشة</p>' +
+      '<div class="mark-choices" style="grid-template-columns:1fr 1fr 1fr">' +
+      SCROLL_PACES.map(function (p) {
+        return '<button class="btn ' + ((Store.get('readPace') || 'mid') === p.id ? 'btn-primary' : 'btn-ghost') + '" data-act="read-pace" data-ref="' + p.id + '">' + esc(p.n) + '</button>';
+      }).join('') + '</div>');
+  }
+
+  function scrollToTop() {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+  }
+
+  function watchScrollPosition() {
+    var btn = $('to-top');
+    if (!btn) return;
+    var show = function () { btn.hidden = window.scrollY < 400; };
+    window.addEventListener('scroll', show, { passive: true });
+    show();
+  }
+
+  /* ---------------- أدعية القرآن بمواضيعها ---------------- */
+
+  function renderDuaThemes() {
+    var host = $('dua-themes');
+    if (!host || typeof DUA_THEMES === 'undefined') return;
+    host.innerHTML = DUA_THEMES.map(function (t) {
+      return '<button class="chip" data-dua-theme="' + esc(t.id) + '">' + esc(t.n) +
+        ' <span class="fold-tally">' + ar(t.v.split(',').length) + '</span></button>';
+    }).join('');
+    var src = $('dua-themes-source');
+    if (src) src.textContent = DUA_THEMES_SOURCE.n + ' على كتيّب ' + DUA_THEMES_SOURCE.b + '، والنص من المصحف';
+  }
+
+  function openDuaTheme(id) {
+    var theme = DUA_THEMES.filter(function (t) { return t.id === id; })[0];
+    if (!theme) return;
+    var refs = theme.v.split(',');
+    openSheet('أدعية ' + theme.n,
+      refs.map(function (r) {
+        var parts = r.split(':');
+        var s = +parts[0], a = +parts[1];
+        var meta = surahMeta(s);
+        var text = Mushaf.ready() ? Mushaf.ayah(s, a) : '';
+        return '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
+          '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) + '</span>' +
+          esc(text) + '</button>';
+      }).join('') +
+      '<p class="setting-note" style="margin-top:10px">اضغط أي آية لتفتحها في المصحف</p>');
   }
 
   function markPlayerToggle() {
@@ -3740,7 +3846,7 @@
     tasbih: renderTasbih,
     radio: renderRadio,
     hadith: renderHadith,
-    dua: renderDua,
+    dua: function () { renderDua(); renderDuaThemes(); },
     ruqyah: renderRuqyah,
     calendar: renderCalendar,
     timetable: renderTimetable,
@@ -3780,6 +3886,11 @@
       Store.setNote(+parts[0], +parts[1], field ? field.value : '');
       toast(field && field.value.trim() ? 'حُفظت الملاحظة' : 'أُزيلت الملاحظة');
       verseSheet(+parts[0], +parts[1]);
+    },
+    'read-pace': function (ref) {
+      Store.set('readPace', ref);
+      closeSheet();
+      startAutoScroll();
     },
     'umrah-reset': function () {
       Store.set('umrah', {});
@@ -3993,6 +4104,9 @@
       renderUmrah();
       return;
     }
+    var duaTheme = target.closest('[data-dua-theme]');
+    if (duaTheme) { openDuaTheme(duaTheme.getAttribute('data-dua-theme')); return; }
+
     var umrahFold = target.closest('[data-umrah-fold]');
     if (umrahFold && target.closest('.fold-head')) {
       var fid = umrahFold.getAttribute('data-umrah-fold');
@@ -4130,6 +4244,21 @@
       renderHome();
       if (state.view === 'prayers') renderPrayers();
     });
+
+    bind('reader-autoscroll', 'click', function () {
+      if (autoScrolling()) { stopAutoScroll(); return; }
+      paceSheet();
+    });
+    bind('page-autoscroll', 'click', function () {
+      if (autoScrolling()) { stopAutoScroll(); return; }
+      paceSheet();
+    });
+    bind('to-top', 'click', function () { stopAutoScroll(true); scrollToTop(); });
+    /* a touch anywhere stops the page walking, so the reader is never fought */
+    ['pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
+      window.addEventListener(ev, function () { if (state.autoScroll) stopAutoScroll(); }, { passive: true });
+    });
+    watchScrollPosition();
 
     bind('page-prev', 'click', function () { turnPage(1 * -1); });
     bind('page-next', 'click', function () { turnPage(1); });
@@ -4509,7 +4638,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -4724,4 +4724,95 @@ test('a step is ticked and kept, the tally follows, and the reference tabs each 
   /* and it is reached from the more list */
   win.App.go('more');
   assert.ok(doc.querySelector('#more-list [data-go="umrah"]'), 'صفة العمرة should be in المزيد');
+});
+
+/* ---------------- وضع القراءة، وسهم الصعود، وأدعية القرآن ---------------- */
+
+test('the page walks by itself at the pace chosen, and stops at the foot', () => {
+  const { win, doc } = boot();
+  /* the frames are kept in a queue, so a cancel does not lose the last one */
+  const queued = [];
+  win.requestAnimationFrame = function (fn) { queued.push(fn); return queued.length; };
+  win.cancelAnimationFrame = function () {};
+  const frame = function (t) { const fn = queued.pop(); queued.length = 0; if (fn) fn(t); };
+  let at = 500;
+  Object.defineProperty(win, 'scrollY', { get: () => at, configurable: true });
+  win.scrollBy = function (x, y) { at += y; };
+  win.App.state.surah = 2; win.App.go('reader');
+  assert.strictEqual(win.App.helpers.autoScrolling(), false);
+  /* the button opens the choice of pace rather than starting blind */
+  click(win, doc.getElementById('reader-autoscroll'));
+  const paces = [...doc.querySelectorAll('[data-act="read-pace"]')].map((b) => b.getAttribute('data-ref'));
+  assert.strictEqual(paces.join(','), 'slow,mid,fast');
+  click(win, doc.querySelector('[data-act="read-pace"][data-ref="mid"]'));
+  assert.strictEqual(win.App.helpers.autoScrolling(), true);
+  assert.ok(doc.getElementById('reader-autoscroll').classList.contains('is-on'));
+  frame(0); for (let t = 100; t <= 5000; t += 100) frame(t);
+  const middle = at - 500;
+  assert.ok(middle > 0, 'the page walked down, ' + middle + 'px');
+  /* a faster pace covers more ground in the same time */
+  win.App.helpers.stopAutoScroll(true);
+  at = 500; win.Store.set('readPace', 'fast');
+  win.App.helpers.startAutoScroll();
+  frame(0); for (let t = 100; t <= 5000; t += 100) frame(t);
+  assert.ok(at - 500 > middle, 'سريع outruns متوسط');
+  /* nothing left to scroll ends it */
+  win.scrollBy = function () {};
+  frame(6000); frame(6100);
+  assert.strictEqual(win.App.helpers.autoScrolling(), false, 'the foot of the page stops it');
+});
+
+test('the reader takes the page back with a touch, and leaving the mushaf ends it', () => {
+  const { win, doc } = boot();
+  win.requestAnimationFrame = function () { return 1; };
+  win.cancelAnimationFrame = function () {};
+  win.App.state.surah = 1; win.App.go('reader');
+  win.App.helpers.startAutoScroll();
+  assert.strictEqual(win.App.helpers.autoScrolling(), true);
+  win.dispatchEvent(new win.Event('wheel'));
+  assert.strictEqual(win.App.helpers.autoScrolling(), false, 'a touch is never fought');
+  win.App.helpers.startAutoScroll();
+  win.App.go('home');
+  assert.strictEqual(win.App.helpers.autoScrolling(), false, 'nothing walks a page the reader has left');
+  assert.ok(!doc.getElementById('reader-autoscroll').classList.contains('is-on'), 'and the button says so');
+  assert.strictEqual(win.Store.get('readPace'), 'mid', 'the pace is kept between visits');
+});
+
+test('the arrow to the top waits until there is something to come back from', () => {
+  const { win, doc } = boot();
+  const btn = doc.getElementById('to-top');
+  assert.ok(btn && btn.hidden, 'nothing to return to at the top');
+  assert.strictEqual(btn.querySelector('use').getAttribute('href'), '#i-up');
+  assert.strictEqual(btn.getAttribute('aria-label'), 'إلى أعلى الصفحة');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.to-top \{[^}]*position:\s*fixed/, 'it stays in reach while the screen moves');
+  assert.match(css, /\.to-top \{[^}]*width:\s*48px/, 'and is a full thumb');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/btn\.hidden = window\.scrollY < 400/.test(app), 'it shows once the reader has come some way down');
+});
+
+test("the qur'an's own supplications are gathered by theme, and read from the mushaf", () => {
+  const { win, doc } = boot();
+  win.App.go('dua');
+  const chips = [...doc.querySelectorAll('[data-dua-theme]')];
+  assert.strictEqual(chips.length, win.DUA_THEMES.length);
+  assert.ok(chips.length >= 25, 'the booklet\'s themes, ' + chips.length);
+  /* every verse a theme names is a real verse of the mushaf */
+  win.DUA_THEMES.forEach(function (t) {
+    assert.ok(t.n && t.v, t.id + ' should be whole');
+    t.v.split(',').forEach(function (ref) {
+      const parts = ref.split(':').map(Number);
+      assert.strictEqual(parts.length, 2, t.id + ' has a malformed reference: ' + ref);
+      const text = win.Mushaf.ayah(parts[0], parts[1]);
+      assert.ok(text && text.length > 5, t.id + ' points at nothing: ' + ref);
+    });
+  });
+  click(win, chips[0]);
+  const hits = doc.querySelectorAll('#sheet .search-hit');
+  assert.strictEqual(hits.length, win.DUA_THEMES[0].v.split(',').length);
+  /* the words are the mushaf's, never copied beside it */
+  const first = win.DUA_THEMES[0].v.split(',')[0].split(':').map(Number);
+  assert.ok(hits[0].textContent.indexOf(win.Mushaf.ayah(first[0], first[1])) !== -1);
+  const themes = fs.readFileSync(path.join(DOCS, 'data', 'dua-themes.js'), 'utf8');
+  assert.ok(themes.indexOf('فإنك بأعيننا') !== -1, 'and the booklet the themes came from is named');
 });

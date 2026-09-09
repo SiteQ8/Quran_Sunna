@@ -130,16 +130,34 @@ test('the heatmap returns one entry per day in order', () => {
   assert.strictEqual(hit.active, true);
 });
 
-test('bookmarks toggle, report state and cap their length', () => {
+test('a mark carries its kind, changes kind, and the list is capped', () => {
   fresh();
   assert.strictEqual(S.isBookmarked(2, 255), false);
-  assert.strictEqual(S.toggleBookmark(2, 255, 'آية الكرسي'), true);
+  assert.strictEqual(S.bookmarkKind(2, 255), null);
+  assert.strictEqual(S.toggleBookmark(2, 255, 'memo'), true);
   assert.strictEqual(S.isBookmarked(2, 255), true);
-  assert.strictEqual(S.bookmarks()[0].note, 'آية الكرسي');
-  assert.strictEqual(S.toggleBookmark(2, 255), false);
+  assert.strictEqual(S.bookmarkKind(2, 255), 'memo');
+  /* another kind changes the mark rather than adding a second */
+  assert.strictEqual(S.toggleBookmark(2, 255, 'ponder'), true);
+  assert.strictEqual(S.bookmarkKind(2, 255), 'ponder');
+  assert.strictEqual(S.bookmarks().length, 1);
+  /* the same kind again lifts it */
+  assert.strictEqual(S.toggleBookmark(2, 255, 'ponder'), false);
   assert.strictEqual(S.isBookmarked(2, 255), false);
-  for (let i = 1; i <= 310; i++) S.toggleBookmark(1, i);
+  /* a kind that is not one of the four falls back to reading */
+  S.toggleBookmark(3, 1, 'nonsense');
+  assert.strictEqual(S.bookmarkKind(3, 1), 'read');
+  for (let i = 1; i <= 310; i++) S.toggleBookmark(1, i, 'read');
   assert.strictEqual(S.bookmarks().length, 300);
+});
+
+test('a note is kept on a verse, and cleared when emptied', () => {
+  fresh();
+  assert.strictEqual(S.note(2, 255), '');
+  S.setNote(2, 255, '  أعظم آية في القرآن  ');
+  assert.strictEqual(S.note(2, 255), 'أعظم آية في القرآن', 'trimmed, and kept');
+  S.setNote(2, 255, '   ');
+  assert.strictEqual(S.note(2, 255), '', 'emptied is removed');
 });
 
 test('reading progress records surahs and ayahs without duplicates', () => {

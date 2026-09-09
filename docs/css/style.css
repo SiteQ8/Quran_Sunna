@@ -495,6 +495,28 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #umrah-steps .chip { font-variant-numeric: tabular-nums; height: 44px; }
 #umrah-steps { padding: 3px; }
 
+
+/* the arrow back to the top of a long screen */
+.to-top {
+  position: fixed; inset-inline-end: 14px; bottom: calc(var(--tab-h) + 16px); z-index: 40;
+  width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--raised); color: var(--accent-ink); border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+}
+.to-top .icon { width: 22px; height: 22px; stroke-width: 2.2; }
+#reader-autoscroll.is-on, #page-autoscroll.is-on { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
+#dua-themes { display: flex; flex-wrap: wrap; gap: 8px; }
+#dua-themes .chip .fold-tally { margin-inline-start: 6px; }
+
+@media (max-width: 430px) {
+  /* five controls on the reader's bar: the icons take the least a thumb
+     allows, and a button that carries a word drops it */
+  .reader-bar { gap: 6px; }
+  .bar-word { display: none; }
+  .reader-bar .btn:not(.btn-primary) { width: 44px; padding: 0; }
+  .reader-bar .btn-primary { padding-inline: 12px; }
+}
+
 /* ---------- the month timetable ---------- */
 
 .tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }
