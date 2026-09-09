@@ -4478,3 +4478,28 @@ test('the month of prayers is told in words when few, and with the share only wh
   assert.strictEqual(sum(st(45, 3, 2), 50), 'علّمت 50 صلاة في آخر ثلاثين يوماً، 45 منها في وقتها، أي 90%');
   assert.ok(sum(st(1, 0, 0), 1).indexOf('%') === -1, 'no percentage of one prayer');
 });
+
+test('the site serves its own pages, and the app does not answer for them', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  const nav = /if \(request\.mode === 'navigate'\) \{([\s\S]*?)\n      \}/.exec(sw)[1];
+  assert.ok(nav.indexOf("fetch(new Request(request.url, { cache: 'reload' }))") !== -1,
+    'a navigation asks the network first, or a real page of the site is answered with the app');
+  const fallbackAt = nav.indexOf("caches.match('./index.html'");
+  const catchAt = nav.indexOf('.catch(');
+  assert.ok(catchAt !== -1 && fallbackAt > catchAt, 'the app is only the fallback when the network is gone');
+  assert.ok(sw.indexOf("'./privacy.html'") !== -1, 'the policy travels with the app, so it opens offline too');
+});
+
+test('the privacy policy covers the android app and is reachable from it', () => {
+  const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
+  ['الإشعارات', 'المنبّه الدقيق', 'الإقلاع', 'الاهتزاز', 'الموقع الجغرافي'].forEach(function (perm) {
+    assert.ok(policy.indexOf(perm) !== -1, 'the policy should name the permission: ' + perm);
+  });
+  /* every permission the package asks for is spoken for */
+  const manifest = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  const asked = [...manifest.matchAll(/android\.permission\.([A-Z_]+)/g)].map((m) => m[1]);
+  const spokenFor = { INTERNET: true, POST_NOTIFICATIONS: 'الإشعارات', SCHEDULE_EXACT_ALARM: 'المنبّه الدقيق', USE_EXACT_ALARM: 'المنبّه الدقيق', RECEIVE_BOOT_COMPLETED: 'الإقلاع', VIBRATE: 'الاهتزاز', ACCESS_FINE_LOCATION: 'الموقع الجغرافي', ACCESS_COARSE_LOCATION: 'الموقع الجغرافي' };
+  asked.forEach(function (p) { assert.ok(spokenFor[p], 'the policy says nothing about ' + p); });
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<a href="privacy.html">سياسة الخصوصية</a>') !== -1, 'and the app links to it');
+});
