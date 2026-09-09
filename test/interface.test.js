@@ -3733,7 +3733,7 @@ test('a shared picture names where its words come from, and the maker', () => {
   assert.ok(app.indexOf("'حصن المسلم، الباب ' + ar(chapter.id)") !== -1, 'a dhikr from the book names its chapter');
   assert.ok(app.indexOf("(it.r ? it.r + '، ' : '') + 'حصن المسلم'") !== -1, 'a daily dhikr names its narrator and the book');
   assert.ok(app.indexOf("'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat") !== -1, 'a supplication names its reference');
-  assert.ok(app.indexOf("\"'Amiri Quran', 'Amiri', serif\", 'القرآن الكريم'") !== -1, 'a verse names the mushaf');
+  assert.ok(app.indexOf("'quran', 'القرآن الكريم'") !== -1, 'a verse names the mushaf');
 });
 
 /* ---------------- the writing guide, kept by the reviewer ---------------- */
@@ -4944,4 +4944,33 @@ test('a supplication and a verse each keep their own room beside their share but
     assert.ok(share, 'and a verse can be sent as a picture too');
     assert.strictEqual(share.getAttribute('data-ref'), withVerses.v[i], 'each button carries its own verse');
   });
+});
+
+test('a shared card is always written in one of the app\'s own faces', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the canvas can only find a family it is given by name, so a class name
+     handed in as a face falls back to whatever the browser happens to use */
+  assert.ok(app.indexOf("var quranFace = FACES[face] || FACES.naskh;") !== -1,
+    'the face is looked up, never taken raw');
+  const faces = /var FACES = \{([\s\S]*?)\};/.exec(app)[1];
+  assert.ok(/naskh:\s*"'Amiri'/.test(faces) && /quran:\s*"'Amiri Quran'/.test(faces),
+    'and both names are families the app itself loads');
+  /* every call asks for one of them */
+  [...app.matchAll(/textCard\([^;]*?,\s*'([a-z]+)'\s*,/g)].forEach(function (m) {
+    assert.ok(m[1] === 'naskh' || m[1] === 'quran', 'a card asked for an unknown face: ' + m[1]);
+  });
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf("--naskh: 'Amiri'") !== -1 && css.indexOf("--quran: 'Amiri Quran'") !== -1,
+    'the same two faces the screen reads with');
+});
+
+test('a shared supplication carries no source line, and the app does not say where it was made', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const share = /'share-dua': function \(ref\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(share.indexOf("'naskh', ''") !== -1, 'the foot of the card is left empty');
+  assert.ok(share.indexOf('DUA_BOOK_SOURCE') === -1, 'the booklet is not named on the picture');
+  ['index.html'].forEach(function (f) {
+    assert.ok(fs.readFileSync(path.join(DOCS, f), 'utf8').indexOf('صنع في الكويت') === -1, f);
+  });
+  assert.ok(fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8').indexOf('صنع في الكويت') === -1);
 });

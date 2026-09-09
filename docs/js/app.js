@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.11.4';
+  var VERSION = '8.11.5';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2147,7 +2147,7 @@
     var meta = surahMeta(s);
     var text = Mushaf.ayah(s, a);
     if (!text) return Promise.resolve(null);
-    return textCard('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), text, "'Amiri Quran', 'Amiri', serif", 'القرآن الكريم');
+    return textCard('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a), text, 'quran', 'القرآن الكريم');
   }
 
   /* Any words on the same card: a dhikr from the book, a supplication, a
@@ -2162,6 +2162,12 @@
     ctx.beginPath(); ctx.arc(cx + r * .03, cy, r * .28, 0, Math.PI * 2); ctx.fillStyle = '#f3e9d2'; ctx.fill();
     ctx.beginPath(); ctx.arc(cx + r * .14, cy - r * .04, r * .25, 0, Math.PI * 2); ctx.fillStyle = '#1a1412'; ctx.fill();
   }
+
+  /* the two faces the app reads with, as the canvas needs them written */
+  var FACES = {
+    naskh: "'Amiri', 'Noto Naskh Arabic', serif",
+    quran: "'Amiri Quran', 'Amiri', serif"
+  };
 
   function textCard(heading, text, face, source) {
     if (!text) return Promise.resolve(null);
@@ -2206,7 +2212,9 @@
     }
 
     return ready().then(function () {
-      var quranFace = face || "'Amiri', serif";
+      /* the canvas knows a family, not a class name, so the app's own faces
+         are named here and nothing may fall back to the browser's default */
+      var quranFace = FACES[face] || FACES.naskh;
       var size = text.length > 400 ? 44 : (text.length > 220 ? 52 : 60);
       ctx.font = '400 ' + size + 'px ' + quranFace;
       ctx.direction = 'rtl';
@@ -3919,7 +3927,7 @@
       var topic = duaTopics().filter(function (t) { return t.id === parts[0]; })[0];
       if (!topic) return;
       var text = topic.i[+parts[1]];
-      if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', DUA_BOOK_SOURCE.b), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
+      if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', ''), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
     },
     'read-pace': function (ref) {
       Store.set('readPace', ref);
