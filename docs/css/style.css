@@ -412,7 +412,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .window-mark .icon { width: 12px; height: 12px; stroke-width: 2.4; }
 
 .mark-choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.mark-choices .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* an odd last one spans the row so no gap is left beside it, unless the grid
+   was asked for a different number of columns, as the three paces are */
+.mark-choices:not(.three) .btn:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.mark-choices.three { grid-template-columns: 1fr 1fr 1fr; }
+.mark-choices.three .btn { padding-inline: 6px; }
 
 .prayer-row .row-mark { color: var(--ink-3); }
 .prayer-row.mark-jamaah .row-mark, .prayer-row.mark-ontime .row-mark { color: var(--accent-ink); }
@@ -505,12 +509,25 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .to-top .icon { width: 22px; height: 22px; stroke-width: 2.2; }
 #reader-autoscroll.is-on, #page-autoscroll.is-on { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
-#dua-themes { display: flex; flex-wrap: wrap; gap: 8px; }
+/* the topics as a grid of equal tiles, two to a row, so the eye runs down a
+   column instead of hunting along a ragged edge of pills */
+.topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.topic {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  min-height: 52px; padding: 0 12px 0 10px; border-radius: var(--r-sm);
+  background: var(--sunken); border: 1px solid var(--line); text-align: start;
+}
+.topic-name { font-size: var(--step--1); font-weight: 600; color: var(--ink); line-height: 1.4; }
+.topic-count {
+  flex: none; min-width: 28px; height: 24px; padding: 0 7px; border-radius: 999px;
+  display: grid; place-items: center; background: var(--accent-wash); color: var(--accent-ink);
+  font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
 .dua-line { position: relative; padding: var(--s3) 44px var(--s3) var(--s3); margin-bottom: var(--s2);
   background: var(--sunken); border-radius: var(--r-sm); border-inline-start: 3px solid var(--gold);
   font-size: var(--step-0); line-height: 2; }
 .dua-share { position: absolute; inset-inline-end: 2px; top: 4px; width: 40px; height: 40px; padding: 0; }
-#dua-themes .chip .fold-tally { margin-inline-start: 6px; }
+
 
 @media (max-width: 430px) {
   /* five controls on the reader's bar: the icons take the least a thumb
