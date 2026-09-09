@@ -4153,7 +4153,7 @@ test('the mark is the eye of the sadu holding the crescent', () => {
   const android = path.join(__dirname, '..', 'android/app/src/main/res');
   assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
   assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#8f2323') !== -1);
-  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_notification.xml'), 'utf8').indexOf('M12,1.5L22.5,12') !== -1, 'the status bar carries the eye');
+  assert.ok(/M12,1 L23,12/.test(fs.readFileSync(path.join(android, 'drawable/ic_notification.xml'), 'utf8')), 'the status bar carries the eye');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/logo.py')), 'the mark is drawn by a script, so it can be drawn again');
 });
 
@@ -4526,7 +4526,7 @@ test('the adhan has voices, and the fajr keeps its own recording', () => {
     assert.ok(fs.existsSync(f), 'missing ' + v.id);
     assert.ok(fs.statSync(f).size > 300000 && fs.statSync(f).size < 4000000, v.id + ' is the wrong size');
   });
-  assert.strictEqual(win.ADHAN_SOURCE.n, 'إسلام ويب');
+  assert.ok(!/إسلام ويب/.test(fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8')), 'the source is not named in the interface');
 });
 
 test('the chosen adhan is handed to the app so it sounds with the app closed', () => {
@@ -4551,4 +4551,67 @@ test('the app fills the screen and hides the system bars', () => {
   assert.ok(main.indexOf('onWindowFocusChanged') !== -1, 'and they stay hidden after a dialog');
   /* a hidden bar takes no room, so only a cutout is inset */
   assert.ok(main.indexOf('WindowInsets.Type.displayCutout()') !== -1);
+});
+
+test('each voice button shows only its own sound playing', () => {
+  const { win, doc } = boot();
+  const started = [];
+  win.Audio = function () {
+    const clip = { paused: true, src: '', play: function () { clip.paused = false; return Promise.resolve(); }, pause: function () { clip.paused = true; }, removeAttribute: function () {}, load: function () {} };
+    started.push(clip); return clip;
+  };
+  win.App.go('settings');
+  const mark = (id) => doc.getElementById(id).querySelector('use').getAttribute('href');
+  click(win, doc.getElementById('settings-voice-try'));
+  assert.strictEqual(mark('settings-voice-try'), '#i-pause', 'the reminder is playing');
+  assert.strictEqual(mark('settings-adhan-try'), '#i-play', 'and the adhan is not');
+  win.App.helpers.stopSpeaking();
+  const sel = doc.getElementById('settings-adhan-voice');
+  sel.value = 'bilal'; fire(win, sel, 'change');
+  assert.strictEqual(mark('settings-adhan-try'), '#i-pause', 'the adhan is playing');
+  assert.strictEqual(mark('settings-voice-try'), '#i-play', 'and the reminder is not');
+  win.App.helpers.stopSpeaking();
+  assert.strictEqual(mark('settings-adhan-try'), '#i-play');
+});
+
+test('the salawat is shown in full, in the very words of the book', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const shown = doc.getElementById('salawat-text').textContent;
+  /* the words are taken from حصن المسلم, never typed beside the recording, so
+     the shown text must be that entry exactly, tashkeel and all */
+  const chapter = win.HISN.filter(function (c) { return c.id === 23; })[0];
+  const ibrahimiyya = chapter.i.filter(function (i) { return i.a === 53; })[0];
+  assert.strictEqual(shown, ibrahimiyya.t);
+  /* and it is the whole du'a, both halves of it */
+  const bare = shown.replace(/[\u064B-\u0652\u0670]/g, '');
+  ['اللهم صل على محمد', 'كما صليت على إبراهيم', 'إنك حميد مجيد', 'بارك على محمد', 'كما باركت على إبراهيم'].forEach(function (part) {
+    assert.ok(bare.indexOf(part) !== -1, 'the ibrahimiyya should contain: ' + part);
+  });
+  assert.strictEqual((bare.match(/إنك حميد مجيد/g) || []).length, 2, 'it closes both halves');
+  win.SALAWAT_VOICES.forEach(function (v) {
+    const c = win.HISN.filter(function (x) { return x.id === v.hisn; })[0];
+    assert.ok(c && c.i.some(function (i) { return i.a === v.a; }), v.id + ' should point into حصن المسلم');
+  });
+  const sel = doc.getElementById('settings-salawat-voice');
+  sel.value = 'azwaj'; fire(win, sel, 'change');
+  const second = chapter.i.filter(function (i) { return i.a === 54; })[0];
+  assert.strictEqual(doc.getElementById('salawat-text').textContent, second.t, 'and it follows the choice');
+});
+
+test('the launcher icon is the app\'s own artwork, whole inside the safe middle', () => {
+  const res = path.join(__dirname, '..', 'android/app/src/main/res');
+  const adaptive = fs.readFileSync(path.join(res, 'mipmap-anydpi-v26/ic_launcher.xml'), 'utf8');
+  assert.ok(adaptive.indexOf('@mipmap/ic_launcher_foreground') !== -1, 'the foreground is the artwork itself, not a redrawing');
+  assert.ok(adaptive.indexOf('<monochrome') !== -1, 'and a single colour form for a themed home screen');
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
+    ['ic_launcher.png', 'ic_launcher_foreground.png'].forEach(function (f) {
+      const p = path.join(res, 'mipmap-' + d, f);
+      assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/' + f);
+    });
+  });
+  const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
+  assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
+  assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 2, 'one colour only, as the status bar draws it');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the artwork every size is drawn from');
 });

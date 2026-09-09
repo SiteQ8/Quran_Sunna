@@ -94,5 +94,5 @@ test('the package targets the level the store requires, and keeps the bridge thr
   });
   const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('OnBackInvokedCallback') !== -1, 'from android 16 the back gesture no longer arrives as a key press');
-  assert.ok(main.indexOf('WindowInsets.Type.systemBars()') !== -1, 'edge to edge is enforced, so the page insets itself');
+  assert.ok(main.indexOf('WindowInsets.Type.displayCutout()') !== -1, 'a hidden bar takes no room, but a cutout still does');
 });

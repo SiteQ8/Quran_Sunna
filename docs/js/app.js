@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.8.0';
+  var VERSION = '8.8.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -851,17 +851,30 @@
      downloaded and it works with the connection off. */
   /* The book's own recording of الصلاة على النبي, a man reciting it, which
      needs no speech engine at all. Fetched once and kept by the worker. */
+  /* The words of the chosen salawat, taken from حصن المسلم itself so the
+     reader reads exactly what the voice recites. */
+  function salawatText() {
+    var id = Store.get('salawatVoice') || 'ibrahimiyya';
+    var v = (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).filter(function (x) { return x.id === id; })[0];
+    if (!v || typeof HISN === 'undefined') return '';
+    var chapter = HISN.filter(function (c) { return c.id === v.hisn; })[0];
+    if (!chapter) return '';
+    var item = chapter.i.filter(function (it) { return it.a === v.a; })[0];
+    return item ? item.t : '';
+  }
+
   function salawatUrl() {
     var id = Store.get('salawatVoice') || 'ibrahimiyya';
     if (typeof SALAWAT_VOICES !== 'undefined' && !SALAWAT_VOICES.some(function (v) { return v.id === id; })) id = 'ibrahimiyya';
     return 'audio/salawat/' + id + '.mp3';
   }
 
-  function playRecording(url) {
+  function playRecording(url, button) {
     try {
       var clip = new window.Audio();
       clip.src = url;
       state.voiceClip = clip;
+      state.voiceButton = button || 'settings-voice-try';
       clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); } };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
@@ -887,19 +900,25 @@
   }
 
   /* The one button starts the sample and, while it plays, stops it. */
+  /* Only the button that started the sound shows that it is playing; hearing
+     the adhan must not light the reminder's button beside it. */
   function markVoiceButton(playing) {
-    var btn = $('settings-voice-try');
-    if (!btn) return;
-    btn.innerHTML = icon(playing ? 'pause' : 'play');
-    btn.setAttribute('aria-label', playing ? 'أوقف الصوت' : 'اسمع الصوت');
-    btn.classList.toggle('is-playing', playing);
+    ['settings-voice-try', 'settings-adhan-try'].forEach(function (id) {
+      var btn = $(id);
+      if (!btn) return;
+      var mine = playing && (state.voiceButton || 'settings-voice-try') === id;
+      btn.innerHTML = icon(mine ? 'pause' : 'play');
+      btn.setAttribute('aria-label', mine ? 'أوقف الصوت' : (id === 'settings-adhan-try' ? 'اسمع الأذان' : 'اسمع الصوت'));
+      btn.classList.toggle('is-playing', mine);
+    });
+    if (!playing) state.voiceButton = null;
   }
 
   function speak(text, why) {
     var mode = Store.get('voice') || 'recording';
     if (mode === 'none') return false;
     if (mode === 'tone') return chime();
-    if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(salawatUrl());
+    if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(salawatUrl(), 'settings-voice-try');
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
     try {
       var line = new window.SpeechSynthesisUtterance(text);
@@ -1744,14 +1763,14 @@
   function playAdhanSample() {
     var id = Store.get('adhanVoice') || 'none';
     if (id === 'none') { chime(); return; }
-    playRecording(adhanUrl(id, false));
+    playRecording(adhanUrl(id, false), 'settings-adhan-try');
   }
 
   /* at the prayer, with the app open, the adhan is heard in its voice */
   function soundAdhan(key) {
     var id = Store.get('adhanVoice') || 'none';
     if (id === 'none') return false;
-    return playRecording(adhanUrl(id, key === 'fajr'));
+    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try');
   }
 
   function markPlayerToggle() {
@@ -2286,7 +2305,7 @@
     if (note) {
       note.textContent = (Store.get('adhanVoice') || 'none') === 'none'
         ? 'نغمة التنبيه المعتادة في هاتفك'
-        : 'يُسمع عند دخول الوقت، وللفجر أذانه، من ' + ADHAN_SOURCE.n;
+        : 'يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم';
     }
     handAdhanSoundToApp();
   }
@@ -3480,6 +3499,11 @@
     }), Store.get('salawatVoice') || 'ibrahimiyya');
     var salawatRow = $('settings-salawat-voice') ? $('settings-salawat-voice').closest('.setting') : null;
     if (salawatRow) salawatRow.hidden = (s.voice || 'recording') !== 'recording';
+    var shown = $('salawat-text');
+    if (shown) {
+      shown.hidden = (s.voice || 'recording') !== 'recording';
+      shown.textContent = salawatText();
+    }
     fillSelect($('settings-voice'), [
       { value: 'recording', label: 'صوت قارئ' },
       { value: 'tone', label: 'نغمة' },
@@ -3953,7 +3977,8 @@
     bind('settings-salawat-voice', 'change', function (e) {
       Store.set('salawatVoice', e.target.value);
       stopSpeaking();
-      playRecording(salawatUrl());
+      renderSettings();
+      playRecording(salawatUrl(), 'settings-voice-try');
     });
     bind('settings-adhan-voice', 'change', function (e) {
       Store.set('adhanVoice', e.target.value);
@@ -4376,7 +4401,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, prayerSummary: prayerSummary, adhanUrl: adhanUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
