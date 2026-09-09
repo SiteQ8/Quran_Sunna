@@ -444,6 +444,57 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    the icon and the colour, and the label reads it out */
 @media (max-width: 430px) { .reader-save-word { display: none; } #reader-save { width: 48px; padding: 0; } }
 
+/* ---------- صفة العمرة ---------- */
+
+.umrah-card { padding-bottom: var(--s3); }
+.umrah-head { display: flex; align-items: center; gap: var(--s3); padding-bottom: var(--s3); margin-bottom: var(--s3); border-bottom: 1px solid var(--line); }
+.umrah-num { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--accent-solid); color: var(--on-accent); font-size: var(--step-1); font-weight: 700; }
+.umrah-titles { display: grid; gap: 2px; min-width: 0; }
+.umrah-t { font-size: var(--step-1); font-weight: 700; line-height: 1.2; }
+.umrah-n { font-size: var(--step--1); color: var(--ink-3); }
+
+.umrah-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
+.umrah-steps > li { display: flex; gap: var(--s3); align-items: flex-start; }
+.umrah-step-n { flex: none; width: 26px; height: 26px; margin-top: 2px; display: grid; place-items: center; border-radius: 8px;
+  background: var(--accent-wash); color: var(--accent-ink); font-size: .78rem; font-weight: 700; }
+.umrah-step-body { display: grid; gap: 8px; min-width: 0; }
+.umrah-step-t { line-height: 1.85; }
+
+.umrah-dua, .umrah-ayah, .umrah-hadith {
+  display: block; padding: var(--s3); border-radius: var(--r-sm); background: var(--sunken);
+  border-inline-start: 3px solid var(--gold); line-height: 2.1; font-size: 1rem; color: var(--ink);
+}
+.umrah-ayah, .umrah-hadith { font-family: var(--quran); font-size: 1.1rem; text-align: center; }
+.umrah-src { display: block; margin-top: 6px; font-family: var(--ui); font-size: var(--step--1); color: var(--ink-3); }
+.umrah-note { font-size: var(--step--1); color: var(--ink-3); line-height: 1.8; }
+.umrah-warn { display: flex; gap: 8px; align-items: flex-start; font-size: var(--step--1); color: var(--danger); line-height: 1.8; }
+.umrah-warn .icon { width: 18px; height: 18px; flex: none; margin-top: 3px; }
+
+.umrah-places { display: grid; gap: var(--s2); }
+.umrah-place { padding: var(--s3); border-radius: var(--r-sm); background: var(--sunken); display: grid; gap: 4px; }
+.umrah-place-n { font-weight: 700; color: var(--accent-ink); }
+.umrah-place-t { font-size: var(--step--1); line-height: 1.8; color: var(--ink-2); }
+.umrah-place-d { font-size: var(--step--1); color: var(--ink-3); }
+.umrah-after { font-size: var(--step--1); line-height: 1.9; color: var(--ink-2); margin: var(--s3) 0 0; }
+
+.umrah-sub { font-size: var(--step-0); font-weight: 700; margin: var(--s4) 0 var(--s2); color: var(--accent-ink); }
+.umrah-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
+.umrah-list > li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.85; font-size: var(--step--1); }
+.umrah-list .icon { width: 20px; height: 20px; flex: none; margin-top: 4px; }
+.umrah-dont .icon { color: var(--danger); }
+.umrah-do .icon { color: var(--accent-ink); }
+.umrah-notes .icon { color: var(--gold); }
+
+.umrah-tag, .umrah-end {
+  margin: var(--s4) 0 0; padding: var(--s3); border-radius: var(--r-sm); text-align: center;
+  background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; line-height: 1.9;
+}
+.umrah-move { margin-top: var(--s3); }
+.umrah-move .btn[disabled] { opacity: .45; }
+#umrah-steps .chip { font-variant-numeric: tabular-nums; height: 44px; }
+#umrah-steps { padding: 3px; }
+
 /* ---------- the month timetable ---------- */
 
 .tt-scroll { max-height: 62vh; overflow: auto; margin: 0 calc(var(--s4) * -1); }
@@ -811,6 +862,20 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* the sheet of a verse: its words, then a grid of what can be done with it,
    then the four kinds of mark */
 .sheet-ayah { text-align: center; text-align-last: center; margin-bottom: 6px; }
+/* the number of a stage, in the accent, before its name */
+.stage-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--accent-wash); color: var(--accent-ink); font-size: .82rem; font-weight: 700; }
+.fold-head .fold-note { display: block; font-size: var(--step--1); font-weight: 400; color: var(--ink-3); margin-top: 2px; }
+
+/* the reference lines of the umrah: a line of prose beside its mark */
+.umrah-line { font-size: var(--step-0); line-height: 1.85; color: var(--ink); }
+.row.umrah-forbidden .row-mark, .row.umrah-mistakes .row-mark { background: color-mix(in srgb, var(--danger) 12%, var(--raised)); color: var(--danger); }
+.row.umrah-allowed .row-mark { background: var(--accent-wash); color: var(--accent-ink); }
+#umrah-tab { flex-wrap: wrap; }
+#umrah-tab .chip { flex: 1 1 0; min-width: 76px; font-size: .78rem; padding: 0 8px; }
+#umrah-ref .row { align-items: flex-start; }
+#umrah-ref .row-mark { margin-top: 2px; }
+
 /* the play on a station's row reads as a control, not a stray hairline */
 .row-play { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent-solid); color: var(--on-accent); }

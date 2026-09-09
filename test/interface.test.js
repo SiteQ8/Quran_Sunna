@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -4663,4 +4663,65 @@ test('a station carries a filled play control, not a stray hairline', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.row-play \{[^}]*border-radius:\s*50%/, 'drawn as a round button');
   assert.match(css, /i-play'\]\), \.icon:has\(use\[href='#i-pause'\]\) \{ fill: currentColor; stroke: none/, 'the triangle is a shape, so it is filled not outlined');
+});
+
+/* ---------------- صفة العمرة ---------------- */
+
+
+
+/* ---------------- صفة العمرة ---------------- */
+
+test('the umrah is five stages in the order the rite is performed, each naming its page', () => {
+  const { win } = boot();
+  /* joined, since an array built inside the page has its own realm's prototype */
+  assert.strictEqual(win.UMRAH_STAGES.map((s) => s.id).join(','), 'before,talbiyah,tawaf,sayi,halq',
+    'ihram, then talbiyah, then tawaf, then sayi, then the cutting of the hair');
+  assert.strictEqual(win.UMRAH_STAGES.reduce((n, s) => n + s.i.length, 0), 32);
+  let page = 0;
+  win.UMRAH_STAGES.forEach(function (st) {
+    assert.ok(st.t && st.note && st.i.length, st.id + ' should be whole');
+    assert.ok(st.p > page, 'the pages should run forward through the book: ' + st.id);
+    page = st.p;
+  });
+  assert.strictEqual(win.UMRAH_SOURCE.b, 'دليل المعتمر');
+  assert.ok(win.UMRAH_SOURCE.a.indexOf('طلال') !== -1, 'and name its author');
+});
+
+test('the five mawaqit carry who they are for and how far they lie from makkah', () => {
+  const { win } = boot();
+  assert.strictEqual(win.UMRAH_MAWAQIT.length, 5);
+  const byName = {};
+  win.UMRAH_MAWAQIT.forEach(function (m) {
+    assert.ok(m.n && m.w && m.km > 0, m.n + ' should be whole');
+    byName[m.n] = m.km;
+  });
+  assert.strictEqual(byName['ذو الحليفة'], 450);
+  assert.strictEqual(byName['قرن المنازل'], 75);
+  assert.strictEqual(byName['الجحفة'], 183);
+  assert.strictEqual(byName['يلملم'], 92);
+  assert.strictEqual(byName['ذات عرق'], 94);
+});
+
+test('a step is ticked and kept, the tally follows, and the reference tabs each show their own', () => {
+  const { win, doc } = boot();
+  win.App.go('umrah');
+  assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold').length, 5);
+  assert.strictEqual(doc.querySelectorAll('[data-umrah-step]').length, 32);
+  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '0 من 32');
+  /* the stage the reader stands in is the one that opens */
+  assert.strictEqual(doc.querySelector('#umrah-stages .fold.is-open .fold-title').textContent.indexOf('قبل الإحرام'), 0);
+  click(win, doc.querySelector('[data-umrah-step]'));
+  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '1 من 32');
+  assert.strictEqual(JSON.stringify(win.Store.get('umrah')), '{"before:0":1}');
+  click(win, doc.querySelector('[data-umrah-step]'));
+  assert.strictEqual(JSON.stringify(win.Store.get('umrah')), '{}', 'pressed again it is cleared');
+  const counts = { mawaqit: 5, forbidden: win.UMRAH_FORBIDDEN.length, allowed: win.UMRAH_ALLOWED.length, mistakes: win.UMRAH_MISTAKES.length };
+  Object.keys(counts).forEach(function (tab) {
+    click(win, doc.querySelector('[data-umrah="' + tab + '"]'));
+    assert.strictEqual(doc.querySelectorAll('#umrah-ref .row').length, counts[tab], tab);
+    assert.strictEqual(doc.querySelector('[data-umrah="' + tab + '"]').getAttribute('aria-selected'), 'true');
+  });
+  /* and it is reached from the more list */
+  win.App.go('more');
+  assert.ok(doc.querySelector('#more-list [data-go="umrah"]'), 'صفة العمرة should be in المزيد');
 });

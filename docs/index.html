@@ -434,6 +434,27 @@
   </div>
 </section>
 
+<section class="view" id="v-umrah" aria-labelledby="umrah-title">
+  <div class="view-head">
+    <h1 id="umrah-title">صفة العمرة</h1>
+    <p>خطوة خطوة، من قبل الإحرام إلى التقصير</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>خطوات العمرة</h2><span class="badge" id="umrah-tally"></span></div>
+    <p class="setting-note">علّم كل خطوة إذا أدّيتها، ويحفظ لك التطبيق موضعك حتى تُتمّها</p>
+    <div id="umrah-stages"></div>
+    <button class="btn btn-ghost btn-block" data-act="umrah-reset" style="margin-top:12px">ابدأ من جديد</button>
+  </div>
+  <div class="segment" id="umrah-tab" role="tablist" aria-label="مراجع العمرة">
+    <button class="chip is-on" data-umrah="mawaqit" role="tab" aria-selected="true">المواقيت</button>
+    <button class="chip" data-umrah="forbidden" role="tab" aria-selected="false">المحظورات</button>
+    <button class="chip" data-umrah="allowed" role="tab" aria-selected="false">ما يجوز</button>
+    <button class="chip" data-umrah="mistakes" role="tab" aria-selected="false">أخطاء</button>
+  </div>
+  <div class="card"><div id="umrah-ref"></div></div>
+  <p class="source" id="umrah-source"></p>
+</section>
+
 <section class="view" id="v-qibla" aria-labelledby="qibla-title">
   <div class="view-head"><h1 id="qibla-title">القبلة</h1><p>اتجاه الكعبة من موقعك بحساب دائرة عظمى</p></div>
   <div class="compass">
@@ -724,6 +745,8 @@
 <script src="data/ojeiri.js"></script>
 <script src="data/marks.js"></script>
 <script src="data/adhan.js"></script>
+<script src="data/umrah.js"></script>
+<script src="data/umrah.js"></script>
 <script src="data/content.js"></script>
 <script src="data/extras.js"></script>
 <script src="js/prayer-engine.js"></script>
