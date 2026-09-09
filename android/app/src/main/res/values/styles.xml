@@ -3,7 +3,7 @@
     <!-- the platform's own theme, so the wrapper carries no support library -->
     <style name="Theme.App" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:windowBackground">@drawable/window_splash</item>
-        <item name="android:statusBarColor">@color/colorPrimary</item>
-        <item name="android:navigationBarColor">@color/navigationColor</item>
+        <item name="android:statusBarColor">@color/backgroundColor</item>
+        <item name="android:navigationBarColor">@color/backgroundColor</item>
     </style>
 </resources>

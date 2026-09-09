@@ -4544,14 +4544,6 @@ test('the chosen adhan is handed to the app so it sounds with the app closed', (
   assert.ok(receiver.indexOf('CHANNEL_SILENT') !== -1, 'the notification keeps quiet when the app raises the adhan itself');
 });
 
-test('the app fills the screen and hides the system bars', () => {
-  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
-  assert.ok(main.indexOf('bars.hide(WindowInsets.Type.statusBars()') !== -1);
-  assert.ok(main.indexOf('BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE') !== -1, 'a swipe brings them back');
-  assert.ok(main.indexOf('onWindowFocusChanged') !== -1, 'and they stay hidden after a dialog');
-  /* a hidden bar takes no room, so only a cutout is inset */
-  assert.ok(main.indexOf('WindowInsets.Type.displayCutout()') !== -1);
-});
 
 test('each voice button shows only its own sound playing', () => {
   const { win, doc } = boot();
@@ -4850,4 +4842,54 @@ test("the booklet's supplications are gathered by topic beside the qur'an's", ()
   assert.ok(doc.querySelector('#sheet .search-hit').textContent.indexOf(win.Mushaf.ayah(first[0], first[1])) !== -1);
   const src = fs.readFileSync(path.join(DOCS, 'data', 'duas.js'), 'utf8');
   assert.ok(src.indexOf('فإنك بأعيننا') !== -1, 'and the booklet is named');
+});
+
+test('the bar of the mushaf is one row of one size, held at the top on solid ground', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the rule that lays the bar out, not the one that tightens it on a narrow phone */
+  const bar = [...css.matchAll(/\.reader-bar \{[^}]*\}/g)].map((m) => m[0]).filter((r) => r.indexOf('display') !== -1)[0];
+  assert.ok(bar, 'the bar should be laid out in one rule');
+  assert.match(bar, /position:\s*sticky/, 'it holds while the page scrolls');
+  assert.match(bar, /background:\s*var\(--paper\)/, 'on solid ground, so the words never show through it');
+  assert.match(bar, /display:\s*flex/);
+  assert.match(css, /\.reader-bar \.btn \{[^}]*height:\s*48px/, 'one height for every control');
+  assert.match(css, /\.btn-icon \{[^}]*width:\s*48px/, 'and one width for a button that is only a mark');
+  const { doc } = boot();
+  const bars = [...doc.querySelectorAll('.reader-bar')];
+  assert.ok(bars.length >= 2, 'the surah reader and the page reader both have one');
+  bars.forEach(function (row) {
+    assert.ok(row.querySelectorAll('.btn').length >= 2, 'a bar carries its controls');
+    assert.ok(row.querySelectorAll('.btn-primary').length <= 1, 'only one takes the room that is left');
+  });
+  /* every icon-only control in a bar is a square, and none of them was
+     given a width that would clip a word */
+  bars.forEach(function (row) {
+    row.querySelectorAll('.btn').forEach(function (b) {
+      const onlyIcon = !b.textContent.trim();
+      assert.strictEqual(b.classList.contains('btn-icon'), onlyIcon,
+        (b.id || b.getAttribute('aria-label')) + ' should' + (onlyIcon ? '' : ' not') + ' be a square');
+    });
+  });
+});
+
+test('the listen button reads استمع, with its mark after the word', () => {
+  const { doc } = boot();
+  const play = doc.getElementById('reader-play');
+  assert.strictEqual(play.textContent.trim(), 'استمع');
+  /* the word comes first in the markup, and the mark is ordered after it */
+  assert.strictEqual(play.firstChild.textContent.trim(), 'استمع');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.reader-bar \.btn-primary \.icon \{ order: 2; \}/);
+});
+
+test('the app sits below the phone bars rather than under them', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('bars.show(WindowInsets.Type.statusBars()') !== -1,
+    'the clock and the battery stay where the reader expects them');
+  assert.ok(main.indexOf('bars.hide(') === -1, 'nothing of the system is hidden');
+  assert.ok(main.indexOf('WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout()') !== -1,
+    'and both the bars and a camera cutout keep their room');
+  const styles = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/res/values/styles.xml'), 'utf8');
+  assert.ok(styles.indexOf('android:statusBarColor">@color/backgroundColor') !== -1,
+    'the bar takes the app\'s own paper');
 });

@@ -515,10 +515,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 @media (max-width: 430px) {
   /* five controls on the reader's bar: the icons take the least a thumb
      allows, and a button that carries a word drops it */
-  .reader-bar { gap: 6px; }
+  /* six controls on one line: each icon takes the least a thumb allows, and a
+     button that carries a word drops it */
+  .reader-bar { gap: 5px; }
   .bar-word { display: none; }
-  .reader-bar .btn:not(.btn-primary) { width: 44px; padding: 0; }
-  .reader-bar .btn-primary { padding-inline: 12px; }
+  .reader-bar .btn-icon { width: 44px; }
+  .reader-bar .btn-primary { padding-inline: 10px; }
 }
 
 /* ---------- the month timetable ---------- */
@@ -723,10 +725,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .btn-search { margin-bottom: var(--s3); justify-content: flex-start; padding-inline: var(--s3); color: var(--ink-3); font-weight: 500; }
 .btn-search .icon { color: var(--ink-3); }
 /* a button that is only an icon */
-.btn-icon, .reader-bar .btn:not(.btn-primary):not(#reader-save) { width: 48px; padding: 0; flex: none; }
-.reader-bar .btn { height: 48px; }
-.reader-bar .btn-primary { flex: 1 1 auto; min-width: 0; margin-inline-start: 0; }
-.reader-bar #reader-save { flex: none; padding-inline: var(--s3); }
+.reader-bar .btn { height: 48px; min-height: 48px; }
+/* a button whose whole content is one mark is a square of the same height */
+.btn-icon { width: 48px; padding: 0; flex: none; }
+.reader-bar .btn-primary { flex: 1 1 auto; min-width: 0; margin-inline-start: 0; padding-inline: var(--s3); }
+/* the word comes first and its mark follows it */
+.reader-bar .btn-primary .icon { order: 2; }
 #surah-filter { margin-bottom: var(--s3); }
 
 .chip {
@@ -947,9 +951,13 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .surah-head h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; }
 .surah-head p { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
 
+/* The bar of the mushaf: it holds while the page scrolls, so its ground is
+   solid and the words never show through it. Every control on it is the same
+   square; only the one that reads aloud takes the room that is left. */
 .reader-bar {
-  display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s3);
-  position: sticky; top: 0; z-index: 20; padding: var(--s2) 0; background: var(--paper);
+  display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s2);
+  position: sticky; top: 3px; z-index: 30; padding: var(--s2) 0; background: var(--paper);
+  box-shadow: 0 8px 12px -8px rgba(0, 0, 0, .16);
 }
 
 /* ---------- search ---------- */
@@ -973,9 +981,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* ---------- reading progress ---------- */
 
+/* the thread of progress rides above the bar, both held at the top together */
 .read-progress {
-  position: sticky; top: 0; z-index: 20; height: 3px;
-  background: var(--line); border-radius: 999px; margin-bottom: var(--s3);
+  position: sticky; top: 0; z-index: 31; height: 3px;
+  background: var(--line); border-radius: 999px; margin: 0;
 }
 .read-progress span {
   display: block; height: 100%; width: 0; border-radius: 999px;
