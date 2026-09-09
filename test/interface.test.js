@@ -4787,7 +4787,7 @@ test("the qur'an's own supplications are gathered by theme, and read from the mu
   const { win, doc } = boot();
   win.App.go('dua');
   const chips = [...doc.querySelectorAll('[data-dua-theme]')];
-  assert.strictEqual(chips.length, win.App.helpers.duaTopics().length, 'a chip for every topic');
+  assert.strictEqual(chips.length, win.App.helpers.duaTopics().length, 'a tile for every topic');
   assert.ok(chips.length >= 25, 'the booklet\'s themes, ' + chips.length);
   /* every verse a theme names is a real verse of the mushaf */
   win.DUA_THEMES.forEach(function (t) {
@@ -4892,4 +4892,27 @@ test('the app sits below the phone bars rather than under them', () => {
   const styles = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/res/values/styles.xml'), 'utf8');
   assert.ok(styles.indexOf('android:statusBarColor">@color/backgroundColor') !== -1,
     'the bar takes the app\'s own paper');
+});
+
+test('the topics are equal tiles, and the three paces share one row', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the topics: a grid of two, not a ragged run of pills */
+  assert.match(css, /\.topics \{[^}]*grid-template-columns:\s*1fr 1fr/);
+  assert.match(css, /\.topic \{[^}]*min-height:\s*52px/, 'one height for every tile');
+  /* the sheet of four marks stretches an odd last one; the three paces must not */
+  assert.match(css, /\.mark-choices:not\(\.three\) \.btn:last-child:nth-child\(odd\)/,
+    'the stretching rule was written for the four marks and must not reach the paces');
+  assert.match(css, /\.mark-choices\.three \{ grid-template-columns: 1fr 1fr 1fr; \}/);
+  const { win, doc } = boot();
+  win.App.go('dua');
+  const tiles = [...doc.querySelectorAll('.topic')];
+  assert.ok(tiles.length >= 25);
+  tiles.forEach(function (t) {
+    assert.ok(t.querySelector('.topic-name') && t.querySelector('.topic-count'), 'a name and a count');
+  });
+  win.App.state.surah = 1; win.App.go('reader');
+  win.App.helpers.paceSheet();
+  const grid = doc.querySelector('#sheet .mark-choices');
+  assert.ok(grid.classList.contains('three'), 'the paces ask for three columns');
+  assert.strictEqual(doc.querySelectorAll('#sheet [data-act="read-pace"]').length, 3);
 });

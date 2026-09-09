@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.11.1';
+  var VERSION = '8.11.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1832,7 +1832,7 @@
   function paceSheet() {
     openSheet('وضع القراءة',
       '<p class="setting-note">تتحرك الصفحة وحدها بالسرعة التي تختارها، فتقرأ بلا أن ترفع يدك، وتقف بلمسة على الشاشة</p>' +
-      '<div class="mark-choices" style="grid-template-columns:1fr 1fr 1fr">' +
+      '<div class="mark-choices three">' +
       SCROLL_PACES.map(function (p) {
         return '<button class="btn ' + ((Store.get('readPace') || 'mid') === p.id ? 'btn-primary' : 'btn-ghost') + '" data-act="read-pace" data-ref="' + p.id + '">' + esc(p.n) + '</button>';
       }).join('') + '</div>');
@@ -1874,8 +1874,9 @@
     if (!host) return;
     var topics = duaTopics();
     host.innerHTML = topics.map(function (t) {
-      return '<button class="chip" data-dua-theme="' + esc(t.id) + '">' + esc(t.n) +
-        ' <span class="fold-tally">' + ar(t.i.length + t.v.length) + '</span></button>';
+      return '<button class="topic" data-dua-theme="' + esc(t.id) + '">' +
+        '<span class="topic-name">' + esc(t.n) + '</span>' +
+        '<span class="topic-count">' + ar(t.i.length + t.v.length) + '</span></button>';
     }).join('');
     var tally = $('dua-book-tally');
     if (tally) tally.textContent = ar(topics.reduce(function (n, t) { return n + t.i.length; }, 0)) + ' دعاء';
