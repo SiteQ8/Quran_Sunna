@@ -88,56 +88,56 @@
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "المواقيت وسنن الوقت على تقويم العجيري"
+      "label": "المواقيت وسنن الوقت"
+    },
+    {
+      "src": "screens/prayers.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "صلاتي، صلواتك الخمس وشهرك"
     },
     {
       "src": "screens/page.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "المصحف صفحة صفحة بالرسم العثماني"
+      "label": "المصحف صفحة صفحة"
     },
     {
       "src": "screens/azkar.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "أذكار الوقت وحصن المسلم كاملاً"
+      "label": "أذكار الوقت"
     },
     {
       "src": "screens/hisn.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "كل ذكر بعدّه وحلقة تمتلئ"
-    },
-    {
-      "src": "screens/tasbih.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "المسبحة"
+      "label": "حصن المسلم بأبوابه"
     },
     {
       "src": "screens/tracker.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "السنن اليومية على كتاب المنح العلية"
+      "label": "السنن اليومية"
     },
     {
       "src": "screens/calendar.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "التقويم الهجري بمواسمه"
+      "label": "التقويم الهجري"
     },
     {
       "src": "screens/qibla.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "القبلة ببوصلة الجهاز"
+      "label": "القبلة"
     }
   ],
   "shortcuts": [

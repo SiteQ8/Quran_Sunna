@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.8.2';
+  var VERSION = '8.9.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1275,6 +1275,7 @@
 
   var TILES = [
     { nav: 'tasbih', icon: 'beads', name: 'المسبحة', note: 'عدّاد بأهداف' },
+    { nav: 'umrah', icon: 'check', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'بوصلة' },
     { nav: 'khatma', icon: 'target', name: 'الختمة', note: 'خطة قراءة' },
     { nav: 'hadith', icon: 'text', name: 'الأربعون', note: 'النووية' },
@@ -2859,6 +2860,7 @@
   /* ---------------- more ---------------- */
 
   var MORE_LINKS = [
+    { nav: 'umrah', icon: 'kaaba', name: 'صفة العمرة', note: 'من الميقات إلى التحلل، على دليل المعتمر' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'علّم صلواتك الخمس وتابع شهرك' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
@@ -2905,6 +2907,81 @@
     if (state.heading === null) return null;
     var d = Math.abs(((bearing - state.heading) % 360 + 540) % 360 - 180);
     return d;
+  }
+
+  function scrollTop() {
+    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+  }
+
+  /* ---------------- صفة العمرة ---------------- */
+
+  function renderUmrah() {
+    var host = $('umrah-stages');
+    if (!host || typeof UMRAH_STAGES === 'undefined') return;
+    var done = Store.get('umrah') || {};
+    var total = 0, marked = 0;
+    host.innerHTML = UMRAH_STAGES.map(function (stage, si) {
+      var mine = stage.i.map(function (text, ii) {
+        var key = stage.id + ':' + ii;
+        var on = !!done[key];
+        total++; if (on) marked++;
+        return '<button class="check' + (on ? ' is-done' : '') + '" data-umrah-step="' + key + '" role="checkbox" aria-checked="' + (on ? 'true' : 'false') + '">' +
+          '<span class="check-box">' + icon('check') + '</span>' +
+          '<span class="check-label">' + esc(text) + '</span></button>';
+      }).join('');
+      var stageDone = stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; });
+      var here = stage.i.filter(function (_, ii) { return done[stage.id + ':' + ii]; }).length;
+      /* the stage the reader stands in opens by itself, and a finished one folds away */
+      var open = state.umrahOpen ? state.umrahOpen[stage.id] !== false : si === firstUnfinished(done);
+      return '<section class="fold' + (open ? ' is-open' : '') + '" data-umrah-fold="' + stage.id + '">' +
+        '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
+        '<span class="stage-num">' + ar(si + 1) + '</span>' +
+        '<span class="fold-title">' + esc(stage.t) + '<span class="fold-note">' + esc(stage.note) + '</span></span>' +
+        '<span class="fold-tally' + (here === stage.i.length ? ' is-full' : '') + '">' + ar(here) + ' من ' + ar(stage.i.length) + '</span>' +
+        icon('chevron', 'fold-arrow') + '</button>' +
+        '<div class="fold-body">' + mine +
+        '<p class="fold-source">' + esc(UMRAH_SOURCE.b) + '، صفحة ' + ar(stage.p) + '</p></div></section>';
+    }).join('');
+    if ($('umrah-tally')) $('umrah-tally').textContent = ar(marked) + ' من ' + ar(total);
+    if ($('umrah-source')) $('umrah-source').textContent = UMRAH_SOURCE.b + '، ' + UMRAH_SOURCE.a;
+    renderUmrahRef();
+  }
+
+  /* the stage a reader is standing in, so it opens by itself */
+  function firstUnfinished(done) {
+    for (var i = 0; i < UMRAH_STAGES.length; i++) {
+      var stage = UMRAH_STAGES[i];
+      if (!stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; })) return i;
+    }
+    return 0;
+  }
+
+  function renderUmrahRef() {
+    var host = $('umrah-ref');
+    if (!host) return;
+    var which = state.umrahTab || 'mawaqit';
+    [].forEach.call(document.querySelectorAll('[data-umrah]'), function (chip) {
+      var on = chip.getAttribute('data-umrah') === which;
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-selected', on ? 'true' : 'false');
+    });
+    if (which === 'mawaqit') {
+      host.innerHTML = '<p class="setting-note">من مرّ على ميقات وهو يريد العمرة لزمه الإحرام منه، ومن كان مسكنه دونها أحرم من مكانه، وأهل مكة يُحرمون للعمرة من الحلّ خارج حدود الحرم كالتنعيم.</p>' +
+        UMRAH_MAWAQIT.map(function (m) {
+          return '<div class="row"><span class="row-mark">' + ar(m.km) + '</span>' +
+            '<span class="row-body"><span class="row-title">' + esc(m.n) + (m.now ? '، ويُسمّى اليوم ' + esc(m.now) : '') + '</span>' +
+            '<span class="row-note">' + esc(m.w) + '، ويبعد ' + ar(m.km) + ' كم عن مكة</span></span></div>';
+        }).join('');
+      return;
+    }
+    var list = which === 'forbidden' ? UMRAH_FORBIDDEN : which === 'allowed' ? UMRAH_ALLOWED : UMRAH_MISTAKES;
+    var head = which === 'forbidden' ? 'يحرم على المعتمر بعد إحرامه من الميقات'
+      : which === 'allowed' ? 'ويجوز للمحرم' : 'مما يقع فيه بعض الناس';
+    host.innerHTML = '<p class="setting-note">' + head + '</p>' +
+      list.map(function (t) {
+        return '<div class="row umrah-' + which + '"><span class="row-mark">' + icon(which === 'allowed' ? 'check' : 'close') + '</span>' +
+          '<span class="row-body"><span class="row-note umrah-line">' + esc(t) + '</span></span></div>';
+      }).join('');
   }
 
   function renderQibla() {
@@ -3658,6 +3735,7 @@
     'azkar-list': renderAzkarList,
     tracker: renderTracker,
     more: renderMore,
+    umrah: renderUmrah,
     qibla: renderQibla,
     tasbih: renderTasbih,
     radio: renderRadio,
@@ -3669,6 +3747,7 @@
     page: renderPage,
     hisn: renderHisnChapter,
     prayers: renderPrayers,
+    umrah: renderUmrah,
     settings: renderSettings,
     about: renderSettings
   };
@@ -3701,6 +3780,11 @@
       Store.setNote(+parts[0], +parts[1], field ? field.value : '');
       toast(field && field.value.trim() ? 'حُفظت الملاحظة' : 'أُزيلت الملاحظة');
       verseSheet(+parts[0], +parts[1]);
+    },
+    'umrah-reset': function () {
+      Store.set('umrah', {});
+      renderUmrah();
+      toast('بدأت الخطوات من أولها');
     },
     'download-stop': function () { if (state.downloading) state.downloading.stop = true; },
     'audio-remove-confirm': function (ref) {
@@ -3898,6 +3982,30 @@
       removeSurahAudio(ra[0], +ra[1]).then(function () { toast('حُذف الصوت'); renderSavedAudio(); });
       return;
     }
+
+    var umrahStep = target.closest('[data-umrah-step]');
+    if (umrahStep) {
+      var key = umrahStep.getAttribute('data-umrah-step');
+      var all = Store.get('umrah') || {};
+      if (all[key]) delete all[key]; else all[key] = 1;
+      Store.set('umrah', all);
+      buzz(6);
+      renderUmrah();
+      return;
+    }
+    var umrahFold = target.closest('[data-umrah-fold]');
+    if (umrahFold && target.closest('.fold-head')) {
+      var fid = umrahFold.getAttribute('data-umrah-fold');
+      if (!state.umrahOpen) {
+        state.umrahOpen = {};
+        UMRAH_STAGES.forEach(function (st, i) { state.umrahOpen[st.id] = i === firstUnfinished(Store.get('umrah') || {}); });
+      }
+      state.umrahOpen[fid] = !state.umrahOpen[fid];
+      renderUmrah();
+      return;
+    }
+    var umrahTab = target.closest('[data-umrah]');
+    if (umrahTab) { state.umrahTab = umrahTab.getAttribute('data-umrah'); renderUmrahRef(); return; }
 
     var markable = target.closest('[data-mark-prayer]');
     if (markable) {
@@ -4401,7 +4509,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
