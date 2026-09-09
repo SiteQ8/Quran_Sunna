@@ -8,7 +8,12 @@ import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
+import android.graphics.Insets;
 import android.view.KeyEvent;
+import android.view.View;
+import android.view.WindowInsets;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 import android.webkit.GeolocationPermissions;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
@@ -29,6 +34,7 @@ public class MainActivity extends Activity {
     private static final int ASK_LOCATION = 8;
 
     private WebView web;
+    private OnBackInvokedCallback back;
     private GeolocationPermissions.Callback pendingLocation;
     private String pendingLocationOrigin;
 
@@ -39,7 +45,6 @@ public class MainActivity extends Activity {
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
-        s.setDatabaseEnabled(true);
         s.setGeolocationEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);
         s.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
@@ -68,7 +73,12 @@ public class MainActivity extends Activity {
                 requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, ASK_LOCATION);
             }
         });
+        /* From android 15 the window is drawn edge to edge and cannot opt out,
+           so the page is inset by the bars itself; without this the top of the
+           app would sit under the status bar. */
         setContentView(web);
+        web.setFitsSystemWindows(false);
+        ViewCompat_setOnApplyWindowInsetsListener(web);
 
         try {
             AdhanReceiver.ensureChannels(this);
@@ -80,6 +90,7 @@ public class MainActivity extends Activity {
             && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[] { Manifest.permission.POST_NOTIFICATIONS }, ASK_NOTIFICATIONS);
         }
+        listenForBack();
         if (savedInstanceState == null) web.loadUrl(target(getIntent()));
         else web.restoreState(savedInstanceState);
     }
@@ -118,14 +129,42 @@ public class MainActivity extends Activity {
         }
     }
 
-    /* the back gesture walks the page's own history before it leaves the app */
+    /* The back gesture walks the page's own history before it leaves the app.
+       From android 13 the system asks through this callback, and from android
+       16 it no longer arrives as a key press at all, so both are handled. */
+    private void listenForBack() {
+        if (Build.VERSION.SDK_INT >= 33) {
+            back = new OnBackInvokedCallback() {
+                @Override
+                public void onBackInvoked() {
+                    if (web != null && web.canGoBack()) web.goBack();
+                    else finish();
+                }
+            };
+            getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, back);
+        }
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
+        if (Build.VERSION.SDK_INT < 33 && keyCode == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
             web.goBack();
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    /* the bars of the system are given their room, and the page keeps the rest */
+    private void ViewCompat_setOnApplyWindowInsetsListener(final View view) {
+        view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
+                Insets keyboard = insets.getInsets(WindowInsets.Type.ime());
+                v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, keyboard.bottom));
+                return WindowInsets.CONSUMED;
+            }
+        });
     }
 
     @Override
@@ -142,6 +181,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        if (Build.VERSION.SDK_INT >= 33 && back != null) getOnBackInvokedDispatcher().unregisterOnBackInvokedCallback(back);
         if (web != null) web.destroy();
         super.onDestroy();
     }
