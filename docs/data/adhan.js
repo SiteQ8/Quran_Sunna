@@ -8,13 +8,13 @@ var ADHAN_VOICES = [
   { id: 'mujallad', n: 'أحمد نواف المجلاد', s: 167, fajr: true },
   { id: 'mukhtar', n: 'حاج سليمان مختار', s: 192, fajr: true }
 ];
-var ADHAN_SOURCE = { n: 'إسلام ويب', u: 'https://audio.islamweb.net' };
+var ADHAN_SOURCE = { u: 'https://audio.islamweb.net' };
 
 /* أصوات الصلاة على النبي ﷺ، من تسجيلات حصن المسلم في موقع الكتاب. */
 var SALAWAT_VOICES = [
-  { id: 'ibrahimiyya', n: 'الصلاة الإبراهيمية', s: 23 },
-  { id: 'azwaj', n: 'اللهم صلِّ على محمد وأزواجه وذريته', s: 14 },
-  { id: 'fadl', n: 'من صلى عليّ صلاة صلى الله عليه بها عشراً', s: 9 }
+  { id: 'ibrahimiyya', n: 'الصلاة الإبراهيمية', s: 37, hisn: 23, a: 53 },
+  { id: 'azwaj', n: 'اللهم صلِّ على محمد وأزواجه وذريته', s: 24, hisn: 23, a: 54 },
+  { id: 'fadl', n: 'من صلى عليّ صلاة صلى الله عليه بها عشراً', s: 9, hisn: 107, a: 219 }
 ];
 var SALAWAT_SOURCE = { n: 'حصن المسلم', u: 'https://www.hisnmuslim.com' };
 if (typeof module !== 'undefined') module.exports = { ADHAN_VOICES: ADHAN_VOICES, ADHAN_SOURCE: ADHAN_SOURCE, SALAWAT_VOICES: SALAWAT_VOICES, SALAWAT_SOURCE: SALAWAT_SOURCE };
