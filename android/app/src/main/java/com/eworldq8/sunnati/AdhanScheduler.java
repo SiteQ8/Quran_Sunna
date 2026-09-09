@@ -1,4 +1,4 @@
-package io.github.siteq8.sunnati;
+package com.eworldq8.sunnati;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -121,7 +121,7 @@ public final class AdhanScheduler {
 
     private static PendingIntent pending(Context context, String name) {
         Intent intent = new Intent(context, AdhanReceiver.class);
-        intent.setAction("io.github.siteq8.sunnati.ADHAN");
+        intent.setAction("com.eworldq8.sunnati.ADHAN");
         intent.putExtra(EXTRA_NAME, name);
         /* one request code, so a new alarm replaces the old rather than joining it */
         return PendingIntent.getBroadcast(context, REQUEST, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);

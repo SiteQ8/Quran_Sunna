@@ -5,7 +5,7 @@
     ],
     "target": {
       "namespace": "android_app",
-      "package_name": "io.github.siteq8.sunnati",
+      "package_name": "com.eworldq8.sunnati",
       "sha256_cert_fingerprints": [
         "5E:14:B4:A2:0B:B6:BE:28:5D:F7:82:47:D5:FE:E1:B6:7B:59:44:EE:0E:D1:AB:DB:D9:A0:A3:26:A6:8B:FE:D2",
         "REPLACE_WITH_THE_SHA256_PLAY_GIVES_YOU_AFTER_UPLOAD"

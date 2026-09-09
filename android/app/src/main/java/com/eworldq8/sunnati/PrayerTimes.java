@@ -1,4 +1,4 @@
-package io.github.siteq8.sunnati;
+package com.eworldq8.sunnati;
 
 import java.util.Calendar;
 import java.util.TimeZone;
