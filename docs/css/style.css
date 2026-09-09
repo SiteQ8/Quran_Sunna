@@ -511,6 +511,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #reader-autoscroll.is-on, #page-autoscroll.is-on { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
 /* the topics as a grid of equal tiles, two to a row, so the eye runs down a
    column instead of hunting along a ragged edge of pills */
+/* the row of an occasion keeps its button beside the words, never over them */
+#home-upcoming .row, #calendar-upcoming .row { align-items: center; }
+#home-upcoming .btn-icon, #calendar-upcoming .btn-icon { align-self: center; }
+
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

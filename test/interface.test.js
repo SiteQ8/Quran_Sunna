@@ -5137,3 +5137,38 @@ test('both reminders are the reader\'s to turn on and off', () => {
   click(win, doc.getElementById('settings-qiyam'));
   assert.strictEqual(win.Store.get('qiyam'), true);
 });
+
+test('an occasion can be put in the reader\'s own calendar, and no longer repeats its hijri year', () => {
+  const { win, doc } = boot();
+  const row = doc.querySelector('#home-upcoming .row');
+  assert.ok(row.textContent.indexOf('هـ') === -1, 'the gregorian date already carries the year');
+  const btn = row.querySelector('[data-act="to-calendar"]');
+  assert.ok(btn, 'every occasion offers to be added');
+  assert.ok(btn.getAttribute('aria-label').indexOf('إلى تقويمك') !== -1);
+  /* inside the app the phone's own calendar is opened with it filled in */
+  const handed = [];
+  win.SunnatiApp = { addToCalendar: function (t, n, s, e) { handed.push({ t: t, s: s, e: e }); return true; } };
+  click(win, btn);
+  assert.strictEqual(handed.length, 1);
+  const first = win.Hijri.upcoming(new win.Date(), 0)[0];
+  assert.strictEqual(handed[0].t, first.name);
+  assert.strictEqual(new Date(handed[0].s).toDateString(), first.date.toDateString(), 'on the day it falls');
+  assert.ok(handed[0].e > handed[0].s, 'and a day long');
+  /* in a browser it becomes a file every calendar understands */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function addToCalendar\(name, date\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('BEGIN:VCALENDAR') !== -1 && fn.indexOf('DTSTART;VALUE=DATE:') !== -1);
+  assert.ok(fn.indexOf('BEGIN:VALARM') !== -1, 'with a reminder the day before');
+  assert.ok(fn.indexOf("text/calendar") !== -1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('Intent.ACTION_INSERT') !== -1, 'the reader confirms it themselves; nothing is written behind them');
+});
+
+test('صلاتي is described as following the prayers, not marking them', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  [html, app].forEach(function (src) {
+    assert.ok(src.indexOf('تتبّع صلواتك الخمس وشهرك') !== -1);
+    assert.ok(src.indexOf('علّم صلواتك الخمس وتابع شهرك') === -1);
+  });
+});
