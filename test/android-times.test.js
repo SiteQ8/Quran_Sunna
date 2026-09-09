@@ -79,3 +79,20 @@ test('the wrapper owns its page: a web view with a bridge, no browser helper', (
   const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
   assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings));
 });
+
+test('the package targets the level the store requires, and keeps the bridge through R8', () => {
+  const gradle = fs.readFileSync(path.join(root, 'android/app/build.gradle'), 'utf8');
+  const target = /targetSdk (\d+)/.exec(gradle);
+  assert.ok(target && +target[1] >= 36, 'the store refuses anything below thirty six, found ' + (target && target[1]));
+  assert.ok(/compileSdk (\d+)/.exec(gradle)[1] === target[1], 'compiled against what it targets');
+  assert.ok(gradle.indexOf('minifyEnabled true') !== -1, 'R8 shrinks the package and writes a mapping to upload');
+  const rules = fs.readFileSync(path.join(root, 'android/app/proguard-rules.pro'), 'utf8');
+  assert.ok(/@android\.webkit\.JavascriptInterface <methods>;/.test(rules),
+    'without this R8 renames the bridge methods and the page calls into nothing');
+  ['AdhanReceiver', 'BootReceiver', 'MainActivity'].forEach(function (c) {
+    assert.ok(rules.indexOf('-keep class com.eworldq8.sunnati.' + c) !== -1, c + ' is named by string in the manifest');
+  });
+  const main = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('OnBackInvokedCallback') !== -1, 'from android 16 the back gesture no longer arrives as a key press');
+  assert.ok(main.indexOf('WindowInsets.Type.systemBars()') !== -1, 'edge to edge is enforced, so the page insets itself');
+});
