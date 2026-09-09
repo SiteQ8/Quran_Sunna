@@ -31,6 +31,13 @@
     friday: true,
     fridayShown: '',
     qiyam: false,
+    wirdAt: '',
+    jumuahBefore: 0,
+    qadaDone: {},
+    afterPrayerOff: false,
+    afterPrayerShown: '',
+    fastOwed: 0,
+    fastDone: 0,
     adhanVoice: 'none',
     salawatVoice: 'ibrahimiyya',
     voice: 'recording',
@@ -230,6 +237,41 @@
 
   /* How the last so many days went: prayed in time (jamaah or ontime), made
      up, missed, and the run of days with all five in time ending today. */
+  /* What is owed and what has been made up. A prayer marked missed is owed
+     until it is made up; the count of made-up ones is kept apart so the
+     record of the day itself is never rewritten. */
+  function qadaOwed() {
+    var missed = {};
+    PRAYER_KEYS.forEach(function (k) { missed[k] = 0; });
+    keys().forEach(function (k) {
+      if (k.indexOf(DAY_PREFIX) !== 0) return;
+      var prayers = (readJSON(k, {}) || {}).prayers || {};
+      PRAYER_KEYS.forEach(function (p) { if (prayers[p] === 'missed') missed[p]++; });
+    });
+    var done = readJSON(PREFIX + 'qadaDone', {});
+    var out = {};
+    PRAYER_KEYS.forEach(function (k) { out[k] = Math.max(0, missed[k] - (done[k] || 0)); });
+    return out;
+  }
+
+  function markQada(key, by) {
+    if (PRAYER_KEYS.indexOf(key) === -1) return;
+    var done = readJSON(PREFIX + 'qadaDone', {});
+    done[key] = Math.max(0, (done[key] || 0) + (by || 1));
+    writeJSON(PREFIX + 'qadaDone', done);
+  }
+
+  /* The days of ramadan owed, and those already fasted for them. */
+  function fastOwed() {
+    return Math.max(0, (+get('fastOwed') || 0) - (+get('fastDone') || 0));
+  }
+
+  function setFastOwed(n) { set('fastOwed', Math.max(0, n | 0)); }
+
+  function markFast(by) {
+    set('fastDone', Math.max(0, (+get('fastDone') || 0) + (by || 1)));
+  }
+
   function prayerStats(days, from) {
     var end = from ? new Date(from.getTime()) : new Date();
     var out = { days: days, prayed: 0, inTime: 0, jamaah: 0, late: 0, missed: 0, full: 0, streak: 0 };
@@ -508,6 +550,11 @@
     setPrayer: setPrayer,
     prayersOf: prayersOf,
     prayerStats: prayerStats,
+    qadaOwed: qadaOwed,
+    markQada: markQada,
+    fastOwed: fastOwed,
+    setFastOwed: setFastOwed,
+    markFast: markFast,
     PRAYER_KEYS: PRAYER_KEYS,
     PRAYER_STATES: PRAYER_STATES,
     setHisnCount: setHisnCount,

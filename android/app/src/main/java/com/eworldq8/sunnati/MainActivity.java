@@ -88,6 +88,7 @@ public class MainActivity extends Activity {
             AdhanScheduler.scheduleNext(this);
             SalawatScheduler.scheduleNext(this);
             QiyamScheduler.scheduleNext(this);
+            NoteScheduler.scheduleNext(this);
         } catch (Exception e) {
             Log.w("sunnati", "adhan setup skipped", e);
         }

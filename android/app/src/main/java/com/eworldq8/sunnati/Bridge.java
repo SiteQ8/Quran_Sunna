@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Environment;
+import android.os.Build;
 import android.provider.CalendarContract;
 import android.provider.MediaStore;
 import android.util.Base64;
@@ -63,6 +64,11 @@ public final class Bridge {
         if (json == null || json.isEmpty() || "[]".equals(json)) QiyamScheduler.clear(host);
         else QiyamScheduler.setTimes(host, json);
     }
+
+    /** Reminders the page works out: the daily portion, the friday call, and
+     *  whatever comes after. A list of when, title and words. */
+    @JavascriptInterface
+    public void setReminders(String json) { NoteScheduler.setAll(host, json); }
 
     @JavascriptInterface
     public boolean canNotify() {
@@ -128,6 +134,29 @@ public final class Bridge {
                 .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             host.startActivity(add);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** A file the reader keeps. It is written into the phone's own Downloads,
+     *  where they can find it, copy it to a drive, or send it on. Nothing
+     *  leaves the phone by itself. */
+    @JavascriptInterface
+    public boolean saveFile(String name, String content) {
+        if (Build.VERSION.SDK_INT < 29) return false;
+        try {
+            ContentValues values = new ContentValues();
+            values.put(MediaStore.Downloads.DISPLAY_NAME, name);
+            values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+            values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+            Uri uri = host.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+            if (uri == null) return false;
+            try (OutputStream out = host.getContentResolver().openOutputStream(uri)) {
+                if (out == null) return false;
+                out.write(content.getBytes("UTF-8"));
+            }
             return true;
         } catch (Exception e) {
             return false;

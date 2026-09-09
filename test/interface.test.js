@@ -2752,8 +2752,11 @@ test('the search reaches the azkar, the hadiths and the supplications', () => {
   const type = function (q) { const f = doc.getElementById('quran-search'); f.value = q; fire(win, f, 'input'); };
   const pick = function (s) { click(win, doc.querySelector('[data-scope="' + s + '"]')); };
 
-  assert.strictEqual(doc.querySelectorAll('#search-scope [data-scope]').length, 5);
-  assert.strictEqual(doc.querySelector('[data-scope="quran"]').getAttribute('aria-checked'), 'true');
+  assert.strictEqual(doc.querySelectorAll('#search-scope [data-scope]').length, 8,
+    'everything, the mushaf, the azkar, the hadiths, the supplications, the sunnahs, the book and the umrah');
+  assert.strictEqual(doc.querySelector('[data-scope="quran"]').getAttribute('aria-checked'), 'true',
+    'the search is opened from the mushaf, so it begins there');
+  assert.ok(doc.querySelector('[data-scope="all"]'), 'and everything is one press away');
 
   pick('azkar'); type('أصبحنا');
   assert.ok(doc.querySelectorAll('#search-results .search-hit').length >= 1, 'the morning azkar hold this word');
@@ -5171,4 +5174,115 @@ test('صلاتي is described as following the prayers, not marking them', () =>
     assert.ok(src.indexOf('تتبّع صلواتك الخمس وشهرك') !== -1);
     assert.ok(src.indexOf('علّم صلواتك الخمس وتابع شهرك') === -1);
   });
+});
+
+/* ---------------- القضاء، والورد، ونداء الجمعة، وأذكار ما بعد الصلاة ---------------- */
+
+test('what is owed of prayer is counted from what was marked missed, and falls as it is made up', () => {
+  const { win, doc } = boot();
+  const d = new win.Date();
+  const back = function (n) { return new win.Date(d.getFullYear(), d.getMonth(), d.getDate() - n); };
+  win.Store.setPrayer('fajr', 'missed', back(1));
+  win.Store.setPrayer('fajr', 'missed', back(2));
+  win.Store.setPrayer('asr', 'missed', back(3));
+  win.Store.setPrayer('isha', 'ontime', back(1));
+  const owed = win.Store.qadaOwed();
+  assert.strictEqual(owed.fajr, 2);
+  assert.strictEqual(owed.asr, 1);
+  assert.strictEqual(owed.isha, 0, 'a prayer prayed is not owed');
+  win.App.go('qada');
+  assert.strictEqual(doc.getElementById('qada-prayers-tally').textContent, '3 عليك');
+  click(win, doc.querySelector('[data-act="qada-done"]'));
+  assert.strictEqual(win.Store.qadaOwed().fajr, 1, 'one made up');
+  assert.strictEqual(doc.getElementById('qada-prayers-tally').textContent, '2 عليك');
+  /* the day's own record is never rewritten by making one up */
+  assert.strictEqual(win.Store.prayersOf(back(1)).fajr, 'missed');
+});
+
+test('the days of ramadan owed are set and struck off one at a time', () => {
+  const { win, doc } = boot();
+  win.App.go('qada');
+  assert.strictEqual(doc.getElementById('qada-fast-tally').textContent, 'لا شيء عليك');
+  for (let i = 0; i < 3; i++) click(win, doc.querySelector('[data-act="fast-owed"][data-ref="1"]'));
+  assert.strictEqual(win.Store.get('fastOwed'), 3);
+  click(win, doc.querySelector('[data-act="fast-done"]'));
+  assert.strictEqual(win.Store.fastOwed(), 2);
+  assert.strictEqual(doc.getElementById('qada-fast-tally').textContent, 'بقي يومان');
+  click(win, doc.querySelector('[data-act="fast-owed"][data-ref="-1"]'));
+  assert.strictEqual(win.Store.get('fastOwed'), 2, 'and the count may be corrected');
+  /* it never goes below nothing */
+  for (let i = 0; i < 6; i++) click(win, doc.querySelector('[data-act="fast-owed"][data-ref="-1"]'));
+  assert.strictEqual(win.Store.get('fastOwed'), 0);
+});
+
+test('the daily portion and the friday call are worked out here and handed to the app', () => {
+  const { win } = boot();
+  win.Store.set('khatmaStart', win.Date.now());
+  win.Store.set('wirdAt', '20:00');
+  win.Store.set('jumuahBefore', 120);
+  const list = win.App.helpers.reminderList();
+  assert.ok(list.length >= 6, 'a week of them, got ' + list.length);
+  const wird = list.filter(function (r) { return r.t === 'وردك اليوم'; });
+  assert.ok(wird.length >= 5, 'one for each day of the plan');
+  assert.match(wird[0].b, /من صفحة \d+ إلى صفحة \d+/, 'naming the pages, so it is useful without opening the app');
+  const friday = list.filter(function (r) { return r.t === 'الجمعة'; })[0];
+  assert.ok(friday, 'and the friday call');
+  assert.strictEqual(new Date(friday.at).getDay(), 5);
+  assert.ok(friday.b.indexOf('الكهف') !== -1);
+  list.forEach(function (r) { assert.ok(r.at > Date.now(), 'nothing already past'); });
+  /* turned off, nothing is queued */
+  win.Store.set('wirdAt', '');
+  win.Store.set('jumuahBefore', 0);
+  assert.strictEqual(win.App.helpers.reminderList().length, 0);
+  const handed = [];
+  win.SunnatiApp = { setReminders: function (j) { handed.push(JSON.parse(j)); } };
+  win.App.helpers.handRemindersToApp();
+  assert.strictEqual(handed[0].length, 0);
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/NoteScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1,
+    'and the app arms each in turn');
+});
+
+test('the adhkar of a prayer are offered the moment it is marked prayed, once, and can be stopped', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.App.helpers.offerAfterPrayer('dhuhr'), true);
+  assert.strictEqual(doc.getElementById('sheet-title').textContent, 'أذكار ما بعد الظهر');
+  assert.ok(doc.querySelectorAll('#sheet .dua-line').length >= 3, 'the first of them, in place');
+  assert.strictEqual(win.App.helpers.offerAfterPrayer('dhuhr'), false, 'not twice for the same prayer');
+  assert.strictEqual(win.App.helpers.offerAfterPrayer('asr'), true, 'but each prayer has its own');
+  click(win, doc.querySelector('#sheet [data-act="after-prayer-off"]'));
+  assert.strictEqual(win.Store.get('afterPrayerOff'), true);
+  assert.strictEqual(win.App.helpers.offerAfterPrayer('maghrib'), false, 'and it stays off');
+});
+
+test('one search reaches everything the app holds, and no source crowds out the rest', () => {
+  const { win, doc } = boot();
+  const hits = win.App.helpers.searchTexts('all', 'اللهم');
+  assert.ok(hits.length > 20, 'plenty found, got ' + hits.length);
+  const bySource = {};
+  hits.forEach(function (h) {
+    const k = h.key.split(':')[0];
+    bySource[k] = (bySource[k] || 0) + 1;
+  });
+  assert.ok(Object.keys(bySource).length >= 5, 'from many sources, got ' + Object.keys(bySource).join(', '));
+  Object.keys(bySource).forEach(function (k) {
+    assert.ok(bySource[k] <= 10, k + ' should not fill the page: ' + bySource[k]);
+  });
+  /* every hit knows where it lives */
+  hits.forEach(function (h) { assert.ok(h.where && h.key, 'a hit with no home'); });
+  /* and the chips offer it */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  ['all', 'hisn', 'umrah'].forEach(function (scope) {
+    assert.ok(html.indexOf('data-scope="' + scope + '"') !== -1, 'a chip for ' + scope);
+  });
+});
+
+test('the backup is a real file the reader can keep', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function exportBackup\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('app.saveFile(name, text)') !== -1, 'inside the app it is written where the reader can find it');
+  assert.ok(fn.indexOf('link.download = name') !== -1, 'and in a browser it is downloaded');
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('MediaStore.Downloads') !== -1, 'into the phone\'s own downloads');
+  assert.ok(bridge.indexOf('DIRECTORY_DOWNLOADS') !== -1);
 });
