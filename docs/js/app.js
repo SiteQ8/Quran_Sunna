@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.10.0';
+  var VERSION = '8.11.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1852,32 +1852,58 @@
 
   /* ---------------- أدعية القرآن بمواضيعها ---------------- */
 
+  /* The topics of the booklet: each holds its own supplications, and the
+     verses of the qur'an that belong to it, which are read from the mushaf
+     rather than written out a second time. */
+  function duaTopics() {
+    var book = typeof DUA_BOOK !== 'undefined' ? DUA_BOOK : [];
+    var themes = typeof DUA_THEMES !== 'undefined' ? DUA_THEMES : [];
+    var byId = {};
+    book.forEach(function (t) { byId[t.id] = { id: t.id, n: t.n, i: t.i, v: [] }; });
+    themes.forEach(function (t) {
+      if (!byId[t.id]) byId[t.id] = { id: t.id, n: t.n, i: [], v: [] };
+      byId[t.id].v = t.v.split(',');
+    });
+    var order = book.map(function (t) { return t.id; });
+    themes.forEach(function (t) { if (order.indexOf(t.id) === -1) order.push(t.id); });
+    return order.map(function (id) { return byId[id]; });
+  }
+
   function renderDuaThemes() {
     var host = $('dua-themes');
-    if (!host || typeof DUA_THEMES === 'undefined') return;
-    host.innerHTML = DUA_THEMES.map(function (t) {
+    if (!host) return;
+    var topics = duaTopics();
+    host.innerHTML = topics.map(function (t) {
       return '<button class="chip" data-dua-theme="' + esc(t.id) + '">' + esc(t.n) +
-        ' <span class="fold-tally">' + ar(t.v.split(',').length) + '</span></button>';
+        ' <span class="fold-tally">' + ar(t.i.length + t.v.length) + '</span></button>';
     }).join('');
+    var tally = $('dua-book-tally');
+    if (tally) tally.textContent = ar(topics.reduce(function (n, t) { return n + t.i.length; }, 0)) + ' دعاء';
     var src = $('dua-themes-source');
-    if (src) src.textContent = DUA_THEMES_SOURCE.n + ' على كتيّب ' + DUA_THEMES_SOURCE.b + '، والنص من المصحف';
+    if (src && typeof DUA_BOOK_SOURCE !== 'undefined') {
+      src.textContent = DUA_BOOK_SOURCE.n + ' على كتيّب ' + DUA_BOOK_SOURCE.b + '، وآيات القرآن تُقرأ من المصحف';
+    }
   }
 
   function openDuaTheme(id) {
-    var theme = DUA_THEMES.filter(function (t) { return t.id === id; })[0];
-    if (!theme) return;
-    var refs = theme.v.split(',');
-    openSheet('أدعية ' + theme.n,
-      refs.map(function (r) {
-        var parts = r.split(':');
-        var s = +parts[0], a = +parts[1];
-        var meta = surahMeta(s);
-        var text = Mushaf.ready() ? Mushaf.ayah(s, a) : '';
-        return '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
-          '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) + '</span>' +
-          esc(text) + '</button>';
-      }).join('') +
-      '<p class="setting-note" style="margin-top:10px">اضغط أي آية لتفتحها في المصحف</p>');
+    var topic = duaTopics().filter(function (t) { return t.id === id; })[0];
+    if (!topic) return;
+    var prose = topic.i.map(function (t) {
+      return '<div class="dua-line">' + esc(t) +
+        '<button class="btn btn-ghost dua-share" data-act="share-dua" data-ref="' + esc(id) + ':' + topic.i.indexOf(t) + '" aria-label="شارك الدعاء">' + icon('share') + '</button></div>';
+    }).join('');
+    var verses = topic.v.map(function (r) {
+      var parts = r.split(':');
+      var s = +parts[0], a = +parts[1];
+      var meta = surahMeta(s);
+      return '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
+        '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) + '</span>' +
+        esc(Mushaf.ready() ? Mushaf.ayah(s, a) : '') + '</button>';
+    }).join('');
+    openSheet('أدعية ' + topic.n,
+      prose +
+      (verses ? '<h2 class="section-title" style="margin-top:14px">من دعاء القرآن</h2>' + verses +
+        '<p class="setting-note">اضغط أي آية لتفتحها في المصحف</p>' : ''));
   }
 
   function markPlayerToggle() {
@@ -3887,6 +3913,13 @@
       toast(field && field.value.trim() ? 'حُفظت الملاحظة' : 'أُزيلت الملاحظة');
       verseSheet(+parts[0], +parts[1]);
     },
+    'share-dua': function (ref) {
+      var parts = ref.split(':');
+      var topic = duaTopics().filter(function (t) { return t.id === parts[0]; })[0];
+      if (!topic) return;
+      var text = topic.i[+parts[1]];
+      if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', DUA_BOOK_SOURCE.b), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
+    },
     'read-pace': function (ref) {
       Store.set('readPace', ref);
       closeSheet();
@@ -4638,7 +4671,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

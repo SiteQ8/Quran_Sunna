@@ -10,7 +10,7 @@ const { JSDOM } = require('/tmp/node_modules/jsdom');
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/content.js', 'data/extras.js',
+  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -4795,7 +4795,7 @@ test("the qur'an's own supplications are gathered by theme, and read from the mu
   const { win, doc } = boot();
   win.App.go('dua');
   const chips = [...doc.querySelectorAll('[data-dua-theme]')];
-  assert.strictEqual(chips.length, win.DUA_THEMES.length);
+  assert.strictEqual(chips.length, win.App.helpers.duaTopics().length, 'a chip for every topic');
   assert.ok(chips.length >= 25, 'the booklet\'s themes, ' + chips.length);
   /* every verse a theme names is a real verse of the mushaf */
   win.DUA_THEMES.forEach(function (t) {
@@ -4807,12 +4807,47 @@ test("the qur'an's own supplications are gathered by theme, and read from the mu
       assert.ok(text && text.length > 5, t.id + ' points at nothing: ' + ref);
     });
   });
-  click(win, chips[0]);
+  const theme = win.DUA_THEMES[0];
+  click(win, doc.querySelector('[data-dua-theme="' + theme.id + '"]'));
   const hits = doc.querySelectorAll('#sheet .search-hit');
-  assert.strictEqual(hits.length, win.DUA_THEMES[0].v.split(',').length);
+  assert.strictEqual(hits.length, theme.v.split(',').length);
   /* the words are the mushaf's, never copied beside it */
-  const first = win.DUA_THEMES[0].v.split(',')[0].split(':').map(Number);
+  const first = theme.v.split(',')[0].split(':').map(Number);
   assert.ok(hits[0].textContent.indexOf(win.Mushaf.ayah(first[0], first[1])) !== -1);
   const themes = fs.readFileSync(path.join(DOCS, 'data', 'dua-themes.js'), 'utf8');
   assert.ok(themes.indexOf('فإنك بأعيننا') !== -1, 'and the booklet the themes came from is named');
+});
+
+test("the booklet's supplications are gathered by topic beside the qur'an's", () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.DUA_BOOK.length, 30, 'the thirty topics of the booklet');
+  const total = win.DUA_BOOK.reduce((n, t) => n + t.i.length, 0);
+  assert.ok(total > 400, 'and its supplications, ' + total);
+  /* nothing came out of the file broken: no word runs past eleven letters,
+     and no stray diacritic was left behind by the font */
+  win.DUA_BOOK.forEach(function (t) {
+    assert.ok(t.id && /^[a-z]+$/.test(t.id), t.n + ' should have a plain id');
+    assert.ok(t.i.length, t.n + ' should not be empty');
+    t.i.forEach(function (line) {
+      assert.ok(line.length > 15, t.n + ': a line too short to be a supplication');
+      assert.ok(!/[\u064B-\u0655\u0670]/.test(line), t.n + ': a stray mark survived: ' + line.slice(0, 40));
+      line.split(' ').forEach(function (w) {
+        assert.ok(w.length <= 11, t.n + ': two words ran together: ' + w);
+      });
+    });
+  });
+  win.App.go('dua');
+  const chips = [...doc.querySelectorAll('[data-dua-theme]')];
+  assert.strictEqual(chips.length, 30, 'every topic is offered');
+  assert.strictEqual(doc.getElementById('dua-book-tally').textContent, String(total) + ' دعاء');
+  click(win, chips[0]);
+  const topic = win.App.helpers.duaTopics()[0];
+  assert.strictEqual(doc.querySelectorAll('#sheet .dua-line').length, topic.i.length);
+  assert.strictEqual(doc.querySelectorAll('#sheet .search-hit').length, topic.v.length,
+    "and the qur'an's verses for the same topic beside them");
+  /* the verses are still read from the mushaf, never copied */
+  const first = topic.v[0].split(':').map(Number);
+  assert.ok(doc.querySelector('#sheet .search-hit').textContent.indexOf(win.Mushaf.ayah(first[0], first[1])) !== -1);
+  const src = fs.readFileSync(path.join(DOCS, 'data', 'duas.js'), 'utf8');
+  assert.ok(src.indexOf('فإنك بأعيننا') !== -1, 'and the booklet is named');
 });
