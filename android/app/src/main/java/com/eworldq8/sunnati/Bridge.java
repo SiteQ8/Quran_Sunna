@@ -46,6 +46,15 @@ public final class Bridge {
     public void setAdhanEnabled(boolean on) { AdhanScheduler.setEnabled(host, on); }
 
     /** Whether the phone lets the app notify at all. */
+    /** How often to remind the reader to send prayers upon the Prophet ﷺ,
+     *  in minutes, or zero for never. The app holds its own alarm for this,
+     *  since a web page is never woken to do it. */
+    @JavascriptInterface
+    public void setSalawatEvery(int minutes) { SalawatScheduler.setEvery(host, minutes); }
+
+    @JavascriptInterface
+    public int salawatEvery() { return SalawatScheduler.every(host); }
+
     @JavascriptInterface
     public boolean canNotify() {
         return androidx_areNotificationsEnabled();

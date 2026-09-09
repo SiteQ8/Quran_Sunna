@@ -22,6 +22,15 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if ("com.eworldq8.sunnati.SALAWAT".equals(intent.getAction())) {
+            try {
+                post(context, "صلِّ على النبي ﷺ", "اللهم صلِّ وسلِّم على نبينا محمد", "salawat", CHANNEL_REMINDERS);
+            } catch (Exception e) {
+                Log.w("sunnati", "salawat not shown", e);
+            }
+            try { SalawatScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next salawat not armed", e); }
+            return;
+        }
         try {
             String name = intent.getStringExtra(AdhanScheduler.EXTRA_NAME);
             if (name != null && !name.isEmpty() && AdhanScheduler.enabled(context)) {
