@@ -4974,3 +4974,38 @@ test('a shared supplication carries no source line, and the app does not say whe
   });
   assert.ok(fs.readFileSync(path.join(__dirname, '..', 'README.md'), 'utf8').indexOf('صنع في الكويت') === -1);
 });
+
+test('no supplication carries a letter torn from its word', () => {
+  const { win } = boot();
+  /* the book justifies its lines, which stretches the joins inside a word
+     until they read as a space; a lone letter is the mark that one was torn */
+  const lone = [];
+  win.DUA_BOOK.forEach(function (t) {
+    t.i.forEach(function (line, at) {
+      line.split(' ').forEach(function (w) {
+        const bare = w.replace(/[^\u0621-\u064A]/g, '');
+        if (bare.length === 1 && bare !== 'و') lone.push(t.id + '[' + at + '] ' + w);
+      });
+    });
+  });
+  assert.deepStrictEqual(lone.join(', '), '', 'a letter standing alone: ' + lone.slice(0, 5).join(', '));
+  /* and none run together the other way */
+  win.DUA_BOOK.forEach(function (t) {
+    t.i.forEach(function (line) {
+      line.split(' ').forEach(function (w) {
+        assert.ok(w.replace(/[^\u0621-\u064A]/g, '').length <= 11, t.id + ': two words joined: ' + w);
+      });
+    });
+  });
+  const rizq = win.DUA_BOOK.filter(function (t) { return t.id === 'rizq'; })[0];
+  assert.ok(rizq.i.some(function (l) { return l.indexOf('ذو حظ عظيم') !== -1; }));
+  assert.ok(!rizq.i.some(function (l) { return /ذو ح ظ/.test(l); }));
+});
+
+test('the button that sends a verse sits inside its card', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const line = /\.verse-line \{[^}]*\}/.exec(css)[0];
+  assert.match(line, /background:\s*var\(--raised\)/, 'the card is the row, so the button is within it');
+  assert.match(line, /border:\s*1px solid var\(--line\)/);
+  assert.match(css, /\.verse-line \.search-hit \{[^}]*background:\s*transparent/, 'and the words inside it carry no second card');
+});
