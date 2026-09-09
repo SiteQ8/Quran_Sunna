@@ -255,15 +255,15 @@
 </section>
 <!-- ══════════ القارئ ══════════ -->
 <section class="view" id="v-reader" aria-labelledby="reader-title">
+<div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="btn btn-ghost" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg></button>
-    <button class="btn btn-ghost" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-next"/></svg></button>
-    <button class="btn btn-ghost" id="reader-autoscroll" aria-label="وضع القراءة، تتحرك الصفحة وحدها"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg></button>
+    <button class="btn btn-ghost btn-icon" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-next"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="reader-autoscroll" aria-label="وضع القراءة، تتحرك الصفحة وحدها"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg></button>
     <button class="btn btn-ghost" id="reader-save" data-surah-audio="1" aria-label="احفظ تلاوة السورة للاستماع بلا إنترنت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg><span class="reader-save-word">حفظ الصوت</span></button>
-    <button class="btn btn-primary" id="reader-play" style="margin-inline-start:auto"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg>استماع</button>
+    <button class="btn btn-primary" id="reader-play">استمع<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
   </div>
-  <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
   <div class="surah-head surah-frame">
     <h2 id="reader-title">…</h2>
     <p id="reader-meta"></p>
@@ -291,12 +291,12 @@
 
 <section class="view" id="v-page" aria-labelledby="page-title">
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost btn-icon" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <div class="page-head">
       <h1 id="page-title" class="page-num">صفحة 1</h1>
       <p id="page-meta" class="page-meta"></p>
     </div>
-    <button class="btn btn-ghost" id="page-jump" aria-label="اذهب إلى صفحة أو جزء أو آية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="page-jump" aria-label="اذهب إلى صفحة أو جزء أو آية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-search"/></svg></button>
   </div>
   <div class="reader-body page-body" id="page-body"></div>
   <div class="page-nav">
@@ -370,18 +370,18 @@
 
 <section class="view" id="v-hisn" aria-labelledby="hisn-title">
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost btn-icon" data-go="azkar" aria-label="رجوع إلى الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <div class="page-head"><h1 id="hisn-title" class="page-num">…</h1><p id="hisn-meta" class="page-meta"></p></div>
-    <button class="btn btn-ghost" id="hisn-reset" aria-label="أعد عدّادات هذا الباب"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="hisn-reset" aria-label="أعد عدّادات هذا الباب"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
   </div>
   <div id="hisn-list"></div>
 </section>
 
 <section class="view" id="v-azkar-list" aria-labelledby="azkar-list-title">
   <div class="reader-bar">
-    <button class="btn btn-ghost" data-go="azkar" aria-label="رجوع إلى أقسام الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
+    <button class="btn btn-ghost btn-icon" data-go="azkar" aria-label="رجوع إلى أقسام الأذكار"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <h1 id="azkar-list-title" style="font-size:1.1rem;font-weight:700">…</h1>
-    <button class="btn btn-ghost" id="azkar-reset" style="margin-inline-start:auto" aria-label="إعادة العدّادات"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="azkar-reset" style="margin-inline-start:auto" aria-label="إعادة العدّادات"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-refresh"/></svg></button>
   </div>
   <div class="meter" style="margin-bottom:14px"><span id="azkar-meter" style="width:0%"></span></div>
   <div id="azkar-items"></div>

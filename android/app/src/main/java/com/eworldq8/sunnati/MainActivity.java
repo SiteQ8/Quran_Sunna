@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -74,14 +75,13 @@ public class MainActivity extends Activity {
                 requestPermissions(new String[] { Manifest.permission.ACCESS_FINE_LOCATION }, ASK_LOCATION);
             }
         });
-        /* The app fills the screen: the status bar and the navigation bar are
-           hidden, and a swipe from an edge brings them back for a moment. What
-           the system still keeps, a camera cutout for instance, is given its
-           room so no word of the page is lost under it. */
+        /* The clock, the battery and the signal stay where the reader expects
+           them, and the app sits beneath that bar rather than under it, so no
+           word and no camera cutout ever falls on the page. */
         setContentView(web);
         web.setFitsSystemWindows(false);
-        goFullScreen();
-        insetForWhatRemains(web);
+        dressSystemBars();
+        insetBelowTheBars(web);
 
         try {
             AdhanReceiver.ensureChannels(this);
@@ -157,23 +157,28 @@ public class MainActivity extends Activity {
         return super.onKeyDown(keyCode, event);
     }
 
-    private void goFullScreen() {
-        getWindow().setDecorFitsSystemWindows(false);
+    /* The bars take the app's own paper, and their marks are drawn dark on it,
+       so the top of the screen belongs to the app rather than standing apart. */
+    private void dressSystemBars() {
+        boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+            == Configuration.UI_MODE_NIGHT_YES;
         WindowInsetsController bars = getWindow().getInsetsController();
         if (bars != null) {
-            bars.hide(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-            bars.setSystemBarsBehavior(WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            bars.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+            int marks = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            bars.setSystemBarsAppearance(night ? 0 : marks, marks);
         }
     }
 
-    /* A hidden bar takes no room, so only a cutout and the keyboard are inset. */
-    private void insetForWhatRemains(final View view) {
+    /* The bars keep their room and the page keeps the rest, the keyboard too. */
+    private void insetBelowTheBars(final View view) {
         view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
-                Insets cutout = insets.getInsets(WindowInsets.Type.displayCutout());
+                Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
                 Insets keyboard = insets.getInsets(WindowInsets.Type.ime());
-                v.setPadding(cutout.left, cutout.top, cutout.right, Math.max(cutout.bottom, keyboard.bottom));
+                v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, keyboard.bottom));
                 return WindowInsets.CONSUMED;
             }
         });
@@ -182,14 +187,14 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        goFullScreen();
+        dressSystemBars();
         if (web != null) web.onResume();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) goFullScreen();
+        if (hasFocus) dressSystemBars();
     }
 
     @Override
