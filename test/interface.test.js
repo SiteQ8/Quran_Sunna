@@ -4916,3 +4916,32 @@ test('the topics are equal tiles, and the three paces share one row', () => {
   assert.ok(grid.classList.contains('three'), 'the paces ask for three columns');
   assert.strictEqual(doc.querySelectorAll('#sheet [data-act="read-pace"]').length, 3);
 });
+
+test('a supplication and a verse each keep their own room beside their share button', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the room for the button is made by the layout, not by a padding that can
+     fall on the wrong side of the line */
+  assert.match(css, /\.dua-line \{[^}]*display:\s*flex/, 'the words and the button sit side by side');
+  assert.ok(!/\.dua-share \{[^}]*position:\s*absolute/.test(css), 'a button laid over the words can cover them');
+  assert.match(css, /\.dua-text \{[^}]*flex:\s*1 1 auto/, 'the words take the room that is left');
+  assert.match(css, /\.verse-line \{[^}]*display:\s*flex/);
+  const { win, doc } = boot();
+  win.App.go('dua');
+  const withVerses = win.App.helpers.duaTopics().filter(function (t) { return t.i.length && t.v.length; })[0];
+  click(win, doc.querySelector('[data-dua-theme="' + withVerses.id + '"]'));
+  /* every supplication carries its own button, and so does every verse */
+  const lines = doc.querySelectorAll('#sheet .dua-line');
+  assert.strictEqual(lines.length, withVerses.i.length);
+  lines.forEach(function (l) {
+    assert.ok(l.querySelector('.dua-text'), 'the words are wrapped, not loose beside the button');
+    assert.ok(l.querySelector('[data-act="share-dua"]'), 'and a button that sends them');
+  });
+  const verses = doc.querySelectorAll('#sheet .verse-line');
+  assert.strictEqual(verses.length, withVerses.v.length);
+  verses.forEach(function (v, i) {
+    assert.ok(v.querySelector('[data-hit]'), 'the words open the mushaf');
+    const share = v.querySelector('[data-act="share"]');
+    assert.ok(share, 'and a verse can be sent as a picture too');
+    assert.strictEqual(share.getAttribute('data-ref'), withVerses.v[i], 'each button carries its own verse');
+  });
+});

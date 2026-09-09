@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.11.3';
+  var VERSION = '8.11.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1887,17 +1887,19 @@
   function openDuaTheme(id) {
     var topic = duaTopics().filter(function (t) { return t.id === id; })[0];
     if (!topic) return;
-    var prose = topic.i.map(function (t) {
-      return '<div class="dua-line">' + esc(t) +
-        '<button class="btn btn-ghost dua-share" data-act="share-dua" data-ref="' + esc(id) + ':' + topic.i.indexOf(t) + '" aria-label="شارك الدعاء">' + icon('share') + '</button></div>';
+    var prose = topic.i.map(function (t, at) {
+      return '<div class="dua-line"><span class="dua-text">' + esc(t) + '</span>' +
+        '<button class="btn btn-ghost dua-share" data-act="share-dua" data-ref="' + esc(id) + ':' + at + '" aria-label="أرسل الدعاء صورة">' + icon('share') + '</button></div>';
     }).join('');
     var verses = topic.v.map(function (r) {
       var parts = r.split(':');
       var s = +parts[0], a = +parts[1];
       var meta = surahMeta(s);
-      return '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
+      return '<div class="verse-line">' +
+        '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
         '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) + '</span>' +
-        esc(Mushaf.ready() ? Mushaf.ayah(s, a) : '') + '</button>';
+        esc(Mushaf.ready() ? Mushaf.ayah(s, a) : '') + '</button>' +
+        '<button class="btn btn-ghost dua-share" data-act="share" data-ref="' + s + ':' + a + '" aria-label="أرسل الآية صورة">' + icon('share') + '</button></div>';
     }).join('');
     openSheet('أدعية ' + topic.n,
       prose +
