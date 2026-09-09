@@ -314,10 +314,13 @@
   </div>
   <div class="chip-row" id="search-scope" role="radiogroup" aria-label="مجال البحث" style="margin-bottom:12px">
     <button class="chip is-on" data-scope="quran" role="radio" aria-checked="true">القرآن</button>
+    <button class="chip" data-scope="all" role="radio" aria-checked="false">كل شيء</button>
     <button class="chip" data-scope="azkar" role="radio" aria-checked="false">الأذكار</button>
     <button class="chip" data-scope="hadith" role="radio" aria-checked="false">الأحاديث</button>
     <button class="chip" data-scope="dua" role="radio" aria-checked="false">الأدعية</button>
     <button class="chip" data-scope="sunan" role="radio" aria-checked="false">السنن</button>
+    <button class="chip" data-scope="hisn" role="radio" aria-checked="false">حصن المسلم</button>
+    <button class="chip" data-scope="umrah" role="radio" aria-checked="false">العمرة</button>
   </div>
   <input class="field" id="quran-search" type="search" placeholder="مثال: الحمد لله" aria-label="اكتب ما تبحث عنه" style="margin-bottom:12px">
   <p class="setting-note" id="search-count"></p>
@@ -434,6 +437,28 @@
       <button class="btn btn-ghost" id="tt-today">ارجع إلى هذا الشهر</button>
       <button class="btn btn-ghost" id="tt-copy"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-text"/></svg>انسخ الجدول</button>
     </div>
+  </div>
+</section>
+
+<section class="view" id="v-qada" aria-labelledby="qada-title">
+  <div class="view-head">
+    <h1 id="qada-title">القضاء</h1>
+    <p>ما عليك من صلاة وصيام، وما قضيته منه</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>الصلوات</h2><span class="badge" id="qada-prayers-tally"></span></div>
+    <p class="setting-note">تُحسب من الصلوات التي علّمتها فائتة في صلاتي، وكلما قضيت واحدة فاضغط قضيتها</p>
+    <div id="qada-prayers"></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-crescent"/></svg>صيام رمضان</h2><span class="badge" id="qada-fast-tally"></span></div>
+    <p class="setting-note">اضبط كم يوماً عليك، ثم علّم كل يوم تصومه</p>
+    <div class="btn-row" style="margin-bottom:12px">
+      <button class="btn btn-ghost" data-act="fast-owed" data-ref="-1" aria-label="أنقص يوماً مما عليك">−</button>
+      <span class="reading-rate" id="qada-fast-owed"></span>
+      <button class="btn btn-ghost" data-act="fast-owed" data-ref="1" aria-label="زد يوماً على ما عليك">+</button>
+    </div>
+    <button class="btn btn-primary btn-block" data-act="fast-done">صمت يوماً منها</button>
   </div>
 </section>
 
@@ -605,6 +630,25 @@
       <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
     <div class="setting"><span><span class="setting-label">تذكير الجمعة</span><br><span class="setting-note">يفتح التطبيق يوم الجمعة بسننه: الصلاة على النبي ﷺ وقراءة الكهف</span></span>
       <button class="switch" id="settings-friday" role="switch" aria-checked="true" aria-label="تذكير الجمعة"></button></div>
+    <div class="setting"><span><span class="setting-label">أذكار بعد الصلاة</span><br><span class="setting-note">تُعرض عند تعليم الصلاة أنك أدّيتها</span></span>
+      <button class="switch" id="settings-after-prayer" role="switch" aria-checked="true" aria-label="أذكار بعد الصلاة"></button></div>
+    <div class="setting"><span><span class="setting-label">ورد اليوم</span><br><span class="setting-note" id="settings-wird-note">تنبيه بورد ختمتك في الساعة التي تختارها</span></span>
+      <select class="select" id="settings-wird">
+        <option value="">بلا تذكير</option>
+        <option value="06:00">6 صباحاً</option>
+        <option value="08:00">8 صباحاً</option>
+        <option value="12:00">12 ظهراً</option>
+        <option value="16:00">4 عصراً</option>
+        <option value="20:00">8 مساءً</option>
+        <option value="22:00">10 مساءً</option>
+      </select></div>
+    <div class="setting"><span><span class="setting-label">نداء الجمعة</span><br><span class="setting-note">تنبيه قبل صلاة الجمعة بقراءة الكهف والصلاة على النبي ﷺ</span></span>
+      <select class="select" id="settings-jumuah-before">
+        <option value="0">بلا تذكير</option>
+        <option value="60">قبل ساعة</option>
+        <option value="120">قبل ساعتين</option>
+        <option value="180">قبل ثلاث ساعات</option>
+      </select></div>
     <div class="setting"><span><span class="setting-label">تذكير قيام الليل</span><br><span class="setting-note" id="settings-qiyam-note">تنبيه عند دخول الثلث الأخير من الليل</span></span>
       <button class="switch" id="settings-qiyam" role="switch" aria-checked="false" aria-label="تذكير قيام الليل"></button></div>
     <div class="setting"><span><span class="setting-label">الصلاة على النبي ﷺ</span><br><span class="setting-note">تذكير كل فترة تختارها</span></span>

@@ -22,6 +22,17 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if ("com.eworldq8.sunnati.NOTE".equals(intent.getAction())) {
+            try {
+                String title = intent.getStringExtra(NoteScheduler.EXTRA_TITLE);
+                String body = intent.getStringExtra(NoteScheduler.EXTRA_BODY);
+                if (title != null && !title.isEmpty()) post(context, title, body, "note", CHANNEL_REMINDERS);
+            } catch (Exception e) {
+                Log.w("sunnati", "note not shown", e);
+            }
+            try { NoteScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next note not armed", e); }
+            return;
+        }
         if ("com.eworldq8.sunnati.QIYAM".equals(intent.getAction())) {
             try {
                 post(context, "قيام الليل", "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى", "qiyam", CHANNEL_REMINDERS);

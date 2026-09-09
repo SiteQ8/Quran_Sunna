@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.13.1';
+  var VERSION = '8.14.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -465,6 +465,7 @@
     state.times = computeTimes(new Date());
     handTimesToApp();
     handQiyamToApp();
+    handRemindersToApp();
     return state.times;
   }
 
@@ -1278,6 +1279,7 @@
 
   var TILES = [
     { nav: 'tasbih', icon: 'beads', name: 'المسبحة', note: 'عدّاد بأهداف' },
+    { nav: 'qada', icon: 'clock', name: 'القضاء', note: 'ما عليك من صلاة وصيام' },
     { nav: 'umrah', icon: 'check', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'بوصلة' },
     { nav: 'khatma', icon: 'target', name: 'الختمة', note: 'خطة قراءة' },
@@ -2536,6 +2538,56 @@
     }
   }
 
+  /* ---------------- ورد اليوم، ونداء الجمعة ---------------- */
+
+  /* Today's portion of the mushaf, and the friday call, worked out here for
+     the days ahead and handed to the app, which delivers them whether the app
+     is open or not. */
+  function wirdFor(day) {
+    if (!Mushaf.ready() || !Store.get('khatmaStart')) return null;
+    var plan = Mushaf.khatmaPlan(Store.get('khatmaDays'));
+    if (!plan || !plan.length) return null;
+    var elapsed = Math.floor((day - new Date(Store.get('khatmaStart'))) / 86400000);
+    var portion = plan[elapsed];
+    return portion || null;
+  }
+
+  function reminderList() {
+    var out = [];
+    var now = new Date();
+    var wird = Store.get('wirdAt');
+    var before = +Store.get('jumuahBefore') || 0;
+    for (var d = 0; d < 7; d++) {
+      var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+      if (wird) {
+        var parts = String(wird).split(':');
+        var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), +parts[0], +parts[1], 0, 0);
+        var portion = wirdFor(day);
+        if (at.getTime() > Date.now() && portion) {
+          out.push({ at: at.getTime(), t: 'وردك اليوم',
+            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to) });
+        }
+      }
+      if (before && day.getDay() === 5) {
+        var times = computeTimes(day);
+        if (typeof times.dhuhr === 'number') {
+          var call = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, times.dhuhr - before, 0, 0);
+          if (call.getTime() > Date.now()) {
+            out.push({ at: call.getTime(), t: 'الجمعة',
+              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة' });
+          }
+        }
+      }
+    }
+    return out;
+  }
+
+  function handRemindersToApp() {
+    var app = bridge();
+    if (!app || !app.setReminders) return false;
+    try { app.setReminders(JSON.stringify(reminderList())); return true; } catch (e) { return false; }
+  }
+
   function handQiyamToApp() {
     var app = bridge();
     if (!app || !app.setQiyamTimes) return false;
@@ -2635,11 +2687,53 @@
   function searchTexts(scope, needle) {
     var plain = Mushaf.normalize(needle);
     var out = [];
+    /* Searching everything, one source must not fill the page and hide the
+       rest, so each is given a share of the room. */
+    var perSource = {};
     function take(text, where, key) {
+      var source = key.split(':')[0];
       if (out.length >= 60) return;
+      if (scope === 'all') {
+        if ((perSource[source] || 0) >= 10) return;
+      }
       if (Mushaf.normalize(text).indexOf(plain) !== -1 || Mushaf.expand(text).indexOf(plain) !== -1) {
         out.push({ text: text, where: where, key: key });
+        perSource[source] = (perSource[source] || 0) + 1;
       }
+    }
+    var every = scope === 'all';
+    if ((every || scope === 'hisn') && typeof HISN !== 'undefined') {
+      HISN.forEach(function (c) {
+        c.i.forEach(function (it) { take(it.t, 'حصن المسلم، ' + c.title, 'hisn:' + c.id); });
+      });
+    }
+    if ((every || scope === 'dua') && typeof DUA_BOOK !== 'undefined') {
+      DUA_BOOK.forEach(function (t) {
+        t.i.forEach(function (line) { take(line, 'أدعية ' + t.n, 'dua-topic:' + t.id); });
+      });
+    }
+    if ((every || scope === 'umrah') && typeof UMRAH_STAGES !== 'undefined') {
+      UMRAH_STAGES.forEach(function (st) {
+        st.i.forEach(function (line) { take(line, 'صفة العمرة، ' + st.t, 'umrah'); });
+      });
+      UMRAH_FORBIDDEN.forEach(function (line) { take(line, 'محظورات الإحرام', 'umrah'); });
+    }
+    if (every) {
+      if (typeof SUNNAH_TRACKER !== 'undefined') {
+        SUNNAH_TRACKER.forEach(function (g) { g.i.forEach(function (line) { take(line, g.s, 'tracker'); }); });
+      }
+      if (typeof AZKAR_DB !== 'undefined') {
+        Object.keys(AZKAR_DB).forEach(function (k) {
+          AZKAR_DB[k].items.forEach(function (item) { take(item.t, AZKAR_DB[k].title, 'azkar:' + k); });
+        });
+      }
+      if (typeof HADITHS !== 'undefined') {
+        HADITHS.forEach(function (h) { take(h.t, 'الحديث ' + ar(h.n), 'hadith'); });
+      }
+      if (typeof DUAS !== 'undefined') {
+        DUAS.forEach(function (g) { g.items.forEach(function (d) { take(d.t, g.cat, 'dua'); }); });
+      }
+      return out;
     }
     if (scope === 'sunan' && typeof SUNNAH_TRACKER !== 'undefined') {
       SUNNAH_TRACKER.forEach(function (g) {
@@ -2663,8 +2757,10 @@
   function renderTextHits(host, hits, needle) {
     if (!hits.length) { host.innerHTML = empty('لا نتيجة في هذا المجال'); return; }
     host.innerHTML = hits.map(function (hit) {
-      var target = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"' :
-        ' data-go="' + esc(hit.key) + '"';
+      var target = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"'
+        : hit.key.indexOf('hisn:') === 0 ? ' data-hisn="' + esc(hit.key.slice(5)) + '"'
+        : hit.key.indexOf('dua-topic:') === 0 ? ' data-dua-theme="' + esc(hit.key.slice(10)) + '"'
+        : ' data-go="' + esc(hit.key) + '"';
       return '<button class="search-hit"' + target + '>' +
         '<span class="search-hit-ref">' + esc(hit.where) + '</span>' +
         highlight(hit.text, needle) + '</button>';
@@ -3240,6 +3336,52 @@
         return '<div class="row umrah-' + which + '"><span class="row-mark">' + icon(which === 'allowed' ? 'check' : 'close') + '</span>' +
           '<span class="row-body"><span class="row-note umrah-line">' + esc(t) + '</span></span></div>';
       }).join('');
+  }
+
+  /* ---------------- القضاء ---------------- */
+
+  var PRAYER_NAMES = { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
+
+  /* The adhkar said after a prescribed prayer, offered the moment one is
+     marked prayed. Shown at most once for each prayer each day. */
+  function offerAfterPrayer(key) {
+    if (Store.get('afterPrayerOff')) return false;
+    var mark = Store.dayKey() + ':' + key;
+    if (Store.get('afterPrayerShown') === mark) return false;
+    Store.set('afterPrayerShown', mark);
+    var chapter = (typeof HISN !== 'undefined' ? HISN : []).filter(function (c) { return c.id === 27; })[0];
+    var items = chapter ? chapter.i.slice(0, 4) : [];
+    openSheet('أذكار ما بعد ' + PRAYER_NAMES[key],
+      items.map(function (it) {
+        return '<div class="dua-line"><span class="dua-text naskh">' + esc(it.t) + '</span>' +
+          (it.c > 1 ? '<span class="topic-count">' + ar(it.c) + '</span>' : '') + '</div>';
+      }).join('') +
+      '<button class="btn btn-primary btn-block" data-act="open-after-prayer" style="margin-top:10px">افتح الباب كاملاً</button>' +
+      '<button class="btn btn-ghost btn-block" data-act="after-prayer-off" style="margin-top:8px">لا تعرضها بعد كل صلاة</button>');
+    return true;
+  }
+
+  function renderQada() {
+    var host = $('qada-prayers');
+    if (!host) return;
+    var owed = Store.qadaOwed();
+    var total = 0;
+    host.innerHTML = Store.PRAYER_KEYS.map(function (k) {
+      total += owed[k];
+      return '<div class="row"><span class="row-mark">' + ar(owed[k]) + '</span>' +
+        '<span class="row-body"><span class="row-title">' + esc(PRAYER_NAMES[k]) + '</span>' +
+        '<span class="row-note">' + (owed[k] ? 'عليك ' + count(owed[k], 'واحدة', 'اثنتان', 'صلوات', 'صلاة') : 'ليس عليك شيء') + '</span></span>' +
+        (owed[k] ? '<button class="btn btn-ghost" data-act="qada-done" data-ref="' + k + '">قضيتها</button>' : '') +
+        '</div>';
+    }).join('');
+    if ($('qada-prayers-tally')) {
+      $('qada-prayers-tally').textContent = total ? ar(total) + ' عليك' : 'لا شيء عليك';
+    }
+    var owedDays = Store.fastOwed();
+    if ($('qada-fast-owed')) $('qada-fast-owed').textContent = ar(+Store.get('fastOwed') || 0) + ' يوماً عليك';
+    if ($('qada-fast-tally')) {
+      $('qada-fast-tally').textContent = owedDays ? 'بقي ' + daysOf(owedDays) : 'لا شيء عليك';
+    }
   }
 
   function renderQibla() {
@@ -3828,6 +3970,9 @@
       { value: '360', label: 'كل ست ساعات' }
     ], String(s.salawat || 0));
     fillVoiceListSoon();
+    setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
+    if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
+    if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-friday'), !!Store.get('friday'));
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
     showQiyamTime();
@@ -3910,12 +4055,21 @@
 
   function exportBackup() {
     var payload = Store.exportAll();
-    var text = JSON.stringify(payload, null, 2);
+    var text = typeof payload === 'string' ? payload : JSON.stringify(payload, null, 2);
+    var name = 'sunnati-backup-' + Store.dayKey() + '.json';
+    /* inside the app the file goes through the phone's own share sheet, so it
+       can be kept in Drive or sent to oneself rather than lost with the phone */
+    var app = bridge();
+    if (app && app.saveFile) {
+      var ok = false;
+      try { ok = app.saveFile(name, text); } catch (e) { ok = false; }
+      if (ok) { toast('حُفظت نسختك في التنزيلات باسم ' + name); return; }
+    }
     var blob = new window.Blob([text], { type: 'application/json' });
     var url = window.URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
-    link.download = 'sunnati-backup-' + Store.dayKey() + '.json';
+    link.download = name;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -4001,6 +4155,7 @@
     tracker: renderTracker,
     more: renderMore,
     umrah: renderUmrah,
+    qada: renderQada,
     qibla: renderQibla,
     tasbih: renderTasbih,
     radio: renderRadio,
@@ -4061,6 +4216,30 @@
       toast('أُوقف تذكير الجمعة، وتعيده من الإعدادات');
       renderSettings();
     },
+    'open-after-prayer': function () { closeSheet(); state.hisn = 27; go('hisn'); },
+    'after-prayer-off': function () {
+      Store.set('afterPrayerOff', true);
+      closeSheet();
+      toast('لن تُعرض بعد الصلاة، وتعيدها من الإعدادات');
+      renderSettings();
+    },
+    'qada-done': function (ref) {
+      Store.markQada(ref, 1);
+      buzz(8);
+      renderQada();
+      toast('تقبّل الله، ' + PRAYER_NAMES[ref] + ' قضيتها');
+    },
+    'fast-owed': function (ref) {
+      Store.setFastOwed((+Store.get('fastOwed') || 0) + (+ref));
+      renderQada();
+    },
+    'fast-done': function () {
+      if (!Store.fastOwed()) { toast('ليس عليك صيام'); return; }
+      Store.markFast(1);
+      buzz(8);
+      renderQada();
+      toast('تقبّل الله، بقي ' + daysOf(Store.fastOwed()));
+    },
     'to-calendar': function (ref) {
       var at = ref.lastIndexOf('|');
       addToCalendar(ref.slice(0, at), new Date(+ref.slice(at + 1)));
@@ -4094,6 +4273,12 @@
       }
       renderHome();
       if (state.view === 'prayers') renderPrayers();
+      if (state.view === 'qada') renderQada();
+      /* a prayer just prayed is the moment for its own adhkar, so they are
+         offered where the reader stands rather than left to be hunted for */
+      if ((parts[1] === 'jamaah' || parts[1] === 'ontime') && sameDay(when, new Date())) {
+        window.setTimeout(function () { offerAfterPrayer(parts[0]); }, 420);
+      }
     },
     'goto-page': goToPage,
     'goto-juz': goToJuz,
@@ -4524,6 +4709,23 @@
       if (document.visibilityState === 'visible') tick();
     });
 
+    bind('settings-after-prayer', 'click', function () {
+      var on = !!Store.get('afterPrayerOff');
+      Store.set('afterPrayerOff', !on ? true : false);
+      setSwitch($('settings-after-prayer'), on);
+      toast(on ? 'ستُعرض الأذكار بعد الصلاة' : 'لن تُعرض بعد الصلاة');
+    });
+    bind('settings-wird', 'change', function (e) {
+      Store.set('wirdAt', e.target.value);
+      handRemindersToApp();
+      toast(e.target.value ? 'سيصلك ورد اليوم في وقته' : 'أُوقف تذكير الورد');
+    });
+    bind('settings-jumuah-before', 'change', function (e) {
+      Store.set('jumuahBefore', +e.target.value);
+      handRemindersToApp();
+      toast(+e.target.value ? 'سيصلك نداء الجمعة قبلها' : 'أُوقف نداء الجمعة');
+    });
+
     bind('settings-friday', 'click', function () {
       var on = !Store.get('friday');
       Store.set('friday', on);
@@ -4827,12 +5029,14 @@
     render: RENDERERS,
     actions: ACTIONS,
     helpers: {
+      renderQada: renderQada, searchTexts: searchTexts, offerAfterPrayer: offerAfterPrayer,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
