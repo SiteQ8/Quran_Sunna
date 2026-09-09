@@ -9,6 +9,7 @@ public final class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         try { AdhanScheduler.scheduleNext(context);
-            SalawatScheduler.scheduleNext(context); } catch (Exception e) { /* the next open arms it */ }
+            SalawatScheduler.scheduleNext(context);
+            QiyamScheduler.scheduleNext(context); } catch (Exception e) { /* the next open arms it */ }
     }
 }

@@ -785,6 +785,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* ---------- home grid ---------- */
 
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
+/* a last row left half empty reads as a hole, so the odd tiles at the end
+   stretch to fill the row they are on */
+.grid > .tile:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
+.grid > .tile:nth-last-child(2):nth-child(3n + 1) { grid-column: span 2; }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 
 .tile {

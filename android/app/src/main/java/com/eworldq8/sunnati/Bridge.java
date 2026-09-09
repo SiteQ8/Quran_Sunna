@@ -55,6 +55,14 @@ public final class Bridge {
     @JavascriptInterface
     public int salawatEvery() { return SalawatScheduler.every(host); }
 
+    /** When the last third of the night falls, for the days ahead, or an
+     *  empty list to stop calling. */
+    @JavascriptInterface
+    public void setQiyamTimes(String json) {
+        if (json == null || json.isEmpty() || "[]".equals(json)) QiyamScheduler.clear(host);
+        else QiyamScheduler.setTimes(host, json);
+    }
+
     @JavascriptInterface
     public boolean canNotify() {
         return androidx_areNotificationsEnabled();
