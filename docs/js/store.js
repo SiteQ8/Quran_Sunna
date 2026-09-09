@@ -27,6 +27,7 @@
     salawat: 0,
     salawatAt: 0,
     umrah: {},
+    readPace: 'mid',
     adhanVoice: 'none',
     salawatVoice: 'ibrahimiyya',
     voice: 'recording',
