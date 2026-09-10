@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.38.1';
+  var VERSION = '8.39.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2285,6 +2285,56 @@
     if (window.scrollTo) window.scrollTo(0, 0);
   }
 
+  /* The sunnahs of jumuah, set among the daily sunnahs while they are due:
+     the night's from the maghrib of thursday to the fajr of friday, then the
+     day's until it ends. Outside that the card is not there at all. */
+  function jumuahCardKind() {
+    if (inJumuahNight()) return 'night';
+    if (new Date().getDay() === 5) return 'day';
+    return null;
+  }
+
+  /* the sunnahs of the prayers as the reader sees them today */
+  function todaySunanLines() {
+    var out = [];
+    var host = $('tracker-list');
+    if (!host) return out;
+    /* the names as they stand on the screen, so the picture and the list
+       cannot say different things */
+    [].forEach.call(host.querySelectorAll('.check-label'), function (el) {
+      var t = (el.firstChild && el.firstChild.nodeType === 3
+        ? el.firstChild.nodeValue : el.textContent || '').trim();
+      if (t && out.length < 12 && out.indexOf(t) === -1) out.push(t);
+    });
+    return out;
+  }
+
+  function renderJumuahCard() {
+    var host = $('tracker-jumuah');
+    if (!host) return;
+    var kind = jumuahCardKind();
+    if (!kind) { host.innerHTML = ''; return; }
+    var night = kind === 'night';
+    var lines = night ? JUMUAH_NIGHT_SUNAN : FRIDAY_SUNAN;
+    var title = night ? 'ليلة الجمعة' : 'يوم الجمعة';
+    var note = night ? 'من مغرب الخميس إلى فجر الجمعة' : 'من سنن هذا اليوم';
+    host.innerHTML = '<div class="card">' +
+      '<div class="card-head"><h2>' + icon('star') + esc(title) + '</h2></div>' +
+      '<p class="setting-note">' + esc(note) + '</p>' +
+      lines.map(function (line) {
+        return '<div class="dua-line"><span class="dua-text">' + esc(line) + '</span></div>';
+      }).join('') +
+      '<button class="btn btn-primary btn-block" data-act="open-kahf" style="margin-top:12px">افتح سورة الكهف</button>' +
+      '<div class="sheet-tools">' +
+        '<button class="btn btn-ghost" data-act="' + (night ? 'share-jumuah-night' : 'share-friday') + '">' +
+          icon('share') + 'صورة</button>' +
+        '<button class="btn btn-ghost" data-act="' + (night ? 'snooze-jumuah-night' : 'snooze-friday') + '">' +
+          icon('clock') + 'ذكّرني بعد ساعة</button>' +
+        '<button class="btn btn-ghost" data-act="' + (night ? 'hide-jumuah-night' : 'friday-off') + '">' +
+          icon('close') + 'لا تُذكّرني</button>' +
+      '</div></div>';
+  }
+
   /* ---------------- المصحف كما طُبع ---------------- */
 
   var MADINAH_LINES = null;
@@ -3740,6 +3790,7 @@
 
   function renderTracker() {
     renderTrackerPrayersNote();
+    renderJumuahCard();
     var host = $('tracker-list');
     if (!host) return;
     var record = Store.day();
@@ -5332,6 +5383,11 @@
     'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     'share-jumuah-night': function () { shareJumuahNight(); },
+    'share-sunan': function () {
+      var rows = todaySunanLines();
+      sharePicture(listCard('سنن اليوم', rows, 'من السنن الرواتب'),
+        'sunan.png', 'سنن اليوم', rows.join('\n') + '\n\nتطبيق سُنّتي · sunnati.3li.info');
+    },
     'share-friday': function () {
       sharePicture(listCard('يوم الجمعة', FRIDAY_SUNAN, 'من سنن هذا اليوم'),
         'friday.png', 'يوم الجمعة', FRIDAY_SUNAN.join('\n') + '\n\nتطبيق سُنّتي · sunnati.3li.info');
@@ -6267,7 +6323,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, renderJumuahCard: renderJumuahCard, jumuahCardKind: jumuahCardKind, todaySunanLines: todaySunanLines, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

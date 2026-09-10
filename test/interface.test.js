@@ -6899,3 +6899,27 @@ test('the my-place button asks again about that place', () => {
   assert.ok(fn.indexOf("toast('نبحث عن المساجد حول موقعك')") !== -1, 'and says so');
   assert.ok(fn.indexOf("toast('حدّد موقعك أولاً')") !== -1, 'or says why it cannot');
 });
+
+test('the sunnahs of jumuah sit among the daily sunnahs while they are due', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const kind = /function jumuahCardKind\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the night's from the maghrib of thursday to the fajr of friday, then the
+     day's until it ends, and outside that the card is not there at all */
+  assert.ok(kind.indexOf("if (inJumuahNight()) return 'night';") !== -1);
+  assert.ok(kind.indexOf("if (new Date().getDay() === 5) return 'day';") !== -1);
+  assert.ok(kind.indexOf('return null;') !== -1, 'and nothing on any other day');
+  const card = /function renderJumuahCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(card.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1,
+    'it is cleared away, not merely hidden');
+  /* it carries the same three choices as the sheet does */
+  ['share-jumuah-night', 'snooze-jumuah-night', 'hide-jumuah-night',
+    'share-friday', 'snooze-friday', 'friday-off'].forEach(function (act) {
+    assert.ok(card.indexOf(act) !== -1, 'missing ' + act);
+  });
+  /* and the daily sunnahs have a picture of their own */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('data-act="share-sunan"') !== -1);
+  const lines = /function todaySunanLines\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(lines.indexOf("querySelectorAll('.check-label')") !== -1,
+    'the picture reads the names off the screen, so the two cannot differ');
+});
