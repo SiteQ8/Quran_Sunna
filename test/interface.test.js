@@ -2379,7 +2379,7 @@ test('nothing that must stay private is committed', () => {
 function reciteHarness(win) {
   /* the walk verse by verse is what a reciter without a whole surah recording
      falls back to, and what the repeat and the memorising use */
-  win.Store.set('reciter', 'ar.hanirifai');
+  win.Store.set('reciter', 'ar.husarymujawwad');
   const asked = [];
   let live = null;
   win.Audio = function () {
@@ -5994,7 +5994,7 @@ test('a whole surah is recited from one recording, so nothing breaks between ver
     'the number is padded to three, as the source keeps them');
   assert.strictEqual(win.App.helpers.surahAudioUrl(114), 'https://server10.mp3quran.net/minsh/114.mp3');
   /* a reciter with no such recording keeps the walk rather than failing */
-  win.Store.set('reciter', 'ar.hanirifai');
+  win.Store.set('reciter', 'ar.husarymujawwad');
   assert.strictEqual(win.App.helpers.surahAudioUrl(20), null);
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function playSurah\(n\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
@@ -6003,7 +6003,16 @@ test('a whole surah is recited from one recording, so nothing breaks between ver
   /* every named source is a real address */
   const map = /var SURAH_AUDIO = \{([\s\S]*?)\};/.exec(app)[1];
   const urls = [...map.matchAll(/'(https:\/\/[^']+)'/g)].map(function (m) { return m[1]; });
-  assert.ok(urls.length >= 5, 'several reciters, got ' + urls.length);
+  assert.ok(urls.length >= 13, 'most reciters, got ' + urls.length);
+  /* every id named must be a reciter the app actually offers, or a reader
+     would pick a voice and get silence */
+  const extras = fs.readFileSync(path.join(DOCS, 'data', 'extras.js'), 'utf8');
+  const offered = [...extras.matchAll(/id: '(ar\.[a-z]+)'/g)].map(function (m) { return m[1]; });
+  const named = [...map.matchAll(/'(ar\.[a-z]+)':/g)].map(function (m) { return m[1]; });
+  named.forEach(function (id) {
+    assert.ok(offered.indexOf(id) !== -1, id + ' is not a reciter the app offers');
+  });
+  assert.strictEqual(new Set(named).size, named.length, 'no reciter is named twice');
   urls.forEach(function (u) { assert.match(u, /^https:\/\/server\d+\.mp3quran\.net\/[a-z_]+\/$/, u); });
 });
 
