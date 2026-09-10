@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.31.4';
+  var VERSION = '8.32.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2885,6 +2885,13 @@
   }
 
   /* ليلة الجمعة runs from the maghrib of thursday to the fajr of friday */
+  /* the night is named by its thursday, so it stays one night past midnight */
+  function nightKey() {
+    var now = new Date();
+    var day = now.getDay() === 5 ? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1) : now;
+    return day.toDateString();
+  }
+
   function inJumuahNight() {
     var now = new Date();
     var minutes = now.getHours() * 60 + now.getMinutes();
@@ -2929,9 +2936,12 @@
       }
       /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
          بعد منتصف الليل، وهو مرة في الاسبوع لا اكثر */
-      if (Store.get('jumuahNight') && d === 0 && !already(out, 'ليلة الجمعة')) {
+      if (Store.get('jumuahNight') && d === 0 && !already(out, 'ليلة الجمعة') && inJumuahNight()) {
+        /* A reminder owed tonight is armed once and once only. It used to be
+           set two minutes out every single time the app was opened, so it
+           arrived again and again the whole night through. */
         var putOff = +Store.get('jumuahNightAt') || 0;
-        if (putOff > Date.now() && inJumuahNight()) {
+        if (putOff > Date.now()) {
           out.push({ at: putOff, t: 'ليلة الجمعة',
             b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
         }
@@ -2944,7 +2954,12 @@
              still owed tonight: putting it off a whole week because the app
              was opened late is not a reminder of this night at all */
           var at = atEve.getTime();
-          if (at <= Date.now() && d === 0 && inJumuahNight()) at = Date.now() + 120000;
+          /* the night has begun and its moment has passed: it is owed tonight,
+             but only if it has not already been given tonight */
+          if (at <= Date.now() && d === 0 && inJumuahNight()) {
+            if (Store.get('jumuahNightArmed') === nightKey()) at = 0;
+            else { at = Date.now() + 120000; Store.set('jumuahNightArmed', nightKey()); Store.set('jumuahNightAt', at); }
+          }
           if (at > Date.now()) {
             out.push({ at: at, t: 'ليلة الجمعة',
               b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
@@ -3116,6 +3131,7 @@
   function snoozeJumuahNight(minutes) {
     var at = Date.now() + minutes * 60000;
     Store.set('jumuahNightAt', at);
+    Store.set('jumuahNightArmed', nightKey());
     handRemindersToApp();
     return at;
   }
@@ -5263,6 +5279,8 @@
     },
     'hide-jumuah-night': function () {
       Store.set('jumuahNight', false);
+      Store.set('jumuahNightAt', 0);
+      Store.set('jumuahNightArmed', '');
       handRemindersToApp();
       closeSheet();
       toast('لن تُذكّر بليلة الجمعة، وتعيدها من الإعدادات');
@@ -5842,6 +5860,7 @@
     bind('settings-jumuah-night', 'click', function () {
       var on = !Store.get('jumuahNight');
       Store.set('jumuahNight', on);
+      if (!on) { Store.set('jumuahNightAt', 0); Store.set('jumuahNightArmed', ''); }
       setSwitch($('settings-jumuah-night'), on);
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير ليلة الجمعة' : 'أُوقف تذكير ليلة الجمعة');
@@ -6184,7 +6203,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
