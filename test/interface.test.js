@@ -6702,3 +6702,23 @@ test('the sunnahs of the night are offered on every opening until put off or hid
   const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
   assert.ok(store.indexOf('jumuahNightShown') === -1, 'and the setting is gone from the store too');
 });
+
+test('the splash writes the app\'s name in the app\'s own face', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const head = html.slice(0, html.indexOf('</head>'));
+  /* the splash is the first thing drawn, so its face cannot wait for the
+     stylesheet to arrive: it is declared in the head itself */
+  assert.ok(head.indexOf("src: url('fonts/plex-arabic-600-arabic.woff2') format('woff2');") !== -1,
+    'the face is declared before anything else loads');
+  assert.ok(/font-weight: 600; font-display: block;/.test(head),
+    'and holds the word back until it is ready rather than flashing a wrong face');
+  assert.ok(head.indexOf('<link rel="preload" href="fonts/plex-arabic-600-arabic.woff2"') !== -1,
+    'and it is fetched at once');
+  /* the weight the splash asks for is the weight declared */
+  const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html)[1];
+  assert.ok(splash.indexOf("font:600 30px/1 'IBM Plex Sans Arabic'") !== -1,
+    'the splash asks for that very face and weight');
+  assert.ok(splash.indexOf('سُنّتي') !== -1);
+  /* the declaration comes before the splash it serves */
+  assert.ok(html.indexOf("plex-arabic-600-arabic.woff2") < html.indexOf('<div id="boot-splash"'));
+});
