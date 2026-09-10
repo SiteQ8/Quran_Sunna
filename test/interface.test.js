@@ -5091,9 +5091,9 @@ test('the app does not repeat its own name and address at the foot of every scre
 
 test('the sections fill their rows, leaving no hole at the end', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  assert.match(css, /\.grid > \.tile:last-child:nth-child\(3n \+ 1\) \{ grid-column: 1 \/ -1; \}/,
+  assert.match(css, /\.grid:not\(\.grid-2\) > \.tile:last-child:nth-child\(3n \+ 1\) \{ grid-column: 1 \/ -1; \}/,
     'a tile left alone on the last row stretches across it');
-  assert.match(css, /\.grid > \.tile:nth-last-child\(2\):nth-child\(3n \+ 1\) \{ grid-column: span 2; \}/,
+  assert.match(css, /\.grid:not\(\.grid-2\) > \.tile:nth-last-child\(2\):nth-child\(3n \+ 1\) \{ grid-column: span 2; \}/,
     'and two left over take half each');
 });
 
@@ -6821,8 +6821,8 @@ test('the cards of the adhkar are all one height', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* a grid sizes each row to its own content, so tiles in different rows came
      out different heights when a name ran to two lines */
-  assert.match(css, /#azkar-groups, #dua-places \{ align-items: stretch; grid-auto-rows: 1fr; \}/);
-  assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{ height: 100%/);
+  assert.match(css, /#azkar-groups, #dua-places \{\n  align-items: stretch; grid-auto-rows: 1fr;/);
+  assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{\n  height: 100%/);
   assert.match(css, /#azkar-groups \.tile-name, #dua-places \.tile-name \{\n  white-space: nowrap/);
 });
 
