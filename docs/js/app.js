@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.4';
+  var VERSION = '8.18.5';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1786,11 +1786,21 @@
 
   function playAudio(url, title, sub) {
     stopAudio();
-    var audio = new window.Audio();
-    audio.src = url;
+    /* if this very clip was fetched ahead while the last one sounded, that is
+       the one that plays: fetching it again would put the wait back */
+    var audio;
+    if (state.warmClip && state.warmed === url) {
+      audio = state.warmClip;
+      state.warmClip = null;
+      state.warmed = null;
+    } else {
+      audio = new window.Audio();
+      audio.src = url;
+    }
+    audio.currentTime = 0;
     state.audio = audio;
     watchClip(audio);
-    state.playing = { title: title, sub: sub };
+    state.playing = { title: title, sub: sub, surah: state.recite ? state.recite.s : (state.surahAudio || null) };
     var player = $('player');
     if (player) player.classList.add('is-open');
     markPlayerToggle();
@@ -4750,6 +4760,11 @@
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
     'mosque-look': function (ref) { lookAtMosque(+ref); },
+    'player-open': function () {
+      /* pressing what is sounding takes the reader to it */
+      if (state.recite) { state.surah = state.recite.s; go('reader'); return; }
+      if (state.playing && state.playing.surah) { state.surah = state.playing.surah; go('reader'); }
+    },
     'qada-done': function (ref) {
       Store.markQada(ref, 1);
       buzz(8);

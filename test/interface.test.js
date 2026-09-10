@@ -5880,3 +5880,36 @@ test('the next verse is fetched while the last is still sounding', () => {
   assert.ok(/reciteVerse[\s\S]{0,2000}warmNextVerse\(r\.s, r\.a \+ 1\);/.test(app),
     'every verse warms the one after it');
 });
+
+test('the player reads its words first, then its controls, and leads to what is sounding', () => {
+  const { win, doc } = boot();
+  const order = [...doc.querySelectorAll('#player > button')].map(function (b) { return b.id; });
+  assert.strictEqual(order.join(','), 'player-body,player-toggle,player-prev,player-next,player-stop',
+    'the surah first, and the play mark after its name');
+  const body = doc.getElementById('player-body');
+  assert.strictEqual(body.getAttribute('data-act'), 'player-open');
+  assert.ok(body.querySelector('#player-title') && body.querySelector('#player-sub'));
+  /* pressing what is sounding opens it */
+  win.App.state.recite = { s: 20, a: 6, to: 135 };
+  click(win, body);
+  assert.strictEqual(win.App.state.view, 'reader');
+  assert.strictEqual(win.App.state.surah, 20);
+});
+
+test('the verse fetched ahead is the one that plays, so nothing waits twice', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function playAudio\(url, title, sub\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* warming a clip and then building a fresh one for the same address leaves
+     the wait exactly where it was */
+  assert.ok(fn.indexOf('if (state.warmClip && state.warmed === url) {') !== -1,
+    'the warmed clip is taken when it matches');
+  assert.ok(fn.indexOf('state.warmClip = null;') !== -1, 'and not used twice');
+  assert.ok(fn.indexOf('audio.currentTime = 0;') !== -1, 'from its beginning');
+  const { win } = boot();
+  win.App.state.recite = { s: 20, a: 1, to: 135 };
+  win.App.helpers.warmNextVerse(20, 2);
+  assert.match(win.App.state.warmed, /\/2350\.mp3$/, 'the second of ta-ha');
+  /* the harness has no audio element to build, so only the address is checked
+     here; the browser check above showed the clip itself being held */
+  assert.ok(win.App.state.warmed, 'held ready to play');
+});
