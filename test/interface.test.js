@@ -6361,7 +6361,7 @@ test('the app does not promise that nothing ever leaves the device', () => {
   const hosts = [...new Set([...app.matchAll(/https:\/\/([a-z0-9.-]+)\//g)].map(function (m) { return m[1]; }))]
     .filter(function (h) { return !/3li\.info|github|openstreetmap\.org$/.test(h); });
   hosts.forEach(function (h) {
-    const stem = h.replace(/^server\d+\./, '').replace(/^tile\./, '').replace(/^api\./, '');
+    const stem = h.replace(/^server\d+\./, '').replace(/^tile\./, '').replace(/^api\./, '').replace(/^www\./, '');
     assert.ok(policy.indexOf(stem) !== -1 || policy.indexOf(h) !== -1,
       h + ' is reached by the app but never named in the policy');
   });
