@@ -85,6 +85,26 @@ public final class Bridge {
     @JavascriptInterface
     public void setSounding(boolean on) {
         if (host instanceof MainActivity) ((MainActivity) host).sounding = on;
+        if (!on) {
+            try { host.startService(new Intent(host, AudioService.class).setAction(AudioService.ACTION_STOP)); }
+            catch (Exception ignored) { /* nothing was holding it */ }
+        }
+    }
+
+    /** What is sounding, so the shade can show it and be pressed. */
+    @JavascriptInterface
+    public void showSounding(String title, String sub, boolean playing) {
+        try {
+            Intent hold = new Intent(host, AudioService.class)
+                .setAction(AudioService.ACTION_START)
+                .putExtra(AudioService.EXTRA_TITLE, title)
+                .putExtra(AudioService.EXTRA_SUB, sub)
+                .putExtra(AudioService.EXTRA_PLAYING, playing);
+            if (Build.VERSION.SDK_INT >= 26) host.startForegroundService(hold);
+            else host.startService(hold);
+        } catch (Exception ignored) {
+            /* the recitation still sounds while the app is open */
+        }
     }
 
     @JavascriptInterface

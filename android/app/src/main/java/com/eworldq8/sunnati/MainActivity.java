@@ -261,6 +261,22 @@ public class MainActivity extends Activity {
         if (hasFocus) dressSystemBars();
     }
 
+    /* The buttons in the shade come back here, and are passed to the page,
+       which is what actually holds the recitation. */
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        String action = intent == null ? null : intent.getAction();
+        if (AudioService.ACTION_TOGGLE.equals(action)) tellPage("App.helpers.togglePlay()");
+        else if (AudioService.ACTION_CLOSE.equals(action)) tellPage("App.helpers.stopAudio()");
+    }
+
+    private void tellPage(String script) {
+        if (web == null) return;
+        try { web.evaluateJavascript("try{" + script + "}catch(e){}", null); } catch (Exception ignored) { }
+    }
+
     @Override
     protected void onPause() {
         /* A recitation carries on when the reader leaves the app: pausing the

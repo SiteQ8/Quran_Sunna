@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.19.0';
+  var VERSION = '8.20.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1802,6 +1802,7 @@
     watchClip(audio);
     state.playing = { title: title, sub: sub, surah: state.recite ? state.recite.s : (state.surahAudio || null) };
     tellAppSounding(true);
+    showInShade(title, sub, true);
     var player = $('player');
     if (player) player.classList.add('is-open');
     markPlayerToggle();
@@ -1989,6 +1990,20 @@
 
   /* The app keeps the page awake while something is sounding, so leaving the
      app does not cut the recitation off. */
+  /* what is sounding, put in the phone's shade with something to press */
+  function showInShade(title, sub, playing) {
+    var app = bridge();
+    if (!app || !app.showSounding) return;
+    try { app.showSounding(title || '', sub || '', !!playing); } catch (e) { /* older package */ }
+  }
+
+  function togglePlay() {
+    if (!state.audio) return;
+    if (state.audio.paused) { state.audio.play(); } else { state.audio.pause(); }
+    markPlayerToggle();
+    if (state.playing) showInShade(state.playing.title, state.playing.sub, !state.audio.paused);
+  }
+
   function tellAppSounding(on) {
     var app = bridge();
     if (!app || !app.setSounding) return;
@@ -2110,8 +2125,42 @@
     );
   }
 
+  /* Where a whole surah is recorded as one file, that is what plays: the
+     verse by verse files carry their own silence at each end, so a walk
+     through them breaks the recitation however early each one is fetched.
+     A reciter without such a recording keeps the walk, and the walk is what
+     the repeat and the memorising still use. */
+  var SURAH_AUDIO = {
+    'ar.mahermuaiqly': 'https://server12.mp3quran.net/maher/',
+    'ar.minshawi': 'https://server10.mp3quran.net/minsh/',
+    'ar.husary': 'https://server13.mp3quran.net/husr/',
+    'ar.abdurrahmaansudais': 'https://server11.mp3quran.net/sds/',
+    'ar.ahmedajamy': 'https://server10.mp3quran.net/ajm/',
+    'ar.shaatree': 'https://server11.mp3quran.net/shatri/',
+    'ar.muhammadjibreel': 'https://server8.mp3quran.net/jbrl/'
+  };
+
+  function surahAudioUrl(n) {
+    var base = SURAH_AUDIO[reciterId()];
+    if (!base) return null;
+    var three = n < 10 ? '00' + n : (n < 100 ? '0' + n : String(n));
+    return base + three + '.mp3';
+  }
+
   function playSurah(n) {
-    reciteFrom(n, state.ayah || 1);
+    var whole = surahAudioUrl(n);
+    if (!whole) { reciteFrom(n, state.ayah || 1); return; }
+    stopRecite();
+    var meta = surahMeta(n);
+    state.surahAudio = n;
+    playAudio(whole, 'سورة ' + (meta ? meta.ar : ''), reciterName());
+    if (state.audio) {
+      state.audio.onended = function () {
+        state.surahAudio = null;
+        stopAudio();
+        toast('تمت تلاوة سورة ' + (meta ? meta.ar : ''));
+      };
+    }
   }
 
   /* ---------------- reading by the page ---------------- */
@@ -5645,7 +5694,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding,
+      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: stopAudio,
       renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
