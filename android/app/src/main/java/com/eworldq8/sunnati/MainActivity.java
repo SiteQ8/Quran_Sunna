@@ -160,6 +160,11 @@ public class MainActivity extends Activity {
         setIntent(intent);
         Uri data = intent.getData();
         if (data != null && "sunnati.3li.info".equals(data.getHost()) && web != null) web.loadUrl(data.toString());
+        /* the buttons in the shade come back here, and are passed to the page,
+           which is what actually holds the recitation */
+        String action = intent == null ? null : intent.getAction();
+        if (AudioService.ACTION_TOGGLE.equals(action)) tellPage("App.helpers.togglePlay()");
+        else if (AudioService.ACTION_CLOSE.equals(action)) tellPage("App.helpers.stopAudio()");
     }
 
     @Override
@@ -259,17 +264,6 @@ public class MainActivity extends Activity {
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
         if (hasFocus) dressSystemBars();
-    }
-
-    /* The buttons in the shade come back here, and are passed to the page,
-       which is what actually holds the recitation. */
-    @Override
-    protected void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-        String action = intent == null ? null : intent.getAction();
-        if (AudioService.ACTION_TOGGLE.equals(action)) tellPage("App.helpers.togglePlay()");
-        else if (AudioService.ACTION_CLOSE.equals(action)) tellPage("App.helpers.stopAudio()");
     }
 
     private void tellPage(String script) {
