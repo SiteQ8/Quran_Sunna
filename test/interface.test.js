@@ -6722,3 +6722,25 @@ test('the splash writes the app\'s name in the app\'s own face', () => {
   /* the declaration comes before the splash it serves */
   assert.ok(html.indexOf("plex-arabic-600-arabic.woff2") < html.indexOf('<div id="boot-splash"'));
 });
+
+test('the pictorial marks fill their box to about the same height', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the boxes were always 24x24; it was the drawing inside each that filled
+     them unequally, by as much as 44 per cent, and the eye caught it */
+  const pictures = ['heart', 'sunrise', 'sunset', 'book', 'food', 'plane', 'mosque',
+    'home', 'hands', 'door', 'clock', 'rain', 'sun', 'moon', 'star', 'drop'];
+  pictures.forEach(function (n) {
+    assert.ok(html.indexOf('<g id="i-' + n + '">') !== -1, 'missing mark ' + n);
+  });
+  /* the redrawn ones reach for the same height as the rest; they were not
+     scaled, which would have thickened their stroke with them */
+  ['21.6s-8.8-5.5-8.8-12', 'M12 2.4v3.6', 'M12 8.4v5', 'M3 3.6h6.6', 'M12 6.4a6.5 6.5']
+    .forEach(function (mark) {
+      assert.ok(html.indexOf(mark) !== -1, 'a redrawn mark is missing: ' + mark);
+    });
+  /* nothing was scaled into place */
+  pictures.forEach(function (n) {
+    const g = new RegExp('<g id="i-' + n + '">([\\s\\S]*?)</g>').exec(html)[1];
+    assert.ok(g.indexOf('scale(') === -1, n + ' must be drawn to size, not scaled');
+  });
+});
