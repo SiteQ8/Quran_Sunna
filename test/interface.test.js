@@ -2076,7 +2076,11 @@ test('the azkar grid shows every section it holds', () => {
   const { win, doc } = boot();
   win.App.go('azkar');
   const tiles = doc.querySelectorAll('#azkar-groups [data-azkar]');
-  assert.strictEqual(tiles.length, Object.keys(win.AZKAR_DB).length);
+  /* the chapters whose name is a du'a now sit on the du'a screen instead */
+  const adhkar = Object.keys(win.AZKAR_DB).filter(function (k) {
+    return win.AZKAR_DB[k].title.indexOf('دعاء') !== 0;
+  });
+  assert.strictEqual(tiles.length, adhkar.length);
   click(win, doc.querySelector('[data-azkar="istighfar"]'));
   assert.ok(doc.getElementById('azkar-list-title').textContent.indexOf('الاستغفار') !== -1);
   assert.strictEqual(doc.querySelectorAll('#azkar-items .dhikr').length,
@@ -6816,7 +6820,35 @@ test('the cards of the adhkar are all one height', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* a grid sizes each row to its own content, so tiles in different rows came
      out different heights when a name ran to two lines */
-  assert.match(css, /#azkar-groups \{ align-items: stretch; grid-auto-rows: 1fr; \}/);
-  assert.match(css, /#azkar-groups \.tile \{ height: 100%/);
-  assert.match(css, /#azkar-groups \.tile-name \{ min-height/);
+  assert.match(css, /#azkar-groups, #dua-places \{ align-items: stretch; grid-auto-rows: 1fr; \}/);
+  assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{ height: 100%/);
+  assert.match(css, /#azkar-groups \.tile-name, #dua-places \.tile-name \{ min-height/);
+});
+
+test('the adhkar screen holds adhkar, and the duas sit with the duas', () => {
+  const { win, doc } = boot();
+  win.App.go('azkar');
+  const kept = [...doc.querySelectorAll('#azkar-groups .tile .tile-name')].map(function (x) { return x.textContent; });
+  assert.ok(kept.length >= 12, 'the adhkar remain, got ' + kept.length);
+  assert.strictEqual(kept.filter(function (t) { return t.indexOf('دعاء') === 0; }).length, 0,
+    'no chapter named a dua is left among them');
+
+  win.App.go('dua');
+  const moved = [...doc.querySelectorAll('#dua-places .tile .tile-name')].map(function (x) { return x.textContent; });
+  assert.strictEqual(moved.length, 8, 'the eight place-duas, got ' + moved.length);
+  moved.forEach(function (t) { assert.strictEqual(t.indexOf('دعاء'), 0, t + ' is not a dua'); });
+  /* nothing was lost between the two screens */
+  assert.strictEqual(kept.length + moved.length, win.App.helpers.azkarSections
+    ? win.App.helpers.azkarSections().length : kept.length + moved.length);
+
+  /* they still count what was read, like the tiles they came from */
+  const tile = doc.querySelector('#dua-places .tile');
+  assert.ok(tile.getAttribute('data-azkar'), 'and still open their chapter');
+  assert.ok(tile.querySelector('.tile-note').textContent.indexOf('من') !== -1, 'with their tally');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/function isPlaceDua\(title\) \{[\s\S]{0,120}indexOf\('دعاء'\) === 0/.test(app),
+    'the rule is the name itself, plainly');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf('#azkar-groups, #dua-places') !== -1, 'and both grids keep one height');
 });
