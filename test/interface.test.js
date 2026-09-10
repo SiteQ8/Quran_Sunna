@@ -6559,3 +6559,28 @@ test('a shared list is drawn in pills, in the app\'s own face, and names the app
   /* nowhere does a picture sign itself with the bare name */
   assert.ok(app.indexOf("'سُنّتي، 3li.info'") === -1, 'the app names itself in full');
 });
+
+test('the madinah line layout is fetched into the same pages the app already uses', () => {
+  const lines = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'madinah-lines.json'), 'utf8'));
+  const mushaf = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'mushaf.json'), 'utf8'));
+  /* the app already divides the mushaf into the madinah's own 604 pages, so
+     this adds the line breaks alone and must agree with the text we hold */
+  assert.strictEqual(mushaf.p.length, 604, 'the page division is already the madinah one');
+  assert.ok(Object.keys(lines.pages).length >= 10, 'some pages are fetched');
+
+  Object.keys(lines.pages).forEach(function (n) {
+    const page = lines.pages[n];
+    assert.ok(page.length >= 1 && page.length <= 15, 'page ' + n + ' has ' + page.length + ' lines');
+    page.forEach(function (line) {
+      line.forEach(function (run) {
+        const [surah, ayah, from, to] = run;
+        assert.ok(surah >= 1 && surah <= 114, 'surah out of range on page ' + n);
+        const words = mushaf.a[surah - 1][ayah - 1];
+        assert.ok(words, 'page ' + n + ' names ' + surah + ':' + ayah + ', which we do not hold');
+        const count = words.split(' ').length;
+        assert.ok(from >= 1 && to <= count && from <= to,
+          surah + ':' + ayah + ' words ' + from + '-' + to + ' but it has ' + count);
+      });
+    });
+  });
+});
