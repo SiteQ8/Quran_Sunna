@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.15.0';
+  var VERSION = '8.15.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1243,7 +1243,7 @@
 
     var fold = $('now-fold');
     if (fold) {
-      var open = openGroups.now !== false;
+      var open = openGroups.now === true;
       fold.classList.toggle('is-open', open);
       var head = fold.querySelector('.fold-head');
       if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -3046,7 +3046,8 @@
           c.i.some(function (it) { return Mushaf.normalize(it.t).indexOf(needle) !== -1; }));
       });
       if (!rows.length) return '';
-      return '<section class="fold is-open"><div class="fold-head fold-static">' +
+      /* a search opens what it matched, since the reader asked for it */
+      return '<section class="fold' + (needle ? ' is-open' : '') + '"><div class="fold-head fold-static">' +
         '<span class="fold-title">' + esc(g.t) + '</span>' +
         '<span class="fold-tally">' + ar(rows.length) + '</span></div><div class="fold-body">' +
         rows.map(function (c) {
@@ -3217,7 +3218,7 @@
        working on and the rest stay out of the way. */
     function fold(key, title, iconName, ids, rows) {
       var done = ids.filter(function (id) { return !!record.sunnah[id]; }).length;
-      var open = openGroups[key] !== false;
+      var open = openGroups[key] === true;
       return '<section class="fold' + (open ? ' is-open' : '') + '" data-fold="' + esc(key) + '">' +
         '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         (iconName ? icon(iconName) : '') +
@@ -3344,8 +3345,9 @@
       }).join('');
       var stageDone = stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; });
       var here = stage.i.filter(function (_, ii) { return done[stage.id + ':' + ii]; }).length;
-      /* the stage the reader stands in opens by itself, and a finished one folds away */
-      var open = state.umrahOpen ? state.umrahOpen[stage.id] !== false : si === firstUnfinished(done);
+      /* every stage is folded away until the reader opens it, so the whole
+         rite is seen at a glance rather than one stage filling the screen */
+      var open = !!(state.umrahOpen && state.umrahOpen[stage.id]);
       return '<section class="fold' + (open ? ' is-open' : '') + '" data-umrah-fold="' + stage.id + '">' +
         '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
         '<span class="stage-num">' + ar(si + 1) + '</span>' +
@@ -3360,14 +3362,6 @@
     renderUmrahRef();
   }
 
-  /* the stage a reader is standing in, so it opens by itself */
-  function firstUnfinished(done) {
-    for (var i = 0; i < UMRAH_STAGES.length; i++) {
-      var stage = UMRAH_STAGES[i];
-      if (!stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; })) return i;
-    }
-    return 0;
-  }
 
   function renderUmrahRef() {
     var host = $('umrah-ref');
@@ -4520,7 +4514,9 @@
     }
 
     var foldHead = target.closest('.fold-head');
-    if (foldHead) {
+    /* the umrah keeps its own folds under their own name, so a head with no
+       [data-fold] above it is not this handler's business */
+    if (foldHead && foldHead.closest('[data-fold]')) {
       var section = foldHead.closest('[data-fold]');
       var key = section.getAttribute('data-fold');
       openGroups[key] = !section.classList.contains('is-open');
@@ -4628,10 +4624,7 @@
     var umrahFold = target.closest('[data-umrah-fold]');
     if (umrahFold && target.closest('.fold-head')) {
       var fid = umrahFold.getAttribute('data-umrah-fold');
-      if (!state.umrahOpen) {
-        state.umrahOpen = {};
-        UMRAH_STAGES.forEach(function (st, i) { state.umrahOpen[st.id] = i === firstUnfinished(Store.get('umrah') || {}); });
-      }
+      if (!state.umrahOpen) state.umrahOpen = {};
       state.umrahOpen[fid] = !state.umrahOpen[fid];
       renderUmrah();
       return;
