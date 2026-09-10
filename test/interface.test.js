@@ -6240,3 +6240,18 @@ test('the mosque pressed on the map is plainly marked in the list', () => {
   assert.strictEqual(marked.length, 1, 'exactly one row is marked');
   assert.ok(marked[0].textContent.indexOf('الثاني') !== -1, 'and it is the one pressed');
 });
+
+test('the retry button stands clear of the line above it', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.mosque-again \{ margin-top: var\(--s4\); \}/);
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [];
+  win.App.go('mosques');
+  const again = doc.querySelector('#mosque-list .mosque-again');
+  assert.ok(again, 'the button carries the class that gives it room');
+  assert.ok(again.className.indexOf('btn-primary') !== -1);
+  /* both the empty answer and the failed one offer it the same way */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.strictEqual((app.match(/btn-block mosque-again/g) || []).length, 2);
+});

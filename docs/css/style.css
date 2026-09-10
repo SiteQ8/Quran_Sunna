@@ -573,6 +573,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #mosque-list .row.is-now .row-title { color: var(--accent-ink); }
 #mosque-list .row-body { text-align: start; }
 .mosque-far { font-variant-numeric: tabular-nums; }
+/* the button stands clear of the line above it, not pressed against it */
+.mosque-again { margin-top: var(--s4); }
 
 /* Choices of equal width, laid in a grid rather than pills of every size
    breaking across lines with a ragged edge. */
