@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.22.1';
+  var VERSION = '8.22.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3804,11 +3804,13 @@
     letMapBeDragged();
     if (!state.mosques) {
       list.innerHTML = '<p class="setting-note">جاري البحث عن المساجد حولك…</p>';
-      findMosques();
+      findMosques(state.mapAt || null);
       return;
     }
     if (!state.mosques.length) {
-      list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك.</p>';
+      list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك.</p>' +
+        '<button class="btn btn-primary btn-block" data-act="mosques-again">تحديث</button>';
+      if ($('mosque-count')) $('mosque-count').textContent = '';
       return;
     }
     renderMosqueList();
@@ -3876,7 +3878,10 @@
       if (state.view === 'mosques') renderMosques();
     }).catch(function () {
       state.mosques = [];
-      if ($('mosque-list')) $('mosque-list').textContent = 'تعذّر جلب المساجد، تحقّق من اتصالك';
+      if ($('mosque-list')) {
+        $('mosque-list').innerHTML = '<p class="setting-note">تعذّر جلب المساجد، تحقّق من اتصالك</p>' +
+          '<button class="btn btn-primary btn-block" data-act="mosques-again">تحديث</button>';
+      }
     });
   }
 
@@ -4947,6 +4952,12 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
+    'mosques-again': function () {
+      /* asked for afresh, wherever the map is now looking */
+      state.mosques = null;
+      state.lookedAt = null;
+      renderMosques();
+    },
     'mosque-look': function (ref, el) {
       var parts = String(ref).split(':');
       lookAtMosque(+parts[0], parts[1] || (el && el.closest('.map-pin') ? 'map' : 'list'));

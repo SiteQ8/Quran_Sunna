@@ -6171,3 +6171,25 @@ test('the map is zoomed by its buttons and by two fingers', () => {
   assert.ok(app.indexOf("bind('map-in', 'click'") !== -1 && app.indexOf("bind('map-out', 'click'") !== -1);
   assert.ok(app.indexOf("e.target.closest('.map-zoom')") !== -1);
 });
+
+test('when no mosque is found, the reader may ask again', () => {
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [];
+  win.App.go('mosques');
+  const list = doc.getElementById('mosque-list');
+  assert.ok(list.textContent.indexOf('لم يُعثر على مساجد مسجّلة حولك.') !== -1);
+  const again = list.querySelector('[data-act="mosques-again"]');
+  assert.ok(again, 'and a button to ask again');
+  assert.strictEqual(again.textContent, 'تحديث');
+  /* asking again clears what was found and what was last looked at, so the
+     same place is not refused as already searched */
+  click(win, again);
+  assert.strictEqual(win.App.state.lookedAt, null, 'the last look is forgotten');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /'mosques-again': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(fn.indexOf('state.mosques = null;') !== -1 && fn.indexOf('renderMosques();') !== -1);
+  /* the same button is offered when the network refuses */
+  assert.ok(app.indexOf("تعذّر جلب المساجد، تحقّق من اتصالك") !== -1);
+  assert.ok(/تعذّر جلب المساجد[\s\S]{0,140}mosques-again/.test(app), 'with a way to try once more');
+});
