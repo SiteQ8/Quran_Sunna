@@ -601,6 +601,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* Choices of equal width, laid in a grid rather than pills of every size
    breaking across lines with a ragged edge. */
+/* the cards of the adhkar all one height, however long their names run */
+#azkar-groups { align-items: stretch; grid-auto-rows: 1fr; }
+#azkar-groups .tile { height: 100%; justify-content: flex-start; }
+#azkar-groups .tile-name { min-height: 2.9em; display: flex; align-items: center; justify-content: center; }
+#azkar-groups .tile-note { min-height: 1.5em; }
+
 .pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
 .pick-grid .chip { width: 100%; padding: 0 4px; font-size: .78rem; }
 #tasbih-phrases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
