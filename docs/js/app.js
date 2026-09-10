@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.20.1';
+  var VERSION = '8.21.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -137,7 +137,10 @@
     return esc(parts[0]) + '\u2060<small class="ampm">' + esc(parts[1]) + '</small>';
   }
 
-  function clockText(minutes) { return ar(PrayerEngine.format(minutes)); }
+  /* the reader chooses whether the hours run to twelve or to twenty four */
+  function clockText(minutes) {
+    return ar(PrayerEngine.format(minutes, Store.get('clock') === '24' ? '24' : null));
+  }
 
   function buzz(ms) {
     if (!Store.get('vibrate')) return;
@@ -4588,6 +4591,7 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
+    if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-friday'), !!Store.get('friday'));
@@ -5353,6 +5357,15 @@
     bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
     bind('home-share-times', 'click', function () { shareTimes(); });
 
+    bind('settings-clock', 'change', function (e) {
+      Store.set('clock', e.target.value);
+      renderHome();
+      if (state.view === 'prayers') renderPrayers();
+      if (state.view === 'timetable') renderTimetable();
+      showQiyamTime();
+      showDuhaTime();
+      toast(e.target.value === '24' ? 'الساعة على أربع وعشرين' : 'الساعة على اثنتي عشرة');
+    });
     bind('settings-wird', 'change', function (e) {
       Store.set('wirdAt', e.target.value);
       handRemindersToApp();

@@ -6054,3 +6054,39 @@ test('the two recitations stay apart: a verse from its own file, a surah from on
   assert.ok(/function saveSurahAudio|jobs\.push\(store\.delete\('https:\/\/cdn\.islamic\.network\/quran\/audio\/128\//.test(app),
     'and what is kept for hearing without a network');
 });
+
+test('the reminder falls on the hour, not an hour from whenever it was chosen', () => {
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
+  /* every hour must mean 12:00, 1:00, 2:00, not 12:54 and 1:54 */
+  assert.ok(sched.indexOf('static long nextOnTheClock(int minutes)') !== -1);
+  assert.ok(sched.indexOf('long at = nextOnTheClock(minutes);') !== -1,
+    'and that is what the alarm is set to');
+  assert.ok(sched.indexOf('int steps = sinceMidnight / minutes + 1;') !== -1, 'counted from midnight');
+  assert.ok(sched.indexOf('while (at <= now) at += minutes * 60000L;') !== -1, 'never in the past');
+  /* the same reckoning, worked here by hand */
+  const next = function (nowMinutes, step) { return ((Math.floor(nowMinutes / step) + 1) * step) % 1440; };
+  assert.strictEqual(next(54, 60), 60, 'at 00:54, every hour, the next is 01:00');
+  assert.strictEqual(next(59, 60), 60);
+  assert.strictEqual(next(130, 60), 180, 'at 02:10 the next is 03:00');
+  assert.strictEqual(next(54, 120), 120, 'every two hours lands on the even hour');
+  assert.strictEqual(next(20, 30), 30);
+});
+
+test('the reader chooses whether hours run to twelve or to twenty four', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.PrayerEngine.format(1080), '6:00 م');
+  assert.strictEqual(win.PrayerEngine.format(1080, '24'), '18:00');
+  assert.strictEqual(win.PrayerEngine.format(705, '24'), '11:45');
+  assert.strictEqual(win.PrayerEngine.format(0, '24'), '00:00');
+  win.App.go('settings');
+  const sel = doc.getElementById('settings-clock');
+  assert.ok(sel, 'the choice is offered');
+  assert.strictEqual(sel.value, '12', 'twelve to begin with');
+  sel.value = '24';
+  fire(win, sel, 'change');
+  assert.strictEqual(win.Store.get('clock'), '24');
+  /* and everything that writes an hour follows it */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.match(app, /function clockText\(minutes\) \{[\s\S]*?Store\.get\('clock'\) === '24'/,
+    'the one place that writes an hour asks the reader\'s choice');
+});
