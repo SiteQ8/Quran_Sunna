@@ -30,17 +30,23 @@ public final class AudioService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         String action = intent == null ? ACTION_STOP : intent.getAction();
-        if (ACTION_STOP.equals(action) || action == null) {
-            stopForeground(true);
-            stopSelf();
-            return START_NOT_STICKY;
-        }
-        String title = intent.getStringExtra(EXTRA_TITLE);
-        String sub = intent.getStringExtra(EXTRA_SUB);
-        boolean playing = intent.getBooleanExtra(EXTRA_PLAYING, true);
+        String title = intent == null ? null : intent.getStringExtra(EXTRA_TITLE);
+        String sub = intent == null ? null : intent.getStringExtra(EXTRA_SUB);
+        boolean playing = intent != null && intent.getBooleanExtra(EXTRA_PLAYING, true);
+
+        /* The system kills the app if a service started with
+         * startForegroundService does not call startForeground within a few
+         * seconds, even when the very next thing it does is stop. A stop that
+         * overtakes its own start used to crash the app, so the notice is
+         * always raised first and only then taken down. */
         try {
             startForeground(ID, shade(title, sub, playing));
         } catch (Exception e) {
+            stopSelf();
+            return START_NOT_STICKY;
+        }
+        if (ACTION_STOP.equals(action) || action == null) {
+            stopForeground(true);
             stopSelf();
         }
         return START_NOT_STICKY;

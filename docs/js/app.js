@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.25.0';
+  var VERSION = '8.25.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1788,7 +1788,7 @@
   }
 
   function playAudio(url, title, sub) {
-    stopAudio();
+    stopAudio(true);
     /* if this very clip was fetched ahead while the last one sounded, that is
        the one that plays: fetching it again would put the wait back */
     var audio;
@@ -1805,7 +1805,15 @@
     watchClip(audio);
     state.playing = { title: title, sub: sub, surah: state.recite ? state.recite.s : (state.surahAudio || null) };
     tellAppSounding(true);
-    showInShade(title, sub, true);
+    /* The shade names what is being listened to, not which verse is sounding:
+       rebuilding it for every verse made the notice flash on each one, and a
+       stop overtaking its own start crashed the app. */
+    var sitting = state.recite ? 'سورة ' + (surahMeta(state.recite.s) || {}).ar
+      : (state.surahAudio ? 'سورة ' + (surahMeta(state.surahAudio) || {}).ar : title);
+    if (state.shaded !== sitting) {
+      state.shaded = sitting;
+      showInShade(sitting, sub, true);
+    }
     var player = $('player');
     if (player) player.classList.add('is-open');
     markPlayerToggle();
@@ -2013,8 +2021,13 @@
     try { app.setSounding(!!on); } catch (e) { /* older package */ }
   }
 
-  function stopAudio() {
-    tellAppSounding(false);
+  function stopAudio(quiet) {
+    /* the pause between one verse and the next is not the end of listening,
+       so the app is only told when the reader really stops */
+    if (!quiet) {
+      tellAppSounding(false);
+      state.shaded = null;
+    }
     if (state.audio) {
       state.audio.onended = null;
       state.audio.oncanplay = null;
@@ -5868,7 +5881,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: stopAudio,
+      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

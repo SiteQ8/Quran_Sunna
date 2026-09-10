@@ -86,8 +86,11 @@ public final class Bridge {
     public void setSounding(boolean on) {
         if (host instanceof MainActivity) ((MainActivity) host).sounding = on;
         if (!on) {
-            try { host.startService(new Intent(host, AudioService.class).setAction(AudioService.ACTION_STOP)); }
-            catch (Exception ignored) { /* nothing was holding it */ }
+            try {
+                Intent stop = new Intent(host, AudioService.class).setAction(AudioService.ACTION_STOP);
+                if (Build.VERSION.SDK_INT >= 26) host.startForegroundService(stop);
+                else host.startService(stop);
+            } catch (Exception ignored) { /* nothing was holding it */ }
         }
     }
 

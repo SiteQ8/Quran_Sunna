@@ -5949,7 +5949,9 @@ test('a recitation carries on when the reader leaves the app', () => {
   win.App.helpers.tellAppSounding(false);
   assert.deepStrictEqual(told.join(','), 'true,false', 'the page tells the app both ways');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(/function stopAudio\(\) \{\s*tellAppSounding\(false\);/.test(app), 'and says so the moment it stops');
+  /* a real stop tells the app; the pause between two verses does not */
+  assert.ok(/function stopAudio\(quiet\) \{[\s\S]{0,220}tellAppSounding\(false\);/.test(app),
+    'and says so the moment the reader really stops');
 });
 
 test('a surah asked for by name is offered before the verses its name falls in', () => {
@@ -6419,4 +6421,39 @@ test('the about screen says how to reach the author once, not twice', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.strictEqual((html.match(/<h2>التواصل<\/h2>/g) || []).length, 1, 'one contact card, not two');
   assert.strictEqual((html.match(/mailto:Site@hotmail\.com/g) || []).length, 1);
+});
+
+test('the notice in the shade is raised once for a sitting, not for every verse', () => {
+  const { win } = boot();
+  const shade = [];
+  win.SunnatiApp = { showSounding: function (t) { shade.push(t); }, setSounding: function () {} };
+  win.Store.set('reciter', 'ar.husarymujawwad');
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  win.App.helpers.reciteFrom(112, 1);
+  for (let i = 0; i < 3; i++) { win.App.state.recite.a++; win.App.helpers.reciteVerse(); }
+  assert.strictEqual(shade.length, 1, 'raised once, got ' + shade.length);
+  assert.strictEqual(shade[0], 'سورة الإخلاص', 'and it names the surah, not the verse');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the pause between two verses is not the end of listening */
+  assert.ok(app.indexOf('function stopAudio(quiet) {') !== -1);
+  assert.ok(/function playAudio\(url, title, sub\) \{\s*stopAudio\(true\);/.test(app),
+    'starting the next verse must not tell the app that listening stopped');
+});
+
+test('the service raises its notice before it takes it down', () => {
+  const service = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AudioService.java'), 'utf8');
+  /* android kills the app if a service started with startForegroundService
+     does not call startForeground within a few seconds, even if it is
+     stopping: a stop overtaking its own start crashed the app */
+  const body = /public int onStartCommand\(Intent intent, int flags, int startId\) \{([\s\S]*?)\n    \}/.exec(service)[1];
+  const raise = body.indexOf('startForeground(ID,');
+  const drop = body.indexOf('stopForeground(true)');
+  assert.ok(raise !== -1 && drop !== -1);
+  assert.ok(raise < drop, 'the notice must be raised before it is taken down');
+  /* and a stop is sent the same way it was started */
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(/ACTION_STOP\);[\s\S]{0,160}startForegroundService\(stop\)/.test(bridge),
+    'a stop raised as a plain service start is refused while the app is away');
 });
