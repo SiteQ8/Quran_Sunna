@@ -28,6 +28,7 @@
     salawatAt: 0,
     umrah: {},
     readPace: 'mid',
+    clock: '12',
     friday: true,
     fridayShown: '',
     eidShown: '',

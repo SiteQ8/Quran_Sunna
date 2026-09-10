@@ -208,7 +208,7 @@
     if (m < 0) m += 1440;
     var h = Math.floor(m / 60), mm = m % 60;
     var two = function (n) { return (n < 10 ? '0' : '') + n; };
-    if (style === 'plain') return two(h) + ':' + two(mm);
+    if (style === 'plain' || style === '24') return two(h) + ':' + two(mm);
     var suffix = h < 12 ? 'ص' : 'م';
     var twelve = h % 12;
     if (twelve === 0) twelve = 12;

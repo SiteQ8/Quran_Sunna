@@ -53,11 +53,30 @@ public final class SalawatScheduler {
         if (!force && waiting(context)) return;
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
-        long at = System.currentTimeMillis() + minutes * 60000L;
+        long at = nextOnTheClock(minutes);
         PendingIntent pending = pending(context);
         boolean exact = Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+    }
+
+    /**
+     * The next round hour, or the next round half or quarter, rather than an
+     * interval counted from whenever the reader happened to choose it. Every
+     * hour means 12:00, 1:00, 2:00, not 12:54 and 1:54.
+     */
+    static long nextOnTheClock(int minutes) {
+        java.util.Calendar c = java.util.Calendar.getInstance();
+        int sinceMidnight = c.get(java.util.Calendar.HOUR_OF_DAY) * 60 + c.get(java.util.Calendar.MINUTE);
+        int steps = sinceMidnight / minutes + 1;
+        c.set(java.util.Calendar.HOUR_OF_DAY, 0);
+        c.set(java.util.Calendar.MINUTE, 0);
+        c.set(java.util.Calendar.SECOND, 0);
+        c.set(java.util.Calendar.MILLISECOND, 0);
+        long at = c.getTimeInMillis() + steps * minutes * 60000L;
+        long now = System.currentTimeMillis();
+        while (at <= now) at += minutes * 60000L;
+        return at;
     }
 
     /** Whether an alarm is already pending, asked without creating one. */
