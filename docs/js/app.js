@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.22.5';
+  var VERSION = '8.23.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2140,7 +2140,13 @@
     'ar.abdurrahmaansudais': 'https://server11.mp3quran.net/sds/',
     'ar.ahmedajamy': 'https://server10.mp3quran.net/ajm/',
     'ar.shaatree': 'https://server11.mp3quran.net/shatri/',
-    'ar.muhammadjibreel': 'https://server8.mp3quran.net/jbrl/'
+    'ar.muhammadjibreel': 'https://server8.mp3quran.net/jbrl/',
+    'ar.abdulsamad': 'https://server7.mp3quran.net/basit/',
+    'ar.saoodshuraym': 'https://server7.mp3quran.net/shur/',
+    'ar.hudhaify': 'https://server9.mp3quran.net/hthfi/',
+    'ar.muhammadayyoub': 'https://server8.mp3quran.net/ayyub/',
+    'ar.hanirifai': 'https://server8.mp3quran.net/hani/',
+    'ar.abdullahbasfar': 'https://server6.mp3quran.net/bsfr/'
   };
 
   function surahAudioUrl(n) {
