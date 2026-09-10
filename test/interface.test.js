@@ -6264,3 +6264,16 @@ test('the retry button stands clear of the line above it', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.strictEqual((app.match(/btn-block mosque-again/g) || []).length, 2);
 });
+
+test('the app links file carries only real fingerprints', () => {
+  const raw = fs.readFileSync(path.join(DOCS, '.well-known', 'assetlinks.json'), 'utf8');
+  const links = JSON.parse(raw);
+  const prints = links[0].target.sha256_cert_fingerprints;
+  /* a line that is not a fingerprint can throw the whole file out with
+     google's verifier, taking the good one with it */
+  prints.forEach(function (f) {
+    assert.match(f, /^([0-9A-F]{2}:){31}[0-9A-F]{2}$/, 'not a fingerprint: ' + f);
+  });
+  assert.strictEqual(links[0].target.package_name, 'com.eworldq8.sunnati');
+  assert.ok(prints.length >= 1);
+});
