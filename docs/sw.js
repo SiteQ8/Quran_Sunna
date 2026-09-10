@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.41.0';
+var VERSION = 'sunnati-v8.42.0';
 
 var SHELL = [
   './',
