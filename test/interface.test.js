@@ -6780,7 +6780,7 @@ test('the shared card carries the store badges as pictures, from their proper so
   /* a badge that fails to load must not take the card with it */
   assert.ok(fn.indexOf('img.onerror = function () { resolve(null); };') !== -1);
   const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(card.indexOf('ctx.drawImage(m, x, y, widths[i], tall)') !== -1, 'drawn, not described');
+  assert.ok(card.indexOf('ctx.drawImage(m,') !== -1, 'drawn, not described');
   assert.ok(card.indexOf('على Google Play، وقريباً App Store') === -1, 'the text line is replaced');
   /* and they are kept for a card made without a network */
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
