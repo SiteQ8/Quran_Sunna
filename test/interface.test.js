@@ -6026,3 +6026,31 @@ test('what is sounding is put in the shade, with something to press', () => {
   assert.ok(manifest.indexOf('foregroundServiceType="mediaPlayback"') !== -1);
   assert.ok(manifest.indexOf('FOREGROUND_SERVICE_MEDIA_PLAYBACK') !== -1, 'asked for as the system requires');
 });
+
+test('the two recitations stay apart: a verse from its own file, a surah from one recording', () => {
+  const { win } = boot();
+  win.Store.set('reciter', 'ar.minshawi');
+  /* the whole surah recording has no way to reach a single verse, so the
+     6236 files must stay for anyone who wants one verse, repeats it, or
+     saves it to hear without a network */
+  assert.strictEqual(win.App.helpers.verseUrl(1, 1),
+    'https://cdn.islamic.network/quran/audio/128/ar.minshawi/1.mp3', 'the first verse of the mushaf');
+  assert.strictEqual(win.App.helpers.verseUrl(114, 6),
+    'https://cdn.islamic.network/quran/audio/128/ar.minshawi/6236.mp3', 'and the last');
+  assert.strictEqual(win.App.helpers.verseUrl(20, 6),
+    'https://cdn.islamic.network/quran/audio/128/ar.minshawi/2354.mp3');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://server10.mp3quran.net/minsh/020.mp3',
+    'while the whole surah comes from one recording');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* every place that wants one verse still asks for one verse */
+  ['function playVerse(', 'function verseUrl('].forEach(function (f) {
+    assert.ok(app.indexOf(f) !== -1, f + ' should still exist');
+  });
+  const perVerse = (app.match(/cdn\.islamic\.network\/quran\/audio\/128\//g) || []).length;
+  assert.ok(perVerse >= 5, 'the per verse files are used in several places, found ' + perVerse);
+  /* the walk, the repeat, and what is saved for offline all use them */
+  assert.ok(/function reciteVerse[\s\S]{0,900}audio\/128\//.test(app), 'the walk verse by verse');
+  assert.ok(/function saveSurahAudio|jobs\.push\(store\.delete\('https:\/\/cdn\.islamic\.network\/quran\/audio\/128\//.test(app),
+    'and what is kept for hearing without a network');
+});
