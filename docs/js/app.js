@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.39.1';
+  var VERSION = '8.40.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4261,17 +4261,36 @@
     'https://overpass.private.coffee/api/interpreter'
   ];
 
-  function askOverpass(query, at) {
-    var which = at || 0;
-    if (which >= OVERPASS.length) return Promise.reject(new Error('no server answered'));
-    return fetch(OVERPASS[which], {
-      method: 'POST',
-      body: 'data=' + encodeURIComponent(query),
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
-    }).then(function (r) {
-      if (!r.ok) throw new Error('server ' + r.status);
-      return r.json();
-    }).catch(function () { return askOverpass(query, which + 1); });
+  /* All the servers are asked at once and the first sound answer is taken.
+     They used to be tried one after another, so when the first two were busy
+     the reader waited out both before the third was even asked, and gave up
+     believing there were no mosques near him. There are: forty within three
+     kilometres of Kuwait City, on the one server that answered. */
+  function askOverpass(query) {
+    var body = 'data=' + encodeURIComponent(query);
+    var left = OVERPASS.length;
+    return new Promise(function (resolve, reject) {
+      var settled = false;
+      OVERPASS.forEach(function (host) {
+        var give = window.setTimeout(function () { fail(); }, 12000);
+        fetch(host, {
+          method: 'POST', body: body,
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        }).then(function (r) {
+          if (!r.ok) throw new Error('server ' + r.status);
+          return r.json();
+        }).then(function (data) {
+          window.clearTimeout(give);
+          if (settled) return;
+          settled = true;
+          resolve(data);
+        }).catch(function () { window.clearTimeout(give); fail(); });
+      });
+      function fail() {
+        left -= 1;
+        if (!settled && left <= 0) reject(new Error('no server answered'));
+      }
+    });
   }
 
   function findMosques(around) {
@@ -4302,7 +4321,7 @@
     }).catch(function () {
       state.mosques = [];
       if ($('mosque-list')) {
-        $('mosque-list').innerHTML = '<p class="setting-note">تعذّر جلب المساجد، تحقّق من اتصالك</p>' +
+        $('mosque-list').innerHTML = '<p class="setting-note">لم يُجب أيّ خادم للخرائط الآن، وليس معناه أن لا مساجد حولك، فجرّب بعد قليل</p>' +
           '<button class="btn btn-primary btn-block mosque-again" data-act="mosques-again">تحديث</button>';
       }
     });
