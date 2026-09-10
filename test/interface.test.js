@@ -1978,8 +1978,10 @@ test('the worker keeps the typefaces so they survive going offline', () => {
 
 test('nothing in the page reaches out to another site for something it needs', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* a link the reader may follow is not a thing the page needs; a src is.
+     the openstreetmap credit is required by the licence of its map. */
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });
@@ -5384,14 +5386,18 @@ test('the mosques are opened in the phone\'s own map, at the reader\'s place', (
   win.App.go('more');
   const row = doc.querySelector('#more-list [data-act="mosques"]');
   assert.ok(row, 'offered in the more list');
-  const opened = [];
-  win.SunnatiApp = { openMap: function (u, h) { opened.push([u, h]); return true; } };
+  /* the row opens the app's own screen of mosques rather than leaving at once */
   win.App.helpers.setPlace({ n: 'الكويت', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
   win.App.go('more');
   click(win, doc.querySelector('#more-list [data-act="mosques"]'));
+  assert.strictEqual(win.App.state.view, 'mosques');
+  /* and from there each one hands its own place to the phone's map */
+  const opened = [];
+  win.SunnatiApp = { openMap: function (u, h) { opened.push([u, h]); return true; } };
+  win.App.helpers.mosqueRoute('29.3812,47.9815|مسجد الصحاف');
   assert.strictEqual(opened.length, 1);
-  assert.ok(opened[0][0].indexOf('geo:29.38000,47.98000') === 0, 'a place, not a search of nowhere');
-  assert.ok(decodeURIComponent(opened[0][0]).indexOf('مسجد') !== -1);
+  assert.ok(opened[0][0].indexOf('geo:29.3812,47.9815') === 0, 'a place, not a search of nowhere');
+  assert.ok(decodeURIComponent(opened[0][0]).indexOf('مسجد الصحاف') !== -1);
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   assert.ok(bridge.indexOf('public boolean openMap') !== -1);
   assert.ok(bridge.indexOf('https://www.google.com/maps/search/mosque') !== -1, 'and a way through when no map app answers');
@@ -5509,12 +5515,12 @@ test('the two tools sit below the date row, never on it', () => {
     'clear of the date and its two nudges');
 });
 
-test('a shared card looks the same whichever theme the reader is in', () => {
+test('the times card wears the same frame as the verse card', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n\n  \/\* the gold knot/.exec(app)[1];
-  /* the screen's accent is bright in the dark theme, which made the shared
-     picture come out a different colour than it does in daylight */
-  assert.ok(fn.indexOf("var fill = '#8f2323', wash = '#c98b8b';") !== -1, 'the app\'s own reds, not the screen\'s');
+  /* the colour comes from the reader's chosen palette, in its light shade,
+     never from the screen, whose accent is far too bright in the dark theme */
+  assert.ok(fn.indexOf('var paint = cardColours();') !== -1);
   assert.ok(fn.indexOf('getPropertyValue') === -1, 'nothing read from the theme');
   /* and it wears the same frame as the verse card */
   assert.ok(fn.indexOf('cardStar(ctx, lx, ly, 22)') !== -1, 'the faint lattice');
@@ -5560,4 +5566,62 @@ test('صلاة الضحى has its window and its best hour, and a reminder the r
   const queued = win.App.helpers.reminderList().filter(function (r) { return r.t === 'صلاة الضحى'; });
   assert.ok(queued.length >= 5, 'one for each day ahead, got ' + queued.length);
   assert.ok(queued[0].b.indexOf('ركعتان فأكثر') !== -1);
+});
+
+test('a shared card takes the colour the reader chose, in a shade fit for paper', () => {
+  const { win } = boot();
+  /* the screen's own accent is far too bright in the dark theme, and fixing
+     the colour ignored the reader's choice; the palette's light shade does both */
+  win.Store.set('accent', 'blue');
+  const blue = win.App.helpers.cardColours();
+  assert.strictEqual(blue.fill, '#26689c', 'the blue the palette keeps for light paper');
+  win.Store.set('accent', 'sadu');
+  assert.strictEqual(win.App.helpers.cardColours().fill, '#9c2b2b');
+  win.Store.set('accent', 'teal');
+  assert.strictEqual(win.App.helpers.cardColours().fill, '#156e6e');
+  /* and it does not change with the theme */
+  win.document.documentElement.setAttribute('data-theme', 'dark');
+  assert.strictEqual(win.App.helpers.cardColours().fill, '#156e6e', 'the paper is light either way');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.strictEqual((app.match(/var paint = cardColours\(\);/g) || []).length, 2,
+    'both the verse card and the times card take it');
+});
+
+test('the sections offer the adhkar and the mosques, and not what the tab bar already holds', () => {
+  const { doc } = boot();
+  const names = [...doc.querySelectorAll('#home-tiles .tile-name')].map(function (t) { return t.textContent; });
+  assert.ok(names.indexOf('الأذكار') !== -1);
+  assert.ok(names.indexOf('المساجد') !== -1);
+  assert.ok(names.indexOf('المسبحة') === -1, 'the tasbih is a tab already, so it is not a tile too');
+  assert.ok(doc.querySelector('#home-tiles [data-act="mosques"]'), 'the mosques open their own screen');
+});
+
+test('the mosques are found around the reader and measured from them', () => {
+  const { win, doc } = boot();
+  /* the distance is over the ground, not a difference of numbers */
+  const far = win.App.helpers.metresBetween({ lat: 29.38, lng: 47.98 }, { lat: 29.3812, lng: 47.9815 });
+  assert.ok(far > 150 && far < 250, 'about two hundred metres, got ' + far);
+  assert.strictEqual(win.App.helpers.farLabel(78), '78 م');
+  assert.strictEqual(win.App.helpers.farLabel(1400), '1.4 كم');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function findMosques\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('around:3000,') !== -1, 'three kilometres about the reader');
+  assert.ok(fn.indexOf('"religion"="muslim"') !== -1);
+  assert.ok(fn.indexOf("['name:ar']") !== -1, 'the arabic name where the map carries one');
+  assert.ok(fn.indexOf('found.sort') !== -1, 'nearest first');
+  /* one server being down must not take the screen with it */
+  assert.ok(app.indexOf('var OVERPASS = [') !== -1);
+  assert.strictEqual((app.match(/api\/interpreter'/g) || []).length, 3, 'three servers, tried in turn');
+  assert.ok(/return askOverpass\(query, which \+ 1\);/.test(app));
+
+  /* the map is drawn from tiles, with the reader's own place at its middle */
+  const map = /function drawMap\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(map.indexOf('tile.openstreetmap.org') !== -1);
+  assert.ok(map.indexOf("'<div class=\"map-me\"") !== -1, 'and the reader is on it');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('openstreetmap.org/copyright') !== -1, 'the map is credited where it came from');
+  /* the screen exists and says something useful before the answer arrives */
+  win.App.go('mosques');
+  assert.ok(doc.getElementById('mosque-list').textContent.length > 5);
 });

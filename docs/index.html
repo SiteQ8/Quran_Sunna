@@ -445,6 +445,26 @@
   </div>
 </section>
 
+<section class="view" id="v-mosques" aria-labelledby="mosques-title">
+  <div class="view-head">
+    <h1 id="mosques-title">المساجد القريبة</h1>
+    <p>أقرب المساجد إلى موقعك، وطريقك إليها</p>
+  </div>
+  <div class="card">
+    <div class="map" id="mosque-map" role="img" aria-label="خريطة المساجد حولك">
+      <div class="map-tiles" id="map-tiles"></div>
+      <div class="map-pins" id="map-pins"></div>
+      <button class="map-zoom" id="map-in" aria-label="تقريب">+</button>
+      <button class="map-zoom map-out" id="map-out" aria-label="إبعاد">−</button>
+    </div>
+    <p class="map-credit">خرائط <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>، وبيانات المساجد منها</p>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mosque"/></svg>أقربها إليك</h2><span class="badge" id="mosque-count"></span></div>
+    <div id="mosque-list"></div>
+  </div>
+</section>
+
 <section class="view" id="v-qada" aria-labelledby="qada-title">
   <div class="view-head">
     <h1 id="qada-title">القضاء</h1>
