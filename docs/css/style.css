@@ -608,7 +608,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    than its neighbours, and forcing a minimum made every one of them two */
 #azkar-groups .tile-name, #dua-places .tile-name {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  display: block; width: 100%; font-size: .82rem; line-height: 1.6;
+  display: block; width: 100%; font-size: .74rem; line-height: 1.7;
 }
 #azkar-groups .tile-note, #dua-places .tile-note { min-height: 1.5em; }
 

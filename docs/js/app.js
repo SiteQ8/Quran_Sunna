@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.40.0';
+  var VERSION = '8.41.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -520,7 +520,7 @@
     return Math.abs(lat).toFixed(2) + '° ' + ns + '، ' + Math.abs(lng).toFixed(2) + '° ' + ew;
   }
 
-  function locate() {
+  function locate(then) {
     if (!window.navigator || !window.navigator.geolocation) {
       toast('تعذّر تحديد موقعك، فاختر مدينة من القائمة');
       return;
@@ -537,6 +537,7 @@
         lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
       }, true);
       toast('ضُبطت المواقيت على ' + (near ? near.n : 'موقعك'));
+      if (typeof then === 'function') then();
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
     }, { enableHighAccuracy: true, timeout: 9000 });
@@ -3790,7 +3791,6 @@
 
   function renderTracker() {
     renderTrackerPrayersNote();
-    renderJumuahCard();
     var host = $('tracker-list');
     if (!host) return;
     var record = Store.day();
@@ -3800,6 +3800,7 @@
     if ($('tracker-done')) $('tracker-done').textContent = ar(c.done);
     if ($('tracker-total')) $('tracker-total').textContent = ar(total);
     if ($('tracker-meter')) $('tracker-meter').style.width = c.percent + '%';
+    renderJumuahCard();
     if ($('tracker-streak')) {
       var s = Store.streak(new Date());
       $('tracker-streak').textContent = s.longest > 0
@@ -5971,14 +5972,18 @@
     bind('map-mine', 'click', function () {
       /* back to the reader's own place, and ask again about it: pressing this
          and seeing nothing change told him nothing */
-      var here = place();
-      if (!here) { toast('حدّد موقعك أولاً'); return; }
-      state.mapAt = { lat: here.lat, lng: here.lng };
+      /* it takes the reading afresh rather than trusting the place last
+         saved: a reader who had moved had to go to the settings to update it
+         before this button was any use to him */
       state.lookedAt = null;
       state.mosques = null;
-      drawMap();
-      renderMosques();
-      toast('نبحث عن المساجد حول موقعك');
+      locate(function () {
+        var here = place();
+        if (!here) return;
+        state.mapAt = { lat: here.lat, lng: here.lng };
+        drawMap();
+        renderMosques();
+      });
     });
     bind('settings-listen', 'change', function (e) {
       Store.set('listenAs', e.target.value);
