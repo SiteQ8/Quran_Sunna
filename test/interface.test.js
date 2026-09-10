@@ -6897,8 +6897,9 @@ test('the my-place button asks again about that place', () => {
   assert.ok(fn.indexOf('state.lookedAt = null;') !== -1, 'the last look is forgotten');
   assert.ok(fn.indexOf('state.mosques = null;') !== -1, 'and what was found is cleared');
   assert.ok(fn.indexOf('renderMosques();') !== -1, 'so it truly asks again');
-  assert.ok(fn.indexOf("toast('نبحث عن المساجد حول موقعك')") !== -1, 'and says so');
-  assert.ok(fn.indexOf("toast('حدّد موقعك أولاً')") !== -1, 'or says why it cannot');
+  /* locate itself says 'جاري تحديد موقعك' and then names the place, so the
+     button no longer needs a word of its own */
+  assert.ok(fn.indexOf('locate(') !== -1, 'the reading is taken again, which speaks for itself');
 });
 
 test('the sunnahs of jumuah sit among the daily sunnahs while they are due', () => {
@@ -6940,4 +6941,27 @@ test('every map server is asked at once, and the first sound answer taken', () =
   /* and the reader is told which of the two things happened */
   assert.ok(app.indexOf('لم يُجب أيّ خادم للخرائط الآن، وليس معناه أن لا مساجد حولك') !== -1,
     'a silent server is not the same as an empty neighbourhood');
+});
+
+test('the my-place button on the map takes the reading afresh', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /bind\('map-mine', 'click', function \(\) \{([\s\S]*?)\n    \}\);/.exec(app)[1];
+  /* it used to trust the place last saved, so a reader who had moved had to
+     go to the settings and update it before this button was any use */
+  assert.ok(fn.indexOf('locate(function () {') !== -1, 'it asks the device again');
+  assert.ok(fn.indexOf('state.lookedAt = null;') !== -1);
+  assert.ok(fn.indexOf('renderMosques();') !== -1, 'and searches around the new reading');
+  /* locate can now tell its caller when it is done */
+  assert.ok(app.indexOf('function locate(then) {') !== -1);
+  assert.ok(app.indexOf("if (typeof then === 'function') then();") !== -1);
+});
+
+test('the sunnahs of jumuah sit at the foot of the daily sunnahs', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* they are the last thing in the list, not the first */
+  assert.ok(html.indexOf('<div id="tracker-list"></div>') < html.indexOf('<div id="tracker-jumuah"></div>'),
+    'the card comes after the list');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* and every card name still fits its one line */
+  assert.ok(css.indexOf('font-size: .74rem; line-height: 1.7;') !== -1);
 });
