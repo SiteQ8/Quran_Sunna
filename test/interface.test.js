@@ -6366,3 +6366,17 @@ test('the app does not promise that nothing ever leaves the device', () => {
       h + ' is reached by the app but never named in the policy');
   });
 });
+
+test('the handover names only files that are really there', () => {
+  const doc = fs.readFileSync(path.join(__dirname, '..', 'HANDOVER.md'), 'utf8');
+  /* a handover that points at files which have moved is worse than none */
+  const named = [...new Set([...doc.matchAll(/`([a-zA-Z0-9_/.\-\u0600-\u06FF]+\.(?:js|json|html|css|sh|py|mjs|gradle|md))`/g)]
+    .map(function (m) { return m[1]; }))];
+  assert.ok(named.length >= 8, 'it should name the files it talks about, got ' + named.length);
+  named.forEach(function (rel) {
+    assert.ok(fs.existsSync(path.join(__dirname, '..', rel)), 'the handover names ' + rel + ', which is not there');
+  });
+  /* and it must not repeat the claim we removed from the app */
+  assert.ok(doc.indexOf('مفتوح المصدر') !== -1, 'it should mention the matter');
+  assert.ok(doc.indexOf('ليس مفتوح المصدر') !== -1, 'and say plainly that it is not');
+});
