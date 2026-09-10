@@ -32,7 +32,7 @@
     listenAs: '',
     pageLayout: 'flow',
     friday: true,
-    fridayShown: '',
+    fridayAt: 0,
     eidShown: '',
     qiyam: false,
     duha: false,
