@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.25.1';
+  var VERSION = '8.26.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2793,12 +2793,22 @@
     return portion || null;
   }
 
+  /* a reminder that comes once a week is armed for its next turn only: the
+     eight day window can hold two of the same day, and the app arms the
+     soonest anyway */
+  function already(out, title) {
+    for (var i = 0; i < out.length; i++) if (out[i].t === title) return true;
+    return false;
+  }
+
   function reminderList() {
     var out = [];
     var now = new Date();
     var wird = Store.get('wirdAt');
     var before = +Store.get('jumuahBefore') || 0;
-    for (var d = 0; d < 7; d++) {
+    /* eight days, not seven: a reminder that comes once a week would be missed
+       altogether if its day had already passed when the list was made */
+    for (var d = 0; d < 8; d++) {
       var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
       if (wird) {
         var parts = String(wird).split(':');
@@ -2819,7 +2829,19 @@
           }
         }
       }
-      if (before && day.getDay() === 5) {
+      /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
+         بعد منتصف الليل، وهو مرة في الاسبوع لا اكثر */
+      if (Store.get('jumuahNight') && day.getDay() === 4 && !already(out, 'ليلة الجمعة')) {
+        var eve = computeTimes(day);
+        if (typeof eve.maghrib === 'number') {
+          var atEve = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eve.maghrib + 15, 0, 0);
+          if (atEve.getTime() > Date.now()) {
+            out.push({ at: atEve.getTime(), t: 'ليلة الجمعة',
+              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
+          }
+        }
+      }
+      if (before && day.getDay() === 5 && !already(out, 'الجمعة')) {
         var times = computeTimes(day);
         if (typeof times.dhuhr === 'number') {
           var call = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, times.dhuhr - before, 0, 0);
@@ -4742,6 +4764,7 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
+    setSwitch($('settings-jumuah-night'), !!Store.get('jumuahNight'));
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
@@ -5544,6 +5567,13 @@
       Store.set('wirdAt', e.target.value);
       handRemindersToApp();
       toast(e.target.value ? 'سيصلك ورد اليوم في وقته' : 'أُوقف تذكير الورد');
+    });
+    bind('settings-jumuah-night', 'click', function () {
+      var on = !Store.get('jumuahNight');
+      Store.set('jumuahNight', on);
+      setSwitch($('settings-jumuah-night'), on);
+      handRemindersToApp();
+      toast(on ? 'سيصلك تذكير ليلة الجمعة' : 'أُوقف تذكير ليلة الجمعة');
     });
     bind('settings-jumuah-before', 'change', function (e) {
       Store.set('jumuahBefore', +e.target.value);

@@ -5243,6 +5243,7 @@ test('the daily portion and the friday call are worked out here and handed to th
   /* turned off, nothing is queued */
   win.Store.set('wirdAt', '');
   win.Store.set('jumuahBefore', 0);
+  win.Store.set('jumuahNight', false);
   assert.strictEqual(win.App.helpers.reminderList().length, 0);
   const handed = [];
   win.SunnatiApp = { setReminders: function (j) { handed.push(JSON.parse(j)); } };
@@ -6456,4 +6457,31 @@ test('the service raises its notice before it takes it down', () => {
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   assert.ok(/ACTION_STOP\);[\s\S]{0,160}startForegroundService\(stop\)/.test(bridge),
     'a stop raised as a plain service start is refused while the app is away');
+});
+
+test('ليلة الجمعة is reminded after the maghrib of thursday, once a week', () => {
+  const { win, doc } = boot();
+  /* the night of jumuah begins at the sunset of thursday, not at midnight */
+  assert.strictEqual(win.Store.get('jumuahNight'), true, 'it is on unless the reader turns it off');
+  const eve = win.App.helpers.reminderList().filter(function (r) { return r.t === 'ليلة الجمعة'; });
+  assert.strictEqual(eve.length, 1, 'once in the week, got ' + eve.length);
+  const when = new Date(eve[0].at);
+  assert.strictEqual(when.getDay(), 4, 'on a thursday');
+  assert.ok(when.getHours() >= 16, 'after maghrib, got ' + when.getHours());
+  assert.ok(eve[0].b.indexOf('الصلاة على النبي') !== -1);
+
+  /* the list must reach far enough that a weekly reminder is never missed */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function reminderList\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('for (var d = 0; d < 8; d++)') !== -1,
+    'seven days can miss a thursday entirely if this one has passed');
+
+  /* and the reader may stop it */
+  win.App.go('settings');
+  const sw = doc.getElementById('settings-jumuah-night');
+  assert.ok(sw, 'the switch is offered');
+  assert.strictEqual(sw.getAttribute('aria-checked'), 'true');
+  click(win, sw);
+  assert.strictEqual(win.Store.get('jumuahNight'), false);
+  assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'ليلة الجمعة'; }).length, 0);
 });

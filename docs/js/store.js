@@ -37,6 +37,7 @@
     duha: false,
     wirdAt: '',
     jumuahBefore: 0,
+    jumuahNight: true,
     qadaDone: {},
     afterPrayerOff: false,
     afterPrayerShown: '',
