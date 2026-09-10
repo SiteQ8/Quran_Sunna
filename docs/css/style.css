@@ -602,8 +602,17 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* Choices of equal width, laid in a grid rather than pills of every size
    breaking across lines with a ragged edge. */
 /* the cards of the adhkar all one height, however long their names run */
-#azkar-groups, #dua-places { align-items: stretch; grid-auto-rows: 1fr; }
-#azkar-groups .tile, #dua-places .tile { height: 100%; justify-content: flex-start; }
+#azkar-groups, #dua-places {
+  align-items: stretch; grid-auto-rows: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+/* min-width: 0 is what lets a card be narrower than the name inside it. A name
+   that may not wrap makes the card's smallest width the width of that name, so
+   the two longest pushed their column wider than its share and were thrown onto
+   rows of their own. With this they keep their column and the name is cut. */
+#azkar-groups .tile, #dua-places .tile {
+  height: 100%; justify-content: flex-start; min-width: 0;
+}
 /* one line apiece, and one size: a name that wrapped made its card taller
    than its neighbours, and forcing a minimum made every one of them two */
 #azkar-groups .tile-name, #dua-places .tile-name {
@@ -894,8 +903,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s2); }
 /* a last row left half empty reads as a hole, so the odd tiles at the end
    stretch to fill the row they are on */
-.grid > .tile:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
-.grid > .tile:nth-last-child(2):nth-child(3n + 1) { grid-column: span 2; }
+.grid:not(.grid-2) > .tile:last-child:nth-child(3n + 1) { grid-column: 1 / -1; }
+.grid:not(.grid-2) > .tile:nth-last-child(2):nth-child(3n + 1) { grid-column: span 2; }
+/* those two count in threes, so on a grid of two they threw the thirteenth
+   card across both columns and left the fourteenth alone beneath it */
+.grid-2 > .tile:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .grid-2 { grid-template-columns: repeat(2, 1fr); }
 
 .tile {
