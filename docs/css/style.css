@@ -587,6 +587,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   will-change: transform;
 }
 .mad-line > span { display: inline; }
+/* the verse mark must not push the line box taller: a printed page keeps every
+   line the same height, and a short surah puts many marks on one line */
+.mad-line .ayah-num { width: 1.5em; height: 1.5em; vertical-align: -.28em; }
 .mad-line .ayah { display: inline; }
 .mad-line + .surah-frame { margin-top: var(--s3); }
 
