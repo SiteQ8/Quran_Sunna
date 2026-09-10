@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.6';
+  var VERSION = '8.19.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2916,6 +2916,23 @@
     }).join('');
   }
 
+  /* the surahs whose name or number matches what was typed */
+  function surahsNamed(needle) {
+    var out = [];
+    if (!needle) return out;
+    var asNumber = parseInt(needle, 10);
+    for (var i = 1; i <= 114; i++) {
+      var meta = surahMeta(i);
+      if (!meta) continue;
+      var name = Mushaf.normalize(meta.ar);
+      if (name.indexOf(needle) !== -1 || (asNumber === i && String(asNumber) === needle.trim())) {
+        out.push(meta);
+      }
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+
   function renderSearch() {
     var host = $('search-results');
     if (!host) return;
@@ -2953,6 +2970,9 @@
       return;
     }
 
+    /* someone typing طه wants the surah, not only the verses the word falls
+       in, so any surah whose name matches is offered first */
+    var named = surahsNamed(needle);
     var hits = Mushaf.search(needle, { limit: 60 });
     var total = Mushaf.countMatches(needle);
     if ($('search-count')) {
@@ -2960,9 +2980,18 @@
         ? 'وردت في ' + ayat(total) + '، وهذه أول ' + ar(hits.length)
         : 'لا نتيجة';
     }
-    if (!hits.length) { host.innerHTML = empty('لم نجد هذه الكلمة في المصحف'); return; }
+    var surahRows = named.map(function (m) {
+      var note = Mushaf.ready() ? ayat(m.ay) + '، تبدأ في صفحة ' + ar(Mushaf.pageOf(m.n, 1)) : ayat(m.ay);
+      return '<button class="row" data-open-surah="' + m.n + '">' +
+        '<span class="row-mark">' + ar(m.n) + '</span>' +
+        '<span class="row-body"><span class="row-title">سورة ' + esc(m.ar) + '</span>' +
+        '<span class="row-note">' + note + '</span></span></button>';
+    }).join('');
 
-    host.innerHTML = hits.map(function (hit) {
+    if (!hits.length && !named.length) { host.innerHTML = empty('لم نجد هذه الكلمة في المصحف'); return; }
+    if (!hits.length) { host.innerHTML = surahRows; return; }
+
+    host.innerHTML = surahRows + hits.map(function (hit) {
       var meta = surahMeta(hit.s);
       return '<button class="search-hit" data-hit="' + hit.s + ':' + hit.a + '">' +
         '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(hit.a) + '</span>' +
@@ -4046,7 +4075,7 @@
     }
     if ($('tasbih-phrases')) {
       $('tasbih-phrases').innerHTML = list.map(function (p, i) {
-        return '<button class="chip' + (i === state.tasbih.index ? ' is-on' : '') +
+        return '<button class="chip pick' + (i === state.tasbih.index ? ' is-on' : '') +
           '" data-phrase="' + i + '">' + esc(p.t) + '</button>';
       }).join('');
     }
@@ -5021,6 +5050,9 @@
       renderUmrah();
       return;
     }
+    var openSurah = target.closest('[data-open-surah]');
+    if (openSurah) { state.surah = +openSurah.getAttribute('data-open-surah'); go('reader'); return; }
+
     var duaTheme = target.closest('[data-dua-theme]');
     if (duaTheme) { openDuaTheme(duaTheme.getAttribute('data-dua-theme')); return; }
 
@@ -5613,7 +5645,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding,
+      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding,
       renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
