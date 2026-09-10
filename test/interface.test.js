@@ -5286,3 +5286,37 @@ test('the backup is a real file the reader can keep', () => {
   assert.ok(bridge.indexOf('MediaStore.Downloads') !== -1, 'into the phone\'s own downloads');
   assert.ok(bridge.indexOf('DIRECTORY_DOWNLOADS') !== -1);
 });
+
+test('adding to the calendar never claims a success it did not have', () => {
+  const { win, doc } = boot();
+  const day = new win.Date(2027, 1, 8);
+  const toastText = function () { return doc.getElementById('toast').textContent; };
+
+  /* the app opens the phone's own calendar */
+  const opened = [];
+  win.SunnatiApp = { addToCalendar: function (t) { opened.push(t); return true; } };
+  assert.strictEqual(win.App.helpers.addToCalendar('رمضان', day), true);
+  assert.strictEqual(opened.length, 1);
+
+  /* an app without that door still writes the file and hands it over */
+  const saved = [];
+  win.SunnatiApp = { saveAndOpen: function (n, m, c) { saved.push([n, m, c]); return true; } };
+  assert.strictEqual(win.App.helpers.addToCalendar('رمضان', day), true);
+  assert.strictEqual(saved[0][0], 'رمضان.ics');
+  assert.strictEqual(saved[0][1], 'text/calendar');
+  assert.ok(saved[0][2].indexOf('BEGIN:VCALENDAR') === 0);
+
+  /* an app that can do neither says so: a web view swallows a blob download,
+     so offering one and reporting success would be a lie */
+  win.SunnatiApp = { version: function () { return '8.8.1'; } };
+  assert.strictEqual(win.App.helpers.addToCalendar('رمضان', day), false);
+  assert.ok(toastText().indexOf('حدّث التطبيق') !== -1, 'and it says what to do about it');
+
+  /* in a plain browser the download is real, so it is offered there */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function addToCalendar\(name, date\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('if (app) {') !== -1 && fn.indexOf('link.download') !== -1);
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('setDownloadListener') !== -1,
+    'and any other download the page starts is taken by the phone rather than swallowed');
+});
