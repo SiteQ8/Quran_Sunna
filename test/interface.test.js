@@ -5751,12 +5751,11 @@ test('the page sits below the phone bars, inset by the framework rather than by 
 
 test('the splash is drawn and held, not a logo blinking past', () => {
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
-  /* it is the app's own hand: paper, sadu band, the mihrab and the name */
+  /* it is the app's own paper, and it eases in rather than snapping on */
   ['0xFFF6F4EE', '0xFF10161A'].forEach(function (c) {
     assert.ok(splash.indexOf(c) !== -1, 'both papers, ' + c);
   });
-  assert.ok(splash.indexOf('ValueAnimator') !== -1, 'it draws itself in rather than appearing whole');
-  assert.ok(splash.indexOf('سُنّتي') !== -1, 'and names the app');
+  assert.ok(splash.indexOf("animate().alpha(1f)") !== -1, 'it eases in rather than appearing whole');
 
   const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('void dismissSplash()') !== -1);
@@ -5768,4 +5767,30 @@ test('the splash is drawn and held, not a logo blinking past', () => {
   assert.ok(/@JavascriptInterface\s+public void pageReady\(\)/.test(bridge));
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(app.indexOf('app.pageReady()') !== -1, 'and the page says so');
+});
+
+test('the app never speaks of a browser', () => {
+  ['index.html', 'js/app.js', 'sw.js'].forEach(function (f) {
+    const src = fs.readFileSync(path.join(DOCS, f), 'utf8');
+    assert.ok(src.indexOf('متصفح') === -1, f + ' still mentions one');
+  });
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('التنبيه يصل من التطبيق نفسه في دقيقته') !== -1);
+});
+
+test('the splash is the app\'s own mark and face, drawn where the fonts can be read', () => {
+  const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
+  /* android cannot open a woff2 face, so the picture is made at build time
+     with the real fonts rather than approximated in canvas */
+  assert.ok(splash.indexOf('splash_art_night') !== -1 && splash.indexOf('"splash_art"') !== -1,
+    'a picture for each theme');
+  assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
+  ['drawable-mdpi', 'drawable-hdpi', 'drawable-xhdpi', 'drawable-xxhdpi', 'drawable-xxxhdpi'].forEach(function (d) {
+    ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
+      assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/res', d, f)), d + '/' + f);
+    });
+  });
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
+  assert.ok(tool.indexOf('plex-arabic-600-arabic.woff2') !== -1, 'the app\'s own face');
+  assert.ok(tool.indexOf('icons/icon-512.png') !== -1, 'and its own mark, not a drawing of one');
 });
