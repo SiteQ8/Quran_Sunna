@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.34.0';
+  var VERSION = '8.35.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3029,6 +3029,13 @@
     return true;
   }
 
+  var FRIDAY_SUNAN = [
+    'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه',
+    'اقرأ سورة الكهف، فمن قرأها أضاء له من النور ما بين الجمعتين',
+    'بكّر إلى المسجد، واغتسل وتطيّب والبس أحسن ثيابك',
+    'أكثِر من الدعاء، ففي الجمعة ساعة لا يُرد فيها سائل'
+  ];
+
   var JUMUAH_NIGHT_SUNAN = [
     'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه',
     'اقرأ سورة الكهف، وتُجزئ ليلة الجمعة ويومها',
@@ -3141,9 +3148,10 @@
     if (!Store.get('friday')) return false;
     var now = new Date();
     if (now.getDay() !== 5) return false;
-    var key = now.toDateString();
-    if (Store.get('fridayShown') === key) return false;
-    Store.set('fridayShown', key);
+    /* like the night before it: offered on every opening of the day, and
+       quieted only by the reader's own hand */
+    var quiet = +Store.get('fridayAt') || 0;
+    if (quiet > Date.now()) return false;
     openSheet('يوم الجمعة',
       '<p class="setting-note">من سنن هذا اليوم</p>' +
       '<div class="dua-line"><span class="dua-text">أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه</span>' +
@@ -3151,7 +3159,11 @@
       '<div class="dua-line"><span class="dua-text">واقرأ سورة الكهف، فمن قرأها أضاء له من النور ما بين الجمعتين</span>' +
       '<button class="btn btn-ghost dua-share" data-act="open-kahf" aria-label="افتح سورة الكهف">' + icon('book') + '</button></div>' +
       '<p class="naskh salawat-text">' + esc(salawatText()) + '</p>' +
-      '<button class="btn btn-ghost btn-block" data-act="friday-off" style="margin-top:10px">لا تُذكّرني يوم الجمعة</button>');
+      '<div class="sheet-tools">' +
+        '<button class="btn btn-ghost" data-act="share-friday">' + icon('share') + 'صورة</button>' +
+        '<button class="btn btn-ghost" data-act="snooze-friday">' + icon('clock') + 'ذكّرني بعد ساعة</button>' +
+        '<button class="btn btn-ghost" data-act="friday-off">' + icon('close') + 'لا تُذكّرني</button>' +
+      '</div>');
     return true;
   }
 
@@ -5273,6 +5285,16 @@
     'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     'share-jumuah-night': function () { shareJumuahNight(); },
+    'share-friday': function () {
+      sharePicture(listCard('يوم الجمعة', FRIDAY_SUNAN, 'من سنن هذا اليوم'),
+        'friday.png', 'يوم الجمعة', FRIDAY_SUNAN.join('\n') + '\n\nتطبيق سُنّتي · sunnati.3li.info');
+    },
+    'snooze-friday': function () {
+      var at = Date.now() + 3600000;
+      Store.set('fridayAt', at);
+      closeSheet();
+      toast('سنذكّرك عند ' + clockText(new Date(at).getHours() * 60 + new Date(at).getMinutes()));
+    },
     'snooze-jumuah-night': function () {
       var at = snoozeJumuahNight(60);
       closeSheet();
@@ -5288,6 +5310,7 @@
       renderSettings();
     },
     'friday-off': function () {
+      Store.set('fridayAt', 0);
       Store.set('friday', false);
       closeSheet();
       toast('أُوقف تذكير الجمعة، وتعيده من الإعدادات');

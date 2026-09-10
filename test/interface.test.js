@@ -5093,7 +5093,7 @@ test('the sections fill their rows, leaving no hole at the end', () => {
     'and two left over take half each');
 });
 
-test('a friday opens with its sunnahs, once, and can be turned off', () => {
+test('a friday opens with its sunnahs, and can be turned off', () => {
   const { win, doc } = boot({ now: new Date('2026-09-11T08:30:00+03:00') });
   win.Store.set('placeAsked', true);
   assert.strictEqual(win.App.helpers.maybeFridaySheet(), true, 'friday');
@@ -5103,12 +5103,12 @@ test('a friday opens with its sunnahs, once, and can be turned off', () => {
   assert.ok(body.indexOf('سورة الكهف') !== -1, 'and al-kahf');
   /* the whole salawat is written out, from the book */
   assert.ok(doc.querySelector('#sheet .salawat-text').textContent.length > 100);
-  /* only once in a day */
-  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false);
+  /* offered again on the next opening, as the night before it is */
+  assert.strictEqual(win.App.helpers.maybeFridaySheet(), true);
   /* the reader may end it from the sheet itself */
   click(win, doc.querySelector('#sheet [data-act="friday-off"]'));
   assert.strictEqual(win.Store.get('friday'), false);
-  win.Store.set('fridayShown', '');
+  assert.strictEqual(win.Store.get('fridayAt'), 0, 'and what was put off is cleared with it');
   assert.strictEqual(win.App.helpers.maybeFridaySheet(), false, 'and it stays off');
 });
 
@@ -6743,4 +6743,28 @@ test('the pictorial marks fill their box to about the same height', () => {
     const g = new RegExp('<g id="i-' + n + '">([\\s\\S]*?)</g>').exec(html)[1];
     assert.ok(g.indexOf('scale(') === -1, n + ' must be drawn to size, not scaled');
   });
+});
+
+test('the sunnahs of friday are offered like those of its night', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function maybeFridaySheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* offered on every opening of the day, not once and then dropped */
+  assert.ok(fn.indexOf('fridayShown') === -1, 'no longer shown once a day');
+  assert.ok(fn.indexOf("var quiet = +Store.get('fridayAt') || 0;") !== -1);
+  assert.ok(fn.indexOf('if (quiet > Date.now()) return false;') !== -1, 'silent only while put off');
+  /* and it carries the same three choices as the night before it */
+  ['share-friday', 'snooze-friday', 'friday-off'].forEach(function (act) {
+    assert.ok(fn.indexOf('data-act="' + act + '"') !== -1, 'missing ' + act);
+  });
+  /* turning it off clears what was put off too, or it would come back */
+  const off = /'friday-off': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(off.indexOf("Store.set('fridayAt', 0);") !== -1);
+  assert.ok(off.indexOf("Store.set('friday', false);") !== -1);
+  /* the sheet and the picture read from one list */
+  assert.ok(app.indexOf('var FRIDAY_SUNAN = [') !== -1);
+  assert.ok(app.indexOf("listCard('يوم الجمعة', FRIDAY_SUNAN") !== -1);
+  /* and the once-a-day flag is gone from the store as well */
+  const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
+  assert.ok(store.indexOf('fridayShown') === -1);
+  assert.ok(store.indexOf('fridayAt: 0') !== -1);
 });
