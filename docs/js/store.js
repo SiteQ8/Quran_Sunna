@@ -32,6 +32,7 @@
     fridayShown: '',
     eidShown: '',
     qiyam: false,
+    duha: false,
     wirdAt: '',
     jumuahBefore: 0,
     qadaDone: {},

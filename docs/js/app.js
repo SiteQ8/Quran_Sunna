@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.15.2';
+  var VERSION = '8.16.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -656,9 +656,14 @@
     var host = $('windows');
     if (!host) return;
     var marks = Store.prayersOf(new Date());
+    /* The strip marks what the arc is counting: the prayer just past while its
+       half hour runs, and the coming one after that. Fajr is over once the sun
+       is up, so the mark moves to dhuhr rather than staying on sunrise. */
+    var sinceAdhan = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
+    var marked = (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES) ? c.prev.key : c.next.key;
     host.innerHTML = c.marks.map(function (m) {
       var cls = 'window';
-      if (m.key === c.prev.key) cls += ' is-now';
+      if (m.key === marked) cls += ' is-now';
       else if (m.at < c.now) cls += ' is-past';
       var prayer = Store.PRAYER_KEYS.indexOf(m.key) !== -1;
       var came = m.at <= c.now;
@@ -666,7 +671,7 @@
       if (state) cls += ' is-marked mark-' + state;
       var tag = prayer && came ? 'button' : 'div';
       return '<' + tag + ' class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
-        (m.key === c.prev.key ? '، الوقت الحالي' : '') + (state ? '، ' + esc(PRAYER_STATE_NAMES[state]) : '') +
+        (m.key === marked ? (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES ? '، الوقت الحالي' : '، الصلاة القادمة') : '') + (state ? '، ' + esc(PRAYER_STATE_NAMES[state]) : '') +
         (prayer && came ? '، اضغط لتعلّمها' : '') + '"' +
         (prayer && came ? ' data-mark-prayer="' + m.key + '"' : '') + '>' +
         '<div class="window-name" aria-hidden="true">' + esc(m.ar) + '</div>' +
@@ -2522,6 +2527,19 @@
     };
   }
 
+  /* صلاة الضحى runs from the sun's rising by a spear's length, near twenty
+     minutes after sunrise, until a little before the sun stands at noon. Its
+     best hour is when a quarter of the day has passed, حين ترمض الفصال. */
+  function duhaWindow(day) {
+    var t = computeTimes(day);
+    if (typeof t.sunrise !== 'number' || typeof t.dhuhr !== 'number' || typeof t.maghrib !== 'number') return null;
+    return {
+      from: t.sunrise + 20,
+      best: t.sunrise + Math.round((t.maghrib - t.sunrise) / 4),
+      to: t.dhuhr - 10
+    };
+  }
+
   function qiyamAt(day) {
     var marks = nightMarks(day);
     if (!marks) return null;
@@ -2531,6 +2549,15 @@
   }
 
   /* the note says the hour it will call tonight, so the reader knows */
+  function showDuhaTime() {
+    var note = $('settings-duha-note');
+    if (!note) return;
+    var w = duhaWindow(new Date());
+    note.textContent = w
+      ? 'وقتها من ' + clockText(w.from) + ' إلى ' + clockText(w.to) + '، وأفضلها نحو ' + clockText(w.best)
+      : 'ركعتان فأكثر بعد ارتفاع الشمس إلى قُبيل الزوال';
+  }
+
   function showQiyamTime() {
     var note = $('settings-qiyam-note');
     if (!note) return;
@@ -2624,6 +2651,16 @@
         if (at.getTime() > Date.now() && portion) {
           out.push({ at: at.getTime(), t: 'وردك اليوم',
             b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to) });
+        }
+      }
+      if (Store.get('duha')) {
+        var duha = duhaWindow(day);
+        if (duha) {
+          var atDuha = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, duha.best, 0, 0);
+          if (atDuha.getTime() > Date.now()) {
+            out.push({ at: atDuha.getTime(), t: 'صلاة الضحى',
+              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال' });
+          }
         }
       }
       if (before && day.getDay() === 5) {
@@ -3462,8 +3499,9 @@
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
     if (!ctx) return Promise.resolve(null);
-    var fill = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#8f2323';
-    var wash = document.documentElement.style.getPropertyValue('--accent').trim() || fill;
+    /* A shared picture is the same picture whatever theme the reader is in,
+       so its colours are the app's own rather than the screen's. */
+    var fill = '#8f2323', wash = '#c98b8b';
 
     var faces = ["700 44px 'IBM Plex Sans Arabic'", "600 40px 'IBM Plex Sans Arabic'", "400 30px 'IBM Plex Sans Arabic'"];
     var ready = document.fonts && document.fonts.load
@@ -3475,12 +3513,19 @@
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
+      /* the same paper, lattice and gold frame the verse card wears, so the
+         two are plainly from one app */
       ctx.fillStyle = '#f7f5ef';
       ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.globalAlpha = 0.07;
+      for (var ly = 40; ly < H; ly += 112) for (var lx = 40; lx < W; lx += 112) cardStar(ctx, lx, ly, 22);
+      ctx.restore();
       ctx.strokeStyle = wash; ctx.lineWidth = 6;
       ctx.strokeRect(36, 36, W - 72, H - 72);
       ctx.strokeStyle = '#b08833'; ctx.lineWidth = 2;
       ctx.strokeRect(52, 52, W - 104, H - 104);
+      cardStar(ctx, 52, 52, 14); cardStar(ctx, W - 52, 52, 14);
+      cardStar(ctx, 52, H - 52, 14); cardStar(ctx, W - 52, H - 52, 14);
 
       ctx.direction = 'rtl'; ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
@@ -3507,6 +3552,7 @@
       });
 
       ctx.textAlign = 'center';
+      cardStar(ctx, W / 2, H - PAD - 54, 13);
       ctx.fillStyle = '#8b9691';
       ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
       ctx.fillText('سُنّتي، 3li.info', W / 2, H - PAD + 6);
@@ -3516,6 +3562,20 @@
         else resolve(null);
       });
     });
+  }
+
+  /* the gold knot at the corners of a card, and the lattice behind it */
+  function cardStar(context, cx, cy, r) {
+    context.save();
+    context.translate(cx, cy);
+    context.strokeStyle = '#b08833';
+    context.lineWidth = 3;
+    [0, Math.PI / 4].forEach(function (rot) {
+      context.save(); context.rotate(rot);
+      context.strokeRect(-r, -r, r * 2, r * 2);
+      context.restore();
+    });
+    context.restore();
   }
 
   function roundRect(ctx, x, y, w, h, r) {
@@ -4193,7 +4253,9 @@
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-friday'), !!Store.get('friday'));
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
+    setSwitch($('settings-duha'), !!Store.get('duha'));
     showQiyamTime();
+    showDuhaTime();
     fillAdhanVoices();
     handSalawatToApp();
     handQiyamToApp();
@@ -4955,6 +5017,14 @@
       setSwitch($('settings-friday'), on);
       toast(on ? 'سيفتح التطبيق يوم الجمعة بسننه' : 'أُوقف تذكير الجمعة');
     });
+    bind('settings-duha', 'click', function () {
+      var on = !Store.get('duha');
+      Store.set('duha', on);
+      setSwitch($('settings-duha'), on);
+      handRemindersToApp();
+      showDuhaTime();
+      toast(on ? 'سيصلك تذكير بصلاة الضحى' : 'أُوقف تذكير الضحى');
+    });
     bind('settings-qiyam', 'click', function () {
       var on = !Store.get('qiyam');
       Store.set('qiyam', on);
@@ -5261,7 +5331,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
