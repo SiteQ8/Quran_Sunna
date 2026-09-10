@@ -5794,3 +5794,40 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   assert.ok(tool.indexOf('plex-arabic-600-arabic.woff2') !== -1, 'the app\'s own face');
   assert.ok(tool.indexOf('icons/icon-512.png') !== -1, 'and its own mark, not a drawing of one');
 });
+
+test('pressing a mosque brings the map onto it and names it', () => {
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'الكويت', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [
+    { n: 'العبدالرزاق', lat: 29.3806, lng: 47.9805, far: 78 },
+    { n: 'الصحاف', lat: 29.3815, lng: 47.9812, far: 191 }
+  ];
+  win.App.go('mosques');
+  /* every mosque is offered both on the map and in the list */
+  assert.strictEqual(doc.querySelectorAll('#mosque-list [data-act="mosque-look"]').length, 4,
+    'the mark and the words of each row both point at the map');
+  win.App.helpers.lookAtMosque(1);
+  assert.strictEqual(win.App.state.mosqueAt, 1);
+  assert.strictEqual(win.App.state.mapAt.lat, 29.3815, 'the map is centred on it');
+  const line = doc.getElementById('map-chosen');
+  assert.ok(!line.hidden);
+  assert.ok(line.textContent.indexOf('الصحاف') !== -1 && line.textContent.indexOf('191 م') !== -1);
+  assert.ok(line.querySelector('[data-act="mosque-go"]'), 'and the way there is offered');
+  /* the reader may come back to their own place */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("state.mapAt = null; state.mosqueAt = -1;") !== -1);
+});
+
+test('the map asks for no more tiles than it shows, and says plainly when it finds nothing', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function drawMap\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the open map asks not to be drawn on in bulk; a finer grid would ask for
+     four times as many tiles on every draw */
+  assert.ok(fn.indexOf('var size = MAP.tile;') !== -1 && fn.indexOf('devicePixelRatio') === -1);
+  assert.ok(fn.indexOf('Math.ceil(W / size) + 1') !== -1, 'one row of tiles beyond the edge, no more');
+  /* a screen not yet laid out measures nothing, so it waits rather than
+     building the map to a size it never has */
+  assert.ok(fn.indexOf('if (!box.width) {') !== -1);
+  assert.ok(fn.indexOf('requestAnimationFrame') !== -1);
+  assert.ok(app.indexOf('لم يُعثر على مساجد مسجّلة حولك.') !== -1);
+});

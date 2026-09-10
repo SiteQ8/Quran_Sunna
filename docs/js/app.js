@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.1';
+  var VERSION = '8.18.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3507,36 +3507,79 @@
     var where = place();
     if (!host || !pins || !where) return;
     var box = $('mosque-map').getBoundingClientRect();
-    var W = box.width || 340, H = box.height || 320;
-    var centre = toTile(where.lat, where.lng, MAP.zoom);
-    var left = W / 2 - (centre.x % 1) * MAP.tile;
-    var top = H / 2 - (centre.y % 1) * MAP.tile;
-    var acrossX = Math.ceil(W / MAP.tile) + 1;
-    var acrossY = Math.ceil(H / MAP.tile) + 1;
+    /* a screen not yet laid out measures nothing, and the map would be built
+       to a size it never has; it is drawn again once the width is real */
+    if (!box.width) {
+      window.requestAnimationFrame(function () { if (state.view === 'mosques') drawMap(); });
+      return;
+    }
+    var W = box.width, H = box.height;
+    var eye = state.mapAt || where;
+    var centre = toTile(eye.lat, eye.lng, MAP.zoom);
+    /* One tile for each square of the map and no more: the open map asks that
+       it not be drawn on in bulk, and a finer grid would quadruple every draw
+       for a sharpness the reader does not miss. */
+    var z = MAP.zoom;
+    var size = MAP.tile;
+    var eyeAt = toTile(eye.lat, eye.lng, z);
+    var left = W / 2 - (eyeAt.x % 1) * size;
+    var top = H / 2 - (eyeAt.y % 1) * size;
+    var acrossX = Math.ceil(W / size) + 1;
+    var acrossY = Math.ceil(H / size) + 1;
     var out = '';
+    var n = Math.pow(2, z);
     for (var i = -Math.ceil(acrossX / 2); i <= Math.ceil(acrossX / 2); i++) {
       for (var j = -Math.ceil(acrossY / 2); j <= Math.ceil(acrossY / 2); j++) {
-        var tx = Math.floor(centre.x) + i, ty = Math.floor(centre.y) + j;
-        var n = Math.pow(2, MAP.zoom);
+        var tx = Math.floor(eyeAt.x) + i, ty = Math.floor(eyeAt.y) + j;
         if (ty < 0 || ty >= n) continue;
         var wrapped = ((tx % n) + n) % n;
-        out += '<img alt="" loading="lazy" src="https://tile.openstreetmap.org/' + MAP.zoom + '/' + wrapped + '/' + ty + '.png"' +
-          ' style="left:' + Math.round(left + i * MAP.tile) + 'px;top:' + Math.round(top + j * MAP.tile) + 'px">';
+        out += '<img alt="" src="https://tile.openstreetmap.org/' + z + '/' + wrapped + '/' + ty + '.png"' +
+          ' style="width:' + size + 'px;height:' + size + 'px;left:' + Math.round(left + i * size) +
+          'px;top:' + Math.round(top + j * size) + 'px">';
       }
     }
     host.innerHTML = out;
 
-    var marks = '<div class="map-me" style="left:' + Math.round(W / 2) + 'px;top:' + Math.round(H / 2) + 'px"></div>';
+    var me = toTile(where.lat, where.lng, z);
+    var marks = '<div class="map-me" style="left:' + Math.round(W / 2 + (me.x - eyeAt.x) * size) +
+      'px;top:' + Math.round(H / 2 + (me.y - eyeAt.y) * size) + 'px"></div>';
     (state.mosques || []).forEach(function (m, at) {
-      var t = toTile(m.lat, m.lng, MAP.zoom);
-      var x = W / 2 + (t.x - centre.x) * MAP.tile;
-      var y = H / 2 + (t.y - centre.y) * MAP.tile;
-      if (x < -30 || x > W + 30 || y < -40 || y > H + 30) return;
-      marks += '<div class="map-pin" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px" title="' + esc(m.n) + '">' +
-        icon('mosque') + '</div>';
-      void at;
+      var t = toTile(m.lat, m.lng, z);
+      var x = W / 2 + (t.x - eyeAt.x) * size;
+      var y = H / 2 + (t.y - eyeAt.y) * size;
+      if (x < -40 || x > W + 40 || y < -50 || y > H + 40) return;
+      marks += '<button class="map-pin' + (state.mosqueAt === at ? ' is-on' : '') + '" data-act="mosque-look" data-ref="' + at +
+        '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px" aria-label="' + esc(m.n) + '">' +
+        icon('mosque') + '</button>';
     });
     pins.innerHTML = marks;
+    showChosenMosque();
+  }
+
+  /* the name of the mosque the reader pressed, beneath the map */
+  function showChosenMosque() {
+    var line = $('map-chosen');
+    if (!line) return;
+    var m = (state.mosques || [])[state.mosqueAt];
+    if (!m) { line.hidden = true; return; }
+    line.hidden = false;
+    line.innerHTML = '<span class="row-title">' + esc(m.n) + '</span>' +
+      '<span class="row-note mosque-far">' + farLabel(m.far) + '</span>' +
+      '<button class="btn btn-ghost" data-act="mosque-go" data-ref="' + m.lat + ',' + m.lng + '|' + esc(m.n) + '">الطريق</button>';
+  }
+
+  /* pressing a mosque brings the map onto it and names it */
+  function lookAtMosque(at) {
+    var m = (state.mosques || [])[at];
+    if (!m) return;
+    state.mosqueAt = at;
+    state.mapAt = { lat: m.lat, lng: m.lng };
+    MAP.zoom = Math.max(MAP.zoom, 17);
+    /* the name is shown whether or not the map itself can be drawn */
+    showChosenMosque();
+    drawMap();
+    var map = $('mosque-map');
+    if (map && map.scrollIntoView) map.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
 
   function renderMosques() {
@@ -3554,14 +3597,16 @@
       return;
     }
     if (!state.mosques.length) {
-      list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك، وقد لا تكون مضافة إلى الخريطة المفتوحة بعد</p>';
+      list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك.</p>';
       return;
     }
     if ($('mosque-count')) $('mosque-count').textContent = ar(state.mosques.length) + ' حولك';
     list.innerHTML = state.mosques.map(function (m) {
-      return '<div class="row"><span class="row-mark">' + icon('mosque') + '</span>' +
-        '<span class="row-body"><span class="row-title">' + esc(m.n) + '</span>' +
-        '<span class="row-note mosque-far">' + farLabel(m.far) + '</span></span>' +
+      var at = state.mosques.indexOf(m);
+      return '<div class="row' + (state.mosqueAt === at ? ' is-now' : '') + '">' +
+        '<button class="row-mark" data-act="mosque-look" data-ref="' + at + '" aria-label="أرِني ' + esc(m.n) + ' على الخريطة">' + icon('mosque') + '</button>' +
+        '<button class="row-body" data-act="mosque-look" data-ref="' + at + '"><span class="row-title">' + esc(m.n) + '</span>' +
+        '<span class="row-note mosque-far">' + farLabel(m.far) + '</span></button>' +
         '<button class="btn btn-ghost" data-act="mosque-go" data-ref="' + m.lat + ',' + m.lng + '|' + esc(m.n) + '">الطريق</button></div>';
     }).join('');
   }
@@ -4683,6 +4728,7 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
+    'mosque-look': function (ref) { lookAtMosque(+ref); },
     'qada-done': function (ref) {
       Store.markQada(ref, 1);
       buzz(8);
@@ -5176,6 +5222,7 @@
     });
     bind('map-in', 'click', function () { MAP.zoom = Math.min(18, MAP.zoom + 1); drawMap(); });
     bind('map-out', 'click', function () { MAP.zoom = Math.max(11, MAP.zoom - 1); drawMap(); });
+    bind('map-mine', 'click', function () { state.mapAt = null; state.mosqueAt = -1; MAP.zoom = 15; drawMap(); });
     bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
     bind('home-share-times', 'click', function () { shareTimes(); });
 
@@ -5504,7 +5551,7 @@
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours,
-      renderMosques: renderMosques, findMosques: findMosques, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
+      renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
