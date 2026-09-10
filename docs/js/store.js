@@ -29,6 +29,7 @@
     umrah: {},
     readPace: 'mid',
     clock: '12',
+    listenAs: '',
     friday: true,
     fridayShown: '',
     eidShown: '',
