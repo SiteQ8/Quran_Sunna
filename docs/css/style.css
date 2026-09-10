@@ -798,7 +798,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 /* two or three choices of which one is on: one pill, equal halves */
 .segment { display: flex; padding: 4px; border-radius: 999px; background: var(--sunken); margin-bottom: var(--s3); }
-.segment .chip { flex: 1 1 0; height: 40px; border: 0; background: transparent; color: var(--ink-2); font-weight: 600; }
+.segment .chip { flex: 1 1 0; height: 44px; border: 0; background: transparent; color: var(--ink-2); font-weight: 600; }
 .segment .chip.is-on { background: var(--accent-solid); color: var(--on-accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .chip.is-on { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); }
 .chip-row { display: flex; gap: var(--s2); flex-wrap: wrap; }

@@ -1702,21 +1702,24 @@ test('the sunnah groups fold, each with its own tally', () => {
     assert.ok(tally, 'every group names how many of it are done');
     assert.match(tally.textContent, /^[0-9]+ من [0-9]+$/, 'got ' + tally.textContent);
     assert.ok(g.querySelector('.fold-head'), 'and has a head to press');
-    assert.strictEqual(g.querySelector('.fold-head').getAttribute('aria-expanded'), 'true');
+    assert.strictEqual(g.querySelector('.fold-head').getAttribute('aria-expanded'), 'false',
+      'a group is folded away until the reader opens it');
   });
 });
 
-test('a group shuts when its head is pressed and stays shut', () => {
+test('a group opens when its head is pressed and stays open', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
+  const total = doc.querySelectorAll('#tracker-list .fold').length;
   const head = doc.querySelectorAll('#tracker-list .fold-head')[1];
   click(win, head);
-  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold:not(.is-open)').length, 1);
-  assert.strictEqual(head.getAttribute('aria-expanded'), 'false');
+  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold.is-open').length, 1);
+  assert.strictEqual(head.getAttribute('aria-expanded'), 'true');
 
   click(win, doc.querySelector('#tracker-list .fold.is-open .check'));
-  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold:not(.is-open)').length, 1,
-    'ticking a deed must not fling every group back open');
+  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold.is-open').length, 1,
+    'ticking a deed must not fold the group away under the reader');
+  assert.strictEqual(doc.querySelectorAll('#tracker-list .fold').length, total, 'and the rest stay as they were');
 });
 
 test('the tally follows what has been ticked', () => {
@@ -1987,17 +1990,17 @@ test('the sunnah card on the home view folds with its own tally', () => {
   const { win, doc } = boot();
   const fold = doc.getElementById('now-fold');
   assert.ok(fold, 'the home sunnah card should be a folding group');
-  assert.ok(fold.classList.contains('is-open'), 'it starts open');
+  assert.ok(!fold.classList.contains('is-open'), 'it starts folded away');
   const tally = doc.getElementById('now-tally');
   assert.match(tally.textContent, /^[0-9]+ من [0-9]+$/, 'got ' + tally.textContent);
 
   click(win, fold.querySelector('.fold-head'));
-  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'));
-  assert.strictEqual(fold.querySelector('.fold-head').getAttribute('aria-expanded'), 'false');
+  assert.ok(doc.getElementById('now-fold').classList.contains('is-open'));
+  assert.strictEqual(fold.querySelector('.fold-head').getAttribute('aria-expanded'), 'true');
 
   win.App.render.home();
-  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'),
-    'it should stay shut when the home view is drawn again');
+  assert.ok(doc.getElementById('now-fold').classList.contains('is-open'),
+    'it should stay open when the home view is drawn again');
 });
 
 test('the tally on the home card follows what is ticked', () => {
@@ -4717,7 +4720,9 @@ test('a step is ticked and kept, the tally follows, and the reference tabs each 
   assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold').length, 5);
   assert.strictEqual(doc.querySelectorAll('[data-umrah-step]').length, 32);
   assert.strictEqual(doc.getElementById('umrah-tally').textContent, '0 من 32');
-  /* the stage the reader stands in is the one that opens */
+  /* every stage is folded away until asked for */
+  assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold.is-open').length, 0);
+  click(win, doc.querySelector('#umrah-stages .fold-head'));
   assert.strictEqual(doc.querySelector('#umrah-stages .fold.is-open .fold-title').textContent.indexOf('قبل الإحرام'), 0);
   click(win, doc.querySelector('[data-umrah-step]'));
   assert.strictEqual(doc.getElementById('umrah-tally').textContent, '1 من 32');
@@ -5412,4 +5417,46 @@ test('the reminder is not pushed away again every time the app is opened', () =>
   const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
   assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context, true)') !== -1,
     'and after one rings the next is armed outright');
+});
+
+test('every fold starts closed, so a screen shows its headings rather than its contents', () => {
+  const { win, doc } = boot();
+  const open = function (view) { return doc.querySelectorAll('#v-' + view + ' .fold.is-open').length; };
+  const all = function (view) { return doc.querySelectorAll('#v-' + view + ' .fold').length; };
+  assert.ok(all('home') >= 1);
+  assert.strictEqual(open('home'), 0, 'the sunnahs of the hour are folded away');
+  win.App.go('tracker');
+  assert.ok(all('tracker') > 5, 'many groups, ' + all('tracker'));
+  assert.strictEqual(open('tracker'), 0);
+  win.App.go('umrah');
+  assert.strictEqual(all('umrah'), 5);
+  assert.strictEqual(open('umrah'), 0, 'no stage opens by itself');
+});
+
+test('a fold opens on its own head, whichever screen it is on', () => {
+  const { win, doc } = boot();
+  click(win, doc.querySelector('#v-home .fold-head'));
+  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 1);
+  assert.strictEqual(doc.querySelector('#v-home .fold-head').getAttribute('aria-expanded'), 'true');
+  click(win, doc.querySelector('#v-home .fold-head'));
+  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 0, 'and closes again');
+
+  win.App.go('tracker');
+  click(win, doc.querySelectorAll('#v-tracker .fold-head')[2]);
+  assert.strictEqual(doc.querySelectorAll('#v-tracker .fold.is-open').length, 1);
+
+  /* the umrah keeps its folds under their own name, and the general handler
+     must not seize them: it once did, and threw on every press */
+  win.App.go('umrah');
+  click(win, doc.querySelector('#v-umrah .fold-head'));
+  assert.strictEqual(doc.querySelectorAll('#v-umrah .fold.is-open').length, 1);
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("if (foldHead && foldHead.closest('[data-fold]')) {") !== -1,
+    'a head with no [data-fold] above it belongs to another handler');
+});
+
+test('a search still opens what it matched', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("'<section class=\"fold' + (needle ? ' is-open' : '') + '\"") !== -1,
+    'the reader asked for it, so it is shown rather than folded away');
 });
