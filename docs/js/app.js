@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.17.2';
+  var VERSION = '8.17.3';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1318,12 +1318,12 @@
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'أذكار وقتك وحصن المسلم' },
     { act: 'mosques', icon: 'mosque', name: 'المساجد', note: 'أقرب المساجد إليك' },
     { nav: 'qada', icon: 'clock', name: 'القضاء', note: 'ما عليك من صلاة وصيام' },
-    { nav: 'umrah', icon: 'check', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
-    { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'بوصلة' },
+    { nav: 'umrah', icon: 'ihram', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
+    { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة' },
     { nav: 'khatma', icon: 'target', name: 'الختمة', note: 'خطة قراءة' },
     { nav: 'hadith', icon: 'text', name: 'الأربعون', note: 'النووية' },
     { nav: 'ruqyah', icon: 'shield', name: 'الرقية', note: 'آيات وأدعية' },
-    { nav: 'dua', icon: 'hands', name: 'الأدعية', note: 'مأثورة' }
+    { nav: 'dua', icon: 'dua', name: 'الأدعية', note: 'مأثورة' }
   ];
 
   function renderTiles() {
@@ -3320,15 +3320,15 @@
   /* ---------------- more ---------------- */
 
   var MORE_LINKS = [
-    { nav: 'umrah', icon: 'kaaba', name: 'صفة العمرة', note: 'من الميقات إلى التحلل، على دليل المعتمر' },
+    { nav: 'umrah', icon: 'ihram', name: 'صفة العمرة', note: 'من الميقات إلى التحلل، على دليل المعتمر' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
-    { act: 'mosques', icon: 'kaaba', name: 'المساجد القريبة', note: 'تُفتح في خريطة هاتفك' },
+    { act: 'mosques', icon: 'mosque', name: 'المساجد القريبة', note: 'أقرب المساجد إليك على الخريطة' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
     { nav: 'hadith', icon: 'text', name: 'من الأربعين النووية', note: 'عشرون حديثاً جامعاً' },
-    { nav: 'dua', icon: 'hands', name: 'الأدعية', note: 'من الكتاب والسنة' },
+    { nav: 'dua', icon: 'dua', name: 'الأدعية', note: 'من الكتاب والسنة' },
     { nav: 'ruqyah', icon: 'shield', name: 'الرقية الشرعية', note: 'آيات وأدعية ثابتة' },
     { nav: 'timetable', icon: 'clock', name: 'جدول الشهر', note: 'مواقيت كل يوم في صفحة' },
     { nav: 'calendar', icon: 'calendar', name: 'التقويم الهجري', note: 'المناسبات والمواسم' },
