@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.2';
+  var VERSION = '8.18.3';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -646,9 +646,11 @@
     if (!state.askedPlace) {
       state.askedPlace = true;
       adoptGrantedNotifications();
-      /* the app holds its splash until the page says it has painted */
+      /* the app holds its splash until the page says it has painted, and the
+         page's own splash goes at the same moment */
       var app = bridge();
       if (app && app.pageReady) { try { app.pageReady(); } catch (e) { /* older package */ } }
+      dismissBootSplash();
       window.setTimeout(function () {
         maybeExplainChrome();
         if (!maybeEidSheet() && !maybeFridaySheet()) maybeAskPlace();
@@ -5517,6 +5519,17 @@
       .catch(function () { /* offline install is optional */ });
   }
 
+  /* The splash written into the page itself: it fades once the first screen
+     is drawn, so the reader never sees a bare page waiting to be filled. */
+  function dismissBootSplash() {
+    var splash = document.getElementById('boot-splash');
+    if (!splash) return;
+    splash.style.opacity = '0';
+    window.setTimeout(function () {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+    }, 420);
+  }
+
   function boot() {
     Store.attach();
     Store.migrate();
@@ -5550,7 +5563,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours,
+      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash,
       renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

@@ -14,6 +14,8 @@
     var root = document.documentElement;
     var dark = s.theme === 'dark' || (s.theme !== 'light' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
     if (dark) root.setAttribute('data-theme', 'dark');
+    /* painted at once, so nothing white shows before the stylesheet lands */
+    root.style.backgroundColor = dark ? '#10161a' : '#f6f4ee';
     var P = { green: ['#1e6f47', '#1e6f47', '#30b171'], gold: ['#b08833', '#7d6124', '#bb9036'], maroon: ['#a84a6b', '#9c4564', '#f66c9d'],
       blue: ['#2f7fc0', '#26689c', '#399ae8'], violet: ['#5b4a99', '#5b4a99', '#a889ff'], teal: ['#1a8a8a', '#156e6e', '#1fa6a6'],
       copper: ['#b5643a', '#945230', '#dd7a47'], sadu: ['#9c2b2b', '#9c2b2b', '#ff6969'] };
@@ -74,6 +76,14 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<!-- What shows while the app wakes. Written inline and styled inline so it
+     paints with the very first frame, before any stylesheet or script. -->
+<div id="boot-splash" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--paper,#f6f4ee);transition:opacity .38s ease">
+  <img src="icons/icon-192.png?v=eye" alt="" width="112" height="112" style="border-radius:26px">
+  <span style="width:112px;height:2px;background:#b08833;opacity:.7"></span>
+  <span style="font:600 30px/1 'IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink,#16241c)">سُنّتي</span>
+</div>
+
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
 <g id="i-home"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V20h14V9.5"/><path d="M9.5 20v-6h5v6"/></g>
