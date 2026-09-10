@@ -39,6 +39,7 @@
     jumuahBefore: 0,
     jumuahNight: true,
     jumuahNightShown: '',
+    jumuahNightAt: 0,
     qadaDone: {},
     afterPrayerOff: false,
     afterPrayerShown: '',

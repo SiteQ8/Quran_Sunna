@@ -575,6 +575,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .mosque-far { font-variant-numeric: tabular-nums; }
 /* the button stands clear of the line above it, not pressed against it */
 .mosque-again { margin-top: var(--s4); }
+/* the three small choices under a sheet: a picture, a delay, a dismissal */
+.sheet-tools { display: flex; gap: 6px; margin-top: var(--s3); }
+.sheet-tools .btn { flex: 1 1 0; flex-direction: column; gap: 4px; height: auto; min-height: 58px;
+  padding: 8px 4px; font-size: .74rem; }
+.sheet-tools .icon { width: 18px; height: 18px; }
 
 /* Choices of equal width, laid in a grid rather than pills of every size
    breaking across lines with a ragged edge. */
