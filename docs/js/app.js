@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.22.0';
+  var VERSION = '8.22.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3671,7 +3671,7 @@
       var y = H / 2 + (t.y - eyeAt.y) * size;
       if (x < -40 || x > W + 40 || y < -50 || y > H + 40) return;
       marks += '<button class="map-pin' + (state.mosqueAt === at ? ' is-on' : '') + '" data-act="mosque-look" data-ref="' + at +
-        '" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px" aria-label="' + esc(m.n) + '">' +
+        ':map" style="left:' + Math.round(x) + 'px;top:' + Math.round(y) + 'px" aria-label="' + esc(m.n) + '">' +
         icon('mosque') + '</button>';
     });
     pins.innerHTML = marks;
@@ -3691,7 +3691,7 @@
   }
 
   /* pressing a mosque brings the map onto it and names it */
-  function lookAtMosque(at) {
+  function lookAtMosque(at, from) {
     var m = (state.mosques || [])[at];
     if (!m) return;
     state.mosqueAt = at;
@@ -3701,8 +3701,12 @@
     showChosenMosque();
     drawMap();
     renderMosqueList();
-    var row = document.querySelector('#mosque-list .row.is-now');
-    if (row && row.scrollIntoView) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    /* from the map, go down to the mosque in the list; from the list, go up to
+       it on the map, so the press always shows the reader the other half */
+    var target = from === 'map'
+      ? document.querySelector('#mosque-list .row.is-now')
+      : $('mosque-map');
+    if (target && target.scrollIntoView) target.scrollIntoView({ block: 'center', behavior: 'smooth' });
   }
 
   /* the tile the map sits on, turned back into a place */
@@ -3721,13 +3725,36 @@
     if (!map || map.dataset.dragging) return;
     map.dataset.dragging = '1';
     var from = null, moved = false;
+    var fingers = {}, pinch = 0;
     map.addEventListener('pointerdown', function (e) {
       if (e.target.closest('.map-zoom') || e.target.closest('.map-pin')) return;
+      fingers[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(fingers);
+      if (ids.length === 2) {
+        pinch = spread(fingers, ids);
+        from = null;
+        return;
+      }
       from = { x: e.clientX, y: e.clientY, at: state.mapAt || place() };
       moved = false;
       map.setPointerCapture(e.pointerId);
     });
     map.addEventListener('pointermove', function (e) {
+      if (fingers[e.pointerId]) { fingers[e.pointerId] = { x: e.clientX, y: e.clientY }; }
+      var ids = Object.keys(fingers);
+      if (ids.length === 2) {
+        /* two fingers spread or close: a step of zoom for each doubling */
+        var now = spread(fingers, ids);
+        if (pinch && now) {
+          var steps = Math.round(Math.log(now / pinch) / Math.LN2);
+          if (steps) {
+            MAP.zoom = Math.max(11, Math.min(18, MAP.zoom + steps));
+            pinch = now;
+            drawMap();
+          }
+        }
+        return;
+      }
       if (!from || !from.at) return;
       var dx = e.clientX - from.x, dy = e.clientY - from.y;
       if (Math.abs(dx) + Math.abs(dy) < 4) return;
@@ -3738,12 +3765,21 @@
       drawMap();
     });
     var settle = function (e) {
+      delete fingers[e.pointerId];
+      if (Object.keys(fingers).length < 2) pinch = 0;
       if (from) { try { map.releasePointerCapture(e.pointerId); } catch (err) { /* gone */ } }
       from = null;
       if (moved) { moved = false; lookAround(); }
     };
     map.addEventListener('pointerup', settle);
     map.addEventListener('pointercancel', settle);
+  }
+
+  /* how far apart two fingers are */
+  function spread(fingers, ids) {
+    var a = fingers[ids[0]], b = fingers[ids[1]];
+    if (!a || !b) return 0;
+    return Math.sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y));
   }
 
   /* the mosques about wherever the map now looks, asked for once it settles */
@@ -4911,7 +4947,10 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
-    'mosque-look': function (ref) { lookAtMosque(+ref); },
+    'mosque-look': function (ref, el) {
+      var parts = String(ref).split(':');
+      lookAtMosque(+parts[0], parts[1] || (el && el.closest('.map-pin') ? 'map' : 'list'));
+    },
     'player-open': function () {
       /* pressing what is sounding takes the reader to it */
       if (state.recite) { state.surah = state.recite.s; go('reader'); return; }
