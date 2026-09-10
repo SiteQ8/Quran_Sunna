@@ -563,7 +563,14 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .map-chosen { display: flex; align-items: center; gap: var(--s3); margin: var(--s3) 0 0;
   padding: var(--s2) var(--s3); background: var(--sunken); border-radius: var(--r-sm); }
 .map-chosen .row-title { flex: 1 1 auto; font-weight: 600; }
-#mosque-list .row.is-now { border-color: var(--accent-solid); }
+/* the mosque the reader pressed on the map, plainly marked in the list: a row
+   has no border of its own, so colouring one showed nothing at all */
+#mosque-list .row.is-now {
+  background: var(--accent-wash);
+  box-shadow: inset 0 0 0 2px var(--accent-solid), var(--shadow);
+}
+#mosque-list .row.is-now .row-mark { background: var(--accent-solid); color: var(--on-accent); }
+#mosque-list .row.is-now .row-title { color: var(--accent-ink); }
 #mosque-list .row-body { text-align: start; }
 .mosque-far { font-variant-numeric: tabular-nums; }
 

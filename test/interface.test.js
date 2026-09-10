@@ -6216,3 +6216,27 @@ test('a mosque on the map can actually be pressed', () => {
   assert.ok(app.indexOf('data-act="mosque-look"') !== -1);
   void doc;
 });
+
+test('the mosque pressed on the map is plainly marked in the list', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* a row carries no border of its own, so colouring one showed nothing:
+     the mark has to be something a row actually has */
+  const rule = /#mosque-list \.row\.is-now \{([^}]*)\}/.exec(css)[1];
+  assert.ok(rule.indexOf('border-color') === -1, 'a row has no border to colour');
+  assert.match(rule, /background: var\(--accent-wash\)/, 'its ground changes');
+  assert.match(rule, /inset 0 0 0 2px var\(--accent-solid\)/, 'and it takes an edge');
+  assert.match(css, /#mosque-list \.row\.is-now \.row-mark \{[^}]*background: var\(--accent-solid\)/,
+    'and its mark is filled');
+
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [
+    { n: 'الأول', lat: 29.3806, lng: 47.9805, far: 78 },
+    { n: 'الثاني', lat: 29.3815, lng: 47.9812, far: 191 }
+  ];
+  win.App.go('mosques');
+  win.App.helpers.lookAtMosque(1, 'map');
+  const marked = doc.querySelectorAll('#mosque-list .row.is-now');
+  assert.strictEqual(marked.length, 1, 'exactly one row is marked');
+  assert.ok(marked[0].textContent.indexOf('الثاني') !== -1, 'and it is the one pressed');
+});
