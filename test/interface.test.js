@@ -2348,8 +2348,8 @@ test('the wrapper asks for nothing it does not need', () => {
     path.join(__dirname, '..', 'android', 'app/src/main/AndroidManifest.xml'), 'utf8');
   const asked = [...manifest.matchAll(/uses-permission android:name="android\.permission\.([A-Z_]+)"/g)]
     .map((m) => m[1]);
-  assert.deepStrictEqual(asked.sort(), ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'INTERNET', 'POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'VIBRATE'],
-    'the network, the notification, the location the page asks for, and what an exact adhan alarm needs, nothing more');
+  assert.deepStrictEqual(asked.sort(), ['ACCESS_COARSE_LOCATION', 'ACCESS_FINE_LOCATION', 'FOREGROUND_SERVICE', 'FOREGROUND_SERVICE_MEDIA_PLAYBACK', 'INTERNET', 'POST_NOTIFICATIONS', 'RECEIVE_BOOT_COMPLETED', 'SCHEDULE_EXACT_ALARM', 'USE_EXACT_ALARM', 'VIBRATE'],
+    'the network, the notification, the location the page asks for, what an exact adhan alarm needs, and what holding a recitation while the reader leaves the app requires, nothing more');
   /* the compass and the location are asked for by the page, so neither may be
      required to install */
   [...manifest.matchAll(/uses-feature[^>]*required="(\w+)"/g)].forEach(function (m) {
@@ -2377,6 +2377,9 @@ test('nothing that must stay private is committed', () => {
 /* ---------------- reciting along ---------------- */
 
 function reciteHarness(win) {
+  /* the walk verse by verse is what a reciter without a whole surah recording
+     falls back to, and what the repeat and the memorising use */
+  win.Store.set('reciter', 'ar.hanirifai');
   const asked = [];
   let live = null;
   win.Audio = function () {
@@ -5979,4 +5982,47 @@ test('choices are laid in an even grid, not pills of every width', () => {
   assert.ok(html.indexOf('<div class="pick-grid" id="search-scope"') !== -1);
   const { doc } = boot();
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
+});
+
+test('a whole surah is recited from one recording, so nothing breaks between verses', () => {
+  const { win } = boot();
+  /* the verse by verse files carry silence at each end, so a walk through them
+     breaks the recitation however early each one is fetched */
+  win.Store.set('reciter', 'ar.minshawi');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://server10.mp3quran.net/minsh/020.mp3');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(1), 'https://server10.mp3quran.net/minsh/001.mp3',
+    'the number is padded to three, as the source keeps them');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(114), 'https://server10.mp3quran.net/minsh/114.mp3');
+  /* a reciter with no such recording keeps the walk rather than failing */
+  win.Store.set('reciter', 'ar.hanirifai');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(20), null);
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function playSurah\(n\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf("if (!whole) { reciteFrom(n, state.ayah || 1); return; }") !== -1,
+    'and falls back to it');
+  /* every named source is a real address */
+  const map = /var SURAH_AUDIO = \{([\s\S]*?)\};/.exec(app)[1];
+  const urls = [...map.matchAll(/'(https:\/\/[^']+)'/g)].map(function (m) { return m[1]; });
+  assert.ok(urls.length >= 5, 'several reciters, got ' + urls.length);
+  urls.forEach(function (u) { assert.match(u, /^https:\/\/server\d+\.mp3quran\.net\/[a-z_]+\/$/, u); });
+});
+
+test('what is sounding is put in the shade, with something to press', () => {
+  const { win } = boot();
+  const shade = [];
+  win.SunnatiApp = { showSounding: function (t, s, playing) { shade.push([t, playing]); } };
+  win.App.helpers.showInShade('سورة طه', 'المنشاوي', true);
+  assert.deepStrictEqual(shade[0], ['سورة طه', true]);
+
+  const service = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AudioService.java'), 'utf8');
+  assert.ok(service.indexOf('startForeground(ID,') !== -1, 'it holds the app while sounding');
+  assert.ok(service.indexOf('ACTION_TOGGLE') !== -1 && service.indexOf('ACTION_CLOSE') !== -1,
+    'and offers a pause and a stop');
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('App.helpers.togglePlay()') !== -1 && main.indexOf('App.helpers.stopAudio()') !== -1,
+    'the buttons reach the page, which is what holds the sound');
+  const manifest = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  assert.ok(manifest.indexOf('android:name=".AudioService"') !== -1);
+  assert.ok(manifest.indexOf('foregroundServiceType="mediaPlayback"') !== -1);
+  assert.ok(manifest.indexOf('FOREGROUND_SERVICE_MEDIA_PLAYBACK') !== -1, 'asked for as the system requires');
 });

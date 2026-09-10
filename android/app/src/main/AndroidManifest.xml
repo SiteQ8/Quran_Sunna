@@ -29,6 +29,9 @@
     <uses-feature android:name="android.hardware.sensor.compass" android:required="false"/>
     <uses-feature android:name="android.hardware.location" android:required="false"/>
 
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"/>
+
     <application
         android:name=".App"
         android:label="@string/appName"
@@ -96,5 +99,9 @@
 
 
 
+        <service
+            android:name=".AudioService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback"/>
     </application>
 </manifest>
