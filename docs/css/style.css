@@ -535,6 +535,29 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .clock { position: relative; }
 /* below the date row, so the two never sit on it */
 
+/* The map: tiles from OpenStreetMap laid in a grid, with the mosques placed
+   over them by their own pixel offset. No library, and nothing loads until
+   the reader opens the screen. */
+.map { position: relative; height: 320px; border-radius: var(--r-md); overflow: hidden;
+  background: var(--sunken); border: 1px solid var(--line); }
+.map-tiles { position: absolute; inset: 0; }
+.map-tiles img { position: absolute; width: 256px; height: 256px; }
+.map-pins { position: absolute; inset: 0; pointer-events: none; }
+.map-pin { position: absolute; width: 28px; height: 28px; margin: -28px 0 0 -14px;
+  display: grid; place-items: center; border-radius: 50% 50% 50% 4px;
+  transform: rotate(-45deg); background: var(--accent-solid); color: var(--on-accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,.3); }
+.map-pin .icon { width: 15px; height: 15px; transform: rotate(45deg); }
+.map-me { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
+  background: #2f7fc0; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(47,127,192,.4); }
+.map-zoom { position: absolute; inset-inline-end: 10px; top: 10px; width: 40px; height: 40px;
+  border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line);
+  color: var(--ink); font-size: 1.3rem; font-weight: 700; line-height: 1; }
+.map-zoom.map-out { top: 58px; }
+.map-credit { font-size: .7rem; color: var(--ink-3); margin: var(--s2) 0 0; text-align: center; }
+.map-credit a { color: var(--ink-3); }
+.mosque-far { font-variant-numeric: tabular-nums; }
+
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
