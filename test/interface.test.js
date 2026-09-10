@@ -122,7 +122,7 @@ test('every asset the page references exists on disk', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const refs = [...html.matchAll(/(?:src|href)="([^"]+)"/g)]
     .map((m) => m[1])
-    .filter((u) => !/^https?:|^data:|^#/.test(u));
+    .filter((u) => !/^https?:|^data:|^#|^mailto:|^tel:/.test(u));
   assert.ok(refs.length >= 12, 'expected the page to reference its assets');
   refs.forEach(function (rel) {
     assert.ok(fs.existsSync(path.join(DOCS, rel.split('?')[0])), 'missing asset ' + rel);
@@ -5078,7 +5078,7 @@ test('the app does not repeat its own name and address at the foot of every scre
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.strictEqual((html.match(/class="foot"/g) || []).length, 1, 'one foot, on the about page');
   assert.ok(html.indexOf('المستودع على GitHub') === -1, 'the repository is not linked from the app');
-  assert.ok(html.indexOf('التطبيق مفتوح المصدر ومجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.') !== -1);
+  assert.ok(html.indexOf('التطبيق مجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.') !== -1);
   assert.ok(html.indexOf('ونص حصن المسلم وتسجيلات') === -1, 'the sources are named in المصادر, not twice');
 });
 
@@ -6312,4 +6312,33 @@ test('the privacy page is dressed like the app, and its summary agrees with its 
     'the summary once said nothing is ever sent, which the mosques screen made untrue');
   const summary = /<h2>خلاصة الأمر<\/h2>([\s\S]*?)<\/section>/.exec(policy)[1];
   assert.ok(summary.indexOf('المساجد القريبة') !== -1, 'the one exception is named up front');
+});
+
+test('the app offers a way to reach its author that works', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the repository is private, so naming it or its licence would be telling
+     the reader of something they cannot open */
+  assert.ok(html.indexOf('github.com/SiteQ8/Quran_Sunna') === -1, 'a private repository is not offered');
+  assert.ok(html.indexOf('برخصة MIT') === -1);
+  assert.ok(html.indexOf('mailto:Site@hotmail.com') !== -1, 'the address is a link, not words to copy');
+});
+
+test('nothing a reader sees claims the source is open, because it is not', () => {
+  /* the repository is private: telling users the code is theirs to inspect,
+     or pointing them at an issues page they cannot open, is untrue */
+  ['index.html', 'privacy.html'].forEach(function (f) {
+    const page = fs.readFileSync(path.join(DOCS, f), 'utf8');
+    assert.ok(page.indexOf('مفتوح المصدر') === -1, f + ' still calls it open source');
+    assert.ok(page.indexOf('الشيفرة كاملة') === -1, f + ' still offers the code');
+    assert.ok(page.indexOf('github.com/SiteQ8') === -1, f + ' still sends the reader to a private repository');
+  });
+  const listing = fs.readFileSync(path.join(__dirname, '..', 'play/README.md'), 'utf8');
+  assert.ok(listing.indexOf('مفتوح المصدر') === -1, 'the store listing still claims it');
+
+  /* and the way to reach the author is one that works */
+  const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  [policy, app].forEach(function (page) {
+    assert.ok(page.indexOf('mailto:Site@hotmail.com') !== -1, 'the email is offered as a link');
+  });
 });
