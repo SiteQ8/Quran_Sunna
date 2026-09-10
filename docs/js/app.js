@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.32.0';
+  var VERSION = '8.33.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3006,13 +3006,14 @@
      once for that night. */
   function maybeJumuahNightSheet() {
     if (!Store.get('jumuahNight') || !inJumuahNight()) return false;
-    var night = new Date();
-    if (night.getDay() === 5) night = new Date(night.getFullYear(), night.getMonth(), night.getDate() - 1);
-    var mark = night.toDateString();
-    if (Store.get('jumuahNightShown') === mark) return false;
-    Store.set('jumuahNightShown', mark);
+    /* It greets the reader every time he opens the app through the night, not
+       once and then no more: a reminder he meant to act on and did not is
+       worth putting before him again. It is silenced only by his own hand,
+       and stops of itself at the fajr of friday. */
+    var quiet = +Store.get('jumuahNightAt') || 0;
+    if (quiet > Date.now()) return false;
     openSheet('ليلة الجمعة',
-      '<p class="setting-note">من مغرب الخميس إلى فجر الجمعة</p>' +
+      '<p class="setting-note">من مغرب الخميس إلى فجر الجمعة، وتُعرض كلما فتحت التطبيق حتى تؤجّلها أو تُخفيها</p>' +
       ['أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه',
        'اقرأ سورة الكهف، وتُجزئ ليلة الجمعة ويومها',
        'أكثِر من الدعاء، ففي الجمعة ساعة لا يُرد فيها سائل',

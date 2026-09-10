@@ -6500,9 +6500,9 @@ test('the night of jumuah is not put off a week because its moment passed', () =
   const { win, doc } = boot();
   /* and the app greets the night when opened in it, once */
   const sheet = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(sheet.indexOf('jumuahNightShown') !== -1, 'shown once for that night');
-  assert.ok(sheet.indexOf('night.getDate() - 1') !== -1,
-    'and after midnight it is still the same night, so it is marked by the thursday');
+  /* it greets the reader on every opening through the night, not once */
+  assert.ok(sheet.indexOf('jumuahNightShown') === -1, 'no longer shown once and then no more');
+  assert.ok(sheet.indexOf('inJumuahNight()') !== -1, 'it is bound to the night itself');
   ['الصلاة على النبي', 'سورة الكهف', 'ساعة لا يُرد فيها سائل', 'بكّر إلى المسجد'].forEach(function (line) {
     assert.ok(sheet.indexOf(line) !== -1, 'the sunnahs should include ' + line);
   });
@@ -6670,4 +6670,35 @@ test('the night reminder is armed once, not afresh on every opening', () => {
   win.Store.set('jumuahNight', false);
   assert.strictEqual(win.App.helpers.reminderList().filter(function (x) { return x.t === 'ليلة الجمعة'; }).length, 0);
   void doc;
+});
+
+test('the sunnahs of the night are offered on every opening until put off or hidden', () => {
+  const { win, doc } = boot();
+  const close = function () { doc.getElementById('sheet').classList.remove('is-open'); };
+  win.Store.set('jumuahNight', true);
+  win.Store.set('jumuahNightAt', 0);
+  const shows = win.App.helpers.inJumuahNight();
+  if (shows) {
+    /* a reminder the reader meant to act on and did not is worth putting
+       before him again, so it is not shown once and then dropped */
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), true); close();
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), true, 'again on the next opening'); close();
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), true, 'and the next'); close();
+    /* put off, it holds its peace until the hour asked for */
+    win.App.helpers.snoozeJumuahNight(60);
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false, 'silent while put off'); close();
+    /* hidden, it does not come back at all */
+    win.Store.set('jumuahNightAt', 0);
+    win.Store.set('jumuahNight', false);
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false);
+  }
+  /* and it stops of itself at the fajr of friday, since it is bound to the night */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('!inJumuahNight()') !== -1, 'outside the night it never shows');
+  assert.ok(fn.indexOf("var quiet = +Store.get('jumuahNightAt') || 0;") !== -1);
+  /* nothing anywhere still keys off a once-a-night flag */
+  assert.ok(app.indexOf('jumuahNightShown') === -1);
+  const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
+  assert.ok(store.indexOf('jumuahNightShown') === -1, 'and the setting is gone from the store too');
 });
