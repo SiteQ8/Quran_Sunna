@@ -6630,3 +6630,14 @@ test('the page can be shown as the madinah mushaf prints it', () => {
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf('data/madinah-lines.json') !== -1);
 });
+
+test('a printed line is held to one row, whatever its spans say', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* .ayah sets white-space itself, which overrode the line and let it wrap
+     inside a span: on a page of short surahs most lines came out two rows */
+  assert.match(css, /\.ayah \{ white-space: normal; \}/, 'the flowing view still wraps as it should');
+  assert.match(css, /\.mad-line \.ayah, \.mad-line \.ayah \* \{ white-space: nowrap; \}/,
+    'but inside a printed line nothing may wrap');
+  /* the line itself asks too */
+  assert.match(css, /\.mad-line \{[\s\S]*?white-space: nowrap/);
+});

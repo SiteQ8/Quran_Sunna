@@ -587,6 +587,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   will-change: transform;
 }
 .mad-line > span { display: inline; }
+/* the verse spans set white-space themselves, which let a line wrap inside one
+   of them however firmly the line asked not to: on a page of short surahs most
+   lines came out two rows tall */
+.mad-line .ayah, .mad-line .ayah * { white-space: nowrap; }
 .mad-line .ayah { display: inline; }
 .mad-line + .surah-frame { margin-top: var(--s3); }
 
