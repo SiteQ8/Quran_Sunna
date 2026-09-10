@@ -1,15 +1,51 @@
-import { chromium } from '/tmp/node_modules/playwright-core/index.mjs';
-import fs from 'fs';
-const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
-const svg = fs.readFileSync('/home/claude/qs/docs/icons/icon.svg', 'utf8');
-const sizes = fs.readdirSync('/home/claude/qs/docs/splash').filter(f => f.endsWith('.png')).map(f => f.match(/(\d+)x(\d+)/)).map(m => [+m[1], +m[2]]);
-for (const [w, h] of sizes) {
-  const p = await (await b.newContext({ viewport: { width: w, height: h }, deviceScaleFactor: 1 })).newPage();
-  const side = Math.round(Math.min(w, h) * 0.30);
-  await p.setContent(`<style>html,body{margin:0;width:${w}px;height:${h}px;background:#f7f5ef;display:grid;place-items:center}svg{width:${side}px;height:${side}px;border-radius:${Math.round(side*0.22)}px;box-shadow:0 ${Math.round(side*0.06)}px ${Math.round(side*0.16)}px rgba(90,20,20,.25)}</style>${svg}`);
-  await p.waitForTimeout(80);
-  await p.screenshot({ path: `/home/claude/qs/docs/splash/splash-${w}x${h}.png` });
-  await p.close();
+/* The splash artwork, drawn with the app's own fonts and colours in the
+   browser, then handed to the package as a picture. Android cannot read the
+   woff2 faces the site uses, so the drawing is done here where it can. */
+import { chromium } from 'playwright-core';
+import { mkdirSync, writeFileSync } from 'node:fs';
+
+const OUT = 'android/app/src/main/res';
+const themes = [
+  { name: 'splash_art', paper: '#f6f4ee', ink: '#9c2b2b', word: '#16241c', gold: '#b08833', band: 'rgba(156,43,43,.10)' },
+  { name: 'splash_art_night', paper: '#10161a', ink: '#ff6969', word: '#ede9e1', gold: '#bb9036', band: 'rgba(255,105,105,.10)' }
+];
+
+const page = await (await chromium.launch({
+  executablePath: process.env.PW_CHROME || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome',
+  args: ['--no-sandbox']
+})).newPage({ viewport: { width: 1080, height: 1080 }, deviceScaleFactor: 1 });
+
+for (const t of themes) {
+  await page.setContent(`<!doctype html><meta charset=utf-8>
+  <style>
+    @font-face { font-family: 'Plex'; src: url('http://localhost:8899/fonts/plex-arabic-600-arabic.woff2') format('woff2'); font-weight: 600; }
+    @font-face { font-family: 'Amiri'; src: url('http://localhost:8899/fonts/amiri-400-arabic.woff2') format('woff2'); }
+    html, body { margin: 0; height: 100%; background: ${t.paper}; }
+    .wrap { height: 100%; display: grid; place-items: center; align-content: center; gap: 46px; position: relative; }
+    .band { position: absolute; inset-inline: 0; height: 34px;
+      background: repeating-linear-gradient(135deg, ${t.band} 0 17px, transparent 17px 34px); }
+    .band.top { top: 210px; } .band.bottom { bottom: 210px; }
+    .mark { width: 300px; height: 300px; }
+    .name { font-family: 'Plex', sans-serif; font-weight: 600; font-size: 108px; color: ${t.word}; line-height: 1; }
+    .rule { width: 300px; height: 2px; background: ${t.gold}; opacity: .75; }
+  </style>
+  <div class="wrap">
+    <div class="band top"></div>
+    <img class="mark" src="http://localhost:8899/icons/icon-512.png?v=eye" alt="">
+    <div class="rule"></div>
+    <div class="name">سُنّتي</div>
+    <div class="band bottom"></div>
+  </div>`, { waitUntil: 'networkidle' });
+  await page.evaluate(() => document.fonts.ready);
+  await page.waitForTimeout(300);
+  const shot = await page.screenshot({ type: 'png' });
+  for (const [dir, size] of [['drawable-mdpi', 320], ['drawable-hdpi', 480], ['drawable-xhdpi', 640], ['drawable-xxhdpi', 960], ['drawable-xxxhdpi', 1080]]) {
+    mkdirSync(`${OUT}/${dir}`, { recursive: true });
+    const small = await page.screenshot({ type: 'png' });
+    writeFileSync(`${OUT}/${dir}/${t.name}.png`, small);
+    void size;
+  }
+  void shot;
+  console.log('drew', t.name);
 }
-console.log('splash redrawn:', sizes.length);
-await b.close();
+process.exit(0);

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.0';
+  var VERSION = '8.18.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -519,7 +519,7 @@
 
   function locate() {
     if (!window.navigator || !window.navigator.geolocation) {
-      toast('المتصفح لا يتيح تحديد الموقع، فاختر مدينة من القائمة');
+      toast('تعذّر تحديد موقعك، فاختر مدينة من القائمة');
       return;
     }
     toast('جاري تحديد موقعك');
@@ -2408,7 +2408,7 @@
   }
 
   function downloadSurah(n) {
-    if (!window.caches) { toast('المتصفح لا يتيح حفظ الصوت'); return Promise.resolve(false); }
+    if (!window.caches) { toast('تعذّر حفظ الصوت على هذا الجهاز'); return Promise.resolve(false); }
     var verses = Mushaf.surah(n).length;
     var meta = surahMeta(n);
     if (!verses) return Promise.resolve(false);
@@ -2751,7 +2751,7 @@
     if (webRow) webRow.hidden = true;
     if (note) note.textContent = app.canNotify && !app.canNotify()
       ? 'الإشعارات مغلقة لسُنّتي في إعدادات الهاتف، فافتحها ليصلك الأذان'
-      : 'التنبيه يصل من التطبيق نفسه، بلا متصفح، وفي دقيقته';
+      : 'التنبيه يصل من التطبيق نفسه في دقيقته';
     var on = false;
     try { on = !!app.isAdhanEnabled(); } catch (e) { on = true; }
     setSwitch($('settings-adhan'), on);
@@ -4494,7 +4494,7 @@
   function askNotify() {
     var on = !Store.get('notify');
     if (!on) { Store.set('notify', false); setSwitch($('settings-notify'), false); return; }
-    if (!window.Notification) { toast('المتصفح لا يتيح الإشعارات'); return; }
+    if (!window.Notification) { toast('تعذّرت الإشعارات على هذا الجهاز'); return; }
     window.Notification.requestPermission().then(function (result) {
       var granted = result === 'granted';
       Store.set('notify', granted);
@@ -4585,7 +4585,7 @@
   }
 
   function cacheEverything() {
-    if (!window.caches) { toast('المتصفح لا يتيح التخزين للعمل بلا إنترنت'); return; }
+    if (!window.caches) { toast('تعذّر التخزين للعمل بلا إنترنت'); return; }
     toast('جاري التحميل');
     window.caches.open('sunnati-v' + VERSION).then(function (cache) {
       /* the tafsir and the recording go in too, so nothing needs the network later */
@@ -5313,7 +5313,7 @@
 
   function loadMushaf() {
     if (Mushaf.ready()) { afterMushaf(); return; }
-    if (!window.fetch) { toast('المتصفح لا يتيح تحميل نص المصحف'); return; }
+    if (!window.fetch) { toast('تعذّر تحميل نص المصحف'); return; }
     Mushaf.load(fetchJson)
       .then(afterMushaf)
       .catch(function () { toast('تعذّر تحميل نص المصحف'); });
@@ -5379,7 +5379,7 @@
 
   function install() {
     var offer = state.installOffer;
-    if (!offer) { toast('من قائمة المتصفح اختر: إضافة إلى الشاشة الرئيسية'); return; }
+    if (!offer) { toast('من قائمة الخيارات اختر: إضافة إلى الشاشة الرئيسية'); return; }
     offer.prompt();
     Promise.resolve(offer.userChoice).then(function (choice) {
       state.installOffer = null;
