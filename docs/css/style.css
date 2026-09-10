@@ -179,7 +179,9 @@ button { background: none; border: none; cursor: pointer; }
 .view-head p { color: var(--ink-2); font-size: var(--step--1); margin-top: 2px; }
 
 /* the play and pause marks are shapes, not lines */
-.icon:has(use[href='#i-play']), .icon:has(use[href='#i-pause']) { fill: currentColor; stroke: none; }
+/* the play triangle is a shape and wants filling; the pause is two strokes,
+   and filling it left nothing to see at all */
+.icon:has(use[href='#i-play']) { fill: currentColor; stroke: none; }
 .icon { width: 1.25em; height: 1.25em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
 /* ---------- tab bar ---------- */
@@ -1248,6 +1250,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 .empty { text-align: center; color: var(--ink-3); padding: var(--s6) var(--s4); font-size: var(--step-0); }
 .empty .icon { width: 34px; height: 34px; margin-bottom: var(--s3); color: var(--line); }
+/* a button here belongs beneath the words, not laid across them */
+.empty .btn { display: block; margin: var(--s3) auto 0; }
 
 .skeleton {
   background: linear-gradient(90deg, var(--sunken) 25%, var(--line-soft) 50%, var(--sunken) 75%);
