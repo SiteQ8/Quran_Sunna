@@ -6982,3 +6982,23 @@ test('the sunnahs of jumuah stand on the home screen too, under the hour\'s sunn
   const fn = /function renderJumuahCard\(where\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1);
 });
+
+test('a sheet that is due is looked for again whenever the app comes forward', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the check used to run only at the first boot, so a reader who tapped the
+     notice while the app was already open was shown nothing at all */
+  const fn = /function showDueSheets\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('maybeEidSheet() || maybeJumuahNightSheet() || maybeFridaySheet()') !== -1,
+    'the eid first, then the night, then the day');
+  assert.ok(fn.indexOf("classList.contains('is-open')") !== -1,
+    'and one already open is not opened over');
+  assert.ok(app.indexOf('if (!showDueSheets()) maybeAskPlace();') !== -1, 'still checked at boot');
+
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('if (started) tellPage("App.helpers.showDueSheets()");') !== -1,
+    'and again each time the app is brought forward');
+  assert.ok(main.indexOf('else tellPage("App.helpers.showDueSheets()");') !== -1,
+    'and when it is opened from a notice');
+  /* not on the very first resume, since the boot check has it */
+  assert.ok(main.indexOf('private boolean started = false;') !== -1);
+});
