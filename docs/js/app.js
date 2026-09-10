@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.14.0';
+  var VERSION = '8.14.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2521,6 +2521,19 @@
       'SUMMARY:' + name, 'DESCRIPTION:' + note,
       'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + name, 'END:VALARM',
       'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    /* an older package has no calendar door, but it can still write the file
+       and hand it to whatever opens a calendar entry */
+    if (app && app.saveAndOpen) {
+      var saved = false;
+      try { saved = app.saveAndOpen(name + '.ics', 'text/calendar', ics); } catch (e) { saved = false; }
+      if (saved) { toast('حُفظ الموعد، فأضفه إلى تقويمك'); return true; }
+    }
+    /* a web view swallows a blob download, so it is only offered where a
+       browser will really take it */
+    if (app) {
+      toast('حدّث التطبيق لتُضيف المواعيد إلى تقويمك');
+      return false;
+    }
     try {
       var url = URL.createObjectURL(new window.Blob([ics], { type: 'text/calendar' }));
       var link = document.createElement('a');
@@ -4064,6 +4077,8 @@
       var ok = false;
       try { ok = app.saveFile(name, text); } catch (e) { ok = false; }
       if (ok) { toast('حُفظت نسختك في التنزيلات باسم ' + name); return; }
+      toast('تعذّر حفظ النسخة');
+      return;
     }
     var blob = new window.Blob([text], { type: 'application/json' });
     var url = window.URL.createObjectURL(blob);

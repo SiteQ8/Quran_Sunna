@@ -145,17 +145,34 @@ public final class Bridge {
      *  leaves the phone by itself. */
     @JavascriptInterface
     public boolean saveFile(String name, String content) {
+        return save(name, "application/json", content, false);
+    }
+
+    /** The same, then handed to whatever app opens that kind of file: a
+     *  calendar entry goes straight to the calendar this way. */
+    @JavascriptInterface
+    public boolean saveAndOpen(String name, String mime, String content) {
+        return save(name, mime, content, true);
+    }
+
+    private boolean save(String name, String mime, String content, boolean open) {
         if (Build.VERSION.SDK_INT < 29) return false;
         try {
             ContentValues values = new ContentValues();
             values.put(MediaStore.Downloads.DISPLAY_NAME, name);
-            values.put(MediaStore.Downloads.MIME_TYPE, "application/json");
+            values.put(MediaStore.Downloads.MIME_TYPE, mime);
             values.put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
             Uri uri = host.getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
             if (uri == null) return false;
             try (OutputStream out = host.getContentResolver().openOutputStream(uri)) {
                 if (out == null) return false;
                 out.write(content.getBytes("UTF-8"));
+            }
+            if (open) {
+                Intent view = new Intent(Intent.ACTION_VIEW)
+                    .setDataAndType(uri, mime)
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+                try { host.startActivity(view); } catch (Exception ignored) { /* the file is still saved */ }
             }
             return true;
         } catch (Exception e) {

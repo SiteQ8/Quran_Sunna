@@ -3,7 +3,12 @@ package com.eworldq8.sunnati;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.app.DownloadManager;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Environment;
+import android.webkit.DownloadListener;
+import android.webkit.URLUtil;
 import android.content.res.Configuration;
 import android.net.Uri;
 import android.os.Build;
@@ -53,6 +58,25 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(false);
         s.setUserAgentString(s.getUserAgentString() + " SunnatiApp/" + BuildConfig.VERSION_NAME);
         web.addJavascriptInterface(new Bridge(this), "SunnatiApp");
+        /* A web view swallows a download unless the app takes it, so a file the
+           page hands over is passed to the phone's own downloader rather than
+           vanishing without a word. */
+        web.setDownloadListener(new DownloadListener() {
+            @Override
+            public void onDownloadStart(String url, String agent, String disposition, String mime, long size) {
+                try {
+                    DownloadManager.Request ask = new DownloadManager.Request(Uri.parse(url));
+                    ask.setMimeType(mime);
+                    ask.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+                    ask.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS,
+                        URLUtil.guessFileName(url, disposition, mime));
+                    DownloadManager manager = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+                    if (manager != null) manager.enqueue(ask);
+                } catch (Exception e) {
+                    Log.w("sunnati", "download not taken", e);
+                }
+            }
+        });
         web.setWebViewClient(new WebViewClient() {
             /* the app's own pages stay in; any other site opens in the phone's browser */
             @Override
