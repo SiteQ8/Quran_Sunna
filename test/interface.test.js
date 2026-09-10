@@ -6295,3 +6295,21 @@ test('the privacy policy tells the truth about where the location goes', () => {
   assert.ok(overpass.indexOf('openstreetmap') === -1 || true);
   assert.ok(app.indexOf('findMosques') !== -1);
 });
+
+test('the privacy page is dressed like the app, and its summary agrees with its detail', () => {
+  const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
+  /* it wears the app's paper, face and mark rather than a bare page */
+  assert.ok(policy.indexOf("href=\"css/fonts.css\"") !== -1, 'the app\'s own face');
+  assert.ok(policy.indexOf('icons/icon-192.png') !== -1, 'and its mark');
+  assert.ok(policy.indexOf('--accent: #9c2b2b') !== -1 && policy.indexOf('--gold: #b08833') !== -1);
+  assert.ok(policy.indexOf('prefers-color-scheme: dark') !== -1, 'and it knows night from day');
+  assert.strictEqual((policy.match(/<section>/g) || []).length, (policy.match(/<\/section>/g) || []).length,
+    'every card is closed');
+  assert.ok(policy.indexOf('class="back"') !== -1, 'and there is a way back to the app');
+
+  /* the summary must not promise what the detail then takes back */
+  assert.ok(policy.indexOf('ولا يرسل عنك شيئاً') === -1,
+    'the summary once said nothing is ever sent, which the mosques screen made untrue');
+  const summary = /<h2>خلاصة الأمر<\/h2>([\s\S]*?)<\/section>/.exec(policy)[1];
+  assert.ok(summary.indexOf('المساجد القريبة') !== -1, 'the one exception is named up front');
+});
