@@ -4524,7 +4524,7 @@ test('the privacy policy covers the android app and is reachable from it', () =>
   /* every permission the package asks for is spoken for */
   const manifest = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/AndroidManifest.xml'), 'utf8');
   const asked = [...manifest.matchAll(/android\.permission\.([A-Z_]+)/g)].map((m) => m[1]);
-  const spokenFor = { INTERNET: true, POST_NOTIFICATIONS: 'الإشعارات', SCHEDULE_EXACT_ALARM: 'المنبّه الدقيق', USE_EXACT_ALARM: 'المنبّه الدقيق', RECEIVE_BOOT_COMPLETED: 'الإقلاع', VIBRATE: 'الاهتزاز', ACCESS_FINE_LOCATION: 'الموقع الجغرافي', ACCESS_COARSE_LOCATION: 'الموقع الجغرافي' };
+  const spokenFor = { INTERNET: true, POST_NOTIFICATIONS: 'الإشعارات', SCHEDULE_EXACT_ALARM: 'المنبّه الدقيق', USE_EXACT_ALARM: 'المنبّه الدقيق', RECEIVE_BOOT_COMPLETED: 'الإقلاع', VIBRATE: 'الاهتزاز', ACCESS_FINE_LOCATION: 'الموقع الجغرافي', ACCESS_COARSE_LOCATION: 'الموقع الجغرافي', FOREGROUND_SERVICE: 'تشغيل في الخلفية', FOREGROUND_SERVICE_MEDIA_PLAYBACK: 'تشغيل في الخلفية' };
   asked.forEach(function (p) { assert.ok(spokenFor[p], 'the policy says nothing about ' + p); });
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(html.indexOf('<a href="privacy.html">سياسة الخصوصية</a>') !== -1, 'and the app links to it');
