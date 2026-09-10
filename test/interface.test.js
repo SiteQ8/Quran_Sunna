@@ -6139,3 +6139,35 @@ test('pressing a mosque brings its row into view', () => {
   assert.ok(row.textContent.indexOf('الثالث') !== -1, 'and it is the one pressed');
   assert.strictEqual(doc.querySelectorAll('#mosque-list .row.is-now').length, 1, 'only that one');
 });
+
+test('pressing a mosque shows the reader the other half', () => {
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [
+    { n: 'الأول', lat: 29.3806, lng: 47.9805, far: 78 },
+    { n: 'الثاني', lat: 29.3815, lng: 47.9812, far: 191 }
+  ];
+  win.App.go('mosques');
+  /* a pin says it came from the map, so the press goes down to the list */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("':map\" style=\"left:'") !== -1, 'a pin carries its origin');
+  assert.ok(/var target = from === 'map'\s*\?\s*document\.querySelector\('#mosque-list \.row\.is-now'\)\s*:\s*\$\('mosque-map'\)/.test(app),
+    'from the map go down to the row, from the list go up to the map');
+  win.App.helpers.lookAtMosque(1, 'map');
+  assert.strictEqual(win.App.state.mosqueAt, 1);
+  assert.ok(doc.querySelector('#mosque-list .row.is-now'), 'and the row is marked either way');
+});
+
+test('the map is zoomed by its buttons and by two fingers', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the page's own pinch was turned off for the map when it was made
+     draggable, so the map has to answer two fingers itself */
+  assert.ok(app.indexOf('function spread(fingers, ids)') !== -1, 'it measures the fingers apart');
+  assert.ok(app.indexOf('Math.round(Math.log(now / pinch) / Math.LN2)') !== -1,
+    'a step of zoom for each doubling of the spread');
+  assert.ok(/MAP\.zoom = Math\.max\(11, Math\.min\(18, MAP\.zoom \+ steps\)\)/.test(app), 'within its range');
+  assert.ok(app.indexOf('if (ids.length === 2)') !== -1, 'and a second finger is not a drag');
+  /* the buttons still work, and are not caught by the drag */
+  assert.ok(app.indexOf("bind('map-in', 'click'") !== -1 && app.indexOf("bind('map-out', 'click'") !== -1);
+  assert.ok(app.indexOf("e.target.closest('.map-zoom')") !== -1);
+});
