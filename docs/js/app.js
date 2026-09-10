@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.21.0';
+  var VERSION = '8.22.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3700,8 +3700,60 @@
     /* the name is shown whether or not the map itself can be drawn */
     showChosenMosque();
     drawMap();
+    renderMosqueList();
+    var row = document.querySelector('#mosque-list .row.is-now');
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+
+  /* the tile the map sits on, turned back into a place */
+  function fromTile(x, y, z) {
+    var n = Math.pow(2, z);
+    var lng = x / n * 360 - 180;
+    var lat = Math.atan(Math.sinh(Math.PI * (1 - 2 * y / n))) * 180 / Math.PI;
+    return { lat: lat, lng: lng };
+  }
+
+  /* The map is dragged with a finger, and when it settles somewhere new the
+     mosques around that place are asked for, so a reader can look down the
+     road rather than only where they stand. */
+  function letMapBeDragged() {
     var map = $('mosque-map');
-    if (map && map.scrollIntoView) map.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    if (!map || map.dataset.dragging) return;
+    map.dataset.dragging = '1';
+    var from = null, moved = false;
+    map.addEventListener('pointerdown', function (e) {
+      if (e.target.closest('.map-zoom') || e.target.closest('.map-pin')) return;
+      from = { x: e.clientX, y: e.clientY, at: state.mapAt || place() };
+      moved = false;
+      map.setPointerCapture(e.pointerId);
+    });
+    map.addEventListener('pointermove', function (e) {
+      if (!from || !from.at) return;
+      var dx = e.clientX - from.x, dy = e.clientY - from.y;
+      if (Math.abs(dx) + Math.abs(dy) < 4) return;
+      moved = true;
+      var t = toTile(from.at.lat, from.at.lng, MAP.zoom);
+      var here = fromTile(t.x - dx / MAP.tile, t.y - dy / MAP.tile, MAP.zoom);
+      state.mapAt = here;
+      drawMap();
+    });
+    var settle = function (e) {
+      if (from) { try { map.releasePointerCapture(e.pointerId); } catch (err) { /* gone */ } }
+      from = null;
+      if (moved) { moved = false; lookAround(); }
+    };
+    map.addEventListener('pointerup', settle);
+    map.addEventListener('pointercancel', settle);
+  }
+
+  /* the mosques about wherever the map now looks, asked for once it settles */
+  function lookAround() {
+    var eye = state.mapAt || place();
+    if (!eye) return;
+    if (state.lookedAt && metresBetween(state.lookedAt, eye) < 400) return;
+    state.lookedAt = { lat: eye.lat, lng: eye.lng };
+    window.clearTimeout(state.lookTimer);
+    state.lookTimer = window.setTimeout(function () { findMosques(eye); }, 350);
   }
 
   function renderMosques() {
@@ -3713,6 +3765,7 @@
       return;
     }
     drawMap();
+    letMapBeDragged();
     if (!state.mosques) {
       list.innerHTML = '<p class="setting-note">جاري البحث عن المساجد حولك…</p>';
       findMosques();
@@ -3722,6 +3775,12 @@
       list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك.</p>';
       return;
     }
+    renderMosqueList();
+  }
+
+  function renderMosqueList() {
+    var list = $('mosque-list');
+    if (!list || !state.mosques || !state.mosques.length) return;
     if ($('mosque-count')) $('mosque-count').textContent = ar(state.mosques.length) + ' حولك';
     list.innerHTML = state.mosques.map(function (m) {
       var at = state.mosques.indexOf(m);
@@ -3754,11 +3813,12 @@
     }).catch(function () { return askOverpass(query, which + 1); });
   }
 
-  function findMosques() {
+  function findMosques(around) {
     var where = place();
-    if (!where) return;
-    var query = '[out:json][timeout:20];(node(around:3000,' + where.lat + ',' + where.lng +
-      ')["amenity"="place_of_worship"]["religion"="muslim"];way(around:3000,' + where.lat + ',' + where.lng +
+    var eye = around || where;
+    if (!eye || !where) return;
+    var query = '[out:json][timeout:20];(node(around:3000,' + eye.lat + ',' + eye.lng +
+      ')["amenity"="place_of_worship"]["religion"="muslim"];way(around:3000,' + eye.lat + ',' + eye.lng +
       ')["amenity"="place_of_worship"]["religion"="muslim"];);out center 40;';
     askOverpass(query).then(function (data) {
       var found = (data.elements || []).map(function (el) {
@@ -5708,7 +5768,7 @@
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: stopAudio,
-      renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
+      renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,

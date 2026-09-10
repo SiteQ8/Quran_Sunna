@@ -540,7 +540,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The map: tiles from OpenStreetMap laid in a grid, with the mosques placed
    over them by their own pixel offset. No library, and nothing loads until
    the reader opens the screen. */
-.map { position: relative; height: 320px; border-radius: var(--r-md); overflow: hidden;
+.map { touch-action: none; cursor: grab; position: relative; height: 320px; border-radius: var(--r-md); overflow: hidden;
   background: var(--sunken); border: 1px solid var(--line); }
 .map-tiles { position: absolute; inset: 0; }
 .map-tiles img { position: absolute; width: 256px; height: 256px; }
