@@ -16,11 +16,20 @@ const SHOTS = [
   })],
   ['dua', (p) => p.evaluate(() => App.go('dua'))],
   ['hisn', (p) => p.evaluate(() => { App.state.hisn = 27; App.go('hisn'); })],
-  ['umrah', (p) => p.evaluate(() => {
+  ['umrah', (p) => p.evaluate(async () => {
     Store.set('umrah', { 'before:0': 1, 'before:1': 1, 'before:2': 1 });
     App.go('umrah');
+    await new Promise((r) => setTimeout(r, 200));
+    /* every fold now starts closed, so one is opened to show what is inside */
+    const head = document.querySelector('#umrah-stages .fold-head');
+    if (head) head.click();
   })],
-  ['tracker', (p) => p.evaluate(() => App.go('tracker'))],
+  ['tracker', (p) => p.evaluate(async () => {
+    App.go('tracker');
+    await new Promise((r) => setTimeout(r, 200));
+    const head = document.querySelectorAll('#tracker-list .fold-head')[1];
+    if (head) head.click();
+  })],
   ['calendar', (p) => p.evaluate(() => App.go('calendar'))]
 ];
 
