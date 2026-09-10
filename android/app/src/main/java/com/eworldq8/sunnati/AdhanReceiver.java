@@ -48,7 +48,7 @@ public final class AdhanReceiver extends BroadcastReceiver {
             } catch (Exception e) {
                 Log.w("sunnati", "salawat not shown", e);
             }
-            try { SalawatScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next salawat not armed", e); }
+            try { SalawatScheduler.scheduleNext(context, true); } catch (Exception e) { Log.w("sunnati", "next salawat not armed", e); }
             return;
         }
         try {

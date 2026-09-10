@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.14.2';
+  var VERSION = '8.15.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -596,14 +596,28 @@
     var mins = Math.floor((total % 3600) / 60);
     var secs = total % 60;
 
-    $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
     var fasting = Hijri.toHijri(new Date(), Store.get('hijriAdjust')).m === 9;
-    $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar
-      : (fasting && c.next.key === 'maghrib') ? 'الإفطار' : 'أذان ' + c.next.ar;
-    $('arc-at').textContent = clockText(c.next.at);
-    /* باقٍ على أذان العصر is how it is said. The sunrise has no adhan, so it
-       is named on its own. */
-    if ($('arc-label')) $('arc-label').textContent = 'باقٍ على';
+    /* For the half hour after an adhan the reader wants to know how long it
+       has been, since that is the window of the prayer; after it, the wait for
+       the next is what matters. The sunrise has no adhan, so nothing is
+       counted from it. */
+    var sinceAdhan = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
+    var fresh = sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES;
+    if (fresh) {
+      var up = Math.max(0, Math.round(sinceAdhan * 60));
+      $('arc-count').textContent = ar(pad(Math.floor(up / 3600)) + ':' + pad(Math.floor((up % 3600) / 60)) + ':' + pad(up % 60));
+      $('arc-label').textContent = 'مضى على';
+      $('arc-name').textContent = 'أذان ' + c.prev.ar;
+      $('arc-at').textContent = clockText(c.prev.at);
+    } else {
+      $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
+      $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar
+        : (fasting && c.next.key === 'maghrib') ? 'الإفطار' : 'أذان ' + c.next.ar;
+      $('arc-at').textContent = clockText(c.next.at);
+      /* باقٍ على أذان العصر is how it is said. The sunrise has no adhan, so it
+         is named on its own. */
+      if ($('arc-label')) $('arc-label').textContent = 'باقٍ على';
+    }
 
     /* Two dashes rather than one offset, so the drawn run is plainly the first
        part of the path and no reasoning about which way an offset shifts is
@@ -631,7 +645,10 @@
     if (!state.askedPlace) {
       state.askedPlace = true;
       adoptGrantedNotifications();
-      window.setTimeout(function () { maybeExplainChrome(); if (!maybeFridaySheet()) maybeAskPlace(); }, 1500);
+      window.setTimeout(function () {
+        maybeExplainChrome();
+        if (!maybeEidSheet() && !maybeFridaySheet()) maybeAskPlace();
+      }, 1500);
     }
   }
 
@@ -657,6 +674,20 @@
         (state ? '<div class="window-mark" aria-hidden="true">' + icon(state === 'missed' ? 'close' : 'check') + '</div>' : '') +
         '</' + tag + '>';
     }).join('');
+    renderNightLine();
+  }
+
+  /* The night's own two marks, which are not prayers and so are not in the
+     strip, but a reader who rises at night wants them. */
+  function renderNightLine() {
+    var host = $('night-line');
+    if (!host) return;
+    var marks = nightMarks(new Date());
+    if (!marks) { host.hidden = true; return; }
+    host.hidden = false;
+    host.innerHTML =
+      '<span><span class="night-name">منتصف الليل</span> ' + clockText(marks.midnight) + '</span>' +
+      '<span><span class="night-name">الثلث الأخير</span> ' + clockText(marks.lastThird) + '</span>';
   }
 
   /* ---------------- the five prayers, marked ---------------- */
@@ -2476,12 +2507,26 @@
   /* The last third of the night: from maghrib the night runs to the next
      fajr, and its last third begins two thirds of the way through. Worked out
      for the reader's own place, for the days ahead, and handed to the app. */
-  function qiyamAt(day) {
+  var AFTER_ADHAN_MINUTES = 30;
+
+  /* The night runs from maghrib to the next fajr. Its middle and the start of
+     its last third are reckoned from that, not from the clock's midnight. */
+  function nightMarks(day) {
     var t = computeTimes(day);
     var next = computeTimes(new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1));
     if (typeof t.maghrib !== 'number' || typeof next.fajr !== 'number') return null;
-    var nightMinutes = (24 * 60 - t.maghrib) + next.fajr;
-    var minutes = t.maghrib + Math.round(nightMinutes * 2 / 3);
+    var night = (1440 - t.maghrib) + next.fajr;
+    return {
+      midnight: (t.maghrib + Math.round(night / 2)) % 1440,
+      lastThird: (t.maghrib + Math.round(night * 2 / 3)) % 1440
+    };
+  }
+
+  function qiyamAt(day) {
+    var marks = nightMarks(day);
+    if (!marks) return null;
+    var t = computeTimes(day);
+    var minutes = t.maghrib + Math.round(((1440 - t.maghrib) + computeTimes(new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1)).fajr) * 2 / 3);
     return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minutes, 0, 0);
   }
 
@@ -3229,6 +3274,7 @@
   var MORE_LINKS = [
     { nav: 'umrah', icon: 'kaaba', name: 'صفة العمرة', note: 'من الميقات إلى التحلل، على دليل المعتمر' },
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
+    { act: 'mosques', icon: 'kaaba', name: 'المساجد القريبة', note: 'تُفتح في خريطة هاتفك' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
@@ -3247,7 +3293,7 @@
     var host = $('more-list');
     if (!host) return;
     host.innerHTML = MORE_LINKS.map(function (l) {
-      return '<button class="row" data-go="' + esc(l.nav) + '">' +
+      return '<button class="row" ' + (l.act ? 'data-act="' + esc(l.act) + '"' : 'data-go="' + esc(l.nav) + '"') + '>' +
         '<span class="row-mark">' + icon(l.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(l.name) + '</span>' +
         '<span class="row-note">' + esc(l.note) + '</span></span></button>';
@@ -3371,6 +3417,99 @@
       }).join('') +
       '<button class="btn btn-primary btn-block" data-act="open-after-prayer" style="margin-top:10px">افتح الباب كاملاً</button>' +
       '<button class="btn btn-ghost btn-block" data-act="after-prayer-off" style="margin-top:8px">لا تعرضها بعد كل صلاة</button>');
+    return true;
+  }
+
+  /* ---------------- المساجد، وصورة المواقيت، وسنن العيد ---------------- */
+
+  /* The mosques around the reader, opened in whatever map their phone keeps.
+     The app holds no map of its own and asks for nothing it does not have. */
+  function openMosques() {
+    var where = place();
+    var here = where && typeof where.lat === 'number'
+      ? where.lat.toFixed(5) + ',' + where.lng.toFixed(5) : '';
+    var url = here
+      ? 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('مسجد') + '&query_place_id=&center=' + here
+      : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('مسجد قريب');
+    if (here) url = 'geo:' + here + '?q=' + encodeURIComponent('مسجد');
+    var app = bridge();
+    if (app && app.openMap) {
+      var ok = false;
+      try { ok = app.openMap(url, here); } catch (e) { ok = false; }
+      if (ok) return true;
+    }
+    var web = here
+      ? 'https://www.google.com/maps/search/mosque/@' + here + ',15z'
+      : 'https://www.google.com/maps/search/mosque';
+    try { window.open(web, '_blank', 'noopener'); return true; } catch (e) { toast('تعذّر فتح الخريطة'); return false; }
+  }
+
+  /* Today's times as a picture, so they can be sent to whoever asks. */
+  function timesCard() {
+    var t = state.times || refreshTimes();
+    var where = place();
+    var hijri = Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust')));
+    var lines = [
+      { n: 'الفجر', v: clockText(t.fajr) },
+      { n: 'الشروق', v: clockText(t.sunrise) },
+      { n: 'الظهر', v: clockText(t.dhuhr) },
+      { n: 'العصر', v: clockText(t.asr) },
+      { n: 'المغرب', v: clockText(t.maghrib) },
+      { n: 'العشاء', v: clockText(t.isha) }
+    ];
+    var marks = nightMarks(new Date());
+    if (marks) {
+      lines.push({ n: 'منتصف الليل', v: clockText(marks.midnight) });
+      lines.push({ n: 'الثلث الأخير', v: clockText(marks.lastThird) });
+    }
+    var body = lines.map(function (l) { return l.n + '  ' + l.v; }).join('\n');
+    return textCard('مواقيت ' + (where ? where.n : '') + '، ' + hijri, body, 'naskh', '');
+  }
+
+  function shareTimes() {
+    var where = place();
+    var t = state.times || refreshTimes();
+    var words = 'مواقيت الصلاة اليوم' + (where ? ' في ' + where.n : '') + ':\n' +
+      'الفجر ' + clockText(t.fajr) + '، الظهر ' + clockText(t.dhuhr) + '، العصر ' + clockText(t.asr) +
+      '، المغرب ' + clockText(t.maghrib) + '، العشاء ' + clockText(t.isha) +
+      '\n\nsunnati.3li.info';
+    return sharePicture(timesCard(), 'times.png', 'مواقيت اليوم', words);
+  }
+
+  /* On the day of either eid the app opens with its sunnahs, once. */
+  function eidToday() {
+    var h = Hijri.toHijri(new Date(), Store.get('hijriAdjust'));
+    if (h.m === 10 && h.d === 1) return 'الفطر';
+    if (h.m === 12 && h.d === 10) return 'الأضحى';
+    return null;
+  }
+
+  function maybeEidSheet() {
+    var which = eidToday();
+    if (!which) return false;
+    var key = new Date().toDateString();
+    if (Store.get('eidShown') === key) return false;
+    Store.set('eidShown', key);
+    var t = state.times || refreshTimes();
+    var at = typeof t.sunrise === 'number' ? clockText(t.sunrise + 20) : '';
+    var sunan = which === 'الفطر'
+      ? ['الغسل والتطيّب ولبس أحسن الثياب',
+         'الأكل قبل الخروج، تمرات وتراً',
+         'التكبير من ليلة العيد إلى الصلاة: الله أكبر الله أكبر، لا إله إلا الله، والله أكبر الله أكبر ولله الحمد',
+         'الخروج ماشياً، والرجوع من طريق آخر',
+         'التهنئة: تقبّل الله منا ومنكم']
+      : ['الغسل والتطيّب ولبس أحسن الثياب',
+         'ألا يأكل حتى يرجع فيأكل من أضحيته',
+         'التكبير المطلق في أيام العشر، والمقيّد بعد الصلوات إلى آخر أيام التشريق',
+         'الخروج ماشياً، والرجوع من طريق آخر',
+         'الأضحية بعد الصلاة، لا قبلها']
+      ;
+    openSheet('عيد ' + which,
+      '<p class="setting-note">صلاة العيد' + (at ? ' نحو ' + at : '') + '، بعد ارتفاع الشمس قدر رمح</p>' +
+      sunan.map(function (line) {
+        return '<div class="dua-line"><span class="dua-text">' + esc(line) + '</span></div>';
+      }).join('') +
+      '<p class="naskh salawat-text">تقبّل الله منا ومنكم صالح الأعمال</p>');
     return true;
   }
 
@@ -4238,6 +4377,7 @@
       toast('لن تُعرض بعد الصلاة، وتعيدها من الإعدادات');
       renderSettings();
     },
+    mosques: function () { openMosques(); },
     'qada-done': function (ref) {
       Store.markQada(ref, 1);
       buzz(8);
@@ -4730,6 +4870,9 @@
       setSwitch($('settings-after-prayer'), on);
       toast(on ? 'ستُعرض الأذكار بعد الصلاة' : 'لن تُعرض بعد الصلاة');
     });
+    bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
+    bind('home-share-times', 'click', function () { shareTimes(); });
+
     bind('settings-wird', 'change', function (e) {
       Store.set('wirdAt', e.target.value);
       handRemindersToApp();
@@ -5044,6 +5187,8 @@
     render: RENDERERS,
     actions: ACTIONS,
     helpers: {
+      openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
+      eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
@@ -5051,7 +5196,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, maybeFridaySheet: maybeFridaySheet, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

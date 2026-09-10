@@ -515,6 +515,26 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #home-upcoming .row, #calendar-upcoming .row { align-items: center; }
 #home-upcoming .btn-icon, #calendar-upcoming .btn-icon { align-self: center; }
 
+/* the night's two marks, quiet beneath the strip of prayers */
+.night-line { display: flex; justify-content: center; gap: var(--s4); margin: var(--s2) 0 0;
+  font-size: var(--step--1); color: var(--ink-3); }
+.night-name { color: var(--ink-2); font-weight: 600; }
+
+/* the two tools of the prayer card: the adhkar at the start, the picture at the end */
+.card-tools { position: absolute; top: 10px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
+.card-tools .btn { pointer-events: auto; width: 44px; height: 44px; min-height: 44px; }
+.prayer-card { position: relative; }
+
+/* the night marks, quiet beneath the strip of prayers */
+.night-line { display: flex; justify-content: center; gap: var(--s4); margin: var(--s2) 0 0;
+  font-size: var(--step--1); color: var(--ink-3); }
+.night-name { color: var(--ink-2); font-weight: 600; }
+
+/* the two tools of the clock: the adhkar at the start, the picture at the end */
+.clock { position: relative; }
+.card-tools { position: absolute; top: 10px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
+.card-tools .btn { pointer-events: auto; width: 44px; height: 44px; min-height: 44px; }
+
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

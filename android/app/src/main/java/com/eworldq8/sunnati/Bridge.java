@@ -180,6 +180,29 @@ public final class Bridge {
         }
     }
 
+    /** Opens whatever map the phone keeps, at the reader's own place, looking
+     *  for mosques. The app carries no map and asks for no key. */
+    @JavascriptInterface
+    public boolean openMap(String url, String here) {
+        try {
+            Intent open = new Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            host.startActivity(open);
+            return true;
+        } catch (Exception first) {
+            try {
+                String web = here == null || here.isEmpty()
+                    ? "https://www.google.com/maps/search/mosque"
+                    : "https://www.google.com/maps/search/mosque/@" + here + ",15z";
+                host.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(web))
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+                return true;
+            } catch (Exception second) {
+                return false;
+            }
+        }
+    }
+
     /** Text handed to the phone's share sheet. */
     @JavascriptInterface
     public void shareText(String text) {

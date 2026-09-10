@@ -144,6 +144,10 @@
   <h1 class="sr-only" id="home-title">الرئيسية</h1>
 
   <div class="clock">
+    <div class="card-tools">
+      <button class="btn btn-ghost btn-icon" id="home-azkar" aria-label="أذكار هذا الوقت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></button>
+      <button class="btn btn-ghost btn-icon" id="home-share-times" aria-label="شارك مواقيت اليوم صورة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-share"/></svg></button>
+    </div>
     <div class="clock-date">
       <button class="date-nudge" id="hijri-down" aria-label="أنقص يوماً من التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-minus"/></svg></button>
       <span><b id="hijri-date">…</b> <span id="greg-date"></span>
@@ -183,6 +187,7 @@
     </div>
 
     <div class="windows" id="windows" role="list" aria-label="مواقيت اليوم، اضغط صلاة لتعلّمها"></div>
+    <p class="night-line" id="night-line" hidden></p>
     <button class="place-line" id="place-line" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب"></button>
   </div>
 
