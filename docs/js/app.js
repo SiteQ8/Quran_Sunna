@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.29.0';
+  var VERSION = '8.29.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2468,7 +2468,7 @@
         ctx.fillText(source, W / 2, footY + 62);
       }
       ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('سُنّتي، 3li.info', W / 2, H - PAD + 10);
+      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD + 10);
 
       return new Promise(function (resolve) {
         canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
