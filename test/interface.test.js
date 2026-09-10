@@ -7002,3 +7002,18 @@ test('a sheet that is due is looked for again whenever the app comes forward', (
   /* not on the very first resume, since the boot check has it */
   assert.ok(main.indexOf('private boolean started = false;') !== -1);
 });
+
+test('a grid of two is not laid out by the rules of a grid of three', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the rules that stretch a lone tile count in threes; on the two-column
+     grid they threw the thirteenth card across both columns and left the
+     fourteenth alone beneath it, which is why two cards never matched */
+  assert.match(css, /\.grid:not\(\.grid-2\) > \.tile:last-child:nth-child\(3n \+ 1\)/);
+  assert.match(css, /\.grid:not\(\.grid-2\) > \.tile:nth-last-child\(2\):nth-child\(3n \+ 1\)/);
+  assert.match(css, /\.grid-2 > \.tile:last-child:nth-child\(odd\) \{ grid-column: 1 \/ -1; \}/,
+    'a grid of two stretches its lone last card by its own rule');
+  /* and a card may be narrower than the name it holds, so the name is cut
+     rather than the column pushed wider */
+  assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{[\s\S]*?min-width: 0;/);
+  assert.match(css, /grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
+});
