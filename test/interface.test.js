@@ -5736,3 +5736,36 @@ test('an empty screen offers one way out, beneath its words', () => {
     .filter(function (r) { return r.textContent.indexOf('المحفوظات') !== -1; })[0];
   assert.ok(row.textContent.indexOf('تتبّع حفظك') !== -1, 'got ' + row.textContent);
 });
+
+test('the page sits below the phone bars, inset by the framework rather than by hand', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  /* asking the web view to inset itself did not hold on every version, and the
+     clock ended up written over the page */
+  assert.ok(main.indexOf('root.setFitsSystemWindows(true)') !== -1,
+    'a frame the framework insets itself');
+  assert.ok(main.indexOf('getWindow().setDecorFitsSystemWindows(false)') !== -1,
+    'and the window drawn edge to edge beneath it');
+  assert.ok(main.indexOf('web.setFitsSystemWindows(false)') !== -1, 'the page fills that frame');
+  assert.ok(main.indexOf('WindowInsets.Type.ime()') !== -1, 'and the keyboard still lifts it');
+});
+
+test('the splash is drawn and held, not a logo blinking past', () => {
+  const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
+  /* it is the app's own hand: paper, sadu band, the mihrab and the name */
+  ['0xFFF6F4EE', '0xFF10161A'].forEach(function (c) {
+    assert.ok(splash.indexOf(c) !== -1, 'both papers, ' + c);
+  });
+  assert.ok(splash.indexOf('ValueAnimator') !== -1, 'it draws itself in rather than appearing whole');
+  assert.ok(splash.indexOf('سُنّتي') !== -1, 'and names the app');
+
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(main.indexOf('void dismissSplash()') !== -1);
+  assert.ok(main.indexOf('splash.animate().alpha(0f)') !== -1, 'it fades rather than vanishing');
+  assert.ok(/postDelayed[\s\S]{0,120}4000/.test(main), 'and never outstays its welcome');
+
+  /* the page tells the app when it has painted */
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(/@JavascriptInterface\s+public void pageReady\(\)/.test(bridge));
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('app.pageReady()') !== -1, 'and the page says so');
+});
