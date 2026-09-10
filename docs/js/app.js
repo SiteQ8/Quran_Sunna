@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.30.0';
+  var VERSION = '8.31.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -654,6 +654,7 @@
       var app = bridge();
       if (app && app.pageReady) { try { app.pageReady(); } catch (e) { /* older package */ } }
       dismissBootSplash(!!app);
+      if (Store.get('pageLayout') === 'madinah') loadMadinahLines().then(function () { if (state.view === 'page') renderPage(); });
       window.setTimeout(function () {
         maybeExplainChrome();
         if (!maybeEidSheet() && !maybeJumuahNightSheet() && !maybeFridaySheet()) maybeAskPlace();
@@ -2250,6 +2251,15 @@
     var marked = {};
     Store.bookmarks().forEach(function (b) { marked[b.s + ':' + b.a] = true; });
 
+    if (Store.get('pageLayout') === 'madinah' && MADINAH_LINES) {
+      renderPrintedPage(body, n, verses, marked);
+      if ($('page-prev')) $('page-prev').disabled = n <= 1;
+      if ($('page-next')) $('page-next').disabled = n >= PAGES_IN_MUSHAF;
+      rememberPlace(first.s, first.a);
+      if (window.scrollTo) window.scrollTo(0, 0);
+      return;
+    }
+
     var html = '', current = 0;
     verses.forEach(function (v) {
       if (v.s !== current) {
@@ -2273,6 +2283,73 @@
     /* the place is remembered as a verse too, so تابع القراءة finds it */
     rememberPlace(first.s, first.a);
     if (window.scrollTo) window.scrollTo(0, 0);
+  }
+
+  /* ---------------- المصحف كما طُبع ---------------- */
+
+  var MADINAH_LINES = null;
+
+  function loadMadinahLines() {
+    if (MADINAH_LINES) return Promise.resolve(MADINAH_LINES);
+    return fetch('data/madinah-lines.json').then(function (r) { return r.json(); })
+      .then(function (d) { MADINAH_LINES = d.pages; return MADINAH_LINES; })
+      .catch(function () { return null; });
+  }
+
+  /* The page as the Madinah mushaf prints it: fifteen lines, each ending
+     where the printed line ends, and each stretched to both margins as it is
+     on the page. The text is the one the app already holds; only its shape
+     comes from the layout. */
+  function renderPrintedPage(body, n, verses, marked) {
+    var page = MADINAH_LINES[n];
+    if (!page) { body.innerHTML = empty('تعذّر بناء هذه الصفحة'); return; }
+    var starts = {};
+    verses.forEach(function (v) { if (v.a === 1) starts[v.s] = true; });
+
+    var html = '', opened = {};
+    page.forEach(function (line) {
+      /* a surah begins above the line its first word falls on */
+      var first = line[0];
+      if (first && starts[first[0]] && !opened[first[0]] && first[1] === 1 && first[2] === 1) {
+        opened[first[0]] = true;
+        var meta = surahMeta(first[0]);
+        html += '<div class="surah-frame page-surah"><h2>سورة ' + esc(meta.ar) + '</h2></div>';
+        if (first[0] !== 1 && first[0] !== 9) html += '<p class="basmala">' + esc(Mushaf.basmala()) + '</p>';
+      }
+      html += '<div class="mad-line">' + line.map(function (run) {
+        var s = run[0], a = run[1], from = run[2], to = run[3];
+        var words = (Mushaf.ayah(s, a) || '').split(' ');
+        var piece = words.slice(from - 1, to).join(' ');
+        var whole = to >= words.length;
+        var cls = 'ayah' + (marked[s + ':' + a] ? ' is-marked' : '');
+        var sajda = whole && Mushaf.isSajda(s, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
+        return '<span class="' + cls + '" data-ayah="' + s + ':' + a + '" data-a="' + a + '">' +
+          esc(piece) + sajda +
+          (whole ? '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span>' : '') +
+          '</span>';
+      }).join(' ') + '</div>';
+    });
+
+    body.innerHTML = '<div class="mad-page">' + html + '</div>' +
+      '<div class="page-foot"><span class="page-foot-num" aria-label="صفحة ' + n + '">' + mushafDigits(n) + '</span></div>';
+    fitPrintedLines(body);
+  }
+
+  /* Each line carries the words of one printed line and no others, so it is
+     squeezed to the width of the page rather than wrapped onto a second row,
+     which is how the printed mushaf keeps its shape. */
+  function fitPrintedLines(body) {
+    var lines = body.querySelectorAll('.mad-line');
+    [].forEach.call(lines, function (line) {
+      line.style.transform = '';
+      var room = line.clientWidth;
+      var wide = line.scrollWidth;
+      if (!room || !wide) return;
+      var scale = Math.min(1, room / wide);
+      if (scale < 0.999) {
+        line.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
+      }
+    });
   }
 
   /* The hizb and its quarter of a verse, from the two hundred and forty
@@ -4931,6 +5008,7 @@
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
     setSwitch($('settings-jumuah-night'), !!Store.get('jumuahNight'));
+    if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
@@ -5730,6 +5808,19 @@
     bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
     bind('home-share-times', 'click', function () { shareTimes(); });
 
+    bind('settings-page-layout', 'change', function (e) {
+      Store.set('pageLayout', e.target.value);
+      if (e.target.value === 'madinah') {
+        loadMadinahLines().then(function (ok) {
+          if (!ok) { Store.set('pageLayout', 'flow'); toast('تعذّر جلب شكل المصحف'); return; }
+          if (state.view === 'page') renderPage();
+          toast('الصفحة كما طُبعت في مصحف المدينة');
+        });
+        return;
+      }
+      if (state.view === 'page') renderPage();
+      toast('الصفحة بالنص المتّصل');
+    });
     bind('settings-listen', 'change', function (e) {
       Store.set('listenAs', e.target.value);
       toast(e.target.value ? 'سيُعمل بها في كل سورة' : 'ستُسأل كل مرة');
@@ -6091,7 +6182,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

@@ -6599,3 +6599,34 @@ test('the madinah line layout is fetched into the same pages the app already use
     });
   });
 });
+
+test('the page can be shown as the madinah mushaf prints it', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('id="settings-page-layout"') !== -1, 'the reader chooses the shape');
+  assert.ok(html.indexOf('>نص متّصل<') !== -1 && html.indexOf('>كما طُبعت<') !== -1);
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function renderPrintedPage\(body, n, verses, marked\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the text is the one the app already holds; only the shape is new */
+  assert.ok(fn.indexOf('Mushaf.ayah(s, a)') !== -1, 'the words come from our own mushaf');
+  assert.ok(fn.indexOf('words.slice(from - 1, to)') !== -1, 'cut where the printed line cuts');
+  /* a verse ending on a line gets its number; one carried over does not */
+  assert.ok(fn.indexOf('var whole = to >= words.length;') !== -1);
+  assert.ok(/whole \? '\\u2060<span class="ayah-num"/.test(fn));
+  /* a surah opens above the line its first word falls on */
+  assert.ok(fn.indexOf("first[1] === 1 && first[2] === 1") !== -1);
+
+  /* every line holds one printed line and no more, so it is squeezed to the
+     width rather than wrapped onto a second row */
+  const fit = /function fitPrintedLines\(body\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fit.indexOf("scaleX(") !== -1 && fit.indexOf('room / wide') !== -1);
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.mad-line \{[\s\S]*?white-space: nowrap/);
+
+  /* the flowing view is still the one the app opens with */
+  const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
+  assert.match(store, /pageLayout: 'flow'/, 'nothing changes for a reader who does not ask');
+  /* and the layout is kept for reading without a network */
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf('data/madinah-lines.json') !== -1);
+});
