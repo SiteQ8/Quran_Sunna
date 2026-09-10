@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.5';
+  var VERSION = '8.18.6';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1797,10 +1797,11 @@
       audio = new window.Audio();
       audio.src = url;
     }
-    audio.currentTime = 0;
+    try { if (audio.currentTime) audio.currentTime = 0; } catch (e) { /* not loaded yet */ }
     state.audio = audio;
     watchClip(audio);
     state.playing = { title: title, sub: sub, surah: state.recite ? state.recite.s : (state.surahAudio || null) };
+    tellAppSounding(true);
     var player = $('player');
     if (player) player.classList.add('is-open');
     markPlayerToggle();
@@ -1986,7 +1987,16 @@
     clip.onplaying = markPlayerToggle;
   }
 
+  /* The app keeps the page awake while something is sounding, so leaving the
+     app does not cut the recitation off. */
+  function tellAppSounding(on) {
+    var app = bridge();
+    if (!app || !app.setSounding) return;
+    try { app.setSounding(!!on); } catch (e) { /* older package */ }
+  }
+
   function stopAudio() {
+    tellAppSounding(false);
     if (state.audio) {
       state.audio.onended = null;
       state.audio.oncanplay = null;
@@ -5603,7 +5613,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse,
+      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding,
       renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

@@ -5883,7 +5883,7 @@ test('the next verse is fetched while the last is still sounding', () => {
 
 test('the player reads its words first, then its controls, and leads to what is sounding', () => {
   const { win, doc } = boot();
-  const order = [...doc.querySelectorAll('#player > button')].map(function (b) { return b.id; });
+  const order = [...doc.querySelectorAll('#player > *')].map(function (b) { return b.id; });
   assert.strictEqual(order.join(','), 'player-body,player-toggle,player-prev,player-next,player-stop',
     'the surah first, and the play mark after its name');
   const body = doc.getElementById('player-body');
@@ -5912,4 +5912,37 @@ test('the verse fetched ahead is the one that plays, so nothing waits twice', ()
   /* the harness has no audio element to build, so only the address is checked
      here; the browser check above showed the clip itself being held */
   assert.ok(win.App.state.warmed, 'held ready to play');
+});
+
+test('the surah name runs to the edge of the bar', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* a button lays its own contents out centred whatever is asked of it, so
+     the words are not one */
+  assert.match(html, /<div class="player-body" id="player-body" data-act="player-open" role="button" tabindex="0"/);
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.player \.player-body \{ text-align: start;/);
+  const { doc } = boot();
+  const body = doc.getElementById('player-body');
+  assert.strictEqual(body.tagName, 'DIV');
+  assert.strictEqual(body.getAttribute('role'), 'button');
+  assert.ok(body.getAttribute('aria-label'), 'and still says what it does');
+});
+
+test('a recitation carries on when the reader leaves the app', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  /* pausing the page on leaving cut the recitation off mid ayah */
+  assert.ok(main.indexOf('if (web != null && !sounding) web.onPause();') !== -1,
+    'the page is not paused while something is sounding');
+  assert.ok(main.indexOf('volatile boolean sounding;') !== -1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(/public void setSounding\(boolean on\)/.test(bridge));
+
+  const { win } = boot();
+  const told = [];
+  win.SunnatiApp = { setSounding: function (v) { told.push(v); } };
+  win.App.helpers.tellAppSounding(true);
+  win.App.helpers.tellAppSounding(false);
+  assert.deepStrictEqual(told.join(','), 'true,false', 'the page tells the app both ways');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/function stopAudio\(\) \{\s*tellAppSounding\(false\);/.test(app), 'and says so the moment it stops');
 });

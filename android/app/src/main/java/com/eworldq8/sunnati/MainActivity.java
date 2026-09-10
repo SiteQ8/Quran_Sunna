@@ -45,6 +45,7 @@ public class MainActivity extends Activity {
     private FrameLayout root;
     private SplashView splash;
     private boolean splashGone;
+    volatile boolean sounding;
     private OnBackInvokedCallback back;
     private GeolocationPermissions.Callback pendingLocation;
     private String pendingLocationOrigin;
@@ -262,7 +263,10 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
-        if (web != null) web.onPause();
+        /* A recitation carries on when the reader leaves the app: pausing the
+           page here would cut it off mid ayah, and it is stopped only when
+           they stop it themselves. */
+        if (web != null && !sounding) web.onPause();
         super.onPause();
     }
 
