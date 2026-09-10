@@ -165,6 +165,7 @@ public class MainActivity extends Activity {
         String action = intent == null ? null : intent.getAction();
         if (AudioService.ACTION_TOGGLE.equals(action)) tellPage("App.helpers.togglePlay()");
         else if (AudioService.ACTION_CLOSE.equals(action)) tellPage("App.helpers.stopAudio()");
+        else tellPage("App.helpers.showDueSheets()");
     }
 
     @Override
@@ -256,6 +257,9 @@ public class MainActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
+        /* brought forward, perhaps from a notice: whatever sheet is due now
+           is looked for again, since the page only looked at its first boot */
+        if (started) tellPage("App.helpers.showDueSheets()");
         dressSystemBars();
         if (web != null) web.onResume();
     }
@@ -266,6 +270,8 @@ public class MainActivity extends Activity {
         if (hasFocus) dressSystemBars();
     }
 
+    private boolean started = false;
+
     private void tellPage(String script) {
         if (web == null) return;
         try { web.evaluateJavascript("try{" + script + "}catch(e){}", null); } catch (Exception ignored) { }
@@ -273,6 +279,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onPause() {
+        started = true;
         /* A recitation carries on when the reader leaves the app: pausing the
            page here would cut it off mid ayah, and it is stopped only when
            they stop it themselves. */

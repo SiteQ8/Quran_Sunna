@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.42.0';
+  var VERSION = '8.43.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -658,7 +658,7 @@
       if (Store.get('pageLayout') === 'madinah') loadMadinahLines().then(function () { if (state.view === 'page') renderPage(); });
       window.setTimeout(function () {
         maybeExplainChrome();
-        if (!maybeEidSheet() && !maybeJumuahNightSheet() && !maybeFridaySheet()) maybeAskPlace();
+        if (!showDueSheets()) maybeAskPlace();
       }, 1500);
     }
   }
@@ -3056,6 +3056,16 @@
      and only if the reader has left it on. */
   /* Opened during the night of jumuah, the app says so and offers its sunnahs,
      once for that night. */
+  /* Whatever sheet is due at this moment. It runs at boot, and again whenever
+     the app is brought forward: a reader who tapped the notice while the app
+     was already open used to be shown nothing at all, because nothing looked
+     again after the first opening. */
+  function showDueSheets() {
+    if (document.getElementById('sheet') &&
+        document.getElementById('sheet').classList.contains('is-open')) return true;
+    return maybeEidSheet() || maybeJumuahNightSheet() || maybeFridaySheet();
+  }
+
   function maybeJumuahNightSheet() {
     if (!Store.get('jumuahNight') || !inJumuahNight()) return false;
     /* It greets the reader every time he opens the app through the night, not
@@ -6350,7 +6360,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, renderJumuahCard: renderJumuahCard, jumuahCardKind: jumuahCardKind, todaySunanLines: todaySunanLines, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
