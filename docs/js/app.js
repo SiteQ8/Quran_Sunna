@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.15.1';
+  var VERSION = '8.15.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3438,12 +3438,14 @@
     try { window.open(web, '_blank', 'noopener'); return true; } catch (e) { toast('تعذّر فتح الخريطة'); return false; }
   }
 
-  /* Today's times as a picture, so they can be sent to whoever asks. */
+  /* Today's times as a picture: a row for each, the name at the start and the
+     hour at the end, so it reads like the card in the app rather than a
+     paragraph. The night's two marks take the same row as the prayers. */
   function timesCard() {
     var t = state.times || refreshTimes();
     var where = place();
-    var hijri = Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust')));
-    var lines = [
+    var marks = nightMarks(new Date());
+    var rows = [
       { n: 'الفجر', v: clockText(t.fajr) },
       { n: 'الشروق', v: clockText(t.sunrise) },
       { n: 'الظهر', v: clockText(t.dhuhr) },
@@ -3451,13 +3453,83 @@
       { n: 'المغرب', v: clockText(t.maghrib) },
       { n: 'العشاء', v: clockText(t.isha) }
     ];
-    var marks = nightMarks(new Date());
     if (marks) {
-      lines.push({ n: 'منتصف الليل', v: clockText(marks.midnight) });
-      lines.push({ n: 'الثلث الأخير', v: clockText(marks.lastThird) });
+      rows.push({ n: 'منتصف الليل', v: clockText(marks.midnight), night: true });
+      rows.push({ n: 'الثلث الأخير', v: clockText(marks.lastThird), night: true });
     }
-    var body = lines.map(function (l) { return l.n + '  ' + l.v; }).join('\n');
-    return textCard('مواقيت ' + (where ? where.n : '') + '، ' + hijri, body, 'naskh', '');
+
+    var W = 1080, PAD = 96, ROW = 108, GAP = 16;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return Promise.resolve(null);
+    var fill = document.documentElement.style.getPropertyValue('--accent-ink').trim() || '#8f2323';
+    var wash = document.documentElement.style.getPropertyValue('--accent').trim() || fill;
+
+    var faces = ["700 44px 'IBM Plex Sans Arabic'", "600 40px 'IBM Plex Sans Arabic'", "400 30px 'IBM Plex Sans Arabic'"];
+    var ready = document.fonts && document.fonts.load
+      ? Promise.all(faces.map(function (f) { return document.fonts.load(f, 'الفجر'); })).catch(function () {})
+      : Promise.resolve();
+
+    return ready.then(function () {
+      var H = PAD + 190 + rows.length * (ROW + GAP) + 150;
+      canvas.width = W; canvas.height = H;
+      ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f7f5ef';
+      ctx.fillRect(0, 0, W, H);
+      ctx.strokeStyle = wash; ctx.lineWidth = 6;
+      ctx.strokeRect(36, 36, W - 72, H - 72);
+      ctx.strokeStyle = '#b08833'; ctx.lineWidth = 2;
+      ctx.strokeRect(52, 52, W - 104, H - 104);
+
+      ctx.direction = 'rtl'; ctx.textBaseline = 'middle';
+      ctx.textAlign = 'center';
+      ctx.fillStyle = fill;
+      ctx.font = "700 44px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText(Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust'))), W / 2, PAD + 30);
+      ctx.fillStyle = '#5e6c65';
+      ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText((where ? where.n + '، ' : '') + gregorianLine(new Date()), W / 2, PAD + 86);
+
+      var top = PAD + 150;
+      rows.forEach(function (row, i) {
+        var y = top + i * (ROW + GAP);
+        ctx.fillStyle = row.night ? 'rgba(176, 136, 51, .10)' : 'rgba(22, 36, 28, .05)';
+        roundRect(ctx, PAD, y, W - PAD * 2, ROW, 26);
+        ctx.fill();
+        ctx.fillStyle = row.night ? '#7a5c1e' : '#16241c';
+        ctx.font = "600 40px 'IBM Plex Sans Arabic', sans-serif";
+        ctx.textAlign = 'right';
+        ctx.fillText(row.n, W - PAD - 34, y + ROW / 2);
+        ctx.fillStyle = row.night ? '#7a5c1e' : fill;
+        ctx.textAlign = 'left';
+        ctx.fillText(row.v, PAD + 34, y + ROW / 2);
+      });
+
+      ctx.textAlign = 'center';
+      ctx.fillStyle = '#8b9691';
+      ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('سُنّتي، 3li.info', W / 2, H - PAD + 6);
+
+      return new Promise(function (resolve) {
+        if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
+        else resolve(null);
+      });
+    });
+  }
+
+  function roundRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  function gregorianLine(d) {
+    return Hijri.WEEKDAYS[d.getDay()] + ' ' + ar(d.getDate()) + ' ' + GREG_MONTHS[d.getMonth()] + ' ' + ar(d.getFullYear());
   }
 
   function shareTimes() {
