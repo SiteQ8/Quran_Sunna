@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.18.3';
+  var VERSION = '8.18.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -650,7 +650,7 @@
          page's own splash goes at the same moment */
       var app = bridge();
       if (app && app.pageReady) { try { app.pageReady(); } catch (e) { /* older package */ } }
-      dismissBootSplash();
+      dismissBootSplash(!!app);
       window.setTimeout(function () {
         maybeExplainChrome();
         if (!maybeEidSheet() && !maybeFridaySheet()) maybeAskPlace();
@@ -2036,6 +2036,25 @@
         reciteVerse();
       };
     }
+    /* The next verse is fetched while this one is still sounding, or the
+       recitation stops between every two while the app waits on the network. */
+    warmNextVerse(r.s, r.a + 1);
+  }
+
+  function warmNextVerse(surah, ayah) {
+    var total = Mushaf.surah(surah) ? Mushaf.surah(surah).length : 0;
+    if (!total || ayah > total) return;
+    var url = 'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' +
+      Mushaf.globalIndex(surah, ayah) + '.mp3';
+    if (state.warmed === url) return;
+    state.warmed = url;
+    try {
+      var ahead = new window.Audio();
+      ahead.preload = 'auto';
+      ahead.src = url;
+      ahead.load();
+      state.warmClip = ahead;
+    } catch (e) { /* the next one will simply be fetched when it is due */ }
   }
 
   function stepRecite(by) {
@@ -5505,11 +5524,10 @@
     window.navigator.serviceWorker.addEventListener('controllerchange', function () {
       if (state.updateOffered) return;
       state.updateOffered = true;
-      /* at the front screen with nothing playing, the new version is simply
-         taken; mid reading or mid recitation it is offered instead */
-      var atRest = (state.view === 'home' || state.view === 'more' || state.view === 'settings') && !state.audio && !state.recite;
-      if (atRest) { window.location.reload(); return; }
-      showBanner('وصلت نسخة جديدة من التطبيق', 'تحديث', function () { window.location.reload(); });
+      /* Never taken by itself, wherever the reader is. A reload in the middle
+         of a page of the mushaf loses their place for a version they did not
+         ask for, so it waits for their word however idle the app looks. */
+      showBanner('وصلت نسخة جديدة من التطبيق', 'حدّث الآن', function () { window.location.reload(); });
     });
 
     /* Without this the browser may keep serving sw.js from its own cache for a
@@ -5521,9 +5539,15 @@
 
   /* The splash written into the page itself: it fades once the first screen
      is drawn, so the reader never sees a bare page waiting to be filled. */
-  function dismissBootSplash() {
+  function dismissBootSplash(atOnce) {
     var splash = document.getElementById('boot-splash');
     if (!splash) return;
+    /* inside the app its own splash is drawn over the page, so the page's one
+       is taken out without a word rather than fading beneath it as a second */
+    if (atOnce) {
+      if (splash.parentNode) splash.parentNode.removeChild(splash);
+      return;
+    }
     splash.style.opacity = '0';
     window.setTimeout(function () {
       if (splash.parentNode) splash.parentNode.removeChild(splash);
@@ -5531,6 +5555,7 @@
   }
 
   function boot() {
+    if (bridge()) dismissBootSplash(true);
     Store.attach();
     Store.migrate();
     Store.prune();
@@ -5563,7 +5588,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash,
+      renderQada: renderQada, searchTexts: searchTexts, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse,
       renderMosques: renderMosques, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

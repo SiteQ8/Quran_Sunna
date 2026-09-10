@@ -1215,18 +1215,6 @@ test('the worker hands over only when the page asks', () => {
   assert.match(code, /clients\.claim\(\)/, 'and it should take charge of the page already open');
 });
 
-test('a new version is taken only when nothing would be lost, and offered otherwise', () => {
-  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const handler = /controllerchange'[\s\S]{0,700}?\n    \}\);/.exec(app);
-  assert.ok(handler, 'the page should notice when a new worker takes charge');
-  assert.match(handler[0], /showBanner/, 'it should offer the new version');
-  /* A reload before the offer is allowed only behind the guard that says the
-     reader is at the front with nothing playing; mid ayah it is never forced. */
-  const offerAt = handler[0].indexOf('showBanner');
-  const before = handler[0].slice(0, offerAt);
-  assert.ok(/atRest\) \{ window\.location\.reload\(\); return; \}/.test(before), 'a reload at rest is the only reload before the offer');
-  assert.ok(/!state\.audio && !state\.recite/.test(before), 'and only with nothing playing');
-});
 
 test('the browser is told never to serve the worker from its own cache', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
@@ -4338,13 +4326,6 @@ test('the worker serves the shell from one version, fetched past the browser cac
   assert.ok(sw.indexOf("fetch(request).then(function (response) {\n      return keep(request, response);\n    }).catch") === -1, 'the file by file network first path is gone');
 });
 
-test('a new version is taken at once when the reader is at rest, and offered otherwise', () => {
-  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /addEventListener\('controllerchange', function \(\) \{([\s\S]*?)\n    \}\);/.exec(app)[1];
-  assert.ok(fn.indexOf("state.view === 'home'") !== -1 && fn.indexOf('!state.audio && !state.recite') !== -1);
-  assert.ok(fn.indexOf('window.location.reload(); return;') !== -1, 'taken at rest');
-  assert.ok(fn.indexOf("showBanner('وصلت نسخة جديدة من التطبيق'") !== -1, 'offered otherwise');
-});
 
 test('inside the app the about page names the package version beside the page version', () => {
   const { win, doc } = boot();
@@ -5856,4 +5837,46 @@ test('the page shows its own splash while it wakes, in the colours already chose
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(app.indexOf("splash.style.opacity = '0';") !== -1, 'fading rather than vanishing');
   assert.ok(app.indexOf('splash.parentNode.removeChild(splash)') !== -1, 'and then removed');
+});
+
+test('only one splash shows: inside the app the page yields to the app\'s own', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function dismissBootSplash\(atOnce\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('if (atOnce) {') !== -1 && fn.indexOf('removeChild(splash)') !== -1,
+    'taken out without a fade rather than showing beneath the app\'s as a second');
+  assert.ok(app.indexOf('dismissBootSplash(!!app);') !== -1, 'and the app is what decides');
+  assert.ok(app.indexOf('if (bridge()) dismissBootSplash(true);') !== -1,
+    'from the first moment, before anything is drawn');
+
+  const { win, doc } = boot();
+  /* with no app around, the page keeps its own and fades it */
+  void win;
+  const left = doc.getElementById('boot-splash');
+  assert.ok(!left || left.style.opacity === '0');
+});
+
+test('a new version is never taken without the reader saying so', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /addEventListener\('controllerchange', function \(\) \{([\s\S]*?)\n    \}\);/.exec(app)[1];
+  /* a reload in the middle of a page of the mushaf loses the reader's place
+     for something they did not ask for, however idle the app looks */
+  assert.ok(fn.indexOf('window.location.reload(); return;') === -1, 'nothing reloads by itself');
+  assert.ok(fn.indexOf('atRest') === -1, 'and no screen counts as idle enough');
+  assert.ok(fn.indexOf("showBanner('وصلت نسخة جديدة من التطبيق', 'حدّث الآن'") !== -1, 'it is offered');
+});
+
+test('the next verse is fetched while the last is still sounding', () => {
+  const { win } = boot();
+  /* fetching only once a verse ends puts the network's wait between every two,
+     and the recitation stops in the middle of the surah */
+  win.App.helpers.warmNextVerse(2, 3);
+  assert.match(win.App.state.warmed, /\/10\.mp3$/, 'the third of al-baqarah is the tenth verse of the mushaf');
+  assert.ok(win.App.state.warmed, 'and it is held ready');
+  /* past the end of a surah there is nothing to fetch */
+  win.App.state.warmed = null;
+  win.App.helpers.warmNextVerse(1, 8);
+  assert.strictEqual(win.App.state.warmed, null, 'al-fatihah has seven');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/reciteVerse[\s\S]{0,2000}warmNextVerse\(r\.s, r\.a \+ 1\);/.test(app),
+    'every verse warms the one after it');
 });
