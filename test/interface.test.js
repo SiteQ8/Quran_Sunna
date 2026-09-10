@@ -5460,3 +5460,45 @@ test('a search still opens what it matched', () => {
   assert.ok(app.indexOf("'<section class=\"fold' + (needle ? ' is-open' : '') + '\"") !== -1,
     'the reader asked for it, so it is shown rather than folded away');
 });
+
+test('the picture of the times is a row for each, the night marks among them', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n\n  function roundRect/.exec(app)[1];
+  /* a row apiece, the name at one end and the hour at the other, not a paragraph */
+  assert.ok(fn.indexOf('roundRect(ctx, PAD, y, W - PAD * 2, ROW, 26)') !== -1, 'each on its own rounded row');
+  assert.ok(fn.indexOf("ctx.textAlign = 'right'") !== -1 && fn.indexOf("ctx.textAlign = 'left'") !== -1,
+    'the name at the start and the hour at the end');
+  ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
+    assert.ok(fn.indexOf(n) !== -1, 'the picture should carry ' + n);
+  });
+  /* the two night marks take the same row, only tinted apart */
+  assert.ok(fn.indexOf('night: true') !== -1 && fn.indexOf("row.night ? 'rgba(176, 136, 51, .10)'") !== -1);
+  assert.ok(fn.indexOf('Hijri.format') !== -1 && fn.indexOf('gregorianLine') !== -1, 'and both dates at its head');
+});
+
+test('the last third is the night divided in three, as the scholars state it', () => {
+  const { win } = boot();
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function nightMarks\(day\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the night runs maghrib to the next fajr, halved for its middle and two
+     thirds along for the last third: a twelve hour night puts it four hours
+     before fajr, a nine hour night three */
+  assert.ok(fn.indexOf('var night = (1440 - t.maghrib) + next.fajr;') !== -1);
+  assert.ok(fn.indexOf('Math.round(night / 2)') !== -1, 'the middle');
+  assert.ok(fn.indexOf('Math.round(night * 2 / 3)') !== -1, 'and two thirds along for the last third');
+  const marks = win.App.helpers.nightMarks(new win.Date());
+  assert.ok(marks && marks.midnight !== marks.lastThird);
+  /* worked by hand: a night of twelve hours from maghrib at 18:00 to fajr at
+     06:00 puts the last third at 02:00, four hours before fajr */
+  const night = (1440 - 1080) + 360;
+  assert.strictEqual(night, 720, 'twelve hours');
+  assert.strictEqual((1080 + Math.round(night * 2 / 3)) % 1440, 120, 'two in the morning');
+  assert.strictEqual((360 - 120 + 1440) % 1440, 240, 'four hours before fajr');
+});
+
+test('the two tools sit below the date row, never on it', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.strictEqual((css.match(/\.card-tools \{ position/g) || []).length, 1, 'one rule, not two fighting');
+  assert.match(css, /\.card-tools \{ position: absolute; top: 62px;/,
+    'clear of the date and its two nudges');
+});

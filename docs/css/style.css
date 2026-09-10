@@ -521,7 +521,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .night-name { color: var(--ink-2); font-weight: 600; }
 
 /* the two tools of the prayer card: the adhkar at the start, the picture at the end */
-.card-tools { position: absolute; top: 10px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
+/* below the date row, so the two never sit on it */
+.card-tools { position: absolute; top: 62px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
 .card-tools .btn { pointer-events: auto; width: 44px; height: 44px; min-height: 44px; }
 .prayer-card { position: relative; }
 
@@ -532,8 +533,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* the two tools of the clock: the adhkar at the start, the picture at the end */
 .clock { position: relative; }
-.card-tools { position: absolute; top: 10px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
-.card-tools .btn { pointer-events: auto; width: 44px; height: 44px; min-height: 44px; }
+/* below the date row, so the two never sit on it */
 
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
