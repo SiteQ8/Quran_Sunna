@@ -24,16 +24,25 @@ public final class SalawatScheduler {
     public static void setEvery(Context context, int minutes) {
         context.getSharedPreferences(AdhanScheduler.PREFS, Context.MODE_PRIVATE)
             .edit().putInt(KEY_EVERY, minutes).apply();
-        if (minutes > 0) scheduleNext(context); else cancel(context);
+        /* a fresh choice starts its count now, so it is forced */
+        if (minutes > 0) scheduleNext(context, true); else cancel(context);
     }
 
     public static int every(Context context) {
         return context.getSharedPreferences(AdhanScheduler.PREFS, Context.MODE_PRIVATE).getInt(KEY_EVERY, 0);
     }
 
+    /** Arms the next reminder, unless one is already waiting. Opening the app
+     *  used to push it a whole interval away again, so a reader who opened it
+     *  every few minutes never received one at all. */
     public static void scheduleNext(Context context) {
+        scheduleNext(context, false);
+    }
+
+    public static void scheduleNext(Context context, boolean force) {
         int minutes = every(context);
         if (minutes <= 0) return;
+        if (!force && waiting(context)) return;
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
         long at = System.currentTimeMillis() + minutes * 60000L;
@@ -41,6 +50,14 @@ public final class SalawatScheduler {
         boolean exact = Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+    }
+
+    /** Whether an alarm is already pending, asked without creating one. */
+    private static boolean waiting(Context context) {
+        Intent intent = new Intent(context, AdhanReceiver.class);
+        intent.setAction("com.eworldq8.sunnati.SALAWAT");
+        return PendingIntent.getBroadcast(context, REQUEST, intent,
+            PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE) != null;
     }
 
     public static void cancel(Context context) {

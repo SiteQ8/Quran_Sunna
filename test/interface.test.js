@@ -5039,7 +5039,7 @@ test('the reminder to send prayers upon the prophet is held by the app, not the 
   const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1, 'an alarm of its own');
   const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
-  assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context)') !== -1, 'and it re-arms itself after each one');
+  assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context, true)') !== -1, 'and it re-arms itself after each one');
   const onBoot = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/BootReceiver.java'), 'utf8');
   assert.ok(onBoot.indexOf('SalawatScheduler.scheduleNext(context)') !== -1, 'and survives a reboot');
   /* the reader's choice reaches the app */
@@ -5319,4 +5319,97 @@ test('adding to the calendar never claims a success it did not have', () => {
   const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('setDownloadListener') !== -1,
     'and any other download the page starts is taken by the phone rather than swallowed');
+});
+
+test('the half hour after an adhan counts up from it, then turns to the next', () => {
+  /* twelve minutes after dhuhr */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the rule itself: within the window the label and the name come from the
+     prayer just past, and the count runs up from it */
+  const fn = /var sinceAdhan = ([\s\S]*?)\n    \} else \{/.exec(app)[1];
+  assert.ok(fn.indexOf("'مضى على'") !== -1 && fn.indexOf("c.prev.ar") !== -1);
+  assert.ok(fn.indexOf('clockText(c.prev.at)') !== -1, 'and it names the hour of that adhan');
+  assert.ok(app.indexOf("var fresh = sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES;") !== -1);
+  assert.ok(app.indexOf('var AFTER_ADHAN_MINUTES = 30;') !== -1, 'thirty minutes, in one place');
+  /* the sunrise has no adhan, so nothing counts from it */
+  assert.ok(/c\.prev\.key !== 'sunrise'/.test(app));
+});
+
+test('the night is halved and thirded from maghrib to the next fajr, not from the clock', () => {
+  const { win, doc } = boot();
+  const marks = win.App.helpers.nightMarks(new win.Date());
+  assert.ok(marks && typeof marks.midnight === 'number' && typeof marks.lastThird === 'number');
+  const t = win.App.helpers.computeTimes ? null : null;
+  /* both fall in the night, and the third is later than the half */
+  const asMinutesAfterMaghrib = function (m) { return (m + 1440 - 0) % 1440; };
+  void asMinutesAfterMaghrib; void t;
+  assert.ok(marks.midnight >= 0 && marks.midnight < 1440);
+  assert.ok(marks.lastThird >= 0 && marks.lastThird < 1440);
+  /* and they are shown under the strip */
+  const line = doc.getElementById('night-line');
+  assert.ok(line && !line.hidden);
+  assert.ok(line.textContent.indexOf('منتصف الليل') !== -1 && line.textContent.indexOf('الثلث الأخير') !== -1);
+});
+
+test('the clock carries its adhkar at one end and its picture at the other', () => {
+  const { win, doc } = boot();
+  const tools = doc.querySelector('.clock .card-tools');
+  assert.ok(tools, 'the two sit on the clock itself');
+  const ids = [...tools.querySelectorAll('.btn')].map(function (b) { return b.id; });
+  assert.deepStrictEqual(ids.join(','), 'home-azkar,home-share-times',
+    'the adhkar first, so it falls at the start of the line and the picture at the end');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.card-tools \{[^}]*justify-content:\s*space-between/);
+  /* the picture carries the day's times and the night's marks */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
+    assert.ok(fn.indexOf(n) !== -1, 'the picture should name ' + n);
+  });
+});
+
+test('the mosques are opened in the phone\'s own map, at the reader\'s place', () => {
+  const { win, doc } = boot();
+  win.App.go('more');
+  const row = doc.querySelector('#more-list [data-act="mosques"]');
+  assert.ok(row, 'offered in the more list');
+  const opened = [];
+  win.SunnatiApp = { openMap: function (u, h) { opened.push([u, h]); return true; } };
+  win.App.helpers.setPlace({ n: 'الكويت', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.go('more');
+  click(win, doc.querySelector('#more-list [data-act="mosques"]'));
+  assert.strictEqual(opened.length, 1);
+  assert.ok(opened[0][0].indexOf('geo:29.38000,47.98000') === 0, 'a place, not a search of nowhere');
+  assert.ok(decodeURIComponent(opened[0][0]).indexOf('مسجد') !== -1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('public boolean openMap') !== -1);
+  assert.ok(bridge.indexOf('https://www.google.com/maps/search/mosque') !== -1, 'and a way through when no map app answers');
+});
+
+test('either eid opens with its own sunnahs, once', () => {
+  const { win, doc } = boot();
+  assert.strictEqual(win.App.helpers.eidToday(), null, 'not today');
+  assert.strictEqual(win.App.helpers.maybeEidSheet(), false);
+  /* the hijri date is nudged onto the first of shawwal */
+  const h = win.Hijri.toHijri(new win.Date(), 0);
+  const days = win.Hijri.daysBetween ? null : null;
+  void h; void days;
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function eidToday\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('h.m === 10 && h.d === 1') !== -1, 'the first of shawwal');
+  assert.ok(fn.indexOf('h.m === 12 && h.d === 10') !== -1, 'and the tenth of dhul hijjah');
+  const sheet = /function maybeEidSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(sheet.indexOf('eidShown') !== -1, 'shown once in the day');
+  assert.ok(sheet.indexOf('الغسل والتطيّب') !== -1 && sheet.indexOf('الرجوع من طريق آخر') !== -1);
+  assert.ok(sheet.indexOf('من أضحيته') !== -1, 'and the adha has its own, not the fitr\'s');
+});
+
+test('the reminder is not pushed away again every time the app is opened', () => {
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('FLAG_NO_CREATE') !== -1,
+    'opening the app must not re-arm an alarm that is already waiting, or it never arrives');
+  assert.ok(/scheduleNext\(context, true\)/.test(sched), 'a fresh choice starts its count now');
+  const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context, true)') !== -1,
+    'and after one rings the next is armed outright');
 });

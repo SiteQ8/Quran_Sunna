@@ -30,6 +30,7 @@
     readPace: 'mid',
     friday: true,
     fridayShown: '',
+    eidShown: '',
     qiyam: false,
     wirdAt: '',
     jumuahBefore: 0,
