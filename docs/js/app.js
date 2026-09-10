@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.23.2';
+  var VERSION = '8.24.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2146,7 +2146,9 @@
     'ar.hudhaify': 'https://server9.mp3quran.net/hthfi/',
     'ar.muhammadayyoub': 'https://server8.mp3quran.net/ayyub/',
     'ar.hanirifai': 'https://server8.mp3quran.net/hani/',
-    'ar.abdullahbasfar': 'https://server6.mp3quran.net/bsfr/'
+    'ar.abdullahbasfar': 'https://server6.mp3quran.net/bsfr/',
+    'ar.ibrahimakhbar': 'https://server6.mp3quran.net/akdr/',
+    'ar.husarymujawwad': 'https://server13.mp3quran.net/husr/Almusshaf-Al-Mojawwad/'
   };
 
   function surahAudioUrl(n) {
