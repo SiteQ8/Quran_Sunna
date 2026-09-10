@@ -4692,7 +4692,8 @@ test('a station carries a filled play control, not a stray hairline', () => {
   assert.strictEqual(play.querySelector('use').getAttribute('href'), '#i-play');
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.row-play \{[^}]*border-radius:\s*50%/, 'drawn as a round button');
-  assert.match(css, /i-play'\]\), \.icon:has\(use\[href='#i-pause'\]\) \{ fill: currentColor; stroke: none/, 'the triangle is a shape, so it is filled not outlined');
+  assert.match(css, /\.icon:has\(use\[href='#i-play'\]\) \{ fill: currentColor; stroke: none/,
+    'the triangle is a shape, so it is filled not outlined');
 });
 
 /* ---------------- صفة العمرة ---------------- */
@@ -5703,4 +5704,35 @@ test('no two entries in a list wear the same mark', () => {
   assert.ok(tiles.indexOf('#i-ihram') !== -1 && tiles.indexOf('#i-mosque') !== -1);
   assert.ok(tiles.indexOf('#i-dua') !== -1 && tiles.indexOf('#i-hands') !== -1,
     'the raised palm for the adhkar and the cupped hands for the supplications');
+});
+
+test('the pause mark is drawn, not filled into nothing', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const pause = /<g id="i-pause">([\s\S]*?)<\/g>/.exec(html)[1];
+  /* it is two strokes, so a rule that fills it and drops the stroke leaves
+     nothing at all to see, in either theme */
+  assert.ok(pause.indexOf('v15') !== -1, 'two upright strokes');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf("use[href='#i-pause']") === -1,
+    'the pause must not be caught by the fill rule written for the play triangle');
+  assert.match(css, /\.icon:has\(use\[href='#i-play'\]\) \{ fill: currentColor; stroke: none; \}/,
+    'only the play triangle is a filled shape');
+});
+
+test('an empty screen offers one way out, beneath its words', () => {
+  const { win, doc } = boot();
+  win.App.go('bookmarks');
+  assert.strictEqual(doc.querySelectorAll('#bookmark-list .btn').length, 0,
+    'no button laid across the words');
+  const below = doc.querySelector('#v-bookmarks > .btn');
+  assert.strictEqual(below.textContent, 'افتح المصحف');
+  assert.strictEqual(below.getAttribute('data-go'), 'quran');
+  /* wherever an empty block does carry a button, it sits under the words */
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.empty \.btn \{ display: block;/);
+  /* and the more list describes it as following one's memorising */
+  win.App.go('more');
+  const row = [...doc.querySelectorAll('#more-list .row')]
+    .filter(function (r) { return r.textContent.indexOf('المحفوظات') !== -1; })[0];
+  assert.ok(row.textContent.indexOf('تتبّع حفظك') !== -1, 'got ' + row.textContent);
 });

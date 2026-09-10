@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.17.3';
+  var VERSION = '8.17.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2933,7 +2933,7 @@
     if (!host) return;
     var list = Store.bookmarks();
     if (!list.length) {
-      host.innerHTML = empty('لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها', 'افتح المصحف', 'quran');
+      host.innerHTML = empty('لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها');
       return;
     }
     /* the four kinds, each its own group with its colour, in the order of the marks */
@@ -3332,7 +3332,7 @@
     { nav: 'ruqyah', icon: 'shield', name: 'الرقية الشرعية', note: 'آيات وأدعية ثابتة' },
     { nav: 'timetable', icon: 'clock', name: 'جدول الشهر', note: 'مواقيت كل يوم في صفحة' },
     { nav: 'calendar', icon: 'calendar', name: 'التقويم الهجري', note: 'المناسبات والمواسم' },
-    { nav: 'bookmarks', icon: 'bookmark', name: 'المحفوظات', note: 'آياتك المعلّمة' },
+    { nav: 'bookmarks', icon: 'bookmark', name: 'المحفوظات', note: 'تتبّع حفظك' },
     { nav: 'settings', icon: 'settings', name: 'الإعدادات', note: 'الحساب والمظهر والنسخ' },
     { nav: 'about', icon: 'info', name: 'عن التطبيق', note: 'المصادر وما يحتاج إنترنت' }
   ];
