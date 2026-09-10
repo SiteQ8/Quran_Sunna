@@ -556,6 +556,13 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line);
   color: var(--ink); font-size: 1.3rem; font-weight: 700; line-height: 1; }
 .map-zoom.map-out { top: 58px; }
+.map-zoom.map-me-btn { top: 106px; }
+.map-pin.is-on { background: var(--gold); color: #16241c; transform: rotate(-45deg) scale(1.18); }
+.map-chosen { display: flex; align-items: center; gap: var(--s3); margin: var(--s3) 0 0;
+  padding: var(--s2) var(--s3); background: var(--sunken); border-radius: var(--r-sm); }
+.map-chosen .row-title { flex: 1 1 auto; font-weight: 600; }
+#mosque-list .row.is-now { border-color: var(--accent-solid); }
+#mosque-list .row-body { text-align: start; }
 .mosque-far { font-variant-numeric: tabular-nums; }
 
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
