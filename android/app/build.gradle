@@ -8,8 +8,8 @@ android {
         applicationId "com.eworldq8.sunnati"
         minSdk 26
         targetSdk 36
-        versionCode 158
-        versionName "8.29.1"
+        versionCode 159
+        versionName "8.30.0"
 
         /* The address the wrapper opens. Everything the app does lives there, so
            a fix published to the site reaches anyone who installed this without

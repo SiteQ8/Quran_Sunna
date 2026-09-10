@@ -6566,7 +6566,22 @@ test('the madinah line layout is fetched into the same pages the app already use
   /* the app already divides the mushaf into the madinah's own 604 pages, so
      this adds the line breaks alone and must agree with the text we hold */
   assert.strictEqual(mushaf.p.length, 604, 'the page division is already the madinah one');
-  assert.ok(Object.keys(lines.pages).length >= 10, 'some pages are fetched');
+  assert.strictEqual(Object.keys(lines.pages).length, 604, 'every page of the mushaf');
+  /* the printed page is fifteen lines; the few that are fewer are the ones a
+     surah heading or the opening of the mushaf takes room from */
+  const fifteen = Object.keys(lines.pages).filter(function (n) { return lines.pages[n].length === 15; });
+  assert.ok(fifteen.length > 450, 'most pages hold fifteen lines, got ' + fifteen.length);
+  /* and not one ayah of the mushaf is left off a page */
+  const seen = new Set();
+  Object.keys(lines.pages).forEach(function (n) {
+    lines.pages[n].forEach(function (line) {
+      line.forEach(function (run) { seen.add(run[0] + ':' + run[1]); });
+    });
+  });
+  let total = 0;
+  mushaf.a.forEach(function (surah) { total += surah.length; });
+  assert.strictEqual(total, 6236);
+  assert.strictEqual(seen.size, 6236, 'every ayah falls on a page, missing ' + (6236 - seen.size));
 
   Object.keys(lines.pages).forEach(function (n) {
     const page = lines.pages[n];
