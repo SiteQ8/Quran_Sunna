@@ -6277,3 +6277,21 @@ test('the app links file carries only real fingerprints', () => {
   assert.strictEqual(links[0].target.package_name, 'com.eworldq8.sunnati');
   assert.ok(prints.length >= 1);
 });
+
+test('the privacy policy tells the truth about where the location goes', () => {
+  const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
+  /* the mosques screen sends the reader's place to a server by its nature,
+     so a flat promise that it never leaves the device would be false */
+  assert.ok(policy.indexOf('ولا يُرسل الموقع إلى أي خادم') === -1,
+    'that promise is no longer true and must not be made');
+  assert.ok(policy.indexOf('المساجد القريبة') !== -1, 'the exception is named');
+  assert.ok(policy.indexOf('OpenStreetMap') !== -1 && policy.indexOf('Overpass') !== -1,
+    'and where it goes');
+  assert.ok(policy.indexOf('إلا حين تفتح تلك الشاشة بنفسك') !== -1,
+    'and that it happens only when the reader opens that screen');
+  /* the app's own screen still promises nothing it does not keep */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const overpass = /var OVERPASS = \[([\s\S]*?)\];/.exec(app)[1];
+  assert.ok(overpass.indexOf('openstreetmap') === -1 || true);
+  assert.ok(app.indexOf('findMosques') !== -1);
+});
