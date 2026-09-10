@@ -5831,3 +5831,29 @@ test('the map asks for no more tiles than it shows, and says plainly when it fin
   assert.ok(fn.indexOf('requestAnimationFrame') !== -1);
   assert.ok(app.indexOf('لم يُعثر على مساجد مسجّلة حولك.') !== -1);
 });
+
+test('the page shows its own splash while it wakes, in the colours already chosen', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html);
+  assert.ok(splash, 'the page carries one');
+  /* written inline and styled inline, so it paints with the first frame
+     rather than waiting on a stylesheet or a script */
+  assert.ok(splash[1].indexOf('position:fixed') !== -1 && splash[1].indexOf('style=') !== -1);
+  assert.ok(html.indexOf('<div id="boot-splash"') < html.indexOf('css/style.css') ||
+    html.indexOf('<div id="boot-splash"') > 0, 'it is in the body itself');
+  assert.ok(splash[1].indexOf('icons/icon-192.png') !== -1, 'the app\'s own mark');
+  assert.ok(splash[1].indexOf('سُنّتي') !== -1);
+  /* the paper is painted before any stylesheet lands, or a white flash shows
+     through in the dark theme */
+  assert.ok(html.indexOf("root.style.backgroundColor = dark ? '#10161a' : '#f6f4ee';") !== -1);
+
+  const { win, doc } = boot();
+  /* it begins to go the moment the first screen is drawn, and is taken out
+     of the page once it has faded */
+  const still = doc.getElementById('boot-splash');
+  assert.ok(!still || still.style.opacity === '0', 'it should be fading or gone');
+  win.App.helpers.dismissBootSplash();
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("splash.style.opacity = '0';") !== -1, 'fading rather than vanishing');
+  assert.ok(app.indexOf('splash.parentNode.removeChild(splash)') !== -1, 'and then removed');
+});
