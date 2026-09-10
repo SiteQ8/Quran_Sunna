@@ -2838,9 +2838,19 @@ test('the first screen fonts are fetched before the stylesheet asks for them', (
 
 test('the countdown says باقٍ على أذان العصر, as it is actually said', () => {
   const { win, doc } = boot();
-  assert.strictEqual(doc.getElementById('arc-label').textContent, 'باقٍ على');
+  const label = doc.getElementById('arc-label').textContent;
   const name = doc.getElementById('arc-name').textContent;
-  const next = win.App.clockState().next;
+  const c = win.App.clockState();
+  /* within the half hour after an adhan the clock counts up from it instead,
+     so which of the two is shown depends on the hour the test runs at */
+  const since = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
+  if (since >= 0 && since < 30) {
+    assert.strictEqual(label, 'مضى على');
+    assert.strictEqual(name, 'أذان ' + c.prev.ar, 'got ' + name);
+    return;
+  }
+  assert.strictEqual(label, 'باقٍ على');
+  const next = c.next;
   if (next.key === 'sunrise') {
     assert.strictEqual(name, 'الشروق', 'the sunrise has no adhan');
   } else {
@@ -5624,4 +5634,22 @@ test('the mosques are found around the reader and measured from them', () => {
   /* the screen exists and says something useful before the answer arrives */
   win.App.go('mosques');
   assert.ok(doc.getElementById('mosque-list').textContent.length > 5);
+});
+
+test('the map credit sits with the other sources, not under the map', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('class="map-credit"') === -1, 'the map screen carries no line of its own');
+  /* the licence of the map still requires it to be named, so it joins the
+     others in المصادر where the app already names where its text comes from */
+  const sources = /<h2>المصادر<\/h2><\/div>\s*<p class="setting-note">([\s\S]*?)<\/p>/.exec(html);
+  assert.ok(sources, 'the sources card exists');
+  assert.ok(sources[1].indexOf('OpenStreetMap') !== -1, 'and names the map among them');
+  assert.ok(sources[1].indexOf('openstreetmap.org/copyright') !== -1, 'with the link its licence asks for');
+});
+
+test('the app writes جاري, never جارٍ', () => {
+  ['index.html', 'js/app.js'].forEach(function (f) {
+    const src = fs.readFileSync(path.join(DOCS, f), 'utf8');
+    assert.ok(src.indexOf('جارٍ') === -1, f + ' still writes جارٍ');
+  });
 });

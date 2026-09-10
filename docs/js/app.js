@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.17.0';
+  var VERSION = '8.17.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -522,7 +522,7 @@
       toast('المتصفح لا يتيح تحديد الموقع، فاختر مدينة من القائمة');
       return;
     }
-    toast('جارٍ تحديد موقعك');
+    toast('جاري تحديد موقعك');
     window.navigator.geolocation.getCurrentPosition(function (pos) {
       var tz = -new Date().getTimezoneOffset() / 60;
       var zone = null;
@@ -2334,7 +2334,7 @@
   }
 
   function sharePicture(drawing, name, title, words) {
-    toast('جارٍ تجهيز الصورة');
+    toast('جاري تجهيز الصورة');
     return drawing.then(function (blob) {
       if (!blob) { toast('تعذّر رسم الصورة'); return false; }
       var app = bridge();
@@ -3544,7 +3544,7 @@
     }
     drawMap();
     if (!state.mosques) {
-      list.innerHTML = '<p class="setting-note">جارٍ البحث عن المساجد حولك…</p>';
+      list.innerHTML = '<p class="setting-note">جاري البحث عن المساجد حولك…</p>';
       findMosques();
       return;
     }
@@ -4561,7 +4561,7 @@
   /* The last resort for a device holding an old copy: throw away every cache,
      let go of the worker, and ask the network for the whole thing again. */
   function refetchEverything() {
-    toast('جارٍ جلب النسخة الأحدث');
+    toast('جاري جلب النسخة الأحدث');
     var jobs = [];
     if (window.caches && window.caches.keys) {
       jobs.push(window.caches.keys().then(function (names) {
@@ -4581,7 +4581,7 @@
 
   function cacheEverything() {
     if (!window.caches) { toast('المتصفح لا يتيح التخزين للعمل بلا إنترنت'); return; }
-    toast('جارٍ التحميل');
+    toast('جاري التحميل');
     window.caches.open('sunnati-v' + VERSION).then(function (cache) {
       /* the tafsir and the recording go in too, so nothing needs the network later */
       return cache.addAll(['./', './index.html', './data/mushaf.json', './css/style.css',
@@ -5379,7 +5379,7 @@
     Promise.resolve(offer.userChoice).then(function (choice) {
       state.installOffer = null;
       renderSettings();
-      if (choice && choice.outcome === 'accepted') toast('جارٍ التثبيت');
+      if (choice && choice.outcome === 'accepted') toast('جاري التثبيت');
     }).catch(function () { state.installOffer = null; });
   }
 

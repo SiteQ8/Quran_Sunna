@@ -554,8 +554,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line);
   color: var(--ink); font-size: 1.3rem; font-weight: 700; line-height: 1; }
 .map-zoom.map-out { top: 58px; }
-.map-credit { font-size: .7rem; color: var(--ink-3); margin: var(--s2) 0 0; text-align: center; }
-.map-credit a { color: var(--ink-3); }
 .mosque-far { font-variant-numeric: tabular-nums; }
 
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
