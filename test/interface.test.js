@@ -5807,7 +5807,7 @@ test('pressing a mosque brings the map onto it and names it', () => {
   assert.ok(line.querySelector('[data-act="mosque-go"]'), 'and the way there is offered');
   /* the reader may come back to their own place */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf("state.mapAt = null; state.mosqueAt = -1;") !== -1);
+  assert.ok(app.indexOf("state.mapAt = { lat: here.lat, lng: here.lng };") !== -1);
 });
 
 test('the map asks for no more tiles than it shows, and says plainly when it finds nothing', () => {
@@ -6822,7 +6822,7 @@ test('the cards of the adhkar are all one height', () => {
      out different heights when a name ran to two lines */
   assert.match(css, /#azkar-groups, #dua-places \{ align-items: stretch; grid-auto-rows: 1fr; \}/);
   assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{ height: 100%/);
-  assert.match(css, /#azkar-groups \.tile-name, #dua-places \.tile-name \{ min-height/);
+  assert.match(css, /#azkar-groups \.tile-name, #dua-places \.tile-name \{\n  white-space: nowrap/);
 });
 
 test('the adhkar screen holds adhkar, and the duas sit with the duas', () => {
@@ -6878,4 +6878,24 @@ test('the splash artwork is drawn with the real face, and the build refuses othe
     assert.ok(fs.existsSync(f), 'missing splash for ' + d);
     assert.ok(fs.statSync(f).size > 2000, 'splash for ' + d + ' looks empty');
   });
+});
+
+test('every card name sits on one line, so the cards match', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* a long name wrapped and made its card taller; forcing a minimum height
+     then made every card two lines tall instead of curing it */
+  assert.ok(/#azkar-groups \.tile-name, #dua-places \.tile-name \{\s*\n\s*white-space: nowrap; overflow: hidden; text-overflow: ellipsis;/.test(css));
+  assert.ok(css.indexOf('min-height: 2.9em') === -1, 'no forced minimum remains');
+});
+
+test('the my-place button asks again about that place', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /bind\('map-mine', 'click', function \(\) \{([\s\S]*?)\n    \}\);/.exec(app)[1];
+  /* it used to recentre and nothing more, so pressing it told the reader
+     nothing at all when no mosque had been found */
+  assert.ok(fn.indexOf('state.lookedAt = null;') !== -1, 'the last look is forgotten');
+  assert.ok(fn.indexOf('state.mosques = null;') !== -1, 'and what was found is cleared');
+  assert.ok(fn.indexOf('renderMosques();') !== -1, 'so it truly asks again');
+  assert.ok(fn.indexOf("toast('نبحث عن المساجد حول موقعك')") !== -1, 'and says so');
+  assert.ok(fn.indexOf("toast('حدّد موقعك أولاً')") !== -1, 'or says why it cannot');
 });

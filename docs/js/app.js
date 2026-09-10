@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.38.0';
+  var VERSION = '8.38.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5893,22 +5893,17 @@
     });
     bind('map-in', 'click', function () { MAP.zoom = Math.min(18, MAP.zoom + 1); drawMap(); });
     bind('map-out', 'click', function () { MAP.zoom = Math.max(11, MAP.zoom - 1); drawMap(); });
-    bind('map-mine', 'click', function () { state.mapAt = null; state.mosqueAt = -1; MAP.zoom = 15; drawMap(); });
-    bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
-    bind('home-share-times', 'click', function () { shareTimes(); });
-
-    bind('settings-page-layout', 'change', function (e) {
-      Store.set('pageLayout', e.target.value);
-      if (e.target.value === 'madinah') {
-        loadMadinahLines().then(function (ok) {
-          if (!ok) { Store.set('pageLayout', 'flow'); toast('تعذّر جلب شكل المصحف'); return; }
-          if (state.view === 'page') renderPage();
-          toast('الصفحة كما طُبعت في مصحف المدينة');
-        });
-        return;
-      }
-      if (state.view === 'page') renderPage();
-      toast('الصفحة بالنص المتّصل');
+    bind('map-mine', 'click', function () {
+      /* back to the reader's own place, and ask again about it: pressing this
+         and seeing nothing change told him nothing */
+      var here = place();
+      if (!here) { toast('حدّد موقعك أولاً'); return; }
+      state.mapAt = { lat: here.lat, lng: here.lng };
+      state.lookedAt = null;
+      state.mosques = null;
+      drawMap();
+      renderMosques();
+      toast('نبحث عن المساجد حول موقعك');
     });
     bind('settings-listen', 'change', function (e) {
       Store.set('listenAs', e.target.value);
