@@ -6,33 +6,74 @@
 <title>سياسة الخصوصية · سُنّتي</title>
 <meta name="description" content="سياسة خصوصية تطبيق سُنّتي، لا يجمع التطبيق أي بيانات ولا يرسل شيئاً عن مستخدمه.">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/fonts.css">
 <style>
-  :root { color-scheme: light dark; }
-  body {
-    margin: 0 auto; padding: 32px 20px 64px; max-width: 44rem; line-height: 1.95;
-    font-family: 'IBM Plex Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;
-    background: #f4f2ec; color: #16241c;
+  /* The page wears what the app wears: its paper, its sadu, its red and its
+     face, so a reader who taps through from the app does not feel he left it. */
+  :root {
+    --paper: #f6f4ee; --raised: #fffdf8; --ink: #16241c; --ink-2: #3d4a44;
+    --ink-3: #6b7873; --line: #e4e0d6; --accent: #9c2b2b; --accent-ink: #8f2323;
+    --gold: #b08833;
   }
-  h1 { font-size: 1.7rem; margin-bottom: .2em; }
-  h2 { font-size: 1.15rem; margin-top: 2em; color: #12492f; }
-  .lead { color: #5e6c65; margin-top: 0; }
-  ul { padding-inline-start: 1.4em; }
-  a { color: #12492f; }
-  .stamp { margin-top: 3em; color: #5e6c65; font-size: .9rem; }
   @media (prefers-color-scheme: dark) {
-    body { background: #10161a; color: #e9e6dd; }
-    h2 { color: #7fc9a0; } .lead, .stamp { color: #96a39b; } a { color: #7fc9a0; }
+    :root {
+      --paper: #10161a; --raised: #172128; --ink: #ede9e1; --ink-2: #c3ccc7;
+      --ink-3: #8f9b95; --line: #263139; --accent: #ff6969; --accent-ink: #ff8080;
+      --gold: #bb9036;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 0 16px 72px; line-height: 1.95;
+    font-family: 'IBM Plex Sans Arabic', 'Noto Naskh Arabic', system-ui, sans-serif;
+    background-color: var(--paper); color: var(--ink);
+    background-image:
+      repeating-linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, transparent) 0 9px, transparent 9px 18px);
+    background-size: 100% 26px; background-repeat: repeat-x; background-position: 0 0;
+  }
+  .wrap { max-width: 40rem; margin: 0 auto; }
+  header {
+    text-align: center; padding: 40px 0 8px;
+  }
+  header img { width: 76px; height: 76px; border-radius: 18px; }
+  h1 { font-size: 1.65rem; margin: 18px 0 .2em; }
+  .lead { color: var(--ink-3); margin-top: 0; }
+  .rule { width: 96px; height: 2px; background: var(--gold); opacity: .7; margin: 20px auto; }
+  section {
+    background: var(--raised); border: 1px solid var(--line); border-radius: 18px;
+    padding: 4px 20px 20px; margin: 16px 0;
+  }
+  h2 {
+    font-size: 1.1rem; color: var(--accent-ink); margin: 22px 0 .4em;
+    display: flex; align-items: center; gap: 10px;
+  }
+  h2::before {
+    content: ''; width: 9px; height: 9px; flex: none; transform: rotate(45deg);
+    border: 2px solid var(--gold);
+  }
+  p { color: var(--ink-2); margin: .7em 0; }
+  ul { padding-inline-start: 1.2em; color: var(--ink-2); }
+  li { margin: .5em 0; }
+  b, strong { color: var(--ink); }
+  a { color: var(--accent-ink); text-underline-offset: 3px; }
+  .stamp { margin: 28px 0 0; color: var(--ink-3); font-size: .88rem; text-align: center; }
+  .back {
+    display: block; text-align: center; margin: 26px auto 0; padding: 14px 22px;
+    background: var(--accent); color: #fff; border-radius: 14px; text-decoration: none;
+    font-weight: 600; max-width: 18rem;
   }
 </style>
 </head>
-<body>
-<h1>سياسة الخصوصية</h1>
-<p class="lead">تطبيق سُنّتي، آخر تحديث في ربيع الأول 1448 هـ.</p>
+<body><div class="wrap">
+<header><img src="icons/icon-192.png?v=eye" alt=""><h1>سياسة الخصوصية</h1>
+<p class="lead">تطبيق سُنّتي، آخر تحديث في ربيع الأول 1448 هـ.</p><div class="rule"></div></header>
 
-<h2>خلاصة الأمر</h2>
-<p>سُنّتي لا يجمع عنك شيئاً، ولا يرسل عنك شيئاً، ولا يطلب حساباً ولا بريداً ولا رقم هاتف، فكل ما تسجّله يبقى في جهازك وحده، ولا يملك من كتب التطبيق أي وسيلة للاطلاع عليه.</p>
+<section><h2>خلاصة الأمر</h2>
+<p>سُنّتي لا يجمع عنك شيئاً، ولا يطلب حساباً ولا بريداً ولا رقم هاتف، فكل ما تسجّله يبقى في جهازك وحده، ولا يملك من كتب التطبيق أي وسيلة للاطلاع عليه.</p>
 
-<h2>ما يُحفظ في جهازك</h2>
+<p>ولا يخرج من جهازك شيء إلا في موضع واحد تعرفه حين تدخله: شاشة <b>المساجد القريبة</b>، فهي تسأل عمّا حولك فيلزمها أن ترسل مكانك. وتفصيل ذلك في باب الموقع الجغرافي أدناه.</p>
+
+</section><section><h2>ما يُحفظ في جهازك</h2>
 <p>يستعمل التطبيق مخزن المتصفح المحلي في جهازك ليحفظ إعداداتك وما سجّلته، ومنه:</p>
 <ul>
   <li>المدينة أو الإحداثيات التي اخترتها، وطريقة الحساب ومذهب العصر</li>
@@ -42,12 +83,12 @@
 </ul>
 <p>هذه البيانات لا تغادر جهازك، ويمكنك تصديرها في ملف واحد أو حذفها بالكامل من شاشة الإعدادات في أي وقت، ويؤدي حذف بيانات المتصفح للموقع إلى محوها كذلك.</p>
 
-<h2>الموقع الجغرافي</h2>
+</section><section><h2>الموقع الجغرافي</h2>
 <p>إن سمحت للتطبيق بمعرفة موقعك فإنه يستعمله لحساب أوقات الصلاة واتجاه القبلة داخل جهازك، ولا يُرسل في ذلك إلى أي خادم. ويمكنك بدلاً من ذلك اختيار مدينة من القائمة فلا يُطلب الموقع أصلاً.</p>
 
     <p>ويُستثنى من ذلك شاشة <b>المساجد القريبة</b> وحدها: فهي بطبيعتها تسأل عمّا حولك، فيُرسل موقعك إلى خادم <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ومشتقّه Overpass ليُعرف أي المساجد قريبة منك، وتُطلب مربّعات الخريطة من خادمها فتحمل هي أيضاً المكان الذي تنظر إليه. ولا يُرسل شيء من ذلك إلا حين تفتح تلك الشاشة بنفسك، ولا يُرسل معه اسمك ولا معرّف جهازك ولا شيء يدلّ عليك، ولا يحتفظ التطبيق بشيء منه. فإن لم تفتحها لم يخرج موقعك من جهازك قط.</p>
 
-<h2>تطبيق أندرويد وأذوناته</h2>
+</section><section><h2>تطبيق أندرويد وأذوناته</h2>
     <p>يعرض تطبيق أندرويد الموقع نفسه داخله، ولا يمرّ بمتصفح آخر ولا يشاركه شيئاً. ويطلب هذه الأذون، وكل واحد لما يُذكر بجانبه ولا شيء غيره:</p>
     <ul>
       <li><b>الإشعارات</b>، ليُظهر تنبيه دخول وقت الصلاة وتذكير الصلاة على النبي ﷺ، ولا يُرسل شيء إلى خادم فالتنبيه يُصنع في جهازك.</li>
@@ -59,10 +100,10 @@
     </ul>
     <p>ويمكنك إيقاف تنبيه الأذان من داخل التطبيق، أو منع الإشعارات عنه من إعدادات الهاتف، ويبقى ما عدا ذلك عاملاً.</p>
 
-    <h2>ما تحفظه في جهازك من الملفات</h2>
+    </section><section><h2>ما تحفظه في جهازك من الملفات</h2>
     <p>إن حفظت تلاوة سورة للاستماع بلا إنترنت، أو حمّلت التفسير، بقي ذلك في مخزن التطبيق في جهازك، وتحذفه من شاشة الإعدادات أو بحذف التطبيق. وإن أرسلت آية أو ذكراً صورةً، حُفظت الصورة في معرض هاتفك ثم فُتحت لك ورقة المشاركة لتختار بنفسك إلى أين تذهب، ولا يُرسل التطبيق شيئاً من تلقاء نفسه.</p>
 
-    <h2>ما يحتاج اتصالاً بالإنترنت</h2>
+    </section><section><h2>ما يحتاج اتصالاً بالإنترنت</h2>
 <p>يعمل التطبيق كله بلا إنترنت بعد أول زيارة، ولا يبقى للشبكة إلا ثلاثة أشياء تطلبها أنت بنفسك:</p>
 <ul>
   <li>تلاوة القارئ، وتأتي من <span dir="ltr">cdn.islamic.network</span></li>
@@ -71,7 +112,7 @@
 </ul>
 <p>هذه جهات مستقلة، ولها سياساتها الخاصة، ولا يرسل التطبيق إليها شيئاً عنك سوى ما يلزم لجلب الملف المطلوب.</p>
 
-<h2>ما ليس في التطبيق</h2>
+</section><section><h2>ما ليس في التطبيق</h2>
 <ul>
   <li>لا إعلانات ولا شبكات إعلانية</li>
   <li>لا تتبع ولا تحليلات ولا معرّفات للأجهزة</li>
@@ -79,15 +120,15 @@
   <li>لا مشاركة ولا بيع لأي بيانات، إذ لا توجد بيانات تُشارَك</li>
 </ul>
 
-<h2>الأطفال</h2>
+</section><section><h2>الأطفال</h2>
 <p>التطبيق مناسب لكل الأعمار، ولا يجمع بيانات من أحد، فلا يجمعها من الأطفال كذلك.</p>
 
-<h2>التغييرات</h2>
+</section><section><h2>التغييرات</h2>
 <p>إن تغيّر شيء في هذه السياسة فسيظهر التغيير في هذه الصفحة وفي سجل الإصدارات في المستودع.</p>
 
-<h2>التواصل</h2>
+</section><section><h2>التواصل</h2>
 <p>للاستفسار أو الملاحظات: <a href="https://github.com/SiteQ8/Quran_Sunna/issues">صفحة الملاحظات في المستودع</a>.</p>
 
-<p class="stamp">سُنّتي مفتوح المصدر برخصة MIT، والشيفرة كاملة متاحة للمراجعة في <a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a>.</p>
-</body>
+</section><p class="stamp">سُنّتي مفتوح المصدر برخصة MIT، والشيفرة كاملة متاحة للمراجعة في <a href="https://github.com/SiteQ8/Quran_Sunna">github.com/SiteQ8/Quran_Sunna</a>.</p>
+<a class="back" href="./">عودة إلى التطبيق</a></div></body>
 </html>
