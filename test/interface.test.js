@@ -6508,3 +6508,36 @@ test('the night of jumuah is not put off a week because its moment passed', () =
   assert.ok(sheet.indexOf('open-kahf') !== -1, 'with al-kahf one press away');
   void win; void doc;
 });
+
+test('the night of jumuah can be shared, put off, or dismissed', () => {
+  const { win, doc } = boot();
+  win.Store.set('jumuahNightShown', '');
+  win.App.helpers.maybeJumuahNightSheet();
+  const tools = [...doc.querySelectorAll('.sheet-tools .btn')].map(function (b) { return b.textContent.trim(); });
+  assert.deepStrictEqual(tools, ['صورة', 'ذكّرني بعد ساعة', 'لا تُذكّرني']);
+
+  /* put off to a stated hour, and the list honours it */
+  const at = win.App.helpers.snoozeJumuahNight(60);
+  assert.ok(at > Date.now() + 59 * 60000 && at < Date.now() + 61 * 60000);
+  assert.strictEqual(win.Store.get('jumuahNightAt'), at);
+
+  /* dismissed for good, and it can be brought back */
+  click(win, doc.querySelector('[data-act="hide-jumuah-night"]'));
+  assert.strictEqual(win.Store.get('jumuahNight'), false);
+  assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'ليلة الجمعة'; }).length, 0);
+  win.App.go('settings');
+  assert.strictEqual(doc.getElementById('settings-jumuah-night').getAttribute('aria-checked'), 'false');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/function shareJumuahNight\(\)/.test(app));
+  assert.ok(app.indexOf('JUMUAH_NIGHT_SUNAN') !== -1, 'the sheet and the picture read from one list');
+});
+
+test('a card keeps the breaks the text asks for', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* four sunnahs run together read as one long sentence rather than four */
+  assert.ok(app.indexOf("String(text).split('\\n').forEach(function (part) {") !== -1,
+    'the text is broken where it asks to be');
+  assert.ok(/wrap\(ctx, part\.split\(' '\), W - PAD \* 2 - 40\)/.test(app),
+    'and each piece is then wrapped on its own');
+});

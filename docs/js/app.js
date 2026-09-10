@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.27.0';
+  var VERSION = '8.28.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2422,7 +2422,13 @@
       var size = text.length > 400 ? 44 : (text.length > 220 ? 52 : 60);
       ctx.font = '400 ' + size + 'px ' + quranFace;
       ctx.direction = 'rtl';
-      var lines = wrap(ctx, text.split(' '), W - PAD * 2 - 40);
+      /* a break asked for in the text is kept: four sunnahs run together read
+         as one long sentence rather than four */
+      var lines = [];
+      String(text).split('\n').forEach(function (part) {
+        if (!part.trim()) { lines.push(''); return; }
+        wrap(ctx, part.split(' '), W - PAD * 2 - 40).forEach(function (l) { lines.push(l); });
+      });
       var lineHeight = Math.round(size * 2.2);
       var H = PAD * 2 + 140 + lines.length * lineHeight + (source ? 220 : 160);
       canvas.width = W; canvas.height = H;
@@ -2846,6 +2852,13 @@
       }
       /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
          بعد منتصف الليل، وهو مرة في الاسبوع لا اكثر */
+      if (Store.get('jumuahNight') && d === 0 && !already(out, 'ليلة الجمعة')) {
+        var putOff = +Store.get('jumuahNightAt') || 0;
+        if (putOff > Date.now() && inJumuahNight()) {
+          out.push({ at: putOff, t: 'ليلة الجمعة',
+            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
+        }
+      }
       if (Store.get('jumuahNight') && day.getDay() === 4 && !already(out, 'ليلة الجمعة')) {
         var eve = computeTimes(day);
         if (typeof eve.maghrib === 'number') {
@@ -2914,8 +2927,35 @@
        'اغتسل غداً وتطيّب وبكّر إلى المسجد'].map(function (line) {
         return '<div class="dua-line"><span class="dua-text">' + esc(line) + '</span></div>';
       }).join('') +
-      '<button class="btn btn-primary btn-block" data-act="open-kahf" style="margin-top:14px">افتح سورة الكهف</button>');
+      '<button class="btn btn-primary btn-block" data-act="open-kahf" style="margin-top:14px">افتح سورة الكهف</button>' +
+      '<div class="sheet-tools">' +
+        '<button class="btn btn-ghost" data-act="share-jumuah-night">' + icon('share') + 'صورة</button>' +
+        '<button class="btn btn-ghost" data-act="snooze-jumuah-night">' + icon('clock') + 'ذكّرني بعد ساعة</button>' +
+        '<button class="btn btn-ghost" data-act="hide-jumuah-night">' + icon('close') + 'لا تُذكّرني</button>' +
+      '</div>');
     return true;
+  }
+
+  var JUMUAH_NIGHT_SUNAN = [
+    'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه',
+    'اقرأ سورة الكهف، وتُجزئ ليلة الجمعة ويومها',
+    'أكثِر من الدعاء، ففي الجمعة ساعة لا يُرد فيها سائل',
+    'اغتسل غداً وتطيّب وبكّر إلى المسجد'
+  ];
+
+  function shareJumuahNight() {
+    return sharePicture(
+      textCard('ليلة الجمعة', JUMUAH_NIGHT_SUNAN.join('\n'), 'naskh', 'من مغرب الخميس إلى فجر الجمعة'),
+      'jumuah-night.png', 'ليلة الجمعة',
+      JUMUAH_NIGHT_SUNAN.join('\n') + '\n\nsunnati.3li.info');
+  }
+
+  /* put off to a stated hour, and only while the night still runs */
+  function snoozeJumuahNight(minutes) {
+    var at = Date.now() + minutes * 60000;
+    Store.set('jumuahNightAt', at);
+    handRemindersToApp();
+    return at;
   }
 
   function maybeFridaySheet() {
@@ -5052,6 +5092,19 @@
     },
     'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
+    'share-jumuah-night': function () { shareJumuahNight(); },
+    'snooze-jumuah-night': function () {
+      var at = snoozeJumuahNight(60);
+      closeSheet();
+      toast('سنذكّرك عند ' + clockText(new Date(at).getHours() * 60 + new Date(at).getMinutes()));
+    },
+    'hide-jumuah-night': function () {
+      Store.set('jumuahNight', false);
+      handRemindersToApp();
+      closeSheet();
+      toast('لن تُذكّر بليلة الجمعة، وتعيدها من الإعدادات');
+      renderSettings();
+    },
     'friday-off': function () {
       Store.set('friday', false);
       closeSheet();
@@ -5955,7 +6008,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, wirdFor: wirdFor,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
