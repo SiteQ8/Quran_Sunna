@@ -21,11 +21,19 @@ public final class SalawatScheduler {
     private SalawatScheduler() { }
 
     /** Minutes between reminders, or zero for none. */
+    /**
+     * The page hands the interval over on every launch, so this is called far
+     * more often than the reader changes it. Only a real change starts the
+     * count afresh; an unchanged one leaves any waiting alarm alone, or the
+     * reminder is pushed an interval further away every time the app opens
+     * and never arrives at all.
+     */
     public static void setEvery(Context context, int minutes) {
+        int before = every(context);
         context.getSharedPreferences(AdhanScheduler.PREFS, Context.MODE_PRIVATE)
             .edit().putInt(KEY_EVERY, minutes).apply();
-        /* a fresh choice starts its count now, so it is forced */
-        if (minutes > 0) scheduleNext(context, true); else cancel(context);
+        if (minutes <= 0) { cancel(context); return; }
+        scheduleNext(context, before != minutes);
     }
 
     public static int every(Context context) {

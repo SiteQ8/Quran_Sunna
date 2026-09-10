@@ -5435,7 +5435,8 @@ test('the reminder is not pushed away again every time the app is opened', () =>
   const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
   assert.ok(sched.indexOf('FLAG_NO_CREATE') !== -1,
     'opening the app must not re-arm an alarm that is already waiting, or it never arrives');
-  assert.ok(/scheduleNext\(context, true\)/.test(sched), 'a fresh choice starts its count now');
+  assert.ok(sched.indexOf('scheduleNext(context, before != minutes);') !== -1,
+    'a fresh choice starts its count now, an unchanged one does not');
   const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
   assert.ok(receiver.indexOf('SalawatScheduler.scheduleNext(context, true)') !== -1,
     'and after one rings the next is armed outright');
@@ -5652,4 +5653,37 @@ test('the app writes جاري, never جارٍ', () => {
     const src = fs.readFileSync(path.join(DOCS, f), 'utf8');
     assert.ok(src.indexOf('جارٍ') === -1, f + ' still writes جارٍ');
   });
+});
+
+test('handing the interval over again does not push the reminder further away', () => {
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SalawatScheduler.java'), 'utf8');
+  const fn = /public static void setEvery\(Context context, int minutes\) \{([\s\S]*?)\n    \}/.exec(sched)[1];
+  /* the page hands the interval over on every launch, so this runs far more
+     often than the reader changes anything; forcing here undid the guard in
+     scheduleNext and the reminder never arrived */
+  assert.ok(fn.indexOf('int before = every(context);') !== -1, 'it must know what was there before');
+  assert.ok(fn.indexOf('scheduleNext(context, before != minutes);') !== -1,
+    'only a real change restarts the count');
+  assert.ok(fn.indexOf('scheduleNext(context, true)') === -1, 'nothing forces it unconditionally');
+  /* and the guard it leans on is still there */
+  assert.ok(sched.indexOf('if (!force && waiting(context)) return;') !== -1);
+  assert.ok(sched.indexOf('FLAG_NO_CREATE') !== -1);
+});
+
+test('every mark the app names is drawn, and the umrah stages each wear their own', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const drawn = [...html.matchAll(/<g id="(i-[a-z-]+)"/g)].map(function (m) { return m[1]; });
+  ['i-ihram', 'i-tent', 'i-mount', 'i-pillar', 'i-stones', 'i-water', 'i-scissors', 'i-minaret', 'i-plane']
+    .forEach(function (name) { assert.ok(drawn.indexOf(name) !== -1, 'missing ' + name); });
+  /* nothing is named that was never drawn */
+  const named = [...html.matchAll(/href="#(i-[a-z-]+)"/g)].map(function (m) { return m[1]; });
+  [...new Set(named)].forEach(function (n) { assert.ok(drawn.indexOf(n) !== -1, 'named but not drawn: ' + n); });
+
+  const { win, doc } = boot();
+  win.UMRAH_STAGES.forEach(function (st) { assert.ok(st.ic, st.id + ' should carry a mark'); });
+  win.App.go('umrah');
+  const marks = [...doc.querySelectorAll('#umrah-stages .stage-num use')].map(function (u) { return u.getAttribute('href'); });
+  assert.strictEqual(marks.join(' '), '#i-water #i-ihram #i-kaaba #i-mount #i-scissors',
+    'the washing, the ihram, the kaaba, the walk and the cutting');
+  marks.forEach(function (m) { assert.ok(drawn.indexOf(m.slice(1)) !== -1, m + ' is not drawn'); });
 });

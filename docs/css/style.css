@@ -976,7 +976,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    then the four kinds of mark */
 .sheet-ayah { text-align: center; text-align-last: center; margin-bottom: 6px; }
 /* the number of a stage, in the accent, before its name */
-.stage-num { flex: none; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+.stage-num .icon { width: 17px; height: 17px; }
+.stage-num { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent-wash); color: var(--accent-ink); font-size: .82rem; font-weight: 700; }
 .fold-head .fold-note { display: block; font-size: var(--step--1); font-weight: 400; color: var(--ink-3); margin-top: 2px; }
 

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.17.1';
+  var VERSION = '8.17.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3397,7 +3397,7 @@
       var open = !!(state.umrahOpen && state.umrahOpen[stage.id]);
       return '<section class="fold' + (open ? ' is-open' : '') + '" data-umrah-fold="' + stage.id + '">' +
         '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        '<span class="stage-num">' + ar(si + 1) + '</span>' +
+        '<span class="stage-num">' + (stage.ic ? icon(stage.ic) : ar(si + 1)) + '</span>' +
         '<span class="fold-title">' + esc(stage.t) + '<span class="fold-note">' + esc(stage.note) + '</span></span>' +
         '<span class="fold-tally' + (here === stage.i.length ? ' is-full' : '') + '">' + ar(here) + ' من ' + ar(stage.i.length) + '</span>' +
         icon('chevron', 'fold-arrow') + '</button>' +
@@ -3419,6 +3419,8 @@
       chip.classList.toggle('is-on', on);
       chip.setAttribute('aria-selected', on ? 'true' : 'false');
     });
+    var refIcon = { mawaqit: 'mount', forbidden: 'close', allowed: 'check', mistakes: 'close' };
+    void refIcon;
     if (which === 'mawaqit') {
       host.innerHTML = '<p class="setting-note">من مرّ على ميقات وهو يريد العمرة لزمه الإحرام منه، ومن كان مسكنه دونها أحرم من مكانه، وأهل مكة يُحرمون للعمرة من الحلّ خارج حدود الحرم كالتنعيم.</p>' +
         UMRAH_MAWAQIT.map(function (m) {
