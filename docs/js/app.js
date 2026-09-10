@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.22.4';
+  var VERSION = '8.22.5';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3809,7 +3809,7 @@
     }
     if (!state.mosques.length) {
       list.innerHTML = '<p class="setting-note">لم يُعثر على مساجد مسجّلة حولك.</p>' +
-        '<button class="btn btn-primary btn-block" data-act="mosques-again">تحديث</button>';
+        '<button class="btn btn-primary btn-block mosque-again" data-act="mosques-again">تحديث</button>';
       if ($('mosque-count')) $('mosque-count').textContent = '';
       return;
     }
@@ -3880,7 +3880,7 @@
       state.mosques = [];
       if ($('mosque-list')) {
         $('mosque-list').innerHTML = '<p class="setting-note">تعذّر جلب المساجد، تحقّق من اتصالك</p>' +
-          '<button class="btn btn-primary btn-block" data-act="mosques-again">تحديث</button>';
+          '<button class="btn btn-primary btn-block mosque-again" data-act="mosques-again">تحديث</button>';
       }
     });
   }
