@@ -5601,8 +5601,8 @@ test('the mosques are found around the reader and measured from them', () => {
   assert.strictEqual(win.App.helpers.farLabel(1400), '1.4 كم');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function findMosques\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf('around:3000,') !== -1, 'three kilometres about the reader');
+  const fn = /function findMosques\(around\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('around:3000,') !== -1, 'three kilometres about wherever the map looks');
   assert.ok(fn.indexOf('"religion"="muslim"') !== -1);
   assert.ok(fn.indexOf("['name:ar']") !== -1, 'the arabic name where the map carries one');
   assert.ok(fn.indexOf('found.sort') !== -1, 'nearest first');
@@ -6089,4 +6089,53 @@ test('the reader chooses whether hours run to twelve or to twenty four', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.match(app, /function clockText\(minutes\) \{[\s\S]*?Store\.get\('clock'\) === '24'/,
     'the one place that writes an hour asks the reader\'s choice');
+});
+
+test('the map can be dragged, and looks around wherever it settles', () => {
+  const { win } = boot();
+  /* a place turned into a tile and back must be the same place, or the map
+     would drift a little further every time it is dragged */
+  const t = win.App.helpers.toTile(29.38, 47.98, 15);
+  const back = win.App.helpers.fromTile(t.x, t.y, 15);
+  assert.ok(Math.abs(back.lat - 29.38) < 0.00001 && Math.abs(back.lng - 47.98) < 0.00001,
+    'got ' + back.lat + ',' + back.lng);
+  /* dragging by a known number of pixels moves it a known distance */
+  const moved = win.App.helpers.fromTile(t.x - 150 / 256, t.y - 120 / 256, 15);
+  const far = win.App.helpers.metresBetween({ lat: 29.38, lng: 47.98 }, moved);
+  assert.ok(far > 600 && far < 1000, 'about eight hundred metres, got ' + far);
+
+  /* it looks again only when the map has really moved, so a nudge does not
+     ask the open map for the same answer over and over */
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.lookedAt = { lat: 29.38, lng: 47.98 };
+  win.App.state.mapAt = { lat: 29.3805, lng: 47.9805 };
+  win.App.helpers.lookAround();
+  assert.strictEqual(win.App.state.lookedAt.lat, 29.38, 'a seventy metre nudge is left alone');
+  win.App.state.mapAt = moved;
+  win.App.helpers.lookAround();
+  assert.strictEqual(win.App.state.lookedAt.lat, moved.lat, 'a real move is followed');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("map.addEventListener('pointermove'") !== -1, 'the map takes a finger');
+  assert.ok(app.indexOf("e.target.closest('.map-pin')") !== -1, 'and a press on a mosque is not a drag');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.map \{ touch-action: none;/, 'so the page does not scroll under the finger');
+  /* the search takes a centre rather than always the reader's own place */
+  assert.ok(/function findMosques\(around\) \{/.test(app));
+});
+
+test('pressing a mosque brings its row into view', () => {
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [
+    { n: 'الأول', lat: 29.3806, lng: 47.9805, far: 78 },
+    { n: 'الثاني', lat: 29.3815, lng: 47.9812, far: 191 },
+    { n: 'الثالث', lat: 29.382, lng: 47.982, far: 260 }
+  ];
+  win.App.go('mosques');
+  win.App.helpers.lookAtMosque(2);
+  const row = doc.querySelector('#mosque-list .row.is-now');
+  assert.ok(row, 'the row is marked');
+  assert.ok(row.textContent.indexOf('الثالث') !== -1, 'and it is the one pressed');
+  assert.strictEqual(doc.querySelectorAll('#mosque-list .row.is-now').length, 1, 'only that one');
 });
