@@ -6485,3 +6485,26 @@ test('ليلة الجمعة is reminded after the maghrib of thursday, once a we
   assert.strictEqual(win.Store.get('jumuahNight'), false);
   assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'ليلة الجمعة'; }).length, 0);
 });
+
+test('the night of jumuah is not put off a week because its moment passed', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the night runs from the maghrib of thursday to the fajr of friday */
+  const window = /function inJumuahNight\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(window.indexOf('now.getDay() === 4') !== -1 && window.indexOf('minutes >= t.maghrib') !== -1);
+  assert.ok(window.indexOf('now.getDay() === 5') !== -1 && window.indexOf('minutes < f.fajr') !== -1);
+  /* opened late in that night, the reminder is still owed tonight */
+  assert.ok(app.indexOf("if (at <= Date.now() && d === 0 && inJumuahNight()) at = Date.now() + 120000;") !== -1,
+    'a reminder of this night must not arrive next week');
+
+  const { win, doc } = boot();
+  /* and the app greets the night when opened in it, once */
+  const sheet = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(sheet.indexOf('jumuahNightShown') !== -1, 'shown once for that night');
+  assert.ok(sheet.indexOf('night.getDate() - 1') !== -1,
+    'and after midnight it is still the same night, so it is marked by the thursday');
+  ['الصلاة على النبي', 'سورة الكهف', 'ساعة لا يُرد فيها سائل', 'بكّر إلى المسجد'].forEach(function (line) {
+    assert.ok(sheet.indexOf(line) !== -1, 'the sunnahs should include ' + line);
+  });
+  assert.ok(sheet.indexOf('open-kahf') !== -1, 'with al-kahf one press away');
+  void win; void doc;
+});

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.26.1';
+  var VERSION = '8.27.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -656,7 +656,7 @@
       dismissBootSplash(!!app);
       window.setTimeout(function () {
         maybeExplainChrome();
-        if (!maybeEidSheet() && !maybeFridaySheet()) maybeAskPlace();
+        if (!maybeEidSheet() && !maybeJumuahNightSheet() && !maybeFridaySheet()) maybeAskPlace();
       }, 1500);
     }
   }
@@ -2801,6 +2801,21 @@
     return false;
   }
 
+  /* ليلة الجمعة runs from the maghrib of thursday to the fajr of friday */
+  function inJumuahNight() {
+    var now = new Date();
+    var minutes = now.getHours() * 60 + now.getMinutes();
+    if (now.getDay() === 4) {
+      var t = computeTimes(now);
+      return typeof t.maghrib === 'number' && minutes >= t.maghrib;
+    }
+    if (now.getDay() === 5) {
+      var f = computeTimes(now);
+      return typeof f.fajr === 'number' && minutes < f.fajr;
+    }
+    return false;
+  }
+
   function reminderList() {
     var out = [];
     var now = new Date();
@@ -2835,8 +2850,13 @@
         var eve = computeTimes(day);
         if (typeof eve.maghrib === 'number') {
           var atEve = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eve.maghrib + 15, 0, 0);
-          if (atEve.getTime() > Date.now()) {
-            out.push({ at: atEve.getTime(), t: 'ليلة الجمعة',
+          /* if the night has begun and its moment has passed, the reminder is
+             still owed tonight: putting it off a whole week because the app
+             was opened late is not a reminder of this night at all */
+          var at = atEve.getTime();
+          if (at <= Date.now() && d === 0 && inJumuahNight()) at = Date.now() + 120000;
+          if (at > Date.now()) {
+            out.push({ at: at, t: 'ليلة الجمعة',
               b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
           }
         }
@@ -2877,6 +2897,27 @@
   /* On a friday the app opens with the two sunnahs of the day before it: the
      prayers upon the Prophet ﷺ, and the reading of al-Kahf. Shown once a day,
      and only if the reader has left it on. */
+  /* Opened during the night of jumuah, the app says so and offers its sunnahs,
+     once for that night. */
+  function maybeJumuahNightSheet() {
+    if (!Store.get('jumuahNight') || !inJumuahNight()) return false;
+    var night = new Date();
+    if (night.getDay() === 5) night = new Date(night.getFullYear(), night.getMonth(), night.getDate() - 1);
+    var mark = night.toDateString();
+    if (Store.get('jumuahNightShown') === mark) return false;
+    Store.set('jumuahNightShown', mark);
+    openSheet('ليلة الجمعة',
+      '<p class="setting-note">من مغرب الخميس إلى فجر الجمعة</p>' +
+      ['أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه',
+       'اقرأ سورة الكهف، وتُجزئ ليلة الجمعة ويومها',
+       'أكثِر من الدعاء، ففي الجمعة ساعة لا يُرد فيها سائل',
+       'اغتسل غداً وتطيّب وبكّر إلى المسجد'].map(function (line) {
+        return '<div class="dua-line"><span class="dua-text">' + esc(line) + '</span></div>';
+      }).join('') +
+      '<button class="btn btn-primary btn-block" data-act="open-kahf" style="margin-top:14px">افتح سورة الكهف</button>');
+    return true;
+  }
+
   function maybeFridaySheet() {
     if (!Store.get('friday')) return false;
     var now = new Date();
@@ -5026,6 +5067,7 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
+    'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     'listen-as': function (ref) {
       var parts = ref.split(':');
       var how = parts[0], n = +parts[1];
@@ -5913,7 +5955,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,

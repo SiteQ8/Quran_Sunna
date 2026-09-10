@@ -38,6 +38,7 @@
     wirdAt: '',
     jumuahBefore: 0,
     jumuahNight: true,
+    jumuahNightShown: '',
     qadaDone: {},
     afterPrayerOff: false,
     afterPrayerShown: '',
