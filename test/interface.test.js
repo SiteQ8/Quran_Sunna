@@ -6342,3 +6342,27 @@ test('nothing a reader sees claims the source is open, because it is not', () =>
     assert.ok(page.indexOf('mailto:Site@hotmail.com') !== -1, 'the email is offered as a link');
   });
 });
+
+test('the app does not promise that nothing ever leaves the device', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
+  /* recitations, tafsir and the mosques all reach for the network, so a flat
+     promise is false wherever it is written, however small the print */
+  assert.ok(html.indexOf('فلا يغادر أي شيء إلى خادم') === -1);
+  assert.ok(policy.indexOf('لا يجمع التطبيق أي بيانات ولا يرسل شيئاً عن مستخدمه') === -1,
+    'not even in the page description, which nobody reads but search engines quote');
+  /* and what does reach out is listed, all of it */
+  ['cdn.islamic.network', 'mp3quran.net', 'api.alquran.cloud', 'openstreetmap.org', 'overpass-api.de']
+    .forEach(function (host) {
+      assert.ok(policy.indexOf(host) !== -1, host + ' is used but not named in the policy');
+    });
+  /* every outside host the code actually reaches is one the policy names */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const hosts = [...new Set([...app.matchAll(/https:\/\/([a-z0-9.-]+)\//g)].map(function (m) { return m[1]; }))]
+    .filter(function (h) { return !/3li\.info|github|openstreetmap\.org$/.test(h); });
+  hosts.forEach(function (h) {
+    const stem = h.replace(/^server\d+\./, '').replace(/^tile\./, '').replace(/^api\./, '');
+    assert.ok(policy.indexOf(stem) !== -1 || policy.indexOf(h) !== -1,
+      h + ' is reached by the app but never named in the policy');
+  });
+});
