@@ -5673,7 +5673,7 @@ test('handing the interval over again does not push the reminder further away', 
 test('every mark the app names is drawn, and the umrah stages each wear their own', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const drawn = [...html.matchAll(/<g id="(i-[a-z-]+)"/g)].map(function (m) { return m[1]; });
-  ['i-ihram', 'i-tent', 'i-mount', 'i-pillar', 'i-stones', 'i-water', 'i-scissors', 'i-minaret', 'i-plane']
+  ['i-ihram', 'i-tent', 'i-mount', 'i-pillar', 'i-stones', 'i-water', 'i-scissors', 'i-dua', 'i-plane']
     .forEach(function (name) { assert.ok(drawn.indexOf(name) !== -1, 'missing ' + name); });
   /* nothing is named that was never drawn */
   const named = [...html.matchAll(/href="#(i-[a-z-]+)"/g)].map(function (m) { return m[1]; });
@@ -5686,4 +5686,21 @@ test('every mark the app names is drawn, and the umrah stages each wear their ow
   assert.strictEqual(marks.join(' '), '#i-water #i-ihram #i-kaaba #i-mount #i-scissors',
     'the washing, the ihram, the kaaba, the walk and the cutting');
   marks.forEach(function (m) { assert.ok(drawn.indexOf(m.slice(1)) !== -1, m + ' is not drawn'); });
+});
+
+test('no two entries in a list wear the same mark', () => {
+  const { win, doc } = boot();
+  win.App.go('home');
+  const tiles = [...doc.querySelectorAll('#home-tiles .tile use')].map(function (u) { return u.getAttribute('href'); });
+  assert.strictEqual(new Set(tiles).size, tiles.length,
+    'two sections looked alike: ' + tiles.filter(function (t, i) { return tiles.indexOf(t) !== i; }).join(' '));
+  win.App.go('more');
+  const rows = [...doc.querySelectorAll('#more-list .row use')].map(function (u) { return u.getAttribute('href'); });
+  assert.strictEqual(new Set(rows).size, rows.length,
+    'two rows looked alike: ' + rows.filter(function (r, i) { return rows.indexOf(r) !== i; }).join(' '));
+  /* the umrah wears the pilgrim and the mosques wear a mosque; they were once
+     the same drawing, which read as one thing being two */
+  assert.ok(tiles.indexOf('#i-ihram') !== -1 && tiles.indexOf('#i-mosque') !== -1);
+  assert.ok(tiles.indexOf('#i-dua') !== -1 && tiles.indexOf('#i-hands') !== -1,
+    'the raised palm for the adhkar and the cupped hands for the supplications');
 });
