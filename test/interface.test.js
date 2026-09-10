@@ -6193,3 +6193,26 @@ test('when no mosque is found, the reader may ask again', () => {
   assert.ok(app.indexOf("تعذّر جلب المساجد، تحقّق من اتصالك") !== -1);
   assert.ok(/تعذّر جلب المساجد[\s\S]{0,140}mosques-again/.test(app), 'with a way to try once more');
 });
+
+test('a mosque on the map can actually be pressed', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the layer over the map lets presses through to the map beneath, so a pin
+     that does not take them back cannot be pressed at all: calling click() in
+     a test passes anyway, which is how this went unnoticed */
+  assert.match(css, /\.map-pins \{[^}]*pointer-events: none/);
+  assert.match(css, /\.map-pin \{ pointer-events: auto;/,
+    'the pin itself must take presses back, or a finger never reaches it');
+  /* and it is big enough to hit */
+  const size = /\.map-pin \{[^}]*width: (\d+)px/.exec(css);
+  assert.ok(size && Number(size[1]) >= 34, 'a pin should be at least 34px, got ' + (size && size[1]));
+
+  const { win, doc } = boot();
+  win.App.helpers.setPlace({ n: 'x', lat: 29.38, lng: 47.98, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' }, true);
+  win.App.state.mosques = [{ n: 'الأول', lat: 29.3806, lng: 47.9805, far: 78 }];
+  win.App.go('mosques');
+  /* the pin is a button carrying the mosque and where the press came from */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('<button class="map-pin') !== -1, 'it is a button, not a mark');
+  assert.ok(app.indexOf('data-act="mosque-look"') !== -1);
+  void doc;
+});
