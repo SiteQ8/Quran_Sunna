@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.35.0';
+  var VERSION = '8.36.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3069,7 +3069,7 @@
       var blocks = items.map(function (line) { return wrapWords(ctx, line, inner); });
       var height = 0;
       blocks.forEach(function (b) { height += b.length * 54 + 44 + GAP; });
-      var H = PAD + 190 + height + 210;
+      var H = PAD + 190 + height + 250;
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
@@ -3109,19 +3109,41 @@
         y += tall + GAP;
       });
 
-      cardStar(ctx, W / 2, H - PAD - 78, 13);
+      cardStar(ctx, W / 2, H - PAD - 150, 13);
       ctx.fillStyle = '#8b9691';
       ctx.font = "400 27px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 20);
-      ctx.fillStyle = '#a8b1ad';
-      ctx.font = "400 23px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('على Google Play، وقريباً App Store', W / 2, H - PAD + 26);
+      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 116);
 
-      return new Promise(function (resolve) {
-        if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
-        else resolve(null);
+      /* the two store badges, drawn as they are given rather than described */
+      return badges().then(function (marks) {
+        var tall = 62, gap = 22;
+        var widths = marks.map(function (m) { return m ? Math.round(m.width * tall / m.height) : 0; });
+        var whole = widths.reduce(function (a, b) { return a + b; }, 0) + (marks.length - 1) * gap;
+        var x = Math.round((W - whole) / 2);
+        var y = H - PAD - 88;
+        marks.forEach(function (m, i) {
+          if (m) ctx.drawImage(m, x, y, widths[i], tall);
+          x += widths[i] + gap;
+        });
+        return new Promise(function (resolve) {
+          if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
+          else resolve(null);
+        });
       });
     });
+  }
+
+  /* the store badges, as their owners publish them */
+  function badges() {
+    var files = ['icons/badge-googleplay.png', 'icons/badge-appstore.png'];
+    return Promise.all(files.map(function (src) {
+      return new Promise(function (resolve) {
+        var img = new window.Image();
+        img.onload = function () { resolve(img); };
+        img.onerror = function () { resolve(null); };
+        img.src = src;
+      });
+    }));
   }
 
   function wrapWords(context, text, maxWidth) {

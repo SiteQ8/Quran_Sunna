@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.35.0';
+var VERSION = 'sunnati-v8.36.0';
 
 var SHELL = [
   './',
@@ -33,6 +33,8 @@ var SHELL = [
   './audio/salawat/ibrahimiyya.mp3',
   './data/content.js',
   './data/extras.js',
+  './icons/badge-googleplay.png',
+  './icons/badge-appstore.png',
   './data/mushaf.json',
   './data/madinah-lines.json',
   './manifest.webmanifest',
