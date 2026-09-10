@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.36.2';
+  var VERSION = '8.37.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3648,7 +3648,9 @@
     renderHisn();
     var host = $('azkar-groups');
     if (!host) return;
-    host.innerHTML = azkarSections().map(function (row) {
+    host.innerHTML = azkarSections().filter(function (row) {
+      return !isPlaceDua(row.def.title);
+    }).map(function (row) {
       var p = Store.azkarProgress(row.key, row.def.items.length);
       return '<button class="tile" data-azkar="' + esc(row.key) + '">' +
         '<span class="tile-glyph">' + icon(row.def.icon) + '</span>' +
@@ -4676,7 +4678,26 @@
     }).join('');
   }
 
+  /* a chapter whose very name is a du'a belongs on the du'a screen */
+  function isPlaceDua(title) {
+    return String(title || '').indexOf('دعاء') === 0;
+  }
+
+  function renderDuaPlaces() {
+    var host = $('dua-places');
+    if (!host) return;
+    var rows = azkarSections().filter(function (row) { return isPlaceDua(row.def.title); });
+    host.innerHTML = rows.map(function (row) {
+      var p = Store.azkarProgress(row.key, row.def.items.length);
+      return '<button class="tile" data-azkar="' + esc(row.key) + '">' +
+        '<span class="tile-glyph">' + icon(row.def.icon) + '</span>' +
+        '<span class="tile-name">' + esc(row.def.title) + '</span>' +
+        '<span class="tile-note">' + ar(p.done) + ' من ' + ar(row.def.items.length) + '</span></button>';
+    }).join('');
+  }
+
   function renderDua() {
+    renderDuaPlaces();
     var host = $('dua-list');
     if (!host || typeof DUAS === 'undefined') return;
     host.innerHTML = DUAS.map(function (group, gi) {
@@ -6252,7 +6273,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
