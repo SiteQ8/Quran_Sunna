@@ -80,6 +80,13 @@ public final class Bridge {
         });
     }
 
+    /** Whether something is sounding, so the app knows not to pause the page
+     *  when the reader leaves it. */
+    @JavascriptInterface
+    public void setSounding(boolean on) {
+        if (host instanceof MainActivity) ((MainActivity) host).sounding = on;
+    }
+
     @JavascriptInterface
     public boolean canNotify() {
         return androidx_areNotificationsEnabled();
