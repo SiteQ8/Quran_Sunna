@@ -544,12 +544,14 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   background: var(--sunken); border: 1px solid var(--line); }
 .map-tiles { position: absolute; inset: 0; }
 .map-tiles img { position: absolute; width: 256px; height: 256px; }
+/* the layer lets presses through to the map beneath, but a mosque itself is
+   pressed, so it takes them back */
 .map-pins { position: absolute; inset: 0; pointer-events: none; }
-.map-pin { position: absolute; width: 28px; height: 28px; margin: -28px 0 0 -14px;
+.map-pin { pointer-events: auto; position: absolute; width: 34px; height: 34px; margin: -34px 0 0 -17px;
   display: grid; place-items: center; border-radius: 50% 50% 50% 4px;
   transform: rotate(-45deg); background: var(--accent-solid); color: var(--on-accent);
   box-shadow: 0 2px 6px rgba(0,0,0,.3); }
-.map-pin .icon { width: 15px; height: 15px; transform: rotate(45deg); }
+.map-pin .icon { width: 18px; height: 18px; transform: rotate(45deg); }
 .map-me { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
   background: #2f7fc0; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(47,127,192,.4); }
 .map-zoom { position: absolute; inset-inline-end: 10px; top: 10px; width: 40px; height: 40px;
