@@ -6861,3 +6861,21 @@ test('the month of fasting is named in full', () => {
   assert.ok(/'رجب', 'شعبان', 'رمضان', 'شوال'/.test(hijri), 'the month list is unchanged');
   void win;
 });
+
+test('the splash artwork is drawn with the real face, and the build refuses otherwise', () => {
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
+  /* a page made with setContent has no origin, so the browser refused the
+     font fetched over http://localhost and drew the name in the system face */
+  assert.ok(tool.indexOf("'http://localhost") === -1, 'the face is not fetched over a socket');
+  assert.ok(tool.indexOf("'data:font/woff2;base64,'") !== -1, 'it is carried in the page itself');
+  assert.ok(tool.indexOf('document.fonts.check("600 108px Plex")') !== -1,
+    'and the render is checked before anything is written');
+  assert.ok(tool.indexOf('the splash would be drawn in the wrong font') !== -1,
+    'a build that lost the face must fail loudly, not ship quietly');
+  /* the artwork exists at every density */
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi'].forEach(function (d) {
+    const f = path.join(__dirname, '..', 'android/app/src/main/res/drawable-' + d + '/splash_art.png');
+    assert.ok(fs.existsSync(f), 'missing splash for ' + d);
+    assert.ok(fs.statSync(f).size > 2000, 'splash for ' + d + ' looks empty');
+  });
+});
