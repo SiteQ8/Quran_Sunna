@@ -91,13 +91,6 @@
       "label": "المواقيت وسنن الوقت"
     },
     {
-      "src": "screens/prayers.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "صلاتي، صلواتك الخمس وشهرك"
-    },
-    {
       "src": "screens/page.png",
       "sizes": "1080x1920",
       "type": "image/png",
@@ -105,11 +98,18 @@
       "label": "المصحف صفحة صفحة"
     },
     {
-      "src": "screens/azkar.png",
+      "src": "screens/prayers.png",
       "sizes": "1080x1920",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "أذكار الوقت"
+      "label": "صلاتي، صلواتك الخمس وشهرك"
+    },
+    {
+      "src": "screens/dua.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "الأدعية بمواضيعها"
     },
     {
       "src": "screens/hisn.png",
@@ -117,6 +117,13 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "حصن المسلم بأبوابه"
+    },
+    {
+      "src": "screens/umrah.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "صفة العمرة خطوة خطوة"
     },
     {
       "src": "screens/tracker.png",
@@ -131,13 +138,6 @@
       "type": "image/png",
       "form_factor": "narrow",
       "label": "التقويم الهجري"
-    },
-    {
-      "src": "screens/qibla.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "القبلة"
     }
   ],
   "shortcuts": [

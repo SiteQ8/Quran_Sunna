@@ -5,6 +5,7 @@ import { chromium } from '/tmp/node_modules/playwright-core/index.mjs';
 
 const SHOTS = [
   ['home', (p) => p.evaluate(() => App.go('home'))],
+  ['page', (p) => p.evaluate(() => App.helpers.openPage(249))],
   ['prayers', (p) => p.evaluate(() => {
     const d = new Date();
     const day = (n) => new Date(d.getFullYear(), d.getMonth(), d.getDate() - n);
@@ -13,12 +14,14 @@ const SHOTS = [
     Store.setPrayer('fajr', 'jamaah'); Store.setPrayer('dhuhr', 'jamaah'); Store.setPrayer('asr', 'ontime');
     App.go('prayers');
   })],
-  ['page', (p) => p.evaluate(() => App.helpers.openPage(249))],
-  ['azkar', (p) => p.evaluate(() => App.go('azkar'))],
+  ['dua', (p) => p.evaluate(() => App.go('dua'))],
   ['hisn', (p) => p.evaluate(() => { App.state.hisn = 27; App.go('hisn'); })],
+  ['umrah', (p) => p.evaluate(() => {
+    Store.set('umrah', { 'before:0': 1, 'before:1': 1, 'before:2': 1 });
+    App.go('umrah');
+  })],
   ['tracker', (p) => p.evaluate(() => App.go('tracker'))],
-  ['calendar', (p) => p.evaluate(() => App.go('calendar'))],
-  ['qibla', (p) => p.evaluate(() => App.go('qibla'))]
+  ['calendar', (p) => p.evaluate(() => App.go('calendar'))]
 ];
 
 const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
@@ -33,7 +36,7 @@ await p.evaluate(() => {
   Store.set('lastRead', { s: 18, a: 10 });
   Store.setBookmark && null;
   const st = document.createElement('style');
-  st.textContent = '#banner{display:none!important}#toast{display:none!important}';
+  st.textContent = '#banner,#toast,.toast,#sheet{display:none!important}';
   document.head.appendChild(st);
 });
 await p.clock.runFor(1500);
