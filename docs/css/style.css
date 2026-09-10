@@ -565,6 +565,14 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #mosque-list .row-body { text-align: start; }
 .mosque-far { font-variant-numeric: tabular-nums; }
 
+/* Choices of equal width, laid in a grid rather than pills of every size
+   breaking across lines with a ragged edge. */
+.pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
+.pick-grid .chip { width: 100%; padding: 0 4px; font-size: .78rem; }
+#tasbih-phrases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+#tasbih-phrases .chip { width: 100%; padding: 0 8px; font-size: .82rem; }
+#tasbih-phrases .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
+
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;

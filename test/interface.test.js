@@ -5946,3 +5946,37 @@ test('a recitation carries on when the reader leaves the app', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(/function stopAudio\(\) \{\s*tellAppSounding\(false\);/.test(app), 'and says so the moment it stops');
 });
+
+test('a surah asked for by name is offered before the verses its name falls in', () => {
+  const { win, doc } = boot();
+  /* someone typing طه wants the surah, not only the verses the word appears in */
+  const named = win.App.helpers.surahsNamed(win.Mushaf.normalize('طه'));
+  assert.ok(named.length >= 1, 'ta-ha should be found by its name');
+  assert.strictEqual(named[0].n, 20);
+  win.App.go('search');
+  const field = doc.getElementById('quran-search');
+  field.value = 'طه';
+  fire(win, field, 'input');
+  const row = doc.querySelector('#search-results [data-open-surah]');
+  assert.ok(row, 'and offered at the head of the results');
+  assert.strictEqual(row.getAttribute('data-open-surah'), '20');
+  assert.ok(row.textContent.indexOf('سورة طه') !== -1);
+  click(win, row);
+  assert.strictEqual(win.App.state.view, 'reader');
+  assert.strictEqual(win.App.state.surah, 20);
+  /* a number finds its surah too */
+  assert.strictEqual(win.App.helpers.surahsNamed('36')[0].n, 36);
+});
+
+test('choices are laid in an even grid, not pills of every width', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.pick-grid \{[^}]*grid-template-columns: repeat\(4, 1fr\)/,
+    'the search scopes, four to a row');
+  assert.match(css, /#tasbih-phrases \{[^}]*grid-template-columns: 1fr 1fr/, 'the dhikr, two to a row');
+  assert.match(css, /#tasbih-phrases \.chip:last-child:nth-child\(odd\) \{ grid-column: 1 \/ -1; \}/,
+    'and an odd last one fills its row rather than leaving a hole');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<div class="pick-grid" id="search-scope"') !== -1);
+  const { doc } = boot();
+  assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
+});
