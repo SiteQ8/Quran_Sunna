@@ -6555,7 +6555,7 @@ test('a shared list is drawn in pills, in the app\'s own face, and names the app
   assert.ok(fn.indexOf('cardColours()') !== -1);
   /* and it signs itself with the app's full name */
   assert.ok(fn.indexOf('تطبيق سُنّتي · 3li.info') !== -1);
-  assert.ok(fn.indexOf('على Google Play، وقريباً App Store') !== -1);
+  assert.ok(fn.indexOf('badges()') !== -1, 'the stores are shown as their own badges');
   /* nowhere does a picture sign itself with the bare name */
   assert.ok(app.indexOf("'سُنّتي، 3li.info'") === -1, 'the app names itself in full');
 });
@@ -6710,13 +6710,14 @@ test('the splash writes the app\'s name in the app\'s own face', () => {
      stylesheet to arrive: it is declared in the head itself */
   assert.ok(head.indexOf("src: url('fonts/plex-arabic-600-arabic.woff2') format('woff2');") !== -1,
     'the face is declared before anything else loads');
+  assert.ok(head.indexOf("font-family: 'Sunnati Splash';") !== -1, 'under a name of its own');
   assert.ok(/font-weight: 600; font-display: block;/.test(head),
     'and holds the word back until it is ready rather than flashing a wrong face');
   assert.ok(head.indexOf('<link rel="preload" href="fonts/plex-arabic-600-arabic.woff2"') !== -1,
     'and it is fetched at once');
   /* the weight the splash asks for is the weight declared */
   const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html)[1];
-  assert.ok(splash.indexOf("font:600 30px/1 'IBM Plex Sans Arabic'") !== -1,
+  assert.ok(splash.indexOf("font:600 30px/1 'Sunnati Splash'") !== -1,
     'the splash asks for that very face and weight');
   assert.ok(splash.indexOf('سُنّتي') !== -1);
   /* the declaration comes before the splash it serves */
@@ -6767,4 +6768,34 @@ test('the sunnahs of friday are offered like those of its night', () => {
   const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
   assert.ok(store.indexOf('fridayShown') === -1);
   assert.ok(store.indexOf('fridayAt: 0') !== -1);
+});
+
+test('the shared card carries the store badges as pictures, from their proper sources', () => {
+  ['badge-googleplay.png', 'badge-appstore.png'].forEach(function (f) {
+    assert.ok(fs.existsSync(path.join(DOCS, 'icons', f)), 'missing badge ' + f);
+  });
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function badges\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf("'icons/badge-googleplay.png', 'icons/badge-appstore.png'") !== -1);
+  /* a badge that fails to load must not take the card with it */
+  assert.ok(fn.indexOf('img.onerror = function () { resolve(null); };') !== -1);
+  const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(card.indexOf('ctx.drawImage(m, x, y, widths[i], tall)') !== -1, 'drawn, not described');
+  assert.ok(card.indexOf('على Google Play، وقريباً App Store') === -1, 'the text line is replaced');
+  /* and they are kept for a card made without a network */
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  ['badge-googleplay.png', 'badge-appstore.png'].forEach(function (f) {
+    assert.ok(sw.indexOf(f) !== -1, f + ' is not kept for offline');
+  });
+});
+
+test('the splash face cannot be overridden by the stylesheet that loads after it', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* declaring it under the app's own family name let fonts.css redeclare that
+     same family and weight afterwards, taking font-display with it */
+  assert.ok(html.indexOf("font-family: 'Sunnati Splash';") !== -1, 'a name of its own');
+  assert.ok(html.indexOf("font:600 30px/1 'Sunnati Splash'") !== -1, 'and the splash asks for it first');
+  const fonts = fs.readFileSync(path.join(DOCS, 'css', 'fonts.css'), 'utf8');
+  assert.ok(fonts.indexOf('Sunnati Splash') === -1, 'nothing else declares that name');
+  assert.ok(html.indexOf("font-display: block") !== -1, 'and it holds the word until the face is ready');
 });
