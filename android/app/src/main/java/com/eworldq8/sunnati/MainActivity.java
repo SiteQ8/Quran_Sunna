@@ -7,6 +7,7 @@ import android.app.DownloadManager;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.Environment;
+import android.widget.FrameLayout;
 import android.webkit.DownloadListener;
 import android.webkit.URLUtil;
 import android.content.res.Configuration;
@@ -41,6 +42,9 @@ public class MainActivity extends Activity {
     private static final int ASK_LOCATION = 8;
 
     private WebView web;
+    private FrameLayout root;
+    private SplashView splash;
+    private boolean splashGone;
     private OnBackInvokedCallback back;
     private GeolocationPermissions.Callback pendingLocation;
     private String pendingLocationOrigin;
@@ -101,11 +105,28 @@ public class MainActivity extends Activity {
         });
         /* The clock, the battery and the signal stay where the reader expects
            them, and the app sits beneath that bar rather than under it, so no
-           word and no camera cutout ever falls on the page. */
-        setContentView(web);
+           word and no camera cutout ever falls on the page. The page is put
+           inside a frame that the framework itself insets: asking the web view
+           to do it by hand did not hold on every version of android. */
+        root = new FrameLayout(this);
+        root.setFitsSystemWindows(true);
+        boolean dark = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
+            == Configuration.UI_MODE_NIGHT_YES;
+        root.setBackgroundColor(dark ? 0xFF10161A : 0xFFF6F4EE);
+        root.addView(web, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        splash = new SplashView(this);
+        root.addView(splash, new FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
+        setContentView(root);
         web.setFitsSystemWindows(false);
+        getWindow().setDecorFitsSystemWindows(false);
         dressSystemBars();
-        insetBelowTheBars(web);
+        keepKeyboardClear(root);
+        /* the splash never outstays its welcome, however slow the page is */
+        root.postDelayed(new Runnable() {
+            @Override public void run() { dismissSplash(); }
+        }, 4000);
 
         try {
             AdhanReceiver.ensureChannels(this);
@@ -198,8 +219,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    /* The bars keep their room and the page keeps the rest, the keyboard too. */
-    private void insetBelowTheBars(final View view) {
+    /* The frame is inset by the framework, so only the keyboard is left to
+       handle: it must lift the page rather than cover what is being typed. */
+    private void keepKeyboardClear(final View view) {
         view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
@@ -209,6 +231,20 @@ public class MainActivity extends Activity {
                 return WindowInsets.CONSUMED;
             }
         });
+    }
+
+    /** Fades the splash away once the page says it is ready, or when the wait
+     *  has gone on long enough. Called from either, so it guards itself. */
+    void dismissSplash() {
+        if (splash == null || splashGone) return;
+        splashGone = true;
+        splash.animate().alpha(0f).setDuration(420).withEndAction(new Runnable() {
+            @Override
+            public void run() {
+                if (root != null && splash != null) root.removeView(splash);
+                splash = null;
+            }
+        }).start();
     }
 
     @Override

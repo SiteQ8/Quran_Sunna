@@ -70,6 +70,16 @@ public final class Bridge {
     @JavascriptInterface
     public void setReminders(String json) { NoteScheduler.setAll(host, json); }
 
+    /** The page telling the app it has painted, so the splash may go. */
+    @JavascriptInterface
+    public void pageReady() {
+        host.runOnUiThread(new Runnable() {
+            @Override public void run() {
+                if (host instanceof MainActivity) ((MainActivity) host).dismissSplash();
+            }
+        });
+    }
+
     @JavascriptInterface
     public boolean canNotify() {
         return androidx_areNotificationsEnabled();
