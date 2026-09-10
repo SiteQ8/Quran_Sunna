@@ -4430,6 +4430,8 @@ test('the pause button becomes a play button when the sound is paused, and back'
     const clip = { paused: true, src: '', play: function () { clip.paused = false; if (clip.onplay) clip.onplay(); return Promise.resolve(); }, pause: function () { clip.paused = true; if (clip.onpause) clip.onpause(); }, removeAttribute: function () {}, load: function () {} };
     clips.push(clip); return clip;
   };
+  /* pressing استمع now asks how to listen, so the choice is stated first */
+  win.Store.set('listenAs', 'whole');
   win.App.state.surah = 112; win.App.go('reader');
   click(win, doc.getElementById('reader-play'));
   const btn = doc.getElementById('player-toggle');
@@ -6379,4 +6381,42 @@ test('the handover names only files that are really there', () => {
   /* and it must not repeat the claim we removed from the app */
   assert.ok(doc.indexOf('مفتوح المصدر') !== -1, 'it should mention the matter');
   assert.ok(doc.indexOf('ليس مفتوح المصدر') !== -1, 'and say plainly that it is not');
+});
+
+test('the reader chooses how to listen to a surah, and the choice can be kept', () => {
+  const { win, doc } = boot();
+  win.Store.set('reciter', 'ar.minshawi');
+  win.App.state.surah = 112;
+  win.App.go('reader');
+  /* the two ways are not the same thing, so the reader is asked which he wants */
+  win.App.helpers.playSurah(112);
+  assert.strictEqual(doc.getElementById('sheet-title').textContent, 'كيف تستمع؟');
+  const choices = [...doc.querySelectorAll('[data-act="listen-as"]')].map(function (b) { return b.textContent; });
+  assert.deepStrictEqual(choices, ['استماع متّصل', 'تتبّع الآيات']);
+  /* each says plainly what it costs */
+  const sheet = doc.getElementById('sheet').textContent;
+  assert.ok(sheet.indexOf('بلا وقفة') !== -1 && sheet.indexOf('من غير تعليم الآيات') !== -1);
+  assert.ok(sheet.indexOf('تُعلَّم كل آية') !== -1 && sheet.indexOf('وقفة يسيرة') !== -1);
+
+  /* without being kept, it asks again */
+  click(win, doc.querySelector('[data-act="listen-as"][data-ref^="follow"]'));
+  assert.strictEqual(win.Store.get('listenAs'), '', 'nothing is kept unless asked');
+  /* kept, it is obeyed and the asking stops */
+  win.Store.set('listenAs', 'whole');
+  win.App.helpers.playSurah(112);
+  assert.ok(!doc.getElementById('sheet').classList.contains('is-open'), 'no longer asked');
+  /* and it can be changed back in the settings */
+  win.App.go('settings');
+  const pick = doc.getElementById('settings-listen');
+  assert.ok(pick, 'the choice is offered in the settings too');
+  assert.strictEqual(pick.value, 'whole');
+  pick.value = '';
+  fire(win, pick, 'change');
+  assert.strictEqual(win.Store.get('listenAs'), '', 'back to being asked each time');
+});
+
+test('the about screen says how to reach the author once, not twice', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.strictEqual((html.match(/<h2>التواصل<\/h2>/g) || []).length, 1, 'one contact card, not two');
+  assert.strictEqual((html.match(/mailto:Site@hotmail\.com/g) || []).length, 1);
 });

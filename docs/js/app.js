@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.24.4';
+  var VERSION = '8.25.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2158,7 +2158,36 @@
     return base + three + '.mp3';
   }
 
+  /* Two ways to hear a surah, and they are not the same thing: the whole
+     recording runs unbroken but cannot know which verse is sounding, while
+     the walk marks each verse and turns the page but carries the silence at
+     the ends of every file. The reader chooses, and the choice is kept. */
   function playSurah(n) {
+    var whole = surahAudioUrl(n);
+    if (!whole) { reciteFrom(n, state.ayah || 1); return; }
+    var kept = Store.get('listenAs');
+    if (kept === 'follow') { reciteFrom(n, state.ayah || 1); return; }
+    if (kept === 'whole') { playWholeSurah(n); return; }
+    askHowToListen(n);
+  }
+
+  function askHowToListen(n) {
+    openSheet('كيف تستمع؟',
+      '<button class="btn btn-primary btn-block" data-act="listen-as" data-ref="whole:' + n + '">' +
+        'استماع متّصل</button>' +
+      '<p class="setting-note">تلاوة السورة كاملة بلا وقفة، من غير تعليم الآيات</p>' +
+      '<button class="btn btn-ghost btn-block" data-act="listen-as" data-ref="follow:' + n + '" style="margin-top:14px">' +
+        'تتبّع الآيات</button>' +
+      '<p class="setting-note">تُعلَّم كل آية وهي تُتلى وتنتقل الصفحة معها، وبينها وقفة يسيرة</p>' +
+      '<label class="setting" style="margin-top:16px"><span class="setting-label">لا تسألني ثانية</span>' +
+      '<button class="switch" id="listen-remember" role="switch" aria-checked="false" aria-label="لا تسألني ثانية"></button></label>');
+    bind('listen-remember', 'click', function () {
+      var on = $('listen-remember').getAttribute('aria-checked') !== 'true';
+      setSwitch($('listen-remember'), on);
+    });
+  }
+
+  function playWholeSurah(n) {
     var whole = surahAudioUrl(n);
     if (!whole) { reciteFrom(n, state.ayah || 1); return; }
     stopRecite();
@@ -4700,6 +4729,7 @@
     ], String(s.salawat || 0));
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
+    if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
@@ -4960,6 +4990,15 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
+    'listen-as': function (ref) {
+      var parts = ref.split(':');
+      var how = parts[0], n = +parts[1];
+      var remember = $('listen-remember') && $('listen-remember').getAttribute('aria-checked') === 'true';
+      if (remember) Store.set('listenAs', how);
+      closeSheet();
+      if (how === 'follow') reciteFrom(n, state.ayah || 1);
+      else playWholeSurah(n);
+    },
     'mosques-again': function () {
       /* asked for afresh, wherever the map is now looking */
       state.mosques = null;
@@ -5475,6 +5514,10 @@
     bind('home-azkar', 'click', function () { state.azkar = azkarForNow(); go('azkar'); });
     bind('home-share-times', 'click', function () { shareTimes(); });
 
+    bind('settings-listen', 'change', function (e) {
+      Store.set('listenAs', e.target.value);
+      toast(e.target.value ? 'سيُعمل بها في كل سورة' : 'ستُسأل كل مرة');
+    });
     bind('settings-clock', 'change', function (e) {
       Store.set('clock', e.target.value);
       renderHome();
@@ -5825,7 +5868,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: stopAudio,
+      renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: stopAudio,
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
