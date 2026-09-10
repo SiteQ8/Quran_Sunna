@@ -140,7 +140,7 @@
     if (h.m === 1 && h.d === 9) list.push({ key: 'tasua', name: 'يوم تاسوعاء', note: 'يستحب صيامه مع عاشوراء مخالفة لأهل الكتاب', kind: 'fast' });
     if (h.m === 1 && h.d === 10) list.push({ key: 'ashura', name: 'يوم عاشوراء', note: 'صيامه يكفر السنة الماضية', kind: 'fast' });
     if (h.m === 8 && h.d === 15) list.push({ key: 'shaban', name: 'منتصف شعبان', note: 'كان النبي ﷺ يكثر الصيام في شعبان', kind: 'fast' });
-    if (h.m === 9) list.push({ key: 'ramadan', name: 'رمضان', note: 'شهر الصيام والقيام ونزول القرآن', kind: 'month' });
+    if (h.m === 9) list.push({ key: 'ramadan', name: 'شهر رمضان المبارك', note: 'شهر الصيام والقيام ونزول القرآن', kind: 'month' });
     if (h.m === 9 && h.d >= 21 && h.d % 2 === 1) list.push({ key: 'laylatQadr', name: 'ليلة وترية في العشر الأواخر', note: 'تحرّوا ليلة القدر في الوتر من العشر الأواخر', kind: 'night' });
     if (h.m === 10 && h.d === 1) list.push({ key: 'eidFitr', name: 'عيد الفطر', note: 'يحرم صيامه وتسن صلاة العيد', kind: 'eid' });
     if (h.m === 10 && h.d >= 2 && h.d <= 8) list.push({ key: 'sixShawwal', name: 'ست من شوال', note: 'من صامها بعد رمضان فكأنما صام الدهر', kind: 'fast' });
