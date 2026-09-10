@@ -30,6 +30,7 @@
     readPace: 'mid',
     clock: '12',
     listenAs: '',
+    pageLayout: 'flow',
     friday: true,
     fridayShown: '',
     eidShown: '',

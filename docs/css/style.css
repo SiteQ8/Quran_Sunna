@@ -576,6 +576,20 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* the button stands clear of the line above it, not pressed against it */
 .mosque-again { margin-top: var(--s4); }
 /* the three small choices under a sheet: a picture, a delay, a dismissal */
+/* الصفحة كما طُبعت: كل سطر يمتد إلى الحاشيتين كما في المصحف */
+.mad-page { padding: var(--s2) 0; }
+.mad-line {
+  font-family: 'Amiri Quran', 'Amiri', serif;
+  line-height: 2.5; white-space: nowrap; direction: rtl;
+  /* every line of the printed page holds its own words and no more, so it is
+     shrunk to the width rather than allowed to wrap onto a second row */
+  transform-origin: right center;
+  will-change: transform;
+}
+.mad-line > span { display: inline; }
+.mad-line .ayah { display: inline; }
+.mad-line + .surah-frame { margin-top: var(--s3); }
+
 .sheet-tools { display: flex; gap: 6px; margin-top: var(--s3); }
 .sheet-tools .btn { flex: 1 1 0; flex-direction: column; gap: 4px; height: auto; min-height: 58px;
   padding: 8px 4px; font-size: .74rem; }
