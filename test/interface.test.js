@@ -6494,7 +6494,7 @@ test('the night of jumuah is not put off a week because its moment passed', () =
   assert.ok(window.indexOf('now.getDay() === 4') !== -1 && window.indexOf('minutes >= t.maghrib') !== -1);
   assert.ok(window.indexOf('now.getDay() === 5') !== -1 && window.indexOf('minutes < f.fajr') !== -1);
   /* opened late in that night, the reminder is still owed tonight */
-  assert.ok(app.indexOf("if (at <= Date.now() && d === 0 && inJumuahNight()) at = Date.now() + 120000;") !== -1,
+  assert.ok(/if \(at <= Date\.now\(\) && d === 0 && inJumuahNight\(\)\) \{[\s\S]{0,220}Date\.now\(\) \+ 120000/.test(app),
     'a reminder of this night must not arrive next week');
 
   const { win, doc } = boot();
@@ -6640,4 +6640,34 @@ test('a printed line is held to one row, whatever its spans say', () => {
     'but inside a printed line nothing may wrap');
   /* the line itself asks too */
   assert.match(css, /\.mad-line \{[\s\S]*?white-space: nowrap/);
+});
+
+test('the night reminder is armed once, not afresh on every opening', () => {
+  const { win, doc } = boot();
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* it used to be set two minutes out every time the app was opened, so it
+     arrived over and over the whole night through */
+  assert.ok(app.indexOf("if (Store.get('jumuahNightArmed') === nightKey()) at = 0;") !== -1,
+    'a night already given its reminder gets no second one');
+  assert.ok(app.indexOf("Store.set('jumuahNightArmed', nightKey());") !== -1);
+
+  /* asking three times over must give the same answer */
+  const when = function () {
+    const r = win.App.helpers.reminderList().filter(function (x) { return x.t === 'ليلة الجمعة'; })[0];
+    return r ? r.at : 0;
+  };
+  const first = when();
+  if (first) {
+    assert.strictEqual(when(), first, 'the second asking must not move it');
+    assert.strictEqual(when(), first, 'nor the third');
+  }
+
+  /* hiding it clears what was armed as well as what was to come */
+  const hide = /'hide-jumuah-night': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(hide.indexOf("Store.set('jumuahNightAt', 0);") !== -1, 'the armed hour is cleared');
+  assert.ok(hide.indexOf("Store.set('jumuahNightArmed', '');") !== -1);
+  assert.ok(hide.indexOf('handRemindersToApp();') !== -1, 'and the app is told at once');
+  win.Store.set('jumuahNight', false);
+  assert.strictEqual(win.App.helpers.reminderList().filter(function (x) { return x.t === 'ليلة الجمعة'; }).length, 0);
+  void doc;
 });
