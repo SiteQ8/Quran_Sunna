@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.28.0';
+  var VERSION = '8.29.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2945,9 +2945,94 @@
 
   function shareJumuahNight() {
     return sharePicture(
-      textCard('ليلة الجمعة', JUMUAH_NIGHT_SUNAN.join('\n'), 'naskh', 'من مغرب الخميس إلى فجر الجمعة'),
+      listCard('ليلة الجمعة', JUMUAH_NIGHT_SUNAN, 'من مغرب الخميس إلى فجر الجمعة'),
       'jumuah-night.png', 'ليلة الجمعة',
-      JUMUAH_NIGHT_SUNAN.join('\n') + '\n\nsunnati.3li.info');
+      JUMUAH_NIGHT_SUNAN.join('\n') + '\n\nتطبيق سُنّتي · sunnati.3li.info');
+  }
+
+  /* A card of separate things, each in its own pill, in the app's own face:
+     a list run together as a paragraph reads as one long sentence. */
+  function listCard(heading, items, note) {
+    var W = 1080, PAD = 96, GAP = 20;
+    var canvas = document.createElement('canvas');
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return Promise.resolve(null);
+    var paint = cardColours();
+    var faces = ["700 46px 'IBM Plex Sans Arabic'", "500 36px 'IBM Plex Sans Arabic'", "400 27px 'IBM Plex Sans Arabic'"];
+    var ready = document.fonts && document.fonts.load
+      ? Promise.all(faces.map(function (f) { return document.fonts.load(f, heading); })).catch(function () {})
+      : Promise.resolve();
+
+    return ready.then(function () {
+      ctx.font = "500 36px 'IBM Plex Sans Arabic', sans-serif";
+      var inner = W - PAD * 2 - 72;
+      var blocks = items.map(function (line) { return wrapWords(ctx, line, inner); });
+      var height = 0;
+      blocks.forEach(function (b) { height += b.length * 54 + 44 + GAP; });
+      var H = PAD + 190 + height + 210;
+      canvas.width = W; canvas.height = H;
+      ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = '#f7f5ef';
+      ctx.fillRect(0, 0, W, H);
+      ctx.save(); ctx.globalAlpha = 0.07;
+      for (var ly = 40; ly < H; ly += 112) for (var lx = 40; lx < W; lx += 112) cardStar(ctx, lx, ly, 22);
+      ctx.restore();
+      ctx.strokeStyle = paint.wash; ctx.lineWidth = 6;
+      ctx.strokeRect(36, 36, W - 72, H - 72);
+      ctx.strokeStyle = '#b08833'; ctx.lineWidth = 2;
+      ctx.strokeRect(52, 52, W - 104, H - 104);
+      cardStar(ctx, 52, 52, 14); cardStar(ctx, W - 52, 52, 14);
+      cardStar(ctx, 52, H - 52, 14); cardStar(ctx, W - 52, H - 52, 14);
+
+      ctx.direction = 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+      ctx.fillStyle = paint.fill;
+      ctx.font = "700 46px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText(heading, W / 2, PAD + 34);
+      if (note) {
+        ctx.fillStyle = '#5e6c65';
+        ctx.font = "400 27px 'IBM Plex Sans Arabic', sans-serif";
+        ctx.fillText(note, W / 2, PAD + 90);
+      }
+
+      var y = PAD + 150;
+      blocks.forEach(function (lines) {
+        var tall = lines.length * 54 + 44;
+        ctx.fillStyle = 'rgba(22, 36, 28, .05)';
+        roundRect(ctx, PAD, y, W - PAD * 2, tall, 28);
+        ctx.fill();
+        ctx.fillStyle = '#16241c';
+        ctx.font = "500 36px 'IBM Plex Sans Arabic', sans-serif";
+        lines.forEach(function (line, i) {
+          ctx.fillText(line, W / 2, y + 22 + 27 + i * 54);
+        });
+        y += tall + GAP;
+      });
+
+      cardStar(ctx, W / 2, H - PAD - 78, 13);
+      ctx.fillStyle = '#8b9691';
+      ctx.font = "400 27px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 20);
+      ctx.fillStyle = '#a8b1ad';
+      ctx.font = "400 23px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillText('على Google Play، وقريباً App Store', W / 2, H - PAD + 26);
+
+      return new Promise(function (resolve) {
+        if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
+        else resolve(null);
+      });
+    });
+  }
+
+  function wrapWords(context, text, maxWidth) {
+    var lines = [], line = '';
+    String(text).split(' ').forEach(function (word) {
+      var probe = line ? line + ' ' + word : word;
+      if (context.measureText(probe).width > maxWidth && line) { lines.push(line); line = word; }
+      else line = probe;
+    });
+    if (line) lines.push(line);
+    return lines;
   }
 
   /* put off to a stated hour, and only while the night still runs */
@@ -4151,7 +4236,7 @@
       cardStar(ctx, W / 2, H - PAD - 54, 13);
       ctx.fillStyle = '#8b9691';
       ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('سُنّتي، 3li.info', W / 2, H - PAD + 6);
+      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD + 6);
 
       return new Promise(function (resolve) {
         if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
@@ -6008,7 +6093,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
+      reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, maybeJumuahNightSheet: maybeJumuahNightSheet, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,

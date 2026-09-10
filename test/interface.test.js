@@ -6541,3 +6541,20 @@ test('a card keeps the breaks the text asks for', () => {
   assert.ok(/wrap\(ctx, part\.split\(' '\), W - PAD \* 2 - 40\)/.test(app),
     'and each piece is then wrapped on its own');
 });
+
+test('a shared list is drawn in pills, in the app\'s own face, and names the app in full', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* each thing in its own pill: a list run together reads as one sentence */
+  assert.ok(fn.indexOf("roundRect(ctx, PAD, y, W - PAD * 2, tall, 28)") !== -1);
+  /* the app's own face, not the naskh of a verse */
+  assert.ok(fn.indexOf("'IBM Plex Sans Arabic'") !== -1);
+  assert.ok(fn.indexOf('Amiri') === -1, 'the mushaf face is for verses, not for a list');
+  /* the colour follows the reader's chosen palette */
+  assert.ok(fn.indexOf('cardColours()') !== -1);
+  /* and it signs itself with the app's full name */
+  assert.ok(fn.indexOf('تطبيق سُنّتي · 3li.info') !== -1);
+  assert.ok(fn.indexOf('على Google Play، وقريباً App Store') !== -1);
+  /* nowhere does a picture sign itself with the bare name */
+  assert.ok(app.indexOf("'سُنّتي، 3li.info'") === -1, 'the app names itself in full');
+});
