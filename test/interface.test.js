@@ -6519,7 +6519,7 @@ test('the night of jumuah can be shared, put off, or dismissed', () => {
   const { win, doc } = boot();
   win.Store.set('jumuahNightShown', '');
   win.App.helpers.maybeJumuahNightSheet();
-  const tools = [...doc.querySelectorAll('.sheet-tools .btn')].map(function (b) { return b.textContent.trim(); });
+  const tools = [...doc.querySelectorAll('#sheet .sheet-tools .btn')].map(function (b) { return b.textContent.trim(); });
   assert.deepStrictEqual(tools, ['صورة', 'ذكّرني بعد ساعة', 'لا تُذكّرني']);
 
   /* put off to a stated hour, and the list honours it */
@@ -6910,7 +6910,7 @@ test('the sunnahs of jumuah sit among the daily sunnahs while they are due', () 
   assert.ok(kind.indexOf("if (inJumuahNight()) return 'night';") !== -1);
   assert.ok(kind.indexOf("if (new Date().getDay() === 5) return 'day';") !== -1);
   assert.ok(kind.indexOf('return null;') !== -1, 'and nothing on any other day');
-  const card = /function renderJumuahCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  const card = /function renderJumuahCard\(where\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(card.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1,
     'it is cleared away, not merely hidden');
   /* it carries the same three choices as the sheet does */
@@ -6964,4 +6964,21 @@ test('the sunnahs of jumuah sit at the foot of the daily sunnahs', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* and every card name still fits its one line */
   assert.ok(css.indexOf('font-size: .74rem; line-height: 1.7;') !== -1);
+});
+
+test('the sunnahs of jumuah stand on the home screen too, under the hour\'s sunnahs', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* directly beneath the fold that holds the sunnahs of this hour */
+  assert.ok(html.indexOf('<div id="home-jumuah"></div>') !== -1);
+  assert.ok(html.indexOf('id="now-fold"') < html.indexOf('<div id="home-jumuah"></div>'),
+    'it comes after the sunnahs of the hour, not before them');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* one drawing serves both places, so the two can never disagree */
+  assert.ok(app.indexOf('function renderJumuahCard(where) {') !== -1);
+  assert.ok(app.indexOf("renderJumuahCard('home-jumuah');") !== -1, 'drawn when the home screen is drawn');
+  assert.ok(app.indexOf('renderJumuahCard();') !== -1, 'and in the sunnah screen as before');
+  /* and it clears itself away outside its hours, in both */
+  const fn = /function renderJumuahCard\(where\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1);
 });

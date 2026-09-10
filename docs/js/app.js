@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.41.0';
+  var VERSION = '8.42.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1384,6 +1384,7 @@
   function renderHome() {
     if (!$('v-home')) return;
     refreshTimes();
+    renderJumuahCard('home-jumuah');
     renderDate();
     tick();
     renderNowSunnah();
@@ -2310,8 +2311,8 @@
     return out;
   }
 
-  function renderJumuahCard() {
-    var host = $('tracker-jumuah');
+  function renderJumuahCard(where) {
+    var host = $(where || 'tracker-jumuah');
     if (!host) return;
     var kind = jumuahCardKind();
     if (!kind) { host.innerHTML = ''; return; }
