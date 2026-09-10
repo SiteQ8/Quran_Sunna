@@ -2815,8 +2815,14 @@ test('the strip of times reads as a list with the current one marked', () => {
   assert.strictEqual(strip.getAttribute('role'), 'list');
   const items = strip.querySelectorAll('[role="listitem"]');
   assert.strictEqual(items.length, 6);
-  const current = [...items].filter((i) => i.getAttribute('aria-label').indexOf('الوقت الحالي') !== -1);
-  assert.strictEqual(current.length, 1, 'exactly one is the current window');
+  /* one is marked, named either الوقت الحالي while its half hour runs or
+     الصلاة القادمة once the clock has turned to the next */
+  const marked = [...items].filter(function (i) {
+    const label = i.getAttribute('aria-label');
+    return label.indexOf('الوقت الحالي') !== -1 || label.indexOf('الصلاة القادمة') !== -1;
+  });
+  assert.strictEqual(marked.length, 1, 'exactly one is marked');
+  assert.strictEqual(doc.querySelectorAll('#windows .window.is-now').length, 1, 'and it is the one shown so');
 });
 
 test('the first screen fonts are fetched before the stylesheet asks for them', () => {
@@ -5501,4 +5507,57 @@ test('the two tools sit below the date row, never on it', () => {
   assert.strictEqual((css.match(/\.card-tools \{ position/g) || []).length, 1, 'one rule, not two fighting');
   assert.match(css, /\.card-tools \{ position: absolute; top: 62px;/,
     'clear of the date and its two nudges');
+});
+
+test('a shared card looks the same whichever theme the reader is in', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n\n  \/\* the gold knot/.exec(app)[1];
+  /* the screen's accent is bright in the dark theme, which made the shared
+     picture come out a different colour than it does in daylight */
+  assert.ok(fn.indexOf("var fill = '#8f2323', wash = '#c98b8b';") !== -1, 'the app\'s own reds, not the screen\'s');
+  assert.ok(fn.indexOf('getPropertyValue') === -1, 'nothing read from the theme');
+  /* and it wears the same frame as the verse card */
+  assert.ok(fn.indexOf('cardStar(ctx, lx, ly, 22)') !== -1, 'the faint lattice');
+  assert.ok(fn.indexOf('cardStar(ctx, 52, 52, 14)') !== -1, 'and the knots at its corners');
+  assert.ok(fn.indexOf("ctx.fillStyle = '#f7f5ef'") !== -1, 'on the same paper');
+});
+
+test('the strip marks the prayer the clock is counting to', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /var sinceAdhan = c\.prev && c\.prev\.key !== 'sunrise' \? c\.now - c\.prev\.at : -1;\n    var marked = ([^\n]*)/.exec(app);
+  assert.ok(fn, 'the strip works out what to mark');
+  /* while the half hour after an adhan runs, the prayer just past is marked;
+     after it, the coming one, so once the sun is up the mark leaves fajr and
+     sunrise and moves to dhuhr */
+  assert.strictEqual(fn[1], "(sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES) ? c.prev.key : c.next.key;");
+  assert.ok(app.indexOf("'، الصلاة القادمة'") !== -1, 'and it is named so for a reader who cannot see colour');
+  const { win, doc } = boot();
+  win.App.go('home');
+  const now = doc.querySelector('.window.is-now');
+  assert.ok(now, 'exactly one is marked');
+  assert.strictEqual(doc.querySelectorAll('.window.is-now').length, 1);
+});
+
+test('صلاة الضحى has its window and its best hour, and a reminder the reader may set', () => {
+  const { win, doc } = boot();
+  const w = win.App.helpers.duhaWindow(new win.Date());
+  assert.ok(w, 'a window is worked out');
+  /* from the sun risen by a spear's length to a little before it stands at
+     noon, and its best hour a quarter of the day along */
+  assert.ok(w.from > 0 && w.best > w.from && w.to > w.best, 'in order: ' + JSON.stringify(w));
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function duhaWindow\(day\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('t.sunrise + 20') !== -1, 'twenty minutes after sunrise');
+  assert.ok(fn.indexOf('Math.round((t.maghrib - t.sunrise) / 4)') !== -1, 'a quarter of the day for its best');
+  assert.ok(fn.indexOf('t.dhuhr - 10') !== -1, 'and it ends before the sun stands');
+  /* the reminder is the reader's to set, and off until they do */
+  win.App.go('settings');
+  assert.strictEqual(doc.getElementById('settings-duha').getAttribute('aria-checked'), 'false');
+  assert.ok(doc.getElementById('settings-duha-note').textContent.indexOf('وأفضلها نحو') !== -1,
+    'and the setting says when');
+  click(win, doc.getElementById('settings-duha'));
+  assert.strictEqual(win.Store.get('duha'), true);
+  const queued = win.App.helpers.reminderList().filter(function (r) { return r.t === 'صلاة الضحى'; });
+  assert.ok(queued.length >= 5, 'one for each day ahead, got ' + queued.length);
+  assert.ok(queued[0].b.indexOf('ركعتان فأكثر') !== -1);
 });
