@@ -6799,3 +6799,24 @@ test('the splash face cannot be overridden by the stylesheet that loads after it
   assert.ok(fonts.indexOf('Sunnati Splash') === -1, 'nothing else declares that name');
   assert.ok(html.indexOf("font-display: block") !== -1, 'and it holds the word until the face is ready');
 });
+
+test('the two badges share one box, so neither reads as the larger', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* scaling each by its height alone let the wider badge look the bigger */
+  assert.ok(card.indexOf('var boxW = 176, boxH = 58') !== -1, 'one box apiece, of one size');
+  assert.ok(card.indexOf('Math.min(boxW / m.width, boxH / m.height)') !== -1, 'each drawn to fit inside it');
+  assert.ok(card.indexOf('(boxW - w) / 2') !== -1, 'and centred in it');
+  /* the badges carry no transparent margin of their own, or one would sit small */
+  const png = fs.readFileSync(path.join(DOCS, 'icons', 'badge-googleplay.png'));
+  assert.ok(png.length > 1000, 'the badge is a real file');
+});
+
+test('the cards of the adhkar are all one height', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* a grid sizes each row to its own content, so tiles in different rows came
+     out different heights when a name ran to two lines */
+  assert.match(css, /#azkar-groups \{ align-items: stretch; grid-auto-rows: 1fr; \}/);
+  assert.match(css, /#azkar-groups \.tile \{ height: 100%/);
+  assert.match(css, /#azkar-groups \.tile-name \{ min-height/);
+});
