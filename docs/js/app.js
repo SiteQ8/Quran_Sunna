@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.37.0';
+  var VERSION = '8.37.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3109,26 +3109,25 @@
         y += tall + GAP;
       });
 
-      cardStar(ctx, W / 2, H - PAD - 176, 13);
+      cardStar(ctx, W / 2, H - PAD - 186, 13);
       ctx.fillStyle = '#8b9691';
       ctx.font = "400 27px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 134);
+      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 132);
 
       /* the two store badges, drawn as they are given rather than described */
       return badges().then(function (marks) {
         /* one box apiece, of one size, and each badge drawn to fit inside it:
            scaling by height alone made the wider one look the larger */
-        var boxW = 176, boxH = 58, gap = 26;
-        var whole = marks.length * boxW + (marks.length - 1) * gap;
+        /* one height for both, their margins already trimmed away, so neither
+           reads as the larger */
+        var tall = 52, gap = 28;
+        var widths = marks.map(function (m) { return m ? Math.round(m.width * tall / m.height) : 0; });
+        var whole = widths.reduce(function (a, b) { return a + b; }, 0) + (marks.length - 1) * gap;
         var x = Math.round((W - whole) / 2);
-        var y = H - PAD - 96;
-        marks.forEach(function (m) {
-          if (m) {
-            var fit = Math.min(boxW / m.width, boxH / m.height);
-            var w = Math.round(m.width * fit), h = Math.round(m.height * fit);
-            ctx.drawImage(m, x + Math.round((boxW - w) / 2), y + Math.round((boxH - h) / 2), w, h);
-          }
-          x += boxW + gap;
+        var y = H - PAD - 92;
+        marks.forEach(function (m, i) {
+          if (m) ctx.drawImage(m, x, y, widths[i], tall);
+          x += widths[i] + gap;
         });
         return new Promise(function (resolve) {
           if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');

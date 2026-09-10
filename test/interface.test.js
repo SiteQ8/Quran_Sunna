@@ -6808,9 +6808,9 @@ test('the two badges share one box, so neither reads as the larger', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   /* scaling each by its height alone let the wider badge look the bigger */
-  assert.ok(card.indexOf('var boxW = 176, boxH = 58') !== -1, 'one box apiece, of one size');
-  assert.ok(card.indexOf('Math.min(boxW / m.width, boxH / m.height)') !== -1, 'each drawn to fit inside it');
-  assert.ok(card.indexOf('(boxW - w) / 2') !== -1, 'and centred in it');
+  assert.ok(card.indexOf('var tall = 52, gap = 28;') !== -1, 'one height for both');
+  assert.ok(card.indexOf('Math.round(m.width * tall / m.height)') !== -1, 'width follows from that height');
+  assert.ok(card.indexOf('x += widths[i] + gap;') !== -1, 'set side by side');
   /* the badges carry no transparent margin of their own, or one would sit small */
   const png = fs.readFileSync(path.join(DOCS, 'icons', 'badge-googleplay.png'));
   assert.ok(png.length > 1000, 'the badge is a real file');
@@ -6851,4 +6851,13 @@ test('the adhkar screen holds adhkar, and the duas sit with the duas', () => {
     'the rule is the name itself, plainly');
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.ok(css.indexOf('#azkar-groups, #dua-places') !== -1, 'and both grids keep one height');
+});
+
+test('the month of fasting is named in full', () => {
+  const { win } = boot();
+  const hijri = fs.readFileSync(path.join(DOCS, 'js', 'hijri.js'), 'utf8');
+  assert.ok(hijri.indexOf("name: 'شهر رمضان المبارك'") !== -1);
+  /* and the month itself keeps its plain name in the calendar's own list */
+  assert.ok(/'رجب', 'شعبان', 'رمضان', 'شوال'/.test(hijri), 'the month list is unchanged');
+  void win;
 });
