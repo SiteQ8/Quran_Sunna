@@ -194,4 +194,4 @@ cd android && ./gradlew --no-daemon bundleRelease assembleRelease
 
 ---
 
-<sub>آخر تحديث لهذا الملف مع الإصدار ٨٫٦٣٫٠.</sub>
+<sub>آخر تحديث لهذا الملف مع الإصدار ٨٫٦٣٫١.</sub>

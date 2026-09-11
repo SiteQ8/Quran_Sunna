@@ -6186,9 +6186,15 @@ test('the place is fetched where it is read, on the line that states it', () => 
   assert.ok(/locate: function \(\) \{ locate\(function \(\) \{ renderHome\(\); \}\); \}/.test(app));
   assert.ok(app.indexOf("bind('place-locate'") === -1, 'not bound by id, which a redraw throws away');
 
-  /* small to the eye, wide enough for a thumb */
+  /* small to the eye, wide enough for a thumb, and sitting beside the pin
+     rather than standing off on its own: the box keeps its 44 and the mark is
+     pushed to the edge that faces it */
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.place-locate \{[^}]*width: 44px; height: 44px/);
+  assert.match(css, /\.place-locate \{[^}]*place-items: center end/);
+  const rect = line.querySelector('.place-locate').getBoundingClientRect
+    ? null : null;
+  void rect;
   void win;
 });
 
