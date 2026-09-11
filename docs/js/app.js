@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.55.0';
+  var VERSION = '8.56.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6548,6 +6548,16 @@
        is taken out without a word rather than fading beneath it as a second */
     if (atOnce) {
       if (splash.parentNode) splash.parentNode.removeChild(splash);
+      return;
+    }
+    /* With the worker holding the shell the page paints in a few hundred
+       milliseconds, so the opening used to appear and start fading in the same
+       breath, which reads as a flicker rather than an opening. This is a floor
+       and not a length: it goes the moment the page is ready once the floor
+       has passed, and a slow first visit never waits for it at all. */
+    var since = (window.performance && window.performance.now) ? window.performance.now() : 700;
+    if (since < 700) {
+      window.setTimeout(function () { dismissBootSplash(false); }, 700 - since);
       return;
     }
     splash.style.opacity = '0';
