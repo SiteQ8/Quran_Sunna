@@ -2324,9 +2324,9 @@ test('the android project is complete enough to build', () => {
    'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml'].forEach(function (rel) {
     assert.ok(fs.existsSync(path.join(root, rel)), 'missing ' + rel);
   });
+  /* the launcher icon itself is the adaptive xml above; what the densities
+     carry is the layer it draws */
   ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (density) {
-    assert.ok(fs.existsSync(path.join(root, 'app/src/main/res/mipmap-' + density, 'ic_launcher.png')),
-      'no launcher icon at ' + density);
     assert.ok(fs.existsSync(path.join(root, 'app/src/main/res/mipmap-' + density, 'ic_launcher_foreground.png')),
       'no adaptive layer at ' + density);
   });
@@ -4628,10 +4628,8 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
   assert.ok(adaptive.indexOf('@mipmap/ic_launcher_foreground') !== -1, 'the foreground is the artwork itself, not a redrawing');
   assert.ok(adaptive.indexOf('<monochrome') !== -1, 'and a single colour form for a themed home screen');
   ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
-    ['ic_launcher.png', 'ic_launcher_foreground.png'].forEach(function (f) {
-      const p = path.join(res, 'mipmap-' + d, f);
-      assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/' + f);
-    });
+    const p = path.join(res, 'mipmap-' + d, 'ic_launcher_foreground.png');
+    assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/ic_launcher_foreground.png');
   });
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
   assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
@@ -7058,6 +7056,28 @@ test('the eve of a fast is reminded, before the suhur and not after it', () => {
   /* and it can be turned off */
   win.Store.set('fastNote', false);
   assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; }).length, 0);
+});
+
+test('the launcher mark is carried once, as the adaptive icon every phone uses', () => {
+  const res = path.join(__dirname, '..', 'android/app/src/main/res');
+  /* minSdk is 26 and anydpi-v26 wins from api 26, so aapt2 resolved the icon
+     to the xml at every density and the five bitmaps were never once chosen */
+  const gradle = fs.readFileSync(path.join(__dirname, '..', 'android/app/build.gradle'), 'utf8');
+  const min = parseInt(/minSdk(?:Version)?\s+(\d+)/.exec(gradle)[1], 10);
+  assert.ok(min >= 26, 'below api 26 the bitmaps would be needed again');
+  assert.ok(fs.existsSync(path.join(res, 'mipmap-anydpi-v26/ic_launcher.xml')));
+  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
+    assert.ok(!fs.existsSync(path.join(res, 'mipmap-' + d, 'ic_launcher.png')),
+      'mipmap-' + d + '/ic_launcher.png weighs and is never reached');
+    /* the foreground the adaptive icon draws is a different matter: it is read
+       at every density and each one is really used */
+    assert.ok(fs.existsSync(path.join(res, 'mipmap-' + d, 'ic_launcher_foreground.png')));
+  });
+  /* and the gate watches for it coming back */
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/review-weight.js'), 'utf8');
+  assert.ok(tool.indexOf('checkShadowed') !== -1, 'the gate knows this class now');
+  assert.ok(/minSdk\(\?:Version\)\?/.test(tool) || tool.indexOf('minSdk') !== -1,
+    'and reads minSdk rather than assuming it');
 });
 
 test('the weight gate reads a package by itself, and refuses bytes carried twice', () => {
