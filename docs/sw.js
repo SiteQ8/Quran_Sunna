@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.44.0';
+var VERSION = 'sunnati-v8.45.0';
 
 var SHELL = [
   './',
@@ -218,7 +218,7 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* The tafsir: half a megabyte fetched once, on first use, and kept. */
+  /* The tafsir: two and a half megabytes fetched once, on first use, and kept. */
   if (url.origin === location.origin && /\/data\/tafsir-[a-z]+\.json$/.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then(function (hit) {

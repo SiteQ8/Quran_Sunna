@@ -6458,8 +6458,10 @@ test('the service raises its notice before it takes it down', () => {
      stopping: a stop overtaking its own start crashed the app */
   const body = /public int onStartCommand\(Intent intent, int flags, int startId\) \{([\s\S]*?)\n    \}/.exec(service)[1];
   const raise = body.indexOf('startForeground(ID,');
-  const drop = body.indexOf('stopForeground(true)');
+  /* stopForeground(boolean) was left behind in android 13 and -Werror refuses it */
+  const drop = body.indexOf('stopForeground(STOP_FOREGROUND_REMOVE)');
   assert.ok(raise !== -1 && drop !== -1);
+  assert.ok(body.indexOf('stopForeground(true)') === -1, 'the old form is gone');
   assert.ok(raise < drop, 'the notice must be raised before it is taken down');
   /* and a stop is sent the same way it was started */
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
@@ -6978,6 +6980,63 @@ test('the my-place button on the map takes the reading afresh', () => {
   /* locate can now tell its caller when it is done */
   assert.ok(app.indexOf('function locate(then) {') !== -1);
   assert.ok(app.indexOf("if (typeof then === 'function') then();") !== -1);
+});
+
+test('the days the sunnah marks for fasting are offered, and only where a fast is right', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function fastToday\(date\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the engine already tagged these days; nothing outside the calendar read it */
+  assert.ok(fn.indexOf("o.kind === 'fast'") !== -1);
+  /* the two eids and the days of tashreeq: a fast there is forbidden, and a
+     tick would be an invitation to a wrong */
+  assert.ok(fn.indexOf("o.kind === 'eid'") !== -1, 'no fast on an eid');
+  /* ramadan carries mondays and white days of its own, and its fast is a duty */
+  assert.ok(fn.indexOf("o.kind === 'month'") !== -1, 'ramadan is not voluntary');
+
+  /* a monday: the section is there, one tick for the day */
+  const mon = boot({ now: new Date(2026, 8, 14, 9, 0, 0) });
+  mon.win.App.go('tracker');
+  const head = mon.doc.querySelector('#tracker-list [data-fold="fast"] .fold-title');
+  assert.ok(head, 'a monday is a day of fasting');
+  assert.strictEqual(head.textContent.trim(), 'صيام التطوع');
+  const ticks = mon.doc.querySelectorAll('#tracker-list [data-fold="fast"] [data-check]');
+  assert.strictEqual(ticks.length, 1, 'one fast, however many reasons');
+  assert.strictEqual(ticks[0].getAttribute('data-check'), 'fast');
+  assert.ok(ticks[0].textContent.indexOf('صيام الإثنين') !== -1);
+
+  /* the tick feeds the same meter as every other sunnah */
+  const before = mon.doc.getElementById('tracker-done').textContent;
+  click(mon.win, ticks[0]);
+  assert.notStrictEqual(mon.doc.getElementById('tracker-done').textContent, before);
+  assert.strictEqual(mon.win.Store.day().sunnah.fast, true);
+
+  /* a day the sunnah does not mark: nothing there */
+  const plain = boot({ now: new Date(2026, 8, 15, 9, 0, 0) });
+  plain.win.App.go('tracker');
+  assert.strictEqual(plain.doc.querySelector('#tracker-list [data-fold="fast"]'), null);
+
+  /* two reasons at once are still one fast, and both are named */
+  const both = boot({ now: new Date(2026, 8, 24, 9, 0, 0) });
+  both.win.App.go('tracker');
+  const many = both.doc.querySelectorAll('#tracker-list [data-fold="fast"] [data-check]');
+  assert.strictEqual(many.length, 1, 'a thursday that is also a white day is one fast');
+  const named = many[0].textContent;
+  assert.ok(named.indexOf('صيام الخميس') !== -1 && named.indexOf('الأيام البيض') !== -1,
+    'both reasons are named, got ' + named);
+
+  /* and the meter counts the one tick, not the reasons */
+  const total = /if \(fastToday\(date\)\.length\) total \+= 1;/.test(app);
+  assert.ok(total, 'one added to the day, not one per reason');
+});
+
+test('the fasting mark is its own, drawn to size', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const g = /<g id="i-fast">[\s\S]*?<\/g>/.exec(html);
+  assert.ok(g, 'the mark is in the sheet');
+  assert.ok(g[0].indexOf('scale(') === -1, 'drawn to size, not scaled');
+  /* and it is not the mark of food, which already means something else */
+  const food = /<g id="i-food">[\s\S]*?<\/g>/.exec(html)[0];
+  assert.notStrictEqual(g[0].replace('i-fast', ''), food.replace('i-food', ''));
 });
 
 test('every card name still fits its one line', () => {

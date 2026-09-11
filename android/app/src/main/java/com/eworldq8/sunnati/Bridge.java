@@ -88,8 +88,7 @@ public final class Bridge {
         if (!on) {
             try {
                 Intent stop = new Intent(host, AudioService.class).setAction(AudioService.ACTION_STOP);
-                if (Build.VERSION.SDK_INT >= 26) host.startForegroundService(stop);
-                else host.startService(stop);
+                host.startForegroundService(stop);
             } catch (Exception ignored) { /* nothing was holding it */ }
         }
     }
@@ -103,8 +102,7 @@ public final class Bridge {
                 .putExtra(AudioService.EXTRA_TITLE, title)
                 .putExtra(AudioService.EXTRA_SUB, sub)
                 .putExtra(AudioService.EXTRA_PLAYING, playing);
-            if (Build.VERSION.SDK_INT >= 26) host.startForegroundService(hold);
-            else host.startService(hold);
+            host.startForegroundService(hold);
         } catch (Exception ignored) {
             /* the recitation still sounds while the app is open */
         }

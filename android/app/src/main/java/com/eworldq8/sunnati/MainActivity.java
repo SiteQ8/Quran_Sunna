@@ -121,7 +121,7 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         setContentView(root);
         web.setFitsSystemWindows(false);
-        getWindow().setDecorFitsSystemWindows(false);
+        drawEdgeToEdge();
         dressSystemBars();
         keepKeyboardClear(root);
         /* the splash never outstays its welcome, however slow the page is */
@@ -214,24 +214,52 @@ public class MainActivity extends Activity {
 
     /* The bars take the app's own paper, and their marks are drawn dark on it,
        so the top of the screen belongs to the app rather than standing apart. */
+    /* Drawing under the bars is of android 11 and after, and from android 15
+       an app that targets 35 or more is drawn so of itself. Below android 11
+       the frame is inset by the framework, as it was before, which is the whole
+       reason the root asks to fit the system windows. */
+    @SuppressWarnings("deprecation")
+    private void drawEdgeToEdge() {
+        if (Build.VERSION.SDK_INT >= 35) return;
+        if (Build.VERSION.SDK_INT >= 30) getWindow().setDecorFitsSystemWindows(false);
+    }
+
+    @SuppressWarnings("deprecation")
     private void dressSystemBars() {
         boolean night = (getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK)
             == Configuration.UI_MODE_NIGHT_YES;
-        WindowInsetsController bars = getWindow().getInsetsController();
-        if (bars != null) {
-            bars.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
-            int marks = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-            bars.setSystemBarsAppearance(night ? 0 : marks, marks);
+        if (Build.VERSION.SDK_INT >= 30) {
+            WindowInsetsController bars = getWindow().getInsetsController();
+            if (bars != null) {
+                bars.show(WindowInsets.Type.statusBars() | WindowInsets.Type.navigationBars());
+                int marks = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                bars.setSystemBarsAppearance(night ? 0 : marks, marks);
+            }
+            return;
         }
+        /* android 8 to 10 say the same thing with the flags that preceded it:
+           dark marks on light paper, and the reverse at night */
+        View decor = getWindow().getDecorView();
+        int flags = decor.getSystemUiVisibility();
+        int light = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
+        decor.setSystemUiVisibility(night ? (flags & ~light) : (flags | light));
     }
 
     /* The frame is inset by the framework, so only the keyboard is left to
        handle: it must lift the page rather than cover what is being typed. */
     private void keepKeyboardClear(final View view) {
+        /* Below android 11 the frame is inset by the framework and the window
+           resizes for the keyboard, so there is nothing to take in hand and the
+           inset types below do not exist yet. */
+        if (Build.VERSION.SDK_INT < 30) return;
         view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
             @Override
             public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                /* said again inside the callback: the listener is only put on
+                   from android 11, but nothing reading this file, lint included,
+                   can see that from in here */
+                if (Build.VERSION.SDK_INT < 30) return insets;
                 Insets bars = insets.getInsets(WindowInsets.Type.systemBars() | WindowInsets.Type.displayCutout());
                 Insets keyboard = insets.getInsets(WindowInsets.Type.ime());
                 v.setPadding(bars.left, bars.top, bars.right, Math.max(bars.bottom, keyboard.bottom));
