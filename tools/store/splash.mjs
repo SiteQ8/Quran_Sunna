@@ -50,14 +50,14 @@ for (const t of themes) {
   const ok = await page.evaluate(() => document.fonts.check("600 108px Plex"));
   if (!ok) throw new Error('the Plex face did not load; the splash would be drawn in the wrong font');
   await page.waitForTimeout(300);
+  /* This loop once walked five densities and carried a size for each, then
+     threw that size away unused and took the same 1080 screenshot every time: ten
+     files, byte for byte the same, and a third of the package. The picture
+     does not change with the density, so it is written once, in nodpi, which
+     is what nodpi means. */
   const shot = await page.screenshot({ type: 'png' });
-  for (const [dir, size] of [['drawable-mdpi', 320], ['drawable-hdpi', 480], ['drawable-xhdpi', 640], ['drawable-xxhdpi', 960], ['drawable-xxxhdpi', 1080]]) {
-    mkdirSync(`${OUT}/${dir}`, { recursive: true });
-    const small = await page.screenshot({ type: 'png' });
-    writeFileSync(`${OUT}/${dir}/${t.name}.png`, small);
-    void size;
-  }
-  void shot;
+  mkdirSync(`${OUT}/drawable-nodpi`, { recursive: true });
+  writeFileSync(`${OUT}/drawable-nodpi/${t.name}.png`, shot);
   console.log('drew', t.name);
 }
 process.exit(0);

@@ -5247,10 +5247,13 @@ test('the daily portion and the friday call are worked out here and handed to th
   assert.strictEqual(new Date(friday.at).getDay(), 5);
   assert.ok(friday.b.indexOf('الكهف') !== -1);
   list.forEach(function (r) { assert.ok(r.at > Date.now(), 'nothing already past'); });
-  /* turned off, nothing is queued */
+  /* turned off, nothing is queued: every switch that can queue one, and the
+     list must come back empty when the last of them is off */
   win.Store.set('wirdAt', '');
   win.Store.set('jumuahBefore', 0);
   win.Store.set('jumuahNight', false);
+  win.Store.set('duha', false);
+  win.Store.set('fastNote', false);
   assert.strictEqual(win.App.helpers.reminderList().length, 0);
   const handed = [];
   win.SunnatiApp = { setReminders: function (j) { handed.push(JSON.parse(j)); } };
@@ -5780,10 +5783,10 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   assert.ok(splash.indexOf('splash_art_night') !== -1 && splash.indexOf('"splash_art"') !== -1,
     'a picture for each theme');
   assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
-  ['drawable-mdpi', 'drawable-hdpi', 'drawable-xhdpi', 'drawable-xxhdpi', 'drawable-xxxhdpi'].forEach(function (d) {
-    ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
-      assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/res', d, f)), d + '/' + f);
-    });
+  /* one copy, in nodpi: the picture does not change with the density, and it
+     used to sit byte for byte in five folders */
+  ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
+    assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi', f)), f);
   });
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
   assert.ok(tool.indexOf('plex-arabic-600-arabic.woff2') !== -1, 'the app\'s own face');
@@ -6880,12 +6883,16 @@ test('the splash artwork is drawn with the real face, and the build refuses othe
     'and the render is checked before anything is written');
   assert.ok(tool.indexOf('the splash would be drawn in the wrong font') !== -1,
     'a build that lost the face must fail loudly, not ship quietly');
-  /* the artwork exists at every density */
-  ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi'].forEach(function (d) {
-    const f = path.join(__dirname, '..', 'android/app/src/main/res/drawable-' + d + '/splash_art.png');
-    assert.ok(fs.existsSync(f), 'missing splash for ' + d);
-    assert.ok(fs.statSync(f).size > 2000, 'splash for ' + d + ' looks empty');
+  /* and the artwork is really there, once */
+  ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
+    const at = path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi', f);
+    assert.ok(fs.existsSync(at), 'missing ' + f);
+    assert.ok(fs.statSync(at).size > 2000, f + ' looks empty');
   });
+  /* the loop that pretended to make one for each density ended in `void size`
+     and screenshotted the same page five times */
+  assert.ok(tool.indexOf('void size') === -1, 'no discarded size left in the tool');
+  assert.ok(tool.indexOf('drawable-nodpi') !== -1, 'it writes where it says it writes');
 });
 
 test('every card name sits on one line, so the cards match', () => {
@@ -7027,6 +7034,48 @@ test('the days the sunnah marks for fasting are offered, and only where a fast i
   /* and the meter counts the one tick, not the reasons */
   const total = /if \(fastToday\(date\)\.length\) total \+= 1;/.test(app);
   assert.ok(total, 'one added to the day, not one per reason');
+});
+
+test('the eve of a fast is reminded, before the suhur and not after it', () => {
+  /* a sunday evening: monday is a day of fasting */
+  const { win } = boot({ now: new Date(2026, 8, 13, 19, 0, 0) });
+  const notes = win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; });
+  assert.ok(notes.length >= 1, 'the eve of a monday carries one');
+  assert.ok(notes[0].b.indexOf('صيام الإثنين') !== -1, 'it names the reason, got ' + notes[0].b);
+  assert.ok(notes[0].b.indexOf('السحور') !== -1, 'and it is of the night, not the dawn');
+
+  /* it falls after the maghrib of the eve, which is the whole point */
+  const eve = win.App.helpers.computeTimes(new Date(2026, 8, 13));
+  const at = new Date(notes[0].at);
+  assert.ok(at.getHours() * 60 + at.getMinutes() > eve.maghrib,
+    'a reminder before the maghrib of the eve is a reminder of the wrong day');
+  assert.strictEqual(at.getDate(), 13, 'and it belongs to the eve, not the day itself');
+
+  /* every eve in the eight days is its own night, so they are not deduped away */
+  assert.ok(win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; }).length > 1,
+    'more than one eve falls inside eight days');
+
+  /* and it can be turned off */
+  win.Store.set('fastNote', false);
+  assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; }).length, 0);
+});
+
+test('the art of the opening is kept once, not once for every density', () => {
+  const res = path.join(__dirname, '..', 'android/app/src/main/res');
+  /* the same 1080 square sat byte for byte in five folders, ten files for two
+     pictures, and it was a third of the package */
+  const copies = fs.readdirSync(res)
+    .filter(function (d) { return d.indexOf('drawable') === 0; })
+    .filter(function (d) { return fs.existsSync(path.join(res, d, 'splash_art.png')); });
+  assert.deepStrictEqual(copies, ['drawable-nodpi'],
+    'one copy, and in nodpi because the pixels do not change with the density');
+  assert.ok(fs.existsSync(path.join(res, 'drawable-nodpi', 'splash_art_night.png')));
+
+  /* it is reached by name, so the name must stay a plain constant: the shrinker
+     keeps the picture only because it sees the string in the pool */
+  const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
+  assert.ok(splash.indexOf('"splash_art_night"') !== -1 && splash.indexOf('"splash_art"') !== -1,
+    'built from pieces, the shrinker would strip the picture and the opening would be blank');
 });
 
 test('the fasting mark is its own, drawn to size', () => {
