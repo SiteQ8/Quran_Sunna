@@ -564,17 +564,51 @@ test('choosing a city moves the times and the qibla', () => {
 
 /* ---------------- khatma ---------------- */
 
+test('the khatma keeps its buttons in its card, in the order of what they cost', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const view = html.slice(html.indexOf('id="v-khatma"'), html.indexOf('<section class="view"', html.indexOf('id="v-khatma"')));
+  /* four buttons stood in three places: one in the card, three loose on the
+     page's own background, and a fourth alone under those */
+  assert.ok(view.indexOf('khatma-page-plus') === -1 && view.indexOf('<div class="btn-row">') === -1,
+    'nothing floats outside a card');
+  assert.ok(view.indexOf('data-go="quran"') === -1,
+    'and the spare way back is gone: the tab bar goes to the same screen');
+
+  const { win, doc } = boot();
+  win.App.go('khatma');
+  assert.strictEqual(doc.querySelectorAll('#v-khatma > .btn-row, #v-khatma > .btn').length, 0);
+  const inCard = [...doc.querySelectorAll('#khatma-state button')].map(function (b) { return b.textContent.trim(); });
+  assert.ok(inCard.some(function (t) { return t.indexOf('تابع من صفحة') !== -1; }), 'following on comes first');
+  assert.ok(inCard.indexOf('قرأت صفحة') !== -1 && inCard.indexOf('تراجع') !== -1);
+  /* starting over wipes the plan, so it is not offered on a plan not begun */
+  assert.strictEqual(doc.querySelector('[data-act="khatma-restart"]'), null, 'nothing read yet, nothing to start over');
+  click(win, doc.querySelector('[data-act="khatma-plus"]'));
+  assert.ok(doc.querySelector('.khatma-reset [data-act="khatma-restart"]'), 'and set apart once there is');
+});
+
+test('no action is written twice in the map', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const body = /  var ACTIONS = \{([\s\S]*?)\n  \};\n/.exec(app)[1];
+  const keys = [...body.matchAll(/^    '?([a-zA-Z-]+)'?: /gm)].map(function (m) { return m[1]; });
+  const twice = keys.filter(function (k, i) { return keys.indexOf(k) !== i; });
+  /* open-kahf was in there twice, and the second silently replaced the first:
+     the same body, so nothing broke, and nothing would have said if it had */
+  assert.deepStrictEqual([...new Set(twice)], [], 'written twice: ' + [...new Set(twice)].join(', '));
+});
+
 test('the khatma plan splits the mushaf and tracks pages read', () => {
   const { win, doc } = boot();
   win.App.go('khatma');
   assert.ok(doc.querySelector('[data-khatma="30"]').classList.contains('is-on'));
   assert.ok(doc.getElementById('khatma-rate').textContent.indexOf('صفحة') !== -1);
 
-  for (let i = 0; i < 5; i++) click(win, doc.getElementById('khatma-page-plus'));
+  /* the buttons live in the card now, which redraws itself on every change,
+     so each click must find the button as it stands and not as it stood */
+  for (let i = 0; i < 5; i++) click(win, doc.querySelector('[data-act="khatma-plus"]'));
   assert.strictEqual(win.Store.progress().pagesRead, 5);
   assert.ok(doc.getElementById('khatma-state').textContent.indexOf('5') !== -1);
 
-  click(win, doc.getElementById('khatma-page-minus'));
+  click(win, doc.querySelector('[data-act="khatma-minus"]'));
   assert.strictEqual(win.Store.progress().pagesRead, 4);
 
   click(win, doc.querySelector('[data-khatma="7"]'));
@@ -585,7 +619,7 @@ test('the khatma plan splits the mushaf and tracks pages read', () => {
 test('pages read never fall below zero or above the mushaf', () => {
   const { win, doc } = boot();
   win.App.go('khatma');
-  for (let i = 0; i < 4; i++) click(win, doc.getElementById('khatma-page-minus'));
+  for (let i = 0; i < 4; i++) click(win, doc.querySelector('[data-act="khatma-minus"]'));
   assert.strictEqual(win.Store.progress().pagesRead, 0);
   win.Store.setReadPages(700);
   assert.strictEqual(win.Store.progress().pagesRead, 604);
@@ -594,8 +628,8 @@ test('pages read never fall below zero or above the mushaf', () => {
 test('restarting the khatma clears the count', () => {
   const { win, doc } = boot();
   win.App.go('khatma');
-  click(win, doc.getElementById('khatma-page-plus'));
-  click(win, doc.getElementById('khatma-restart'));
+  click(win, doc.querySelector('[data-act="khatma-plus"]'));
+  click(win, doc.querySelector('[data-act="khatma-restart"]'));
   assert.strictEqual(win.Store.progress().pagesRead, 0);
   assert.ok(win.Store.get('khatmaStart'));
 });
