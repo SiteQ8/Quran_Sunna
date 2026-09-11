@@ -173,8 +173,52 @@ function checkPackage() {
   });
 }
 
+/* ---------- what no phone can reach ---------- */
+
+/* A bitmap that an anydpi-vN folder shadows is only ever chosen below api N.
+   Five copies of ic_launcher.png sat in the package for exactly that reason:
+   minSdk is 26, anydpi-v26 wins on every device that can install the app, and
+   aapt2 confirmed the bitmaps were never resolved at any density. They weigh
+   and they are never seen. */
+function checkShadowed() {
+  const before = faults;
+  const RES = path.join(ROOT, 'android/app/src/main/res');
+  const gradle = path.join(ROOT, 'android/app/build.gradle');
+  if (!fs.existsSync(RES) || !fs.existsSync(gradle)) return;
+  const min = parseInt((/minSdk(?:Version)?\s+(\d+)/.exec(fs.readFileSync(gradle, 'utf8')) || [])[1], 10);
+  if (!min) return;
+
+  const dirs = fs.readdirSync(RES, { withFileTypes: true })
+    .filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; });
+
+  dirs.forEach(function (dir) {
+    const m = /^([a-z]+)-anydpi(?:-v(\d+))?$/.exec(dir);
+    if (!m) return;
+    const type = m[1];
+    const since = m[2] ? parseInt(m[2], 10) : 0;
+    if (since > min) return;   /* older phones really do fall back to the bitmap */
+    fs.readdirSync(path.join(RES, dir)).forEach(function (f) {
+      const stem = f.replace(/\.[^.]+$/, '');
+      const shadowed = [];
+      dirs.forEach(function (other) {
+        if (other === dir || other.indexOf(type + '-') !== 0) return;
+        const at = path.join(RES, other, stem + '.png');
+        if (fs.existsSync(at)) shadowed.push({ rel: path.relative(ROOT, at), size: fs.statSync(at).size });
+      });
+      if (!shadowed.length) return;
+      const sum = shadowed.reduce(function (a, b) { return a + b.size; }, 0);
+      fault([dir + '/' + f + ' is chosen on every phone from api ' + Math.max(since, min) +
+        ', and minSdk is ' + min + ', so these are never reached (' + human(sum) + '):']
+        .concat(shadowed.map(function (g) { return '  ' + g.rel; })));
+    });
+  });
+  if (faults === before) console.log('shadowed bitmaps: none, minSdk ' + min);
+}
+
 console.log('');
 checkSite();
+console.log('');
+checkShadowed();
 console.log('');
 checkPackage();
 console.log('');
