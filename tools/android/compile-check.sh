@@ -22,7 +22,25 @@ package com.eworldq8.sunnati;
 public final class BuildConfig { public static final String VERSION_NAME = "check"; }
 B
 HERE=$(cd "$(dirname "$0")/../.." && pwd)
+
+# This used to end in `| grep ... || true` and then an unconditional echo, so it
+# said the wrapper compiled whether it did or not, and said it once when javac
+# was not even installed. What javac says is now kept, shown, and obeyed.
+command -v javac >/dev/null 2>&1 || {
+  echo "no javac on the path: a jre is not enough, install a jdk" >&2
+  exit 1
+}
+
 javac -Xlint:all -Werror -d "$SDK/out" --release 17 \
   -cp "$SDK/android-36/android.jar" \
-  "$SDK/gen/com/eworldq8/sunnati/R.java" "$SDK/gen/com/eworldq8/sunnati/BuildConfig.java" "$HERE"/android/app/src/main/java/com/eworldq8/sunnati/*.java 2>&1 | grep -v "^warning: \[options\]" || true
+  "$SDK/gen/com/eworldq8/sunnati/R.java" "$SDK/gen/com/eworldq8/sunnati/BuildConfig.java" \
+  "$HERE"/android/app/src/main/java/com/eworldq8/sunnati/*.java >"$SDK/javac.log" 2>&1
+STATUS=$?
+
+grep -v "^warning: \[options\]" "$SDK/javac.log" || true
+
+if [ "$STATUS" -ne 0 ]; then
+  echo "the wrapper does NOT compile" >&2
+  exit 1
+fi
 echo "wrapper classes compile"

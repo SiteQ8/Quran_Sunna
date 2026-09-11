@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.44.0';
+  var VERSION = '8.45.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1275,6 +1275,20 @@
       }).join('');
   }
 
+  /* The days the sunnah marks out for fasting, which hijri.js already works
+     out and tags. Ramadan is not among them: its fast is a duty and sits with
+     the prayers, not the sunan. Nor are the two eids and the days of tashreeq,
+     where the fast is forbidden and a tick would be an invitation to a wrong. */
+  function fastToday(date) {
+    if (typeof Hijri === 'undefined' || !Hijri.occasions) return [];
+    var list = Hijri.occasions(date || new Date(), Store.get('hijriAdjust'));
+    /* Ramadan carries mondays and white days of its own, and they must not be
+       offered as voluntary: the month's fast is a duty already being kept. */
+    var shut = list.some(function (o) { return o.kind === 'eid' || o.kind === 'month'; });
+    if (shut) return [];
+    return list.filter(function (o) { return o.kind === 'fast'; });
+  }
+
   /* Everything a person can tick today, so the meter can never read more done
      than there is to do. The windows the jumuah replaces drop out on Friday. */
   function totalSunnahCount(date) {
@@ -1291,6 +1305,8 @@
       });
       if (friday && typeof FRIDAY_SUNNAH !== 'undefined') total += FRIDAY_SUNNAH.items.length;
     }
+    /* one tick for the day, however many reasons it carries to be fasted */
+    if (fastToday(date).length) total += 1;
     return total;
   }
 
@@ -3817,6 +3833,21 @@
         }).join(''));
     }
 
+    /* One tick for the day, with its reasons under it: a day can be a monday
+       and one of the white days at once, and it is still one fast. */
+    var fasts = fastToday();
+    if (fasts.length) {
+      html += fold('fast', 'صيام التطوع', 'fast', ['fast'],
+        '<p class="setting-note" style="margin-bottom:12px">' +
+        esc(fasts.length > 1 ? 'يجتمع في هذا اليوم أكثر من سبب للصيام' : fasts[0].note) + '</p>' +
+        '<button class="check' + (record.sunnah.fast ? ' is-done' : '') +
+          '" data-check="fast" role="checkbox" aria-checked="' + (record.sunnah.fast ? 'true' : 'false') + '">' +
+          '<span class="check-box">' + icon('check') + '</span>' +
+          '<span class="check-label">' + esc(fasts.map(function (f) { return f.name; }).join('، ')) +
+          (fasts.length > 1 ? '<span class="check-note">' + esc(fasts[0].note) + '</span>' : '') +
+          '</span></button>');
+    }
+
     if (typeof WIRD_ITEMS !== 'undefined') {
       var wirdIds = WIRD_ITEMS.map(function (item) { return 'wird:' + item.id; });
       html += fold('wird', 'الورد اليومي', 'fire', wirdIds,
@@ -6337,7 +6368,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

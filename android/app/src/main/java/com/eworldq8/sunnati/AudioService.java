@@ -46,7 +46,7 @@ public final class AudioService extends Service {
             return START_NOT_STICKY;
         }
         if (ACTION_STOP.equals(action) || action == null) {
-            stopForeground(true);
+            stopForeground(STOP_FOREGROUND_REMOVE);
             stopSelf();
         }
         return START_NOT_STICKY;
