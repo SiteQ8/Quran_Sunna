@@ -6164,6 +6164,26 @@ test('choices are laid in an even grid, not pills of every width', () => {
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
 });
 
+test('the page greets by the name it showed last time, and never as markup', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the app's own opening screen greets by city; the page's used not to,
+     though the page knows the city better than the wrapper does */
+  assert.ok(html.indexOf('id="boot-greet"') !== -1, 'the opening has a line for it');
+  const script = /<script>\s*\/\* The same greeting[\s\S]*?<\/script>/.exec(html);
+  assert.ok(script, 'set by a line of inline script, before any script of the app runs');
+  assert.ok(script[0].indexOf("localStorage.getItem('sunnati.greet')") !== -1);
+  assert.ok(script[0].indexOf('.textContent = line') !== -1 && script[0].indexOf('innerHTML') === -1,
+    'written as text, never as markup: it is whatever was stored');
+  assert.ok(script[0].indexOf('name.length <= 40') !== -1, 'and not a novel');
+
+  /* the app leaves the name it showed, so both openings say the same thing */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const tell = /function tellPlace\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(tell.indexOf("localStorage.setItem('sunnati.greet', String(p.n))") !== -1);
+  assert.ok(tell.indexOf('sunnati.greet') < tell.indexOf('bridge()'),
+    'left for the page before the wrapper is even asked for, so a browser gets it too');
+});
+
 test('the place is fetched where it is read, on the line that states it', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* the line was itself a button, so a button could not go inside it */
