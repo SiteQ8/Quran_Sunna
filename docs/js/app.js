@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.54.0';
+  var VERSION = '8.55.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2475,42 +2475,14 @@
   /* Any words on the same card: a dhikr from the book, a supplication, a
      hadith. The heading names where it is from. */
   /* the eye of the sadu with the crescent, as the icon draws it */
-  /* The mark at the foot of a shared picture: the same serrated diamond the
-     icon is, with the crescent taken out of it. It used to be four nested
-     diamonds drawn by hand here, so a card a person sent to their family
-     carried one mark while the app on their screen carried another. */
-  function saduMark(ctx, cx, cy, r, paper) {
-    var teeth = 6, depth = r * 0.14;
-    var corner = [[cx, cy - r], [cx + r, cy], [cx, cy + r], [cx - r, cy]];
-    ctx.beginPath();
-    for (var i = 0; i < 4; i++) {
-      var a = corner[i], b = corner[(i + 1) % 4];
-      for (var t = 0; t < teeth; t++) {
-        var t0 = t / teeth, tm = (t + 0.5) / teeth;
-        var px = a[0] + (b[0] - a[0]) * t0, py = a[1] + (b[1] - a[1]) * t0;
-        if (i === 0 && t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        var mx = a[0] + (b[0] - a[0]) * tm, my = a[1] + (b[1] - a[1]) * tm;
-        var ux = mx - cx, uy = my - cy, ln = Math.sqrt(ux * ux + uy * uy) || 1;
-        ctx.lineTo(mx + ux / ln * depth, my + uy / ln * depth);
-      }
-    }
-    ctx.closePath();
-    ctx.fillStyle = '#8f2323';
-    ctx.fill();
-    /* The crescent is painted in the paper's own colour, as it is in the icon.
-       Cutting it out with destination-out was tried and it punched through the
-       card itself, paper, lattice and all, leaving a hole to the page beneath.
-       Two circles in one path under the even-odd rule: what lies inside both
-       is left alone, and what remains of the first is the crescent. Its biting
-       circle sits where the icon's own arc puts it, radius 1.30 and centre
-       offset (0.950, -0.190) of the moon's radius, rather than placed by eye. */
-    var mr = r * 0.538;
-    var mx = cx + r * 0.032;
-    ctx.beginPath();
-    ctx.arc(mx, cy, mr, 0, Math.PI * 2);
-    ctx.arc(mx + mr * 0.950, cy - mr * 0.190, mr * 1.30, 0, Math.PI * 2);
-    ctx.fillStyle = paper || '#f7f5ef';
-    ctx.fill('evenodd');
+  function eyeMark(ctx, cx, cy, r) {
+    var d = function (rr, fill) {
+      ctx.beginPath(); ctx.moveTo(cx, cy - rr); ctx.lineTo(cx + rr, cy); ctx.lineTo(cx, cy + rr); ctx.lineTo(cx - rr, cy); ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+    };
+    d(r, '#b08833'); d(r * .8, '#f3e9d2'); d(r * .6, '#1a1412');
+    ctx.beginPath(); ctx.arc(cx + r * .03, cy, r * .28, 0, Math.PI * 2); ctx.fillStyle = '#f3e9d2'; ctx.fill();
+    ctx.beginPath(); ctx.arc(cx + r * .14, cy - r * .04, r * .25, 0, Math.PI * 2); ctx.fillStyle = '#1a1412'; ctx.fill();
   }
 
   /* the two faces the app reads with, as the canvas needs them written */
@@ -2615,7 +2587,7 @@
       /* the eye of the mark closes it, then where the words come from, then
          the app and its maker */
       var footY = top + lines.length * lineHeight + 20;
-      saduMark(ctx, W / 2, footY, 22, '#f7f5ef');
+      eyeMark(ctx, W / 2, footY, 22);
       ctx.fillStyle = '#5e6c65';
       if (source) {
         ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
