@@ -284,13 +284,17 @@ button { background: none; border: none; cursor: pointer; }
 }
 .place-tap {
   display: inline-flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
-  justify-content: center; min-height: 44px; padding: 0 var(--s2);
+  justify-content: center; min-height: 44px; padding-inline: 0 var(--s2);
   background: none; border: 0; font: inherit; color: inherit;
 }
-/* small to the eye and wide enough for a thumb, as everything tapped must be */
+/* Small to the eye and wide enough for a thumb, as everything tapped must be.
+   The box stays 44 so the thumb has its room, and the mark is pushed to the
+   edge that faces the pin and the box pulled in behind it, so the two read as
+   one thing rather than as a button standing off on its own. */
 .place-locate {
-  display: inline-grid; place-items: center; width: 44px; height: 44px;
-  background: none; border: 0; color: var(--ink-3); flex: none;
+  display: inline-grid; place-items: center end; width: 44px; height: 44px;
+  padding: 0; background: none; border: 0; color: var(--ink-3); flex: none;
+  margin-inline-end: 0;
 }
 .place-locate .icon { width: 17px; height: 17px; }
 .place-where { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--ink-2); }
