@@ -46,7 +46,7 @@
     fastOwed: 0,
     fastDone: 0,
     adhanVoice: 'none',
-    salawatVoice: 'ibrahimiyya',
+    salawatVoice: 'buhendi',
     voice: 'recording',
     voiceName: '',
     placeAsked: false,
