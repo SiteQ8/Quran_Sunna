@@ -117,6 +117,7 @@ public class MainActivity extends Activity {
         root.addView(web, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         splash = new SplashView(this);
+        splashShownAt = android.os.SystemClock.uptimeMillis();
         root.addView(splash, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         setContentView(root);
@@ -270,8 +271,26 @@ public class MainActivity extends Activity {
 
     /** Fades the splash away once the page says it is ready, or when the wait
      *  has gone on long enough. Called from either, so it guards itself. */
+    /** How long the opening screen stays before it is allowed to go.
+     *  The page tells us it has painted, and with the worker holding the shell
+     *  that is a few hundred milliseconds, so the screen used to fade in over
+     *  260ms and start fading out again at once: a flicker, and nobody could
+     *  read the greeting on it. This is the floor, not the length: the screen
+     *  still goes as soon as the page is ready once the floor has passed. */
+    private static final long SPLASH_HOLD_MS = 1100;
+    private long splashShownAt;
+
     void dismissSplash() {
         if (splash == null || splashGone) return;
+        long shown = android.os.SystemClock.uptimeMillis() - splashShownAt;
+        if (shown < SPLASH_HOLD_MS && root != null) {
+            /* asked to go too early: wait out the remainder and ask again, at
+               which point the branch above is false and it goes */
+            root.postDelayed(new Runnable() {
+                @Override public void run() { dismissSplash(); }
+            }, SPLASH_HOLD_MS - shown);
+            return;
+        }
         splashGone = true;
         splash.animate().alpha(0f).setDuration(420).withEndAction(new Runnable() {
             @Override

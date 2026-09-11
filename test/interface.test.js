@@ -5804,6 +5804,24 @@ test('the app never speaks of a browser', () => {
   assert.ok(app.indexOf('التنبيه يصل من التطبيق نفسه في دقيقته') !== -1);
 });
 
+test('the opening is held long enough to be seen, and no longer', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  /* the page says it has painted, and with the worker holding the shell that
+     is a few hundred milliseconds, so the screen faded in over 260ms and began
+     fading out again at once: a flicker, and the greeting on it unreadable */
+  assert.ok(/SPLASH_HOLD_MS = \d+/.test(main), 'the opening has a floor');
+  const hold = +/SPLASH_HOLD_MS = (\d+)/.exec(main)[1];
+  assert.ok(hold >= 800 && hold <= 1600, 'long enough to read, short enough not to annoy: ' + hold);
+  /* a floor and not a length: it still goes as soon as the page is ready */
+  assert.ok(main.indexOf('SPLASH_HOLD_MS - shown') !== -1, 'it waits out the remainder, it does not sleep a fixed time');
+  assert.ok(main.indexOf('}, 4000);') !== -1, 'and a ceiling, for a page that never says it is ready');
+
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function dismissBootSplash\(atOnce\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('performance.now') !== -1 && fn.indexOf('700') !== -1,
+    'the page has the same floor, measured from when it started loading');
+});
+
 test('the splash is the app\'s own mark and face, drawn where the fonts can be read', () => {
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
   /* android cannot open a woff2 face, so the picture is made at build time
@@ -5862,7 +5880,7 @@ test('the map asks for no more tiles than it shows, and says plainly when it fin
   assert.ok(app.indexOf('لم يُعثر على مساجد مسجّلة حولك.') !== -1);
 });
 
-test('the page shows its own splash while it wakes, in the colours already chosen', () => {
+test('the page shows its own splash while it wakes, in the colours already chosen', async () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html);
   assert.ok(splash, 'the page carries one');
@@ -5878,17 +5896,20 @@ test('the page shows its own splash while it wakes, in the colours already chose
   assert.ok(html.indexOf("root.style.backgroundColor = dark ? '#10161a' : '#f6f4ee';") !== -1);
 
   const { win, doc } = boot();
-  /* it begins to go the moment the first screen is drawn, and is taken out
-     of the page once it has faded */
+  /* It used to begin going the moment the first screen was drawn, which with
+     the worker holding the shell is a few hundred milliseconds: it appeared
+     and started fading in the same breath. It is held for a moment first. */
+  assert.ok(doc.getElementById('boot-splash'), 'still there while the floor runs');
+  await new Promise(function (done) { setTimeout(done, 900); });
   const still = doc.getElementById('boot-splash');
-  assert.ok(!still || still.style.opacity === '0', 'it should be fading or gone');
+  assert.ok(!still || still.style.opacity === '0', 'and then it goes');
   win.App.helpers.dismissBootSplash();
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(app.indexOf("splash.style.opacity = '0';") !== -1, 'fading rather than vanishing');
   assert.ok(app.indexOf('splash.parentNode.removeChild(splash)') !== -1, 'and then removed');
 });
 
-test('only one splash shows: inside the app the page yields to the app\'s own', () => {
+test('only one splash shows: inside the app the page yields to the app\'s own', async () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function dismissBootSplash\(atOnce\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf('if (atOnce) {') !== -1 && fn.indexOf('removeChild(splash)') !== -1,
@@ -5898,8 +5919,10 @@ test('only one splash shows: inside the app the page yields to the app\'s own', 
     'from the first moment, before anything is drawn');
 
   const { win, doc } = boot();
-  /* with no app around, the page keeps its own and fades it */
+  /* with no app around, the page keeps its own, holds it a moment, fades it */
   void win;
+  assert.ok(doc.getElementById('boot-splash'), 'held, not flashed');
+  await new Promise(function (done) { setTimeout(done, 900); });
   const left = doc.getElementById('boot-splash');
   assert.ok(!left || left.style.opacity === '0');
 });
