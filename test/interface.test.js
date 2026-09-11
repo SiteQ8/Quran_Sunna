@@ -5387,7 +5387,10 @@ test('the clock carries its adhkar at one end and its picture at the other', () 
   /* the picture carries the day's times and the night's marks */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
+  /* الظهر is no longer a literal here: on friday the picture must say الجمعة,
+     as the screen beside it does, so the name comes from prayerName */
+  assert.ok(fn.indexOf("prayerName('dhuhr')") !== -1, 'the picture asks for the name of the noon');
+  ['الفجر', 'الشروق', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
     assert.ok(fn.indexOf(n) !== -1, 'the picture should name ' + n);
   });
 });
@@ -5492,7 +5495,8 @@ test('the picture of the times is a row for each, the night marks among them', (
   assert.ok(fn.indexOf('roundRect(ctx, PAD, y, W - PAD * 2, ROW, 26)') !== -1, 'each on its own rounded row');
   assert.ok(fn.indexOf("ctx.textAlign = 'right'") !== -1 && fn.indexOf("ctx.textAlign = 'left'") !== -1,
     'the name at the start and the hour at the end');
-  ['الفجر', 'الشروق', 'الظهر', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
+  assert.ok(fn.indexOf("prayerName('dhuhr')") !== -1, 'friday is called by its own name here too');
+  ['الفجر', 'الشروق', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {
     assert.ok(fn.indexOf(n) !== -1, 'the picture should carry ' + n);
   });
   /* the two night marks take the same row, only tinted apart */
@@ -7172,6 +7176,43 @@ test('no name in the page belongs to two things', () => {
      resolves #i-plane to the first, so the second was weight nobody saw */
   assert.deepStrictEqual([...new Set(twice)], [],
     'these names are used more than once: ' + [...new Set(twice)].join(', '));
+});
+
+test('the two buttons on the prayer card actually do something', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* both sat in the page with an id and a label and nothing listening: a
+     button that has never once worked reads as a broken app, not a missing one */
+  ['home-azkar', 'home-share-times'].forEach(function (id) {
+    assert.ok(html.indexOf('id="' + id + '"') !== -1, id + ' should be on the card');
+    assert.ok(new RegExp("bind\\('" + id + "'").test(app), id + ' is on the page but nothing listens');
+  });
+  /* the hands mark is the mark of أذكار بعد الصلاة, which is what it opens */
+  assert.ok(/bind\('home-azkar', 'click', function \(\) \{ openAzkar\('afterprayer'\); \}\)/.test(app));
+  assert.ok(html.indexOf('id="home-azkar" aria-label="أذكار بعد الصلاة"') !== -1,
+    'and the label says what it opens');
+
+  /* the picture of the times calls friday by the name the screen calls it */
+  assert.ok(/\{ n: prayerName\('dhuhr'\), v: clockText\(t\.dhuhr\) \}/.test(app),
+    'a picture of friday that says الظهر disagrees with the screen beside it');
+});
+
+test('a month of the calendar can be read without tapping thirty days', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('id="calendar-seasons"') !== -1, 'the month lists what it carries');
+  assert.ok(/renderCalendarSeasons\(\);/.test(app), 'and it is drawn with the calendar');
+  const fn = /function renderCalendarSeasons\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* gathered by name, not by «the run I opened last»: ramadan carries the white
+     days and the odd nights inside it, and keying on the last run cut the month
+     itself into eight fragments */
+  assert.ok(fn.indexOf('byKey[o.key]') !== -1, 'a season is one line, however many fall inside it');
+  assert.ok(fn.indexOf('spanOf') !== -1, 'and its days are compressed, not listed one by one');
+  assert.ok(fn.indexOf("o.kind === 'weekly'") !== -1, 'what falls every week is not a season of the month');
+
+  const hijri = fs.readFileSync(path.join(DOCS, 'js', 'hijri.js'), 'utf8');
+  assert.ok(hijri.indexOf("name: 'شهر رمضان المبارك'") !== -1, 'the month is named as it is spoken');
+  assert.ok(!/name: 'رمضان',/.test(hijri));
 });
 
 test('the reminders stand in a screen of their own, and none was dropped on the way', () => {

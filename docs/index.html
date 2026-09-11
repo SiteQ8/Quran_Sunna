@@ -176,7 +176,7 @@
 
   <div class="clock">
     <div class="card-tools">
-      <button class="btn btn-ghost btn-icon" id="home-azkar" aria-label="أذكار هذا الوقت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></button>
+      <button class="btn btn-ghost btn-icon" id="home-azkar" aria-label="أذكار بعد الصلاة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></button>
       <button class="btn btn-ghost btn-icon" id="home-share-times" aria-label="شارك مواقيت اليوم صورة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-share"/></svg></button>
     </div>
     <div class="clock-date">
@@ -641,6 +641,10 @@
     <button class="btn btn-ghost btn-block" id="cal-today" style="margin-top:14px" hidden>ارجع إلى اليوم</button>
   </div>
   <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg><span id="calendar-season-head">مواسم الشهر</span></h2></div>
+    <div id="calendar-seasons"></div>
+  </div>
+  <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg><span id="calendar-today">…</span></h2></div>
     <div id="calendar-occasions"></div>
   </div>
@@ -789,7 +793,7 @@
 
   <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن والمواسم</h2></div>
-    <p class="setting-note" id="fast-next" style="margin:0 0 10px"></p>
+    <div class="next-fast" id="fast-next"></div>
     <div class="setting"><span><span class="setting-label">ليلة الجمعة</span><br><span class="setting-note">تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ</span></span>
       <button class="switch" id="settings-jumuah-night" role="switch" aria-checked="true" aria-label="تذكير ليلة الجمعة"></button></div>
     <div class="setting"><span><span class="setting-label">تذكير الصيام</span><br><span class="setting-note">تنبيه في ليلة اليوم الذي يُستحب صيامه، قبل السحور</span></span>

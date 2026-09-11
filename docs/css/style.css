@@ -765,6 +765,29 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .occasion:last-child { margin-bottom: 0; }
 
+/* The mark beside a season in the month list takes that season's own colour,
+   the same one its dot wears in the grid above. */
+.row-mark.kind-eid { color: #b8860b; }
+.row-mark.kind-fast { color: #2a72ad; }
+.row-mark.kind-month, .row-mark.kind-season { color: #1e6f47; }
+.row-mark.kind-night { color: #5b4a99; }
+.row-mark.kind-weekly { color: #8b5a3c; }
+
+/* The nearest fast: a line of grey prose was lost under the heading, and it is
+   the one thing on that card a person actually acts on tonight. */
+.next-fast {
+  display: flex; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s4); margin-bottom: var(--s4);
+  border-radius: var(--r-md); background: color-mix(in srgb, #2a72ad 7%, transparent);
+  border-inline-start: 3px solid #2a72ad;
+}
+.next-fast .icon { color: #2a72ad; flex: none; }
+.next-fast-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.next-fast-when { font-weight: 600; }
+.next-fast-note { font-size: .78rem; line-height: 1.7; color: var(--ink-2); }
+.next-fast.is-off { border-inline-start-color: var(--line); background: none; }
+.next-fast.is-off .icon { color: var(--ink-3); }
+
 /* ---------- the azkar of this hour ---------- */
 
 .now-azkar {
