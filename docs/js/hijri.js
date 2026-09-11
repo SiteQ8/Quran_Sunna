@@ -156,7 +156,7 @@
   function upcoming(date, adjust) {
     var h = toHijri(date, adjust);
     var targets = [
-      { name: 'رمضان', m: 9, d: 1, icon: 'crescent' },
+      { name: 'شهر رمضان المبارك', m: 9, d: 1, icon: 'crescent' },
       { name: 'عيد الفطر', m: 10, d: 1, icon: 'gift' },
       { name: 'يوم عرفة', m: 12, d: 9, icon: 'kaaba' },
       { name: 'عيد الأضحى', m: 12, d: 10, icon: 'gift' },

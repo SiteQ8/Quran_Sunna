@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.50.0';
+  var VERSION = '8.51.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4415,7 +4415,9 @@
     var rows = [
       { n: 'الفجر', v: clockText(t.fajr) },
       { n: 'الشروق', v: clockText(t.sunrise) },
-      { n: 'الظهر', v: clockText(t.dhuhr) },
+      /* the screen calls friday's noon by the name people are waiting for, and
+         a picture of the same day should not call it something else */
+      { n: prayerName('dhuhr'), v: clockText(t.dhuhr) },
       { n: 'العصر', v: clockText(t.asr) },
       { n: 'المغرب', v: clockText(t.maghrib) },
       { n: 'العشاء', v: clockText(t.isha) }
@@ -4923,6 +4925,81 @@
     }
   }
 
+  /* Everything the shown month carries, in the order it falls, with a run of
+     days under one name folded into a single line: the white days are three
+     days and one season, and saying them three times reads as three seasons.
+     The grid already dots such a day; this is so a month can be read at all
+     without tapping thirty cells to find out what is in it. */
+  function renderCalendarSeasons() {
+    var host = $('calendar-seasons');
+    if (!host) return;
+    var adjust = Store.get('hijriAdjust');
+    var month = shownMonth();
+    var days = Hijri.monthDays(month.y, month.m, adjust);
+
+    if ($('calendar-season-head')) {
+      $('calendar-season-head').textContent = 'مواسم ' + Hijri.MONTHS[month.m - 1];
+    }
+
+    /* Gathered by name across the whole month, then the days compressed: a
+       season is one line whether it runs nine days together or falls on five
+       odd nights apart. Keying by name and not by «the run I opened last» is
+       the point: ramadan carries the white days and the odd nights inside it,
+       and a lesser season appearing mid-month used to cut the month itself
+       into fragments. */
+    var order = [];
+    var byKey = {};
+    days.forEach(function (day) {
+      Hijri.occasions(day.date, adjust).forEach(function (o) {
+        /* the weekly ones fall every week and are not a season of the month */
+        if (o.kind === 'weekly' || o.key === 'mondayThursday') return;
+        if (!byKey[o.key]) {
+          byKey[o.key] = { name: o.name, note: o.note, kind: o.kind, days: [], dates: [] };
+          order.push(o.key);
+        }
+        byKey[o.key].days.push(day.d);
+        byKey[o.key].dates.push(day.date);
+      });
+    });
+
+    if (!order.length) {
+      host.innerHTML = '<p class="setting-note">لا موسم مخصوص في هذا الشهر، ' +
+        'وصيام الإثنين والخميس قائم فيه كما في غيره.</p>';
+      return;
+    }
+
+    /* 1..9 reads «1 إلى 9»، و21 و23 و25 تبقى معدودة */
+    function spanOf(list) {
+      var parts = [];
+      var from = list[0], prev = list[0];
+      for (var i = 1; i <= list.length; i++) {
+        if (i < list.length && list[i] === prev + 1) { prev = list[i]; continue; }
+        parts.push(from === prev ? ar(from) : ar(from) + ' إلى ' + ar(prev));
+        if (i < list.length) { from = list[i]; prev = list[i]; }
+      }
+      return parts.join(' و');
+    }
+
+    host.innerHTML = order.map(function (key) {
+      var r = byKey[key];
+      var when = spanOf(r.days) + ' ' + Hijri.MONTHS[month.m - 1];
+      var first = r.dates[0], last = r.dates[r.dates.length - 1];
+      var greg = first.getTime() === last.getTime()
+        ? Hijri.WEEKDAYS[first.getDay()] + ' ' + ar(first.getDate()) + ' ' + GREG_MONTHS[first.getMonth()]
+        : ar(first.getDate()) + ' ' + GREG_MONTHS[first.getMonth()] +
+          ' إلى ' + ar(last.getDate()) + ' ' + GREG_MONTHS[last.getMonth()];
+      return '<button class="row" data-day="' + r.days[0] + '">' +
+        '<span class="row-mark kind-' + esc(r.kind) + '">' + icon(OCCASION_MARK[r.kind] || 'calendar') + '</span>' +
+        '<span class="row-body"><span class="row-title">' + esc(r.name) + '</span>' +
+        /* the arabic zero is a dot, so a middle dot beside a numeral reads as
+           a stray digit: the separator is a comma */
+        '<span class="row-note">' + esc(when) + '، ' + esc(greg) + '<br>' + esc(r.note) + '</span></span></button>';
+    }).join('');
+  }
+
+  var OCCASION_MARK = { eid: 'gift', month: 'crescent', season: 'mountain',
+    night: 'moon', fast: 'fast', weekly: 'clock' };
+
   /* The day the reader has picked out of the grid, or today when none. */
   var pickedDay = null;
 
@@ -5010,6 +5087,7 @@
   function renderCalendar() {
     if (!$('cal-grid')) return;
     renderCalendarGrid();
+    renderCalendarSeasons();
     renderCalendarDay();
     renderCalendarUpcoming();
     fillConverter();
@@ -5166,20 +5244,35 @@
   function renderNextFast() {
     var host = $('fast-next');
     if (!host) return;
-    if (!Store.get('fastNote')) { host.textContent = 'تذكير الصيام موقوف'; return; }
+    function strip(cls, top, note) {
+      host.className = 'next-fast' + (cls ? ' ' + cls : '');
+      host.innerHTML = icon('fast') +
+        '<span class="next-fast-body"><span class="next-fast-when">' + esc(top) + '</span>' +
+        '<span class="next-fast-note">' + esc(note) + '</span></span>';
+    }
+    if (!Store.get('fastNote')) {
+      strip('is-off', 'تذكير الصيام موقوف', 'شغّله ليصلك التنبيه ليلة اليوم الذي يُستحب صيامه');
+      return;
+    }
     var today = new Date();
     for (var d = 0; d < 40; d++) {
       var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
       var why = fastToday(day);
       if (!why.length) continue;
-      var when = d === 0 ? 'اليوم' : d === 1 ? 'غداً' :
-        Hijri.WEEKDAYS[day.getDay()] + ' ' + ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()];
-      host.textContent = 'أقرب صيام: ' + when + '، ' +
-        why.map(function (w) { return w.name; }).join(' و') +
-        '، والتنبيه ليلته بعد المغرب';
+      var names = why.map(function (w) { return w.name; }).join(' و');
+      /* «صيام الإثنين» already says which day it is, so the date does not say
+         it again: أقرب صيام الإثنين الإثنين ١٤ سبتمبر reads like a stutter */
+      var weekday = Hijri.WEEKDAYS[day.getDay()];
+      var dated = (names.indexOf(weekday) === -1 ? weekday + ' ' : '') +
+        ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()];
+      var note = d === 0 ? 'اليوم'
+        : d === 1 ? dated + '، والتنبيه الليلة بعد المغرب بساعة ونصف'
+        : dated + '، والتنبيه ليلته بعد المغرب بساعة ونصف';
+      strip('', 'أقرب صيام: ' + names, note);
       return;
     }
-    host.textContent = '';
+    host.className = 'next-fast';
+    host.innerHTML = '';
   }
 
   function renderSettings() {
@@ -5837,6 +5930,10 @@
     });
 
     bind('hijri-up', 'click', function () { nudgeHijri(1); });
+    /* Both of these sat in the page with an id and a label and nothing
+       listening, so they had never once done anything. */
+    bind('home-azkar', 'click', function () { openAzkar('afterprayer'); });
+    bind('home-share-times', 'click', function () { shareTimes(); });
     bind('hijri-down', 'click', function () { nudgeHijri(-1); });
     bind('ayah-share', 'click', function () {
       var pos = state.dailyAyah;
