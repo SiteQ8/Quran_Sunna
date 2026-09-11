@@ -348,7 +348,7 @@
     <h1 id="search-title">البحث</h1>
     <p>في القرآن أو الأذكار أو الأحاديث أو الأدعية أو السنن، بالتشكيل أو بدونه</p>
   </div>
-  <div class="pick-grid" id="search-scope" role="radiogroup" aria-label="مجال البحث">
+  <div class="chip-grid is-tight" id="search-scope" style="--cols:4;margin-bottom:var(--s3)" role="radiogroup" aria-label="مجال البحث">
     <button class="chip is-on" data-scope="quran" role="radio" aria-checked="true">القرآن</button>
     <button class="chip" data-scope="all" role="radio" aria-checked="false">كل شيء</button>
     <button class="chip" data-scope="azkar" role="radio" aria-checked="false">الأذكار</button>
@@ -559,9 +559,9 @@
   <div class="compass-panel">
     <p class="compass-read" id="qibla-degrees">---°</p>
     <p class="setting-note" style="text-align:center" id="qibla-note"></p>
+    <button class="btn btn-primary btn-block" id="qibla-enable" hidden style="margin-top:14px">فعّل بوصلة الجهاز</button>
+    <button class="btn btn-ghost btn-block" id="qibla-locate" style="margin-top:8px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg>حدّث موقعي</button>
   </div>
-  <button class="btn btn-primary btn-block" id="qibla-enable" hidden style="margin-top:18px">فعّل بوصلة الجهاز</button>
-  <button class="btn btn-ghost btn-block" id="qibla-locate" style="margin-top:8px"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg>حدّث موقعي</button>
 </section>
 
 <!-- ══════════ المسبحة ══════════ -->
@@ -582,18 +582,22 @@
     <div class="counter-phrase" id="tasbih-phrase">سبحان الله</div>
     <button class="counter-btn" id="tasbih-tap">سبّح</button>
   </div>
-  <div class="chip-row" id="tasbih-phrases" style="justify-content:center;margin-bottom:14px"></div>
-  <button class="btn btn-ghost btn-block" id="tasbih-reset">تصفير العدّاد</button>
-  <p class="setting-note pill" style="text-align:center;margin-top:10px" id="tasbih-total"></p>
+  <div class="card">
+    <div class="chip-grid" id="tasbih-phrases" style="--cols:2"></div>
+    <div class="khatma-reset"><button class="btn btn-ghost btn-block" id="tasbih-reset">تصفير العدّاد</button></div>
+    <p class="setting-note" style="text-align:center;margin-top:10px" id="tasbih-total"></p>
+  </div>
 </section>
 
 <!-- ══════════ الإذاعة ══════════ -->
 <section class="view" id="v-radio" aria-labelledby="radio-title">
   <div class="view-head"><h1 id="radio-title">الإذاعة</h1><p>بث مباشر، يحتاج اتصالاً بالإنترنت</p></div>
   <div id="radio-list"></div>
-  <h2 class="section-title">مؤقت الإيقاف</h2>
-  <div class="chip-grid" id="sleep-timer" style="--cols:4"></div>
-  <p class="setting-note" id="sleep-note" style="margin-top:8px"></p>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>مؤقت الإيقاف</h2></div>
+    <div class="chip-grid" id="sleep-timer" style="--cols:4"></div>
+    <p class="setting-note" id="sleep-note" style="margin-top:10px;text-align:center"></p>
+  </div>
 </section>
 
 <!-- ══════════ الأحاديث ══════════ -->
