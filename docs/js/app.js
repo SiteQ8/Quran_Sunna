@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.58.0';
+  var VERSION = '8.59.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4803,7 +4803,9 @@
     if (chips) {
       chips.innerHTML = SLEEP_CHOICES.map(function (m) {
         return '<button class="chip" data-sleep="' + m + '">' + minutesOf(m) + '</button>';
-      }).join('') + '<button class="chip" data-sleep="0">إلغاء</button>';
+      /* the cancel is not one of the durations, so it takes the row under them
+         rather than standing as a fifth orphan at the end of a row of four */
+      }).join('') + '<button class="chip chip-wide" data-sleep="0">إلغاء</button>';
     }
     renderSleepNote();
   }

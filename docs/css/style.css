@@ -984,6 +984,16 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .segment .chip.is-on { background: var(--accent-solid); color: var(--on-accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .chip.is-on { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); }
 .chip-row { display: flex; gap: var(--s2); flex-wrap: wrap; }
+
+/* A fixed set of choices of which one is on. A wrapping row gave cells of
+   different widths breaking wherever they happened to run out of room, which
+   reads as scattered rather than as a set. The grid makes them equal and puts
+   the break where the count says it should be: six across three, four across
+   four. The column count is said at the place of use, since only it knows. */
+.chip-grid { display: grid; grid-template-columns: repeat(var(--cols, 3), 1fr); gap: var(--s2); }
+.chip-grid .chip { width: 100%; padding: 0 8px; }
+/* one that is not a peer of the rest: it takes the whole row under them */
+.chip-grid .chip-wide { grid-column: 1 / -1; }
 .chip-scroll { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: var(--s2); scrollbar-width: none; }
 .chip-scroll::-webkit-scrollbar { display: none; }
 .chip-scroll .chip { flex: none; }

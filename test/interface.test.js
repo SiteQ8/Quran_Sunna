@@ -564,6 +564,29 @@ test('choosing a city moves the times and the qibla', () => {
 
 /* ---------------- khatma ---------------- */
 
+test('a fixed set of choices is a grid of equal cells, not a ragged wrap', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* a wrapping row gave cells of different widths breaking wherever they ran
+     out of room, which reads as scattered rather than as a set */
+  assert.ok(/\.chip-grid \{[^}]*grid-template-columns: repeat\(var\(--cols/.test(css),
+    'the column count is said at the place of use, since only it knows');
+  assert.ok(html.indexOf('class="chip-grid" id="khatma-days" style="--cols:3') !== -1,
+    'six durations across three, which is two even rows');
+  assert.ok(html.indexOf('class="chip-grid" id="sleep-timer" style="--cols:4') !== -1);
+  /* the cancel is not one of the durations, so it does not stand as a fifth
+     orphan at the end of a row of four */
+  assert.ok(/\.chip-grid \.chip-wide \{ grid-column: 1 \/ -1; \}/.test(css));
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('class="chip chip-wide" data-sleep="0"') !== -1);
+
+  const { win, doc } = boot();
+  win.App.go('khatma');
+  const cells = [...doc.getElementById('khatma-days').children];
+  assert.strictEqual(cells.length, 6, 'six choices');
+  assert.ok(cells.every(function (c) { return c.classList.contains('chip'); }));
+});
+
 test('the khatma keeps its buttons in its card, in the order of what they cost', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const view = html.slice(html.indexOf('id="v-khatma"'), html.indexOf('<section class="view"', html.indexOf('id="v-khatma"')));
@@ -1543,7 +1566,11 @@ test('the stylesheet asks for no colour it never defined', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const defined = new Set([...css.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((m) => m[1]));
   [...app.matchAll(/setProperty\('(--[a-z0-9-]+)'/g)].forEach((m) => defined.add(m[1]));
-  const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)/g)].map((m) => m[1]));
+  /* var(--x, fallback) cannot resolve to nothing by construction, and it is how
+     a value said at the place of use is read: --cols is set inline on the one
+     element that knows how many columns its own set wants. Only the bare form
+     is checked. */
+  const used = new Set([...css.matchAll(/var\((--[a-z0-9-]+)\s*\)/g)].map((m) => m[1]));
   const missing = [...used].filter((t) => !defined.has(t));
   assert.deepStrictEqual(missing, [],
     'these resolve to nothing, so whatever they colour is left unpainted: ' + missing.join(', '));
