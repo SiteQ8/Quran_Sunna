@@ -5123,31 +5123,6 @@ test('the sections fill their rows, leaving no hole at the end', () => {
     'and two left over take half each');
 });
 
-test('a friday opens with its sunnahs, and can be turned off', () => {
-  const { win, doc } = boot({ now: new Date('2026-09-11T08:30:00+03:00') });
-  win.Store.set('placeAsked', true);
-  assert.strictEqual(win.App.helpers.maybeFridaySheet(), true, 'friday');
-  assert.strictEqual(doc.getElementById('sheet-title').textContent, 'يوم الجمعة');
-  const body = doc.getElementById('sheet-body').textContent;
-  assert.ok(body.indexOf('أكثِر من الصلاة على النبي') !== -1);
-  assert.ok(body.indexOf('سورة الكهف') !== -1, 'and al-kahf');
-  /* the whole salawat is written out, from the book */
-  assert.ok(doc.querySelector('#sheet .salawat-text').textContent.length > 100);
-  /* offered again on the next opening, as the night before it is */
-  assert.strictEqual(win.App.helpers.maybeFridaySheet(), true);
-  /* the reader may end it from the sheet itself */
-  click(win, doc.querySelector('#sheet [data-act="friday-off"]'));
-  assert.strictEqual(win.Store.get('friday'), false);
-  assert.strictEqual(win.Store.get('fridayAt'), 0, 'and what was put off is cleared with it');
-  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false, 'and it stays off');
-});
-
-test('no friday sheet on any other day', () => {
-  const { win } = boot({ now: new Date('2026-09-09T08:30:00+03:00') });
-  assert.strictEqual(new win.Date().getDay(), 3, 'a wednesday');
-  assert.strictEqual(win.App.helpers.maybeFridaySheet(), false);
-});
-
 test('the call to rise falls at the last third of the night, and the app is told', () => {
   const { win, doc } = boot();
   const at = win.App.helpers.qiyamAt(new win.Date());
@@ -5171,13 +5146,17 @@ test('the call to rise falls at the last third of the night, and the app is told
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
 });
 
-test('both reminders are the reader\'s to turn on and off', () => {
+test('the reminders are the reader\'s to turn on and off', () => {
   const { win, doc } = boot();
-  win.App.go('settings');
-  assert.strictEqual(doc.getElementById('settings-friday').getAttribute('aria-checked'), 'true', 'friday on by default');
-  assert.strictEqual(doc.getElementById('settings-qiyam').getAttribute('aria-checked'), 'false', 'and the night call off until asked');
-  click(win, doc.getElementById('settings-friday'));
-  assert.strictEqual(win.Store.get('friday'), false);
+  win.App.go('reminders');
+  /* the friday switch went with the sheet it turned on and off */
+  assert.strictEqual(doc.getElementById('settings-friday'), null);
+  assert.strictEqual(doc.getElementById('settings-jumuah-night').getAttribute('aria-checked'), 'true',
+    'the night of jumuah on by default');
+  assert.strictEqual(doc.getElementById('settings-qiyam').getAttribute('aria-checked'), 'false',
+    'and the night call off until asked');
+  click(win, doc.getElementById('settings-jumuah-night'));
+  assert.strictEqual(win.Store.get('jumuahNight'), false);
   click(win, doc.getElementById('settings-qiyam'));
   assert.strictEqual(win.Store.get('qiyam'), true);
 });
@@ -6816,28 +6795,34 @@ test('the pictorial marks fill their box to about the same height', () => {
   });
 });
 
-test('the sunnahs of friday are offered like those of its night', () => {
+test('the call of jumuah stops at the fajr, and the day keeps its section instead', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function maybeFridaySheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  /* offered on every opening of the day, not once and then dropped */
-  assert.ok(fn.indexOf('fridayShown') === -1, 'no longer shown once a day');
-  assert.ok(fn.indexOf("var quiet = +Store.get('fridayAt') || 0;") !== -1);
-  assert.ok(fn.indexOf('if (quiet > Date.now()) return false;') !== -1, 'silent only while put off');
-  /* and it carries the same three choices as the night before it */
-  ['share-friday', 'snooze-friday', 'friday-off'].forEach(function (act) {
-    assert.ok(fn.indexOf('data-act="' + act + '"') !== -1, 'missing ' + act);
+  /* A second sheet used to open on every launch of a friday, midnight to
+     midnight, saying what the سنن الجمعة section in السنن already holds. It is
+     gone, and with it the switch, the two keys and the three actions that
+     served nothing else. */
+  ['maybeFridaySheet', 'FRIDAY_SUNAN', "Store.get('friday')", 'share-friday',
+   'snooze-friday', 'friday-off', 'fridayAt'].forEach(function (gone) {
+    assert.ok(app.indexOf(gone) === -1, gone + ' is left behind');
   });
-  /* turning it off clears what was put off too, or it would come back */
-  const off = /'friday-off': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
-  assert.ok(off.indexOf("Store.set('fridayAt', 0);") !== -1);
-  assert.ok(off.indexOf("Store.set('friday', false);") !== -1);
-  /* the sheet and the picture read from one list */
-  assert.ok(app.indexOf('var FRIDAY_SUNAN = [') !== -1);
-  assert.ok(app.indexOf("listCard('يوم الجمعة', FRIDAY_SUNAN") !== -1);
-  /* and the once-a-day flag is gone from the store as well */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('settings-friday') === -1, 'and the switch that turned it on');
   const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
-  assert.ok(store.indexOf('fridayShown') === -1);
-  assert.ok(store.indexOf('fridayAt: 0') !== -1);
+  assert.ok(store.indexOf('fridayAt') === -1 && store.indexOf('friday: true') === -1);
+
+  /* the night's remains, and it is bound to the night itself */
+  const night = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(night.indexOf('inJumuahNight()') !== -1, 'from the maghrib of thursday to the fajr');
+  /* and it carries what the day one carried: the salawat, al-kahf, the hour of
+     answer, and the washing and the early walk */
+  ['الصلاة على النبي', 'سورة الكهف', 'لا يُرد فيها سائل', 'بكّر إلى المسجد'].forEach(function (line) {
+    assert.ok(night.indexOf(line) !== -1, 'the night sheet should carry ' + line);
+  });
+
+  /* and the sunan of the day are a section of the sunan screen */
+  const { win, doc } = boot({ now: new Date(2026, 8, 11, 9, 0, 0) });
+  win.App.go('tracker');
+  assert.ok(doc.querySelector('#tracker-list [data-fold="friday"]'), 'سنن الجمعة stand in السنن');
 });
 
 test('the shared card carries the store badges as pictures, from their proper sources', () => {
@@ -6989,8 +6974,10 @@ test('the sunan of friday stand in the sunan screen, and the card that repeated 
   assert.ok(app.indexOf('renderJumuahCard') === -1, 'and no drawing left behind');
   assert.ok(app.indexOf('jumuahCardKind') === -1);
   /* the sheets themselves stay, the night's and the day's */
+  /* the night's sheet remains and is now the only one: the day's opened on
+     every launch from midnight to midnight and said what this section holds */
   assert.ok(app.indexOf('function maybeJumuahNightSheet() {') !== -1);
-  assert.ok(app.indexOf('function maybeFridaySheet() {') !== -1);
+  assert.ok(app.indexOf('function maybeFridaySheet() {') === -1);
 
   /* and the sunan of the day are a fold of their own, at the head of the list */
   const { win, doc } = boot({ now: new Date(2026, 8, 11, 9, 0, 0) });
@@ -7350,7 +7337,7 @@ test('the reminders stand in a screen of their own, and none was dropped on the 
   const rem = screen('reminders');
   const set = screen('settings');
   /* fifteen rows had piled up inside the location card with no heading */
-  ['settings-notify', 'settings-friday', 'settings-after-prayer', 'settings-wird',
+  ['settings-notify', 'settings-after-prayer', 'settings-wird',
    'settings-jumuah-night', 'settings-fast-note', 'settings-jumuah-before',
    'settings-duha', 'settings-qiyam', 'settings-salawat', 'settings-adhan-voice',
    'settings-voice', 'settings-salawat-voice', 'settings-voice-name', 'settings-adhan'
@@ -7389,8 +7376,8 @@ test('a sheet that is due is looked for again whenever the app comes forward', (
   /* the check used to run only at the first boot, so a reader who tapped the
      notice while the app was already open was shown nothing at all */
   const fn = /function showDueSheets\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf('maybeEidSheet() || maybeJumuahNightSheet() || maybeFridaySheet()') !== -1,
-    'the eid first, then the night, then the day');
+  assert.ok(fn.indexOf('maybeEidSheet() || maybeJumuahNightSheet()') !== -1,
+    'the eid first, then the night of jumuah, and nothing for the day itself');
   assert.ok(fn.indexOf("classList.contains('is-open')") !== -1,
     'and one already open is not opened over');
   assert.ok(app.indexOf('if (!showDueSheets()) maybeAskPlace();') !== -1, 'still checked at boot');
