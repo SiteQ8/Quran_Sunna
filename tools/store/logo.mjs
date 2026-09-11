@@ -154,5 +154,14 @@ for (const [dir, px] of [['mdpi', 108], ['hdpi', 162], ['xhdpi', 216], ['xxhdpi'
   await raster(foreground, px, `${RES}/mipmap-${dir}/ic_launcher_foreground.png`, true);
 }
 
+/* The window background: what the system paints in the instant before the
+   activity draws anything at all. It carried the old mark long after the
+   launcher had a new one, so the opening flashed one identity then the other.
+   120dp, which is 120 pixels at mdpi and four times that at xxxhdpi. */
+for (const [dir, px] of [['mdpi', 120], ['hdpi', 180], ['xhdpi', 240], ['xxhdpi', 360], ['xxxhdpi', 480]]) {
+  mkdirSync(`${RES}/drawable-${dir}`, { recursive: true });
+  await raster(icon, px, `${RES}/drawable-${dir}/splash.png`);
+}
+
 await browser.close();
 console.log('the mark and everything drawn from it');
