@@ -2,7 +2,6 @@
 <resources>
     <string name="appName">سُنّتي</string>
     <string name="launcherName">سُنّتي</string>
-    <string name="defaultUrl">https://sunnati.3li.info/</string>
     <string name="assetStatements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://sunnati.3li.info\" }}]</string>
     <string name="shortcutQuran">المصحف</string>
     <string name="shortcutAzkar">الأذكار</string>

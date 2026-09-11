@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The same rule as backup_rules.xml, in the form android 12 and after
+     read: everything a person records lives in the browser store, which
+     the system carries with the rest of the app data. The older file stays
+     for the phones below 12 that still read it. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="sharedpref" path="."/>
+    </cloud-backup>
+    <device-transfer>
+        <include domain="sharedpref" path="."/>
+    </device-transfer>
+</data-extraction-rules>
