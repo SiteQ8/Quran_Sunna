@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.63.1';
+  var VERSION = '8.63.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1142,10 +1142,13 @@
   /* The opening screen is a picture made at build time, so it cannot know any
      city. The wrapper is told this one and greets with it at the next launch. */
   function tellPlace() {
-    var app = bridge();
-    if (!app || !app.setPlace) return false;
     var p = place();
     if (!p || !p.n) return false;
+    /* the page's own opening screen reads this before any script of the app
+       has run, so the name is left where a line of inline script can find it */
+    try { window.localStorage.setItem('sunnati.greet', String(p.n)); } catch (e) { /* no store, no name */ }
+    var app = bridge();
+    if (!app || !app.setPlace) return false;
     try { app.setPlace(String(p.n)); } catch (e) { return false; }
     return true;
   }

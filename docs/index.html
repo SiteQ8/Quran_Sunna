@@ -94,7 +94,23 @@
   <img src="icons/icon-192.png" alt="" width="112" height="112" style="border-radius:26px">
   <span style="width:112px;height:2px;background:#b08833;opacity:.7"></span>
   <span style="font:600 30px/1 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink,#16241c)">سُنّتي</span>
+  <span id="boot-greet" style="font:500 15px/1.6 'IBM Plex Sans Arabic',system-ui,sans-serif;color:#b08833;opacity:.85"></span>
 </div>
+<script>
+/* The same greeting the app's own opening screen gives, from the city the page
+   already holds: the wrapper has to be told it, the page simply knows it. Read
+   with textContent, never as markup, since it is whatever was stored. */
+(function () {
+  var line = 'حيّاك الله';
+  try {
+    /* the name the app itself showed last time, whatever it was drawn from */
+    var name = localStorage.getItem('sunnati.greet') || '';
+    if (typeof name === 'string' && name.trim() && name.length <= 40) line += ' في ' + name.trim();
+  } catch (e) { /* a store that cannot be read greets without a name */ }
+  var el = document.getElementById('boot-greet');
+  if (el) el.textContent = line;
+})();
+</script>
 
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs>
