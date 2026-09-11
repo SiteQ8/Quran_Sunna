@@ -7060,6 +7060,26 @@ test('the eve of a fast is reminded, before the suhur and not after it', () => {
   assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; }).length, 0);
 });
 
+test('the weight gate reads a package by itself, and refuses bytes carried twice', () => {
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/review-weight.js'), 'utf8');
+  /* ten identical copies of the opening art sat in the package for months and
+     no gate was watching, so this one was written */
+  assert.ok(tool.indexOf('0x06054b50') !== -1, 'it finds the end record itself');
+  assert.ok(tool.indexOf('0x02014b50') !== -1, 'and walks the central directory');
+  assert.ok(tool.indexOf('execFileSync') !== -1 && tool.indexOf("require('adm-zip')") === -1,
+    'nothing is unpacked and nothing new is installed to read a zip');
+  assert.ok(tool.indexOf('process.exit(1)') !== -1, 'a fault is an error, not a remark');
+  /* and it does not go quiet when there is nothing to weigh */
+  assert.ok(tool.indexOf('no package to weigh') !== -1,
+    'a gate that passes when it did not run is no gate');
+  /* whatever it forgives, it says why */
+  const allowed = /const ALLOWED = \[([\s\S]*?)\];/.exec(tool)[1];
+  const rules = allowed.match(/\{[^}]*\}/g) || [];
+  rules.forEach(function (r) {
+    assert.ok(r.indexOf('why:') !== -1, 'every exception carries its reason: ' + r);
+  });
+});
+
 test('the art of the opening is kept once, not once for every density', () => {
   const res = path.join(__dirname, '..', 'android/app/src/main/res');
   /* the same 1080 square sat byte for byte in five folders, ten files for two
