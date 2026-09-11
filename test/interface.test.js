@@ -6169,8 +6169,8 @@ test('the place is fetched where it is read, on the line that states it', () => 
   const { win, doc } = boot();
   const line = doc.getElementById('place-line');
   const kids = [...line.children].map(function (c) { return c.className; });
-  assert.deepStrictEqual(kids, ['place-tap', 'place-locate'],
-    'the two facts first, the fetch after them');
+  assert.deepStrictEqual(kids, ['place-locate', 'place-tap'],
+    'the fetch at the head of the line, before the name it fetches');
   assert.strictEqual(line.querySelector('.place-tap').getAttribute('data-go'), 'settings');
   assert.strictEqual(line.querySelector('.place-locate').getAttribute('data-act'), 'locate');
   assert.ok(line.querySelector('.place-locate').getAttribute('aria-label'), 'an icon alone needs a name');

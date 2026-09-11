@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.62.0';
+  var VERSION = '8.62.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1448,15 +1448,17 @@
       /* Two facts, the place and the reckoning, kept apart so neither leans on
          the other. Saying محسوبة للكويت بطريقة الكويت reads as a stutter and
          tells a person nothing about which body issues the times. */
+      /* The place is read here, so it is fetched here: it used to mean going to
+         the settings or to the qibla to say «my place has changed». It stands
+         at the head of the line, before the name it fetches, rather than at the
+         far end where it read as an afterthought. */
       $('place-line').innerHTML =
+        '<button class="place-locate" data-act="locate" aria-label="حدّث موقعي">' +
+          icon('refresh') + '</button>' +
         '<button class="place-tap" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب">' +
           '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
           ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>' +
-        '</button>' +
-        /* the place is read here, so it is fetched here: it used to mean going
-           to the settings or to the qibla to say «my place has changed» */
-        '<button class="place-locate" data-act="locate" aria-label="حدّث موقعي">' +
-          icon('refresh') + '</button>';
+        '</button>';
     }
   }
 
