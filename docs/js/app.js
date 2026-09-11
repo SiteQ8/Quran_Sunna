@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.45.0';
+  var VERSION = '8.46.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2998,6 +2998,24 @@
           }
         }
       }
+      /* The eve of a day the sunnah marks for fasting: the intention and the
+         suhur are both of the night, so a reminder that comes with the dawn
+         comes too late to be acted on. It is not deduped by name, since every
+         eve in the eight days is its own night. */
+      if (Store.get('fastNote')) {
+        var morrow = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+        var reasons = fastToday(morrow);
+        if (reasons.length) {
+          var eveTimes = computeTimes(day);
+          if (typeof eveTimes.maghrib === 'number') {
+            var callFast = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eveTimes.maghrib + 90, 0, 0);
+            if (callFast.getTime() > Date.now()) {
+              out.push({ at: callFast.getTime(), t: 'صيام الغد',
+                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور' });
+            }
+          }
+        }
+      }
       if (before && day.getDay() === 5 && !already(out, 'الجمعة')) {
         var times = computeTimes(day);
         if (typeof times.dhuhr === 'number') {
@@ -5176,6 +5194,7 @@
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
     setSwitch($('settings-jumuah-night'), !!Store.get('jumuahNight'));
+    setSwitch($('settings-fast-note'), !!Store.get('fastNote'));
     if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
@@ -6043,6 +6062,13 @@
       Store.set('friday', on);
       setSwitch($('settings-friday'), on);
       toast(on ? 'سيفتح التطبيق يوم الجمعة بسننه' : 'أُوقف تذكير الجمعة');
+    });
+    bind('settings-fast-note', 'click', function () {
+      var on = !Store.get('fastNote');
+      Store.set('fastNote', on);
+      setSwitch($('settings-fast-note'), on);
+      handRemindersToApp();
+      toast(on ? 'سيصلك تذكير في ليلة اليوم الذي يُستحب صيامه' : 'أُوقف تذكير الصيام');
     });
     bind('settings-duha', 'click', function () {
       var on = !Store.get('duha');

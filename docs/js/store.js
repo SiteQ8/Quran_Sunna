@@ -39,6 +39,7 @@
     wirdAt: '',
     jumuahBefore: 0,
     jumuahNight: true,
+    fastNote: true,
     jumuahNightAt: 0,
     jumuahNightArmed: '',
     qadaDone: {},
