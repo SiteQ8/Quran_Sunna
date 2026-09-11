@@ -2321,7 +2321,7 @@ test('the android project is complete enough to build', () => {
    'app/build.gradle', 'app/src/main/AndroidManifest.xml',
    'app/src/main/res/values/strings.xml', 'app/src/main/res/values/colors.xml',
    'app/src/main/res/values-night/colors.xml', 'app/src/main/res/xml/shortcuts.xml',
-   'app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml'].forEach(function (rel) {
+   'app/src/main/res/mipmap-anydpi/ic_launcher.xml'].forEach(function (rel) {
     assert.ok(fs.existsSync(path.join(root, rel)), 'missing ' + rel);
   });
   /* the launcher icon itself is the adaptive xml above; what the densities
@@ -2334,12 +2334,17 @@ test('the android project is complete enough to build', () => {
 
 test('the wrapper opens the same address the site is published at', () => {
   const root = path.join(__dirname, '..', 'android');
-  const strings = fs.readFileSync(path.join(root, 'app/src/main/res/values/strings.xml'), 'utf8');
   const manifest = fs.readFileSync(path.join(root, 'app/src/main/AndroidManifest.xml'), 'utf8');
   const site = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
 
-  assert.ok(strings.indexOf('https://sunnati.3li.info/') !== -1,
+  /* the address is a constant in the activity. It was also a string resource
+     once, left over from the trusted web activity this stopped being, and that
+     copy went unread until lint called it unused */
+  const activity = fs.readFileSync(path.join(root, 'app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  assert.ok(/String SITE = "https:\/\/sunnati\.3li\.info\/"/.test(activity),
     'the wrapper should open the published address');
+  const strings = fs.readFileSync(path.join(root, 'app/src/main/res/values/strings.xml'), 'utf8');
+  assert.ok(strings.indexOf('defaultUrl') === -1, 'and should not keep a second, unread copy of it');
   assert.ok(manifest.indexOf('android:host="sunnati.3li.info"') !== -1,
     'and claim links to it');
   assert.ok(manifest.indexOf('autoVerify="true"') !== -1,
@@ -4624,7 +4629,7 @@ test('the salawat is shown in full, in the very words of the book', () => {
 
 test('the launcher icon is the app\'s own artwork, whole inside the safe middle', () => {
   const res = path.join(__dirname, '..', 'android/app/src/main/res');
-  const adaptive = fs.readFileSync(path.join(res, 'mipmap-anydpi-v26/ic_launcher.xml'), 'utf8');
+  const adaptive = fs.readFileSync(path.join(res, 'mipmap-anydpi/ic_launcher.xml'), 'utf8');
   assert.ok(adaptive.indexOf('@mipmap/ic_launcher_foreground') !== -1, 'the foreground is the artwork itself, not a redrawing');
   assert.ok(adaptive.indexOf('<monochrome') !== -1, 'and a single colour form for a themed home screen');
   ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
@@ -5778,8 +5783,8 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
   /* android cannot open a woff2 face, so the picture is made at build time
      with the real fonts rather than approximated in canvas */
-  assert.ok(splash.indexOf('splash_art_night') !== -1 && splash.indexOf('"splash_art"') !== -1,
-    'a picture for each theme');
+  assert.ok(/R\.drawable\.splash_art_night/.test(splash) &&
+    /R\.drawable\.splash_art(?![_a-zA-Z])/.test(splash), 'a picture for each theme');
   assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
   /* one copy, in nodpi: the picture does not change with the density, and it
      used to sit byte for byte in five folders */
@@ -7058,6 +7063,40 @@ test('the eve of a fast is reminded, before the suhur and not after it', () => {
   assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; }).length, 0);
 });
 
+test('lint stands at zero, and whatever is quietened says why', () => {
+  const gradle = fs.readFileSync(path.join(__dirname, '..', 'android/app/build.gradle'), 'utf8');
+  /* it had never been run: seventeen errors and twenty one warnings were
+     waiting, one of them a crash on every phone below android 11 */
+  assert.ok(/warningsAsErrors\s+true/.test(gradle), 'a warning is a fault, or the pile starts again');
+  assert.ok(/abortOnError\s+true/.test(gradle));
+
+  const lintXml = fs.readFileSync(path.join(__dirname, '..', 'android/app/lint.xml'), 'utf8');
+  /* every id quietened must have a comment above it saying why */
+  const ids = [...lintXml.matchAll(/<issue id="([^"]+)"/g)].map(function (m) { return m[1]; });
+  assert.ok(ids.length > 0 && ids.length < 6, 'a short list, or it is a burial ground');
+  ids.forEach(function (id) {
+    const at = lintXml.indexOf('<issue id="' + id + '"');
+    const before = lintXml.slice(0, at);
+    const lastComment = before.lastIndexOf('<!--');
+    const lastClose = before.lastIndexOf('-->');
+    assert.ok(lastComment !== -1 && lastClose > lastComment &&
+      before.slice(lastClose).split('\n').length < 4,
+      id + ' is quietened with no reason written above it');
+  });
+});
+
+test('the compile gate reads R off the resources, not off a list kept by hand', () => {
+  const gate = fs.readFileSync(path.join(__dirname, '..', 'tools/android/compile-check.sh'), 'utf8');
+  /* the stub named two resources, so the gate went red the first time the
+     wrapper referred to a third, which is the gate failing not the code */
+  assert.ok(gate.indexOf('names_from_files') !== -1 && gate.indexOf('names_from_values') !== -1,
+    'R is generated from res/, so it cannot fall behind it');
+  assert.ok(gate.indexOf("s/[.-]/_/g") !== -1,
+    'a dot in Theme.App is not a java identifier, and aapt makes it an underscore');
+  assert.ok(!/public static final class raw \{ public static final int ojeiri/.test(gate),
+    'the hand-written stub is gone');
+});
+
 test('the launcher mark is carried once, as the adaptive icon every phone uses', () => {
   const res = path.join(__dirname, '..', 'android/app/src/main/res');
   /* minSdk is 26 and anydpi-v26 wins from api 26, so aapt2 resolved the icon
@@ -7065,7 +7104,8 @@ test('the launcher mark is carried once, as the adaptive icon every phone uses',
   const gradle = fs.readFileSync(path.join(__dirname, '..', 'android/app/build.gradle'), 'utf8');
   const min = parseInt(/minSdk(?:Version)?\s+(\d+)/.exec(gradle)[1], 10);
   assert.ok(min >= 26, 'below api 26 the bitmaps would be needed again');
-  assert.ok(fs.existsSync(path.join(res, 'mipmap-anydpi-v26/ic_launcher.xml')));
+  assert.ok(fs.existsSync(path.join(res, 'mipmap-anydpi/ic_launcher.xml')),
+    'the -v26 qualifier said nothing that minSdk 26 did not already say');
   ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
     assert.ok(!fs.existsSync(path.join(res, 'mipmap-' + d, 'ic_launcher.png')),
       'mipmap-' + d + '/ic_launcher.png weighs and is never reached');
@@ -7111,11 +7151,14 @@ test('the art of the opening is kept once, not once for every density', () => {
     'one copy, and in nodpi because the pixels do not change with the density');
   assert.ok(fs.existsSync(path.join(res, 'drawable-nodpi', 'splash_art_night.png')));
 
-  /* it is reached by name, so the name must stay a plain constant: the shrinker
-     keeps the picture only because it sees the string in the pool */
+  /* it used to be fetched with getIdentifier and a string, which hid it from
+     every tool reading the source: lint called the artwork unused and the
+     shrinker kept it only because the literal happened to sit in the pool.
+     Named directly, the reference is one the shrinker and lint both follow. */
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
-  assert.ok(splash.indexOf('"splash_art_night"') !== -1 && splash.indexOf('"splash_art"') !== -1,
-    'built from pieces, the shrinker would strip the picture and the opening would be blank');
+  assert.ok(splash.indexOf('getIdentifier') === -1, 'no resource is looked up by string here');
+  assert.ok(splash.indexOf('R.drawable.splash_art_night') !== -1,
+    'the picture is named, so nothing can quietly drop it');
 });
 
 test('no name in the page belongs to two things', () => {

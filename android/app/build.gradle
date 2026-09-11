@@ -8,8 +8,8 @@ android {
         applicationId "com.eworldq8.sunnati"
         minSdk 26
         targetSdk 36
-        versionCode 191
-        versionName "8.49.0"
+        versionCode 192
+        versionName "8.50.0"
 
         /* The address the wrapper opens. Everything the app does lives there, so
            a fix published to the site reaches anyone who installed this without
@@ -42,6 +42,16 @@ android {
                 keyPassword props['keyPassword']
             }
         }
+    }
+
+    lint {
+        // Lint had never been run against this project: seventeen errors and
+        // twenty one warnings were waiting in it, one of them a crash on every
+        // phone below android 11. Now that it stands at zero, a warning counts
+        // as a fault too, or the pile simply starts again. Anything deliberate
+        // goes in app/lint.xml with the reason written beside it.
+        warningsAsErrors true
+        abortOnError true
     }
 
     buildTypes {

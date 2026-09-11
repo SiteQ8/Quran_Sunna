@@ -67,17 +67,19 @@ public final class AudioService extends Service {
             .setShowWhen(false)
             .setVisibility(Notification.VISIBILITY_PUBLIC);
         b.addAction(new Notification.Action.Builder(
-            Icon(playing ? "ic_media_pause" : "ic_media_play"),
+            Icon(playing ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play),
             playing ? "إيقاف مؤقت" : "تشغيل",
             command(ACTION_TOGGLE)).build());
         b.addAction(new Notification.Action.Builder(
-            Icon("ic_menu_close_clear_cancel"), "إيقاف", command(ACTION_CLOSE)).build());
+            Icon(android.R.drawable.ic_menu_close_clear_cancel), "إيقاف", command(ACTION_CLOSE)).build());
         if (Build.VERSION.SDK_INT >= 31) b.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
         return b.build();
     }
 
-    private android.graphics.drawable.Icon Icon(String name) {
-        int id = getResources().getIdentifier(name, "drawable", "android");
+    /* These are framework drawables and have names in android.R, so they are
+       named. Looked up by string they returned 0 when a name was wrong, and an
+       Icon built on 0 fails silently in the shade rather than at the compiler. */
+    private android.graphics.drawable.Icon Icon(int id) {
         return android.graphics.drawable.Icon.createWithResource(this, id);
     }
 

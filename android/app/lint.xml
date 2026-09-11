@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nothing is quietened here without its reason beside it. Anything not
+     named below is a fault the gate refuses, and this file is short on
+     purpose: it is where a warning goes to be argued with, not buried. -->
+<lint>
+    <!-- The app is one web view over the app's own site, and that page is
+         the app: javascript is not an optional extra in it. Nothing else is
+         let in, MainActivity turns every other host away to the browser. -->
+    <issue id="SetJavaScriptEnabled" severity="ignore"/>
+
+    <!-- Portrait is meant. A mushaf page, a qibla rose and a countdown to
+         the adhan are all read upright, and the whole layout is drawn for
+         one column. The two warnings below are both about that choice. -->
+    <issue id="LockedOrientationActivity" severity="ignore"/>
+    <issue id="DiscouragedApi">
+        <ignore path="src/main/AndroidManifest.xml"/>
+    </issue>
+</lint>
