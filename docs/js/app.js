@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.47.0';
+  var VERSION = '8.48.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -386,7 +386,10 @@
   function go(name, silent) {
     /* the page walks only while the reader is on the screen that walks */
     if (state.autoScroll && name !== state.view) stopAutoScroll(true);
-    if (state.view === 'settings' && name !== 'settings') stopSpeaking();
+    /* the voice preview lives on the reminders screen now, so leaving
+       either screen must silence it */
+    if ((state.view === 'settings' || state.view === 'reminders') &&
+        name !== 'settings' && name !== 'reminders') stopSpeaking();
     var target = $('v-' + name);
     if (!target) return;
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
@@ -3921,6 +3924,7 @@
     { nav: 'timetable', icon: 'clock', name: 'جدول الشهر', note: 'مواقيت كل يوم في صفحة' },
     { nav: 'calendar', icon: 'calendar', name: 'التقويم الهجري', note: 'المناسبات والمواسم' },
     { nav: 'bookmarks', icon: 'bookmark', name: 'المحفوظات', note: 'تتبّع حفظك' },
+    { nav: 'reminders', icon: 'bell', name: 'التذكيرات', note: 'ما ينبّهك، ومتى، وبأي صوت' },
     { nav: 'settings', icon: 'settings', name: 'الإعدادات', note: 'الحساب والمظهر والنسخ' },
     { nav: 'about', icon: 'info', name: 'عن التطبيق', note: 'المصادر وما يحتاج إنترنت' }
   ];
@@ -5155,6 +5159,29 @@
     if (on) el.classList.add('is-on'); else el.classList.remove('is-on');
   }
 
+  /* The reminder says the fast is tomorrow, but not which fast. Monday and
+     thursday anyone can count; the white days are the thirteenth, fourteenth
+     and fifteenth of the hijri month, and nobody carries that in their head,
+     so the next one is named here. */
+  function renderNextFast() {
+    var host = $('fast-next');
+    if (!host) return;
+    if (!Store.get('fastNote')) { host.textContent = 'تذكير الصيام موقوف'; return; }
+    var today = new Date();
+    for (var d = 0; d < 40; d++) {
+      var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
+      var why = fastToday(day);
+      if (!why.length) continue;
+      var when = d === 0 ? 'اليوم' : d === 1 ? 'غداً' :
+        Hijri.WEEKDAYS[day.getDay()] + ' ' + ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()];
+      host.textContent = 'أقرب صيام: ' + when + '، ' +
+        why.map(function (w) { return w.name; }).join(' و') +
+        '، والتنبيه ليلته بعد المغرب';
+      return;
+    }
+    host.textContent = '';
+  }
+
   function renderSettings() {
     if (!$('settings-city')) return;
     var s = Store.settings();
@@ -5395,6 +5422,7 @@
     dua: function () { renderDua(); renderDuaThemes(); },
     ruqyah: renderRuqyah,
     calendar: renderCalendar,
+    reminders: function () { renderSettings(); renderNextFast(); },
     timetable: renderTimetable,
     page: renderPage,
     hisn: renderHisnChapter,
@@ -6067,6 +6095,7 @@
       var on = !Store.get('fastNote');
       Store.set('fastNote', on);
       setSwitch($('settings-fast-note'), on);
+      renderNextFast();
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير في ليلة اليوم الذي يُستحب صيامه' : 'أُوقف تذكير الصيام');
     });
