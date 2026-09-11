@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.57.0';
+  var VERSION = '8.58.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3542,6 +3542,18 @@
         ? '<p class="setting-note">الصفحة القادمة تبدأ عند ' + esc(pageLabel(status.read + 1)) + '</p>' +
           '<button class="btn btn-primary btn-block" style="margin-top:14px" data-page="' +
           (status.read + 1) + '">' + icon('book') + 'تابع من صفحة ' + ar(status.read + 1) + '</button>'
+        : '') +
+      /* The rest of what can be done to the plan, in the card with it and in
+         the order of what each costs: the two that move a page by one, then
+         the one that wipes the plan, set apart and spoken more quietly. */
+      '<div class="btn-row" style="margin-top:10px">' +
+        '<button class="btn btn-ghost" data-act="khatma-plus">قرأت صفحة</button>' +
+        '<button class="btn btn-ghost" data-act="khatma-minus"' +
+        (status.read ? '' : ' disabled') + '>تراجع</button>' +
+      '</div>' +
+      (status.read
+        ? '<div class="khatma-reset"><button class="btn btn-ghost btn-block" data-act="khatma-restart">' +
+          'ابدأ ختمة جديدة</button></div>'
         : '');
   }
 
@@ -5599,6 +5611,16 @@
     },
     'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
+    /* the khatma card redraws itself on every change, so a listener put on the
+       button at wire time would be thrown away with the first redraw */
+    'khatma-plus': function () { stepKhatma(1); },
+    'khatma-minus': function () { stepKhatma(-1); },
+    'khatma-restart': function () {
+      Store.setReadPages(0);
+      Store.set('khatmaStart', Date.now());
+      renderKhatma();
+      toast('بدأت ختمة جديدة');
+    },
     'share-jumuah-night': function () { shareJumuahNight(); },
     'share-sunan': function () {
       var rows = todaySunanLines();
@@ -5628,7 +5650,6 @@
     },
     mosques: function () { go('mosques'); },
     'mosque-go': function (ref) { mosqueRoute(ref); },
-    'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     'listen-as': function (ref) {
       var parts = ref.split(':');
       var how = parts[0], n = +parts[1];
@@ -5975,15 +5996,6 @@
       Store.markSurahRead(state.surah);
       toast('سُجّلت السورة في تقدمك');
       renderReader();
-    });
-
-    bind('khatma-page-plus', 'click', function () { stepKhatma(1); });
-    bind('khatma-page-minus', 'click', function () { stepKhatma(-1); });
-    bind('khatma-restart', 'click', function () {
-      Store.setReadPages(0);
-      Store.set('khatmaStart', Date.now());
-      renderKhatma();
-      toast('بدأت ختمة جديدة');
     });
 
     bind('azkar-reset', 'click', resetAzkar);

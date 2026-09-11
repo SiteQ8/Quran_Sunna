@@ -953,6 +953,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: var(--s2); }
+
+/* Starting over wipes the whole plan, so it does not stand shoulder to shoulder
+   with the two that nudge a single page: same card, a rule above it, and a
+   quieter voice. */
+.khatma-reset { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
+.khatma-reset .btn { color: var(--ink-3); font-weight: 500; }
 .btn-row > .btn { flex: 1 1 0; min-width: 0; }
 .btn-grid { margin-bottom: var(--s3); }
 .btn-grid .btn { width: 100%; }
