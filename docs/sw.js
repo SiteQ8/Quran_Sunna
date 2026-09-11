@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.53.0';
+var VERSION = 'sunnati-v8.54.0';
 
 var SHELL = [
   './',
@@ -38,9 +38,9 @@ var SHELL = [
   './data/mushaf.json',
   './data/madinah-lines.json',
   './manifest.webmanifest',
-  './icons/icon.svg?v=eye',
-  './icons/icon-192.png?v=eye',
-  './icons/icon-512.png?v=eye',
+  './icons/icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
   './icons/maskable-512.png',
   './icons/icon-180.png',
   './icons/icon-72.png',
@@ -129,7 +129,7 @@ function dueNotifications() {
           seen[key] = true;
           jobs.push(self.registration.showNotification('حان وقت ' + p.name, {
             body: 'الله أكبر، حيّ على الصلاة', tag: key, lang: 'ar', dir: 'rtl',
-            icon: 'icons/icon-192.png?v=eye', badge: 'icons/icon-96.png?v=eye', data: { url: './' }
+            icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
           }));
         }
       });
@@ -138,7 +138,7 @@ function dueNotifications() {
       plan.salawatAt = now;
       jobs.push(self.registration.showNotification('صلِّ على النبي ﷺ', {
         body: 'اللهم صلِّ وسلِّم على نبينا محمد', tag: 'salawat', lang: 'ar', dir: 'rtl',
-        icon: 'icons/icon-192.png?v=eye', badge: 'icons/icon-96.png?v=eye', data: { url: './' }
+        icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
       }));
     }
     plan.shown = seen;

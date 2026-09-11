@@ -68,8 +68,8 @@
   <link rel="apple-touch-startup-image" href="splash/splash-828x1792.png" media="(device-width: 276px) and (device-height: 597px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
   <link rel="apple-touch-startup-image" href="splash/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
   <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icons/icon.svg?v=eye" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icons/icon-180.png?v=eye">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
 <link rel="preload" href="fonts/plex-arabic-600-arabic.woff2" as="font" type="font/woff2" crossorigin>
 <!-- The splash is the first thing drawn, so the face it needs is declared here
      rather than waiting for the stylesheet to arrive, and it is told to hold
@@ -91,7 +91,7 @@
 <!-- What shows while the app wakes. Written inline and styled inline so it
      paints with the very first frame, before any stylesheet or script. -->
 <div id="boot-splash" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--paper,#f6f4ee);transition:opacity .38s ease">
-  <img src="icons/icon-192.png?v=eye" alt="" width="112" height="112" style="border-radius:26px">
+  <img src="icons/icon-192.png" alt="" width="112" height="112" style="border-radius:26px">
   <span style="width:112px;height:2px;background:#b08833;opacity:.7"></span>
   <span style="font:600 30px/1 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink,#16241c)">سُنّتي</span>
 </div>
@@ -198,9 +198,8 @@
         <path class="mihrab-line" d="M6 152V140a114 114 0 0 1 228 0v12"/>
         <path class="mihrab-line mihrab-inner" d="M20 152V140a100 100 0 0 1 200 0v12"/>
         <g class="mihrab-star" transform="translate(120 20)">
-          <path d="M0 -15 L15 0 L0 15 L-15 0z"/>
-          <path d="M0 -8 L8 0 L0 8 L-8 0z"/>
-          <path class="mihrab-moon" d="M2.6 -3.3a3.6 3.6 0 1 0 0 6.6 4 4 0 0 1 0 -6.6z"/>
+          <path d="M0.00 -13.60 L1.31 -14.36 L2.27 -11.33 L4.00 -12.00 L4.53 -9.07 L6.77 -9.48 L6.80 -6.80 L9.48 -6.77 L9.07 -4.53 L12.00 -4.00 L11.33 -2.27 L14.36 -1.31 L13.60 0.00 L14.36 1.31 L11.33 2.27 L12.00 4.00 L9.07 4.53 L9.48 6.77 L6.80 6.80 L6.77 9.48 L4.53 9.07 L4.00 12.00 L2.27 11.33 L1.31 14.36 L0.00 13.60 L-1.31 14.36 L-2.27 11.33 L-4.00 12.00 L-4.53 9.07 L-6.77 9.48 L-6.80 6.80 L-9.48 6.77 L-9.07 4.53 L-12.00 4.00 L-11.33 2.27 L-14.36 1.31 L-13.60 0.00 L-14.36 -1.31 L-11.33 -2.27 L-12.00 -4.00 L-9.07 -4.53 L-9.48 -6.77 L-6.80 -6.80 L-6.77 -9.48 L-4.53 -9.07 L-4.00 -12.00 L-2.27 -11.33 L-1.31 -14.36 Z"/>
+          <path class="mihrab-moon" d="M-0.80 -6.20a7.30 7.30 0 1 0 2.48 12.40 9.49 9.49 0 0 1 -2.48 -12.40z"/>
         </g>
       </svg>
       <svg class="arc" viewBox="0 0 240 152" role="img" aria-labelledby="arc-desc">
@@ -857,8 +856,8 @@
 <section class="view" id="v-about" aria-labelledby="about-title">
   <div class="view-head"><h1 id="about-title">عن سُنّتي</h1><p>ما الذي يعمل هنا، وكيف</p></div>
   <div class="card brand-card">
-    <img class="brand-mark" src="icons/icon.svg?v=eye" width="88" height="88" alt="شعار سُنّتي: عين السدو تحمل الهلال">
-    <div class="brand-words"><span class="brand-name">سُنّتي</span><span class="brand-line">مصحف ومواقيت وأذكار وسنن في جهازك</span><span class="brand-note">الشعار عين السدو الكويتي، وفي قلبها هلال</span></div>
+    <img class="brand-mark" src="icons/icon.svg" width="88" height="88" alt="شعار سُنّتي: ماسة السدو وفي داخلها هلال">
+    <div class="brand-words"><span class="brand-name">سُنّتي</span><span class="brand-line">مصحف ومواقيت وأذكار وسنن في جهازك</span><span class="brand-note">الشعار ماسة السدو الكويتي، والهلال مقصوص منها</span></div>
   </div>
   <div class="card">
     <p class="naskh" style="font-size:.95rem">سُنّتي يعمل كاملاً على جهازك، فالمصحف كله محفوظ معك وأوقات الصلاة تُحسب فلكياً على الجهاز نفسه دون طلب من أي خادم، ثم تبقى الأذكار والقبلة وتتبع السنن متاحة ولو انقطع الإنترنت.</p>
@@ -906,7 +905,7 @@
 <button class="to-top" id="to-top" hidden aria-label="إلى أعلى الصفحة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg></button>
 
 <div class="banner" id="banner" role="status" aria-live="polite" hidden>
-  <img class="banner-mark" src="icons/icon.svg?v=eye" width="28" height="28" alt="">
+  <img class="banner-mark" src="icons/icon.svg" width="28" height="28" alt="">
   <span class="banner-text" id="banner-text"></span>
   <button class="banner-act" id="banner-act"></button>
   <button class="banner-close" id="banner-close" aria-label="إخفاء"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>

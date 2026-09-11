@@ -9,10 +9,19 @@ const OUT = process.argv[2] || '/tmp/sunnati-social';
 fs.mkdirSync(OUT, { recursive: true });
 const P = 'http://localhost:8840/screens/social/';
 const mark = fs.readFileSync(new URL('../../docs/icons/icon.svg', import.meta.url), 'utf8');
-const logo = (size) => mark.replace(/width='512' height='512'/, `width='${size}' height='${size}'`);
+/* The mark is written with double quotes now and this replacement looked for
+   single ones, so it matched nothing and quietly handed back a 512 drawing
+   whatever size was asked for. A replacement that can miss has to say so. */
+function sized(svg, size) {
+  const out = svg.replace(/width=["']512["'] height=["']512["']/,
+    `width="${size}" height="${size}"`);
+  if (out === svg) throw new Error('the mark did not take a size; icon.svg changed shape');
+  return out;
+}
+const logo = (size) => sized(mark, size);
 const VERSION = '8.7';
 const ITEMS = [
-  ['شعار جديد من السدو الكويتي', 'عين السدو تحمل الهلال، على الأيقونة وفي التطبيق'],
+  ['شعار جديد من السدو الكويتي', 'ماسة السدو والهلال مقصوص منها، على الأيقونة وفي التطبيق'],
   ['المصحف على هيئة المصحف', 'البسملة في سطرها، والجزء والحزب وربعه في رأس الصفحة، وأرقام المصحف'],
   ['صلاتي', 'علّم كل صلاة من الخمس كيف صلّيتها، وشهرك في شبكة'],
   ['ملاحظات وعلامات', 'ملاحظتك على أي آية، وعلامات قراءة ومراجعة وحفظ وتدبر'],

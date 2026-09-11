@@ -4197,6 +4197,53 @@ test('the mark is one sadu diamond with the crescent taken out of it', () => {
   });
 });
 
+test('one address for every icon, and the worker holds every one it is asked for', () => {
+  const read = (f) => fs.readFileSync(path.join(DOCS, f), 'utf8');
+  const pages = ['index.html', 'privacy.html', 'js/app.js', 'manifest.webmanifest'];
+  /* The cache is opened under the version, so an icon cannot go stale under it
+     and the ?v= on the end bought nothing. What it did buy was room to drift:
+     three forms were in use at once, ?v=sadu and ?v=eye and none, so the badge
+     the app asked for when it raised a notification was not the one the worker
+     had put by, and offline it had no icon at all. */
+  pages.concat(['sw.js']).forEach(function (f) {
+    assert.ok(!/icons\/[A-Za-z0-9.\-]+\.(?:png|svg)\?v=/.test(read(f)),
+      f + ' still carries a ?v= on an icon');
+  });
+
+  const precached = new Set([...read('sw.js').matchAll(/'\.\/(icons\/[^']+)'/g)].map(function (m) { return m[1]; }));
+  const asked = new Set();
+  pages.forEach(function (f) {
+    for (const m of read(f).matchAll(/icons\/[A-Za-z0-9.\-]+\.(?:png|svg)/g)) asked.add(m[0]);
+  });
+  const missing = [...asked].filter(function (a) { return !precached.has(a); });
+  assert.deepStrictEqual(missing, [], 'asked for but never put by: ' + missing.join(', '));
+
+  /* and what the ?v= was there to promise is promised by the cache's own name:
+     it is opened under the version and every other name is deleted, so a phone
+     that kept the old mark cannot go on serving it */
+  const sw = read('sw.js');
+  assert.ok(/caches\.open\(VERSION\)/.test(sw), 'the cache is named for the version');
+  assert.ok(/name === VERSION \|\| name === AUDIO_STORE\) \? null : caches\.delete\(name\)/.test(sw),
+    'and every older cache is deleted when the new worker takes over');
+});
+
+test('the same mark is shown at every moment of the opening', () => {
+  const res = path.join(__dirname, '..', 'android/app/src/main/res');
+  /* Three things draw the mark as the app opens: the window background in the
+     instant before anything paints, the launcher icon, and the splash picture.
+     The window background kept the old mark after the launcher had a new one,
+     so the opening flashed one identity and then the other. */
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/logo.mjs'), 'utf8');
+  assert.ok(tool.indexOf('drawable-${dir}/splash.png') !== -1,
+    'the window background is drawn from the mark like everything else');
+  [['mdpi', 120], ['xxxhdpi', 480]].forEach(function (pair) {
+    const at = path.join(res, 'drawable-' + pair[0], 'splash.png');
+    assert.ok(fs.existsSync(at), 'missing splash.png at ' + pair[0]);
+  });
+  const window = fs.readFileSync(path.join(res, 'drawable/window_splash.xml'), 'utf8');
+  assert.ok(window.indexOf('@drawable/splash') !== -1 && window.indexOf('120dp') !== -1);
+});
+
 test('every drawing of the mark comes from the one set of numbers', () => {
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/logo.mjs'), 'utf8');
   /* the geometry used to live in logo.py while the launcher, the status bar
@@ -4230,13 +4277,25 @@ test('the app and its worker carry the same version, and it is the version in th
 
 test('the mark lives in the app: the crown of the mihrab, the about page, the banner, the picture card', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  assert.ok(/<g class="mihrab-star"[^>]*>\s*<path d="M0 -15 L15 0 L0 15 L-15 0z"\/>/.test(html), 'the eye crowns the mihrab');
-  assert.ok(html.indexOf('class="mihrab-moon"') !== -1, 'with the crescent in it');
-  assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg?v=') !== -1, 'the about page opens with the mark');
-  assert.ok(html.indexOf('عين السدو الكويتي، وفي قلبها هلال') !== -1, 'and says what it is');
-  assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg?v=') !== -1, 'the banner carries it');
+  /* the crown wore the old four-diamond eye long after the icon stopped */
+  assert.ok(/<g class="mihrab-star"[^>]*>\s*<path d="M0\.00 -13\.60/.test(html), 'the sadu diamond crowns the mihrab');
+  assert.ok(html.indexOf('class="mihrab-moon"') !== -1, 'with the crescent cut in it');
+  assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg"') !== -1, 'the about page opens with the mark');
+  assert.ok(html.indexOf('ماسة السدو الكويتي، والهلال مقصوص منها') !== -1, 'and says what it is');
+  assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg"') !== -1, 'the banner carries it');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf('function eyeMark(ctx, cx, cy, r)') !== -1 && app.indexOf('eyeMark(ctx, W / 2, footY, 22)') !== -1, 'the picture card closes with the eye');
+  /* the paper's colour is handed in: cutting the crescent out with
+     destination-out punched through the card itself, lattice and all */
+  assert.ok(app.indexOf('function saduMark(ctx, cx, cy, r, paper)') !== -1 &&
+    app.indexOf("saduMark(ctx, W / 2, footY, 22, '#f7f5ef')") !== -1,
+    'the picture card closes with the mark');
+  /* scoped to the function, not to the file: a first pass tested the whole
+     source and the comment explaining the mistake tripped it */
+  const drawn = /function saduMark\([\s\S]*?\n  \}\n/.exec(app)[0];
+  assert.ok(drawn.indexOf('globalCompositeOperation') === -1,
+    'and does not punch a hole in the card to draw it');
+  assert.ok(drawn.indexOf("fill('evenodd')") !== -1, 'the crescent is one path under the even-odd rule');
+  assert.ok(app.indexOf('eyeMark') === -1, 'and not with the one the icon stopped using');
 });
 
 test('the social set and the feature graphic are drawn from sadu bands, not photographs', () => {
@@ -4514,15 +4573,6 @@ test('a note on a verse is written, shown in the sheet, and removed when emptied
   doc.getElementById('note-field').value = '   ';
   click(win, doc.querySelector('#sheet [data-act="note-save"]'));
   assert.strictEqual(win.Store.note(2, 255), '', 'emptied is removed');
-});
-
-test('the icon addresses carry a version, so a phone that kept the old mark fetches the eye', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8'));
-  manifest.icons.forEach(function (i) { assert.ok(/\?v=/.test(i.src), i.src + ' should be versioned'); });
-  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  assert.ok(html.indexOf('href="icons/icon.svg?v=') !== -1 && html.indexOf('href="icons/icon-180.png?v=') !== -1);
-  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
-  assert.ok(sw.indexOf("'./icons/icon-192.png?v=") !== -1, 'the worker keeps the versioned address, which is what the page asks for');
 });
 
 test('the month of prayers is told in words when few, and with the share only when many', () => {
