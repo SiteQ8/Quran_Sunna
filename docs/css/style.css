@@ -621,11 +621,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 #azkar-groups .tile-note, #dua-places .tile-note { min-height: 1.5em; }
 
-.pick-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
-.pick-grid .chip { width: 100%; padding: 0 4px; font-size: .78rem; }
-#tasbih-phrases { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-#tasbih-phrases .chip { width: 100%; padding: 0 8px; font-size: .82rem; }
-#tasbih-phrases .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
+/* The scope of a search, the phrases of the tasbih and the durations of a
+   khatma are one thing wearing three names: a fixed set of which one is on.
+   They were written three times, each with its own columns and padding, and
+   one of them as an id doing layout. See .chip-grid above. */
+.chip-grid.is-tight .chip { padding: 0 4px; font-size: .78rem; }
 
 .topics { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .topic {
@@ -954,9 +954,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .btn-block { width: 100%; }
 .btn-row { display: flex; gap: var(--s2); }
 
-/* Starting over wipes the whole plan, so it does not stand shoulder to shoulder
-   with the two that nudge a single page: same card, a rule above it, and a
-   quieter voice. */
+/* Wiping what was counted does not stand shoulder to shoulder with what only
+   nudges it: same card, a rule above, and a quieter voice. Used by the khatma's
+   restart and by the tasbih's. */
 .khatma-reset { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
 .khatma-reset .btn { color: var(--ink-3); font-weight: 500; }
 .btn-row > .btn { flex: 1 1 0; min-width: 0; }
@@ -994,6 +994,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .chip-grid .chip { width: 100%; padding: 0 8px; }
 /* one that is not a peer of the rest: it takes the whole row under them */
 .chip-grid .chip-wide { grid-column: 1 / -1; }
+/* and an odd one left over at the end takes the rest of its row rather than
+   sitting alone in a half of it */
+.chip-grid .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
 .chip-scroll { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: var(--s2); scrollbar-width: none; }
 .chip-scroll::-webkit-scrollbar { display: none; }
 .chip-scroll .chip { flex: none; }

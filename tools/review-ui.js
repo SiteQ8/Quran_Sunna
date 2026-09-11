@@ -103,11 +103,22 @@ const MIN_CONTRAST_LARGE = 3;
         noise.push('console error: ' + m.text().slice(0, 140));
     });
 
+    /* The opening screen is held for a moment on purpose, so waiting only for
+       the mushaf leaves it lying over the page while the first screen is
+       measured. elementFromPoint then answers with the splash instead of the
+       control under it, and a button with a wide reach is reported as too
+       small for a thumb. It reported exactly that, once in five runs, which is
+       worse than reporting it every time. */
+    const ready = async () => {
+      await page.waitForFunction('window.Mushaf && Mushaf.ready()', { timeout: 40000 });
+      await page.waitForFunction('!document.getElementById("boot-splash")', { timeout: 20000 });
+    };
+
     await page.goto('http://localhost:' + PORT + '/', { waitUntil: 'networkidle' });
-    await page.waitForFunction('window.Mushaf && Mushaf.ready()', { timeout: 40000 });
+    await ready();
     await page.evaluate((t) => { Store.set('theme', t); }, theme);
     await page.reload({ waitUntil: 'networkidle' });
-    await page.waitForFunction('window.Mushaf && Mushaf.ready()', { timeout: 40000 });
+    await ready();
 
     console.log('\n=== ' + theme + ' ===');
 

@@ -6084,15 +6084,46 @@ test('a surah asked for by name is offered before the verses its name falls in',
 
 test('choices are laid in an even grid, not pills of every width', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  assert.match(css, /\.pick-grid \{[^}]*grid-template-columns: repeat\(4, 1fr\)/,
-    'the search scopes, four to a row');
-  assert.match(css, /#tasbih-phrases \{[^}]*grid-template-columns: 1fr 1fr/, 'the dhikr, two to a row');
-  assert.match(css, /#tasbih-phrases \.chip:last-child:nth-child\(odd\) \{ grid-column: 1 \/ -1; \}/,
+  /* The same thing was written three times: .pick-grid for the search scopes,
+     #tasbih-phrases as an id doing layout, and .chip-grid added later without
+     looking for the two already there. Each carried its own column count and
+     its own padding, and one of them the same odd-last-child trick. */
+  assert.ok(css.indexOf('.pick-grid') === -1 && css.indexOf('#tasbih-phrases {') === -1,
+    'one pattern, not three');
+  assert.match(css, /\.chip-grid \{[^}]*grid-template-columns: repeat\(var\(--cols/,
+    'the column count is said where it is known');
+  assert.match(css, /\.chip-grid \.chip:last-child:nth-child\(odd\) \{ grid-column: 1 \/ -1; \}/,
     'and an odd last one fills its row rather than leaving a hole');
+
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  assert.ok(html.indexOf('<div class="pick-grid" id="search-scope"') !== -1);
+  /* every set says how many across it wants, or it falls back to three */
+  [['search-scope', 4], ['tasbih-phrases', 2], ['sleep-timer', 4], ['khatma-days', 3]].forEach(function (pair) {
+    const at = html.indexOf('id="' + pair[0] + '"');
+    assert.ok(at !== -1, pair[0] + ' is not on the page');
+    const tag = html.slice(html.lastIndexOf('<div', at), html.indexOf('>', at) + 1);
+    assert.ok(tag.indexOf('chip-grid') !== -1, pair[0] + ' should be a chip grid');
+    assert.ok(tag.indexOf('--cols:' + pair[1]) !== -1, pair[0] + ' should say --cols:' + pair[1]);
+  });
+
   const { doc } = boot();
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
+});
+
+test('no group of controls is left standing on the page itself', () => {
+  const { win, doc } = boot();
+  /* a single full-width action under its content is a normal thing; a group of
+     buttons or chips with nothing holding it is what reads as scattered */
+  const loose = [];
+  doc.querySelectorAll('.view').forEach(function (v) {
+    [...v.children].forEach(function (c) {
+      if (c.matches('.btn-row, .chip-row, .chip-grid')) loose.push(v.id + ' → ' + (c.id || c.className));
+    });
+  });
+  void win;
+  /* the scopes of a search sit directly over the field they narrow, and read as
+     part of it rather than as something loose, so they are left where they are */
+  assert.deepStrictEqual(loose, ['v-search → search-scope'],
+    'these groups have nothing around them: ' + loose.join(', '));
 });
 
 test('a whole surah is recited from one recording, so nothing breaks between verses', () => {
