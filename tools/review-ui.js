@@ -24,14 +24,30 @@ const TYPES = {
 };
 
 function serve() {
-  return http.createServer(function (req, res) {
+  var server = http.createServer(function (req, res) {
     var rel = decodeURIComponent(req.url.split('?')[0]);
     if (rel === '/') rel = '/index.html';
     var file = path.join(DOCS, rel);
     if (!file.startsWith(DOCS) || !fs.existsSync(file)) { res.writeHead(404); res.end(); return; }
     res.writeHead(200, { 'content-type': TYPES[path.extname(file)] || 'application/octet-stream' });
     fs.createReadStream(file).pipe(res);
-  }).listen(PORT);
+  });
+  /* A port left open by something else used to end this in a raw node stack
+     trace, which reads as though the review broke rather than the port being
+     busy. It cost two gate runs before it was worth a sentence. */
+  server.on('error', function (err) {
+    if (err.code === 'EADDRINUSE') {
+      /* ss, lsof and fuser are all absent from a bare container, so the hint
+         uses the one thing that is always there: the process list. */
+      console.error('port ' + PORT + ' is already in use, most likely a preview server left ' +
+        'running.\nFind it and close it, then run this again:\n' +
+        '  ps -eo pid,args | grep "[h]ttp.server ' + PORT + '"\n' +
+        '  kill <that pid>');
+      process.exit(1);
+    }
+    throw err;
+  });
+  return server.listen(PORT);
 }
 
 var chromium;

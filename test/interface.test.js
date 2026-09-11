@@ -7098,6 +7098,49 @@ test('the art of the opening is kept once, not once for every density', () => {
     'built from pieces, the shrinker would strip the picture and the opening would be blank');
 });
 
+test('no name in the page belongs to two things', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const seen = new Map();
+  const twice = [];
+  for (const m of html.matchAll(/\sid="([^"]+)"/g)) {
+    if (seen.has(m[1])) twice.push(m[1]); else seen.set(m[1], true);
+  }
+  /* i-plane carried two different drawings for a long while: the browser
+     resolves #i-plane to the first, so the second was weight nobody saw */
+  assert.deepStrictEqual([...new Set(twice)], [],
+    'these names are used more than once: ' + [...new Set(twice)].join(', '));
+});
+
+test('the reminders stand in a screen of their own, and none was dropped on the way', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  function screen(id) {
+    const at = html.indexOf('id="v-' + id + '"');
+    assert.ok(at !== -1, 'no screen ' + id);
+    const next = html.indexOf('<section class="view"', at + 10);
+    return html.slice(at, next === -1 ? html.length : next);
+  }
+  const rem = screen('reminders');
+  const set = screen('settings');
+  /* fifteen rows had piled up inside the location card with no heading */
+  ['settings-notify', 'settings-friday', 'settings-after-prayer', 'settings-wird',
+   'settings-jumuah-night', 'settings-fast-note', 'settings-jumuah-before',
+   'settings-duha', 'settings-qiyam', 'settings-salawat', 'settings-adhan-voice',
+   'settings-voice', 'settings-salawat-voice', 'settings-voice-name', 'settings-adhan'
+  ].forEach(function (id) {
+    assert.ok(rem.indexOf('id="' + id + '"') !== -1, id + ' did not make the move');
+    assert.ok(set.indexOf('id="' + id + '"') === -1, id + ' was left behind as well');
+  });
+  /* and there is a way to it, from المزيد and from where it used to be */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/nav: 'reminders'/.test(app), 'a row in المزيد');
+  assert.ok(set.indexOf('data-go="reminders"') !== -1, 'a pointer left in the settings');
+  assert.ok(/reminders: function \(\) \{ renderSettings\(\); renderNextFast\(\); \}/.test(app),
+    'the screen draws itself when opened');
+  /* the voice preview moved with them, so leaving must silence it */
+  assert.ok(app.indexOf("state.view === 'reminders'") !== -1,
+    'the preview is silenced on the way out of the new screen too');
+});
+
 test('the fasting mark is its own, drawn to size', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   const g = /<g id="i-fast">[\s\S]*?<\/g>/.exec(html);

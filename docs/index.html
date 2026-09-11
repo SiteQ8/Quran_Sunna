@@ -156,7 +156,6 @@
 <g id="i-stones"><path d="M12 7.4c2 0 3.6 1.4 3.6 3.1H8.4c0-1.7 1.6-3.1 3.6-3.1z"/><path d="M6.4 14.3c2 0 3.6 1.4 3.6 3.1H2.8c0-1.7 1.6-3.1 3.6-3.1z"/><path d="M17.6 14.3c2 0 3.6 1.4 3.6 3.1h-7.2c0-1.7 1.6-3.1 3.6-3.1z"/><path d="M2.6 20.4h18.8"/></g>
 <g id="i-water"><path d="M10 2.6h4v2.1h-4z"/><path d="M9.6 4.7v2L8 8.7v10.6a2.1 2.1 0 0 0 2.1 2.1h3.8a2.1 2.1 0 0 0 2.1-2.1V8.7l-1.6-2v-2"/><path d="M8 12.4h8"/></g>
 <g id="i-scissors"><path d="M6.5 4 17 17.5M17.5 4 7 17.5"/><path d="M5.5 17.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4z"/><path d="M18.5 17.5a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4z"/></g>
-<g id="i-plane"><path d="M10.5 3.5a1.5 1.5 0 0 1 3 0v5.2l7.5 4.3v2.3l-7.5-2.3v4.3l2.5 1.7v1.7L12 19.5l-4 1.2v-1.7l2.5-1.7v-4.3L3 15.3V13l7.5-4.3z"/></g>
 <g id="i-dua"><path d="M3.6 12.2c0 4.5 3.8 8.2 8.4 8.2s8.4-3.7 8.4-8.2"/><path d="M12 20.4v-8.2"/><path d="M3.6 12.2V8.7a1.4 1.4 0 0 1 2.8 0v2.4"/><path d="M6.4 11.1V7a1.4 1.4 0 0 1 2.8 0v3.6"/><path d="M20.4 12.2V8.7a1.4 1.4 0 0 0-2.8 0v2.4"/><path d="M17.6 11.1V7a1.4 1.4 0 0 0-2.8 0v3.6"/></g>
 <g id="i-kaaba"><path d="M12 2.6 20.8 6.9v10.2L12 21.4 3.2 17.1V6.9z"/><path d="M3.2 6.9 12 11.2l8.8-4.3M12 11.2v10.2"/><path d="M3.6 9.4 12 13.5l8.4-4.1"/></g>
 <g id="i-crescent"><path d="M15 3a9 9 0 1 0 6 15.5A7.5 7.5 0 0 1 15 3Z"/><path d="M19 4l.5 1.5L21 6l-1.5.5L19 8l-.5-1.5L17 6l1.5-.5Z"/></g>
@@ -690,63 +689,12 @@
         <option value="oneSeventh">سُبع الليل</option>
         <option value="none">بلا تعديل</option>
       </select></div>
-    <div class="setting"><span><span class="setting-label">تنبيه الصلاة</span><br><span class="setting-note">إشعار عند دخول الوقت</span></span>
-      <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
-    <div class="setting"><span><span class="setting-label">تذكير الجمعة</span><br><span class="setting-note">يفتح التطبيق يوم الجمعة بسننه: الصلاة على النبي ﷺ وقراءة الكهف</span></span>
-      <button class="switch" id="settings-friday" role="switch" aria-checked="true" aria-label="تذكير الجمعة"></button></div>
-    <div class="setting"><span><span class="setting-label">أذكار بعد الصلاة</span><br><span class="setting-note">تُعرض عند تعليم الصلاة أنك أدّيتها</span></span>
-      <button class="switch" id="settings-after-prayer" role="switch" aria-checked="true" aria-label="أذكار بعد الصلاة"></button></div>
-    <div class="setting"><span><span class="setting-label">ورد اليوم</span><br><span class="setting-note" id="settings-wird-note">تنبيه بورد ختمتك في الساعة التي تختارها</span></span>
-      <select class="select" id="settings-wird">
-        <option value="">بلا تذكير</option>
-        <option value="06:00">6 صباحاً</option>
-        <option value="08:00">8 صباحاً</option>
-        <option value="12:00">12 ظهراً</option>
-        <option value="16:00">4 عصراً</option>
-        <option value="20:00">8 مساءً</option>
-        <option value="22:00">10 مساءً</option>
-      </select></div>
-    <div class="setting"><span><span class="setting-label">ليلة الجمعة</span><br><span class="setting-note">تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ</span></span>
-      <button class="switch" id="settings-jumuah-night" role="switch" aria-checked="true" aria-label="تذكير ليلة الجمعة"></button></div>
-    <div class="setting"><span><span class="setting-label">تذكير الصيام</span><br><span class="setting-note">تنبيه في ليلة اليوم الذي يُستحب صيامه، قبل السحور</span></span>
-      <button class="switch" id="settings-fast-note" role="switch" aria-checked="true" aria-label="تذكير الصيام"></button></div>
-    <div class="setting"><span><span class="setting-label">نداء الجمعة</span><br><span class="setting-note">تنبيه قبل صلاة الجمعة بقراءة الكهف والصلاة على النبي ﷺ</span></span>
-      <select class="select" id="settings-jumuah-before">
-        <option value="0">بلا تذكير</option>
-        <option value="60">قبل ساعة</option>
-        <option value="120">قبل ساعتين</option>
-        <option value="180">قبل ثلاث ساعات</option>
-      </select></div>
-    <div class="setting"><span><span class="setting-label">تذكير صلاة الضحى</span><br><span class="setting-note" id="settings-duha-note">ركعتان فأكثر بعد ارتفاع الشمس إلى قُبيل الزوال</span></span>
-      <button class="switch" id="settings-duha" role="switch" aria-checked="false" aria-label="تذكير صلاة الضحى"></button></div>
-    <div class="setting"><span><span class="setting-label">تذكير قيام الليل</span><br><span class="setting-note" id="settings-qiyam-note">تنبيه عند دخول الثلث الأخير من الليل</span></span>
-      <button class="switch" id="settings-qiyam" role="switch" aria-checked="false" aria-label="تذكير قيام الليل"></button></div>
-    <div class="setting"><span><span class="setting-label">الصلاة على النبي ﷺ</span><br><span class="setting-note">تذكير كل فترة تختارها</span></span>
-      <select class="select" id="settings-salawat" aria-label="تذكير بالصلاة على النبي"></select></div>
-    <div class="setting"><span><span class="setting-label">صوت الأذان</span><br><span class="setting-note" id="settings-adhan-note">يُسمع عند دخول الوقت، وللفجر أذانه</span></span>
-      <span class="voice-pick">
-        <select class="select" id="settings-adhan-voice" aria-label="صوت الأذان"></select>
-        <button class="btn btn-ghost" id="settings-adhan-try" aria-label="اسمع الأذان"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
-      </span></div>
-    <div class="setting"><span><span class="setting-label">صوت التذكير</span><br><span class="setting-note" id="settings-voice-hint">صوت قارئ يتلو الصلاة الإبراهيمية، ويُسمع ما دام التطبيق مفتوحاً</span></span>
-      <span class="voice-pick">
-        <select class="select" id="settings-voice" aria-label="صوت التذكير"></select>
-        <button class="btn btn-ghost" id="settings-voice-try" aria-label="اسمع الصوت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
-      </span></div>
-    <div class="setting"><span><span class="setting-label">أي صلاة على النبي ﷺ</span><br><span class="setting-note">تُتلى بصوت قارئ من حصن المسلم</span></span>
-      <span class="voice-pick">
-        <select class="select" id="settings-salawat-voice" aria-label="اختيار الصلاة على النبي"></select>
-      </span></div>
-    <p class="naskh salawat-text" id="salawat-text" hidden></p>
-    <div class="setting" id="settings-device-voice" hidden><span><span class="setting-label">صوت الهاتف</span><br><span class="setting-note" id="settings-voice-note">اختر صوتاً واضغط زر السماع</span></span>
-      <span class="voice-pick">
-        <select class="select" id="settings-voice-name" aria-label="اختيار صوت الهاتف"></select>
-        <span class="voice-plain" id="settings-voice-plain" hidden>صوت الهاتف</span>
-      </span></div>
-    <div class="setting" id="settings-adhan-row" hidden><span><span class="setting-label">تنبيه الأذان</span><br><span class="setting-note">من التطبيق نفسه في وقت كل صلاة لموقعك، ويرنّ والتطبيق مغلق</span></span>
-      <button class="switch" id="settings-adhan" role="switch" aria-checked="true" aria-label="تنبيه الأذان"></button></div>
-    <p class="setting-note" id="settings-notify-note">تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.</p>
   </div>
+
+  <button class="row" data-go="reminders">
+    <span class="row-mark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bell"/></svg></span>
+    <span class="row-body"><span class="row-title">التذكيرات</span>
+    <span class="row-note">تنبيه الصلاة والأذان والسنن والورد، في صفحة وحدها</span></span></button>
 
   <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-text"/></svg>القراءة والمظهر</h2></div>
@@ -819,6 +767,85 @@
 </section>
 
 <!-- ══════════ عن التطبيق ══════════ -->
+
+<!-- ══════════ التذكيرات ══════════ -->
+<section class="view" id="v-reminders" aria-labelledby="reminders-title">
+  <div class="view-head"><h1 id="reminders-title">التذكيرات</h1><p>ما ينبّهك، ومتى، وبأي صوت</p></div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mosque"/></svg>الصلاة</h2></div>
+    <div class="setting"><span><span class="setting-label">تنبيه الصلاة</span><br><span class="setting-note">إشعار عند دخول الوقت</span></span>
+      <button class="switch" id="settings-notify" role="switch" aria-checked="false" aria-label="تنبيه الصلاة"></button></div>
+    <div class="setting" id="settings-adhan-row" hidden><span><span class="setting-label">تنبيه الأذان</span><br><span class="setting-note">من التطبيق نفسه في وقت كل صلاة لموقعك، ويرنّ والتطبيق مغلق</span></span>
+      <button class="switch" id="settings-adhan" role="switch" aria-checked="true" aria-label="تنبيه الأذان"></button></div>
+    <div class="setting"><span><span class="setting-label">صوت الأذان</span><br><span class="setting-note" id="settings-adhan-note">يُسمع عند دخول الوقت، وللفجر أذانه</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-adhan-voice" aria-label="صوت الأذان"></select>
+        <button class="btn btn-ghost" id="settings-adhan-try" aria-label="اسمع الأذان"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </span></div>
+    <div class="setting"><span><span class="setting-label">أذكار بعد الصلاة</span><br><span class="setting-note">تُعرض عند تعليم الصلاة أنك أدّيتها</span></span>
+      <button class="switch" id="settings-after-prayer" role="switch" aria-checked="true" aria-label="أذكار بعد الصلاة"></button></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن والمواسم</h2></div>
+    <p class="setting-note" id="fast-next" style="margin:0 0 10px"></p>
+    <div class="setting"><span><span class="setting-label">ليلة الجمعة</span><br><span class="setting-note">تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ</span></span>
+      <button class="switch" id="settings-jumuah-night" role="switch" aria-checked="true" aria-label="تذكير ليلة الجمعة"></button></div>
+    <div class="setting"><span><span class="setting-label">تذكير الصيام</span><br><span class="setting-note">تنبيه في ليلة اليوم الذي يُستحب صيامه، قبل السحور</span></span>
+      <button class="switch" id="settings-fast-note" role="switch" aria-checked="true" aria-label="تذكير الصيام"></button></div>
+    <div class="setting"><span><span class="setting-label">نداء الجمعة</span><br><span class="setting-note">تنبيه قبل صلاة الجمعة بقراءة الكهف والصلاة على النبي ﷺ</span></span>
+      <select class="select" id="settings-jumuah-before">
+        <option value="0">بلا تذكير</option>
+        <option value="60">قبل ساعة</option>
+        <option value="120">قبل ساعتين</option>
+        <option value="180">قبل ثلاث ساعات</option>
+      </select></div>
+    <div class="setting"><span><span class="setting-label">تذكير الجمعة</span><br><span class="setting-note">يفتح التطبيق يوم الجمعة بسننه: الصلاة على النبي ﷺ وقراءة الكهف</span></span>
+      <button class="switch" id="settings-friday" role="switch" aria-checked="true" aria-label="تذكير الجمعة"></button></div>
+    <div class="setting"><span><span class="setting-label">تذكير صلاة الضحى</span><br><span class="setting-note" id="settings-duha-note">ركعتان فأكثر بعد ارتفاع الشمس إلى قُبيل الزوال</span></span>
+      <button class="switch" id="settings-duha" role="switch" aria-checked="false" aria-label="تذكير صلاة الضحى"></button></div>
+    <div class="setting"><span><span class="setting-label">تذكير قيام الليل</span><br><span class="setting-note" id="settings-qiyam-note">تنبيه عند دخول الثلث الأخير من الليل</span></span>
+      <button class="switch" id="settings-qiyam" role="switch" aria-checked="false" aria-label="تذكير قيام الليل"></button></div>
+    <div class="setting"><span><span class="setting-label">الصلاة على النبي ﷺ</span><br><span class="setting-note">تذكير كل فترة تختارها</span></span>
+      <select class="select" id="settings-salawat" aria-label="تذكير بالصلاة على النبي"></select></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>وردك</h2></div>
+    <div class="setting"><span><span class="setting-label">ورد اليوم</span><br><span class="setting-note" id="settings-wird-note">تنبيه بورد ختمتك في الساعة التي تختارها</span></span>
+      <select class="select" id="settings-wird">
+        <option value="">بلا تذكير</option>
+        <option value="06:00">6 صباحاً</option>
+        <option value="08:00">8 صباحاً</option>
+        <option value="12:00">12 ظهراً</option>
+        <option value="16:00">4 عصراً</option>
+        <option value="20:00">8 مساءً</option>
+        <option value="22:00">10 مساءً</option>
+      </select></div>
+  </div>
+
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-radio"/></svg>الصوت</h2></div>
+    <div class="setting"><span><span class="setting-label">صوت التذكير</span><br><span class="setting-note" id="settings-voice-hint">صوت قارئ يتلو الصلاة الإبراهيمية، ويُسمع ما دام التطبيق مفتوحاً</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-voice" aria-label="صوت التذكير"></select>
+        <button class="btn btn-ghost" id="settings-voice-try" aria-label="اسمع الصوت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
+      </span></div>
+    <div class="setting"><span><span class="setting-label">أي صلاة على النبي ﷺ</span><br><span class="setting-note">تُتلى بصوت قارئ من حصن المسلم</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-salawat-voice" aria-label="اختيار الصلاة على النبي"></select>
+      </span></div>
+    <p class="naskh salawat-text" id="salawat-text" hidden></p>
+    <div class="setting" id="settings-device-voice" hidden><span><span class="setting-label">صوت الهاتف</span><br><span class="setting-note" id="settings-voice-note">اختر صوتاً واضغط زر السماع</span></span>
+      <span class="voice-pick">
+        <select class="select" id="settings-voice-name" aria-label="اختيار صوت الهاتف"></select>
+        <span class="voice-plain" id="settings-voice-plain" hidden>صوت الهاتف</span>
+      </span></div>
+    <p class="setting-note" id="settings-notify-note">تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.</p>
+  </div>
+</section>
+
 <section class="view" id="v-about" aria-labelledby="about-title">
   <div class="view-head"><h1 id="about-title">عن سُنّتي</h1><p>ما الذي يعمل هنا، وكيف</p></div>
   <div class="card brand-card">
