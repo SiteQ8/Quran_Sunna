@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.62.1';
+  var VERSION = '8.63.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1036,8 +1036,11 @@
     row.hidden = mode !== 'speech';
     var hint = $('settings-voice-hint');
     if (hint) {
+      /* the recording is no longer always the ibrahimiyya, so the line names
+         whatever is chosen rather than one of the four by name */
+      var v = salawatVoice();
       hint.textContent = {
-        recording: 'صوت قارئ يتلو الصلاة الإبراهيمية، ويُسمع ما دام التطبيق مفتوحاً',
+        recording: (v ? v.n + '، ' : '') + 'ويُسمع ما دام التطبيق مفتوحاً',
         tone: 'نغمة قصيرة من الجهاز',
         speech: 'الهاتف ينطق الصلاة على النبي بصوته',
         none: 'يصل التنبيه صامتاً'
