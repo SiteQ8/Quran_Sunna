@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.43.2';
+  var VERSION = '8.44.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1384,7 +1384,6 @@
   function renderHome() {
     if (!$('v-home')) return;
     refreshTimes();
-    renderJumuahCard('home-jumuah');
     renderDate();
     tick();
     renderNowSunnah();
@@ -2287,15 +2286,6 @@
     if (window.scrollTo) window.scrollTo(0, 0);
   }
 
-  /* The sunnahs of jumuah, set among the daily sunnahs while they are due:
-     the night's from the maghrib of thursday to the fajr of friday, then the
-     day's until it ends. Outside that the card is not there at all. */
-  function jumuahCardKind() {
-    if (inJumuahNight()) return 'night';
-    if (new Date().getDay() === 5) return 'day';
-    return null;
-  }
-
   /* the sunnahs of the prayers as the reader sees them today */
   function todaySunanLines() {
     var out = [];
@@ -2309,32 +2299,6 @@
       if (t && out.length < 12 && out.indexOf(t) === -1) out.push(t);
     });
     return out;
-  }
-
-  function renderJumuahCard(where) {
-    var host = $(where || 'tracker-jumuah');
-    if (!host) return;
-    var kind = jumuahCardKind();
-    if (!kind) { host.innerHTML = ''; return; }
-    var night = kind === 'night';
-    var lines = night ? JUMUAH_NIGHT_SUNAN : FRIDAY_SUNAN;
-    var title = night ? 'ليلة الجمعة' : 'يوم الجمعة';
-    var note = night ? 'من مغرب الخميس إلى فجر الجمعة' : 'من سنن هذا اليوم';
-    host.innerHTML = '<div class="card">' +
-      '<div class="card-head"><h2>' + icon('star') + esc(title) + '</h2></div>' +
-      '<p class="setting-note">' + esc(note) + '</p>' +
-      lines.map(function (line) {
-        return '<div class="dua-line"><span class="dua-text">' + esc(line) + '</span></div>';
-      }).join('') +
-      '<button class="btn btn-primary btn-block" data-act="open-kahf" style="margin-top:12px">افتح سورة الكهف</button>' +
-      '<div class="sheet-tools">' +
-        '<button class="btn btn-ghost" data-act="' + (night ? 'share-jumuah-night' : 'share-friday') + '">' +
-          icon('share') + 'صورة</button>' +
-        '<button class="btn btn-ghost" data-act="' + (night ? 'snooze-jumuah-night' : 'snooze-friday') + '">' +
-          icon('clock') + 'ذكّرني بعد ساعة</button>' +
-        '<button class="btn btn-ghost" data-act="' + (night ? 'hide-jumuah-night' : 'friday-off') + '">' +
-          icon('close') + 'لا تُذكّرني</button>' +
-      '</div></div>';
   }
 
   /* ---------------- المصحف كما طُبع ---------------- */
@@ -3811,7 +3775,6 @@
     if ($('tracker-done')) $('tracker-done').textContent = ar(c.done);
     if ($('tracker-total')) $('tracker-total').textContent = ar(total);
     if ($('tracker-meter')) $('tracker-meter').style.width = c.percent + '%';
-    renderJumuahCard();
     if ($('tracker-streak')) {
       var s = Store.streak(new Date());
       $('tracker-streak').textContent = s.longest > 0
@@ -3837,6 +3800,22 @@
     }
 
     var html = '';
+
+    /* The sunan of the day itself, on friday alone and at the head of the
+       list, ticked under the same names the home screen uses so a deed
+       marked in one place stands marked in the other. */
+    if (isFriday() && typeof FRIDAY_SUNNAH !== 'undefined') {
+      var fridayIds = FRIDAY_SUNNAH.items.map(function (_, i) { return 'now:friday:' + i; });
+      html += fold('friday', FRIDAY_SUNNAH.l, 'star', fridayIds,
+        '<p class="setting-note" style="margin-bottom:12px">' + esc(FRIDAY_SUNNAH.sub) + '</p>' +
+        FRIDAY_SUNNAH.items.map(function (item, i) {
+          var id = 'now:friday:' + i;
+          var done = !!record.sunnah[id];
+          return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
+            '<span class="check-box">' + icon('check') + '</span>' +
+            '<span class="check-label">' + esc(item) + '</span></button>';
+        }).join(''));
+    }
 
     if (typeof WIRD_ITEMS !== 'undefined') {
       var wirdIds = WIRD_ITEMS.map(function (item) { return 'wird:' + item.id; });
@@ -6358,7 +6337,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, renderJumuahCard: renderJumuahCard, jumuahCardKind: jumuahCardKind, todaySunanLines: todaySunanLines, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

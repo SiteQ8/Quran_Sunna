@@ -468,7 +468,9 @@ test('a middle dot never sits beside an arabic numeral', () => {
 });
 
 test('the sunnah tracker records ticks and updates the meter', () => {
-  const { win, doc } = boot();
+  /* a plain wednesday: friday adds its own fold at the head of the list, and
+     a count of rows must not depend on the day the suite is run */
+  const { win, doc } = boot({ now: new Date(2026, 8, 9, 10, 0, 0) });
   win.App.go('tracker');
   const boxes = doc.querySelectorAll('#tracker-list [data-check]');
   const expected = win.WIRD_ITEMS.length + win.SUNNAH_TRACKER.reduce((n, g) => n + g.i.length, 0);
@@ -6516,15 +6518,18 @@ test('the night of jumuah is not put off a week because its moment passed', () =
 });
 
 test('the night of jumuah can be shared, put off, or dismissed', () => {
-  const { win, doc } = boot();
-  win.Store.set('jumuahNightShown', '');
+  /* the sheet is bound to the night itself, not to a once-only flag, so the
+     clock is handed a thursday evening rather than left to whenever the suite
+     happens to run */
+  const night = new Date(2026, 8, 10, 23, 0, 0).getTime();
+  const { win, doc } = boot({ now: new Date(night) });
   win.App.helpers.maybeJumuahNightSheet();
   const tools = [...doc.querySelectorAll('#sheet .sheet-tools .btn')].map(function (b) { return b.textContent.trim(); });
   assert.deepStrictEqual(tools, ['صورة', 'ذكّرني بعد ساعة', 'لا تُذكّرني']);
 
   /* put off to a stated hour, and the list honours it */
   const at = win.App.helpers.snoozeJumuahNight(60);
-  assert.ok(at > Date.now() + 59 * 60000 && at < Date.now() + 61 * 60000);
+  assert.ok(at > night + 59 * 60000 && at < night + 61 * 60000);
   assert.strictEqual(win.Store.get('jumuahNightAt'), at);
 
   /* dismissed for good, and it can be brought back */
@@ -6902,28 +6907,47 @@ test('the my-place button asks again about that place', () => {
   assert.ok(fn.indexOf('locate(') !== -1, 'the reading is taken again, which speaks for itself');
 });
 
-test('the sunnahs of jumuah sit among the daily sunnahs while they are due', () => {
-  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const kind = /function jumuahCardKind\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  /* the night's from the maghrib of thursday to the fajr of friday, then the
-     day's until it ends, and outside that the card is not there at all */
-  assert.ok(kind.indexOf("if (inJumuahNight()) return 'night';") !== -1);
-  assert.ok(kind.indexOf("if (new Date().getDay() === 5) return 'day';") !== -1);
-  assert.ok(kind.indexOf('return null;') !== -1, 'and nothing on any other day');
-  const card = /function renderJumuahCard\(where\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(card.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1,
-    'it is cleared away, not merely hidden');
-  /* it carries the same three choices as the sheet does */
-  ['share-jumuah-night', 'snooze-jumuah-night', 'hide-jumuah-night',
-    'share-friday', 'snooze-friday', 'friday-off'].forEach(function (act) {
-    assert.ok(card.indexOf(act) !== -1, 'missing ' + act);
-  });
-  /* and the daily sunnahs have a picture of their own */
+test('the sunan of friday stand in the sunan screen, and the card that repeated the sheet is gone', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  assert.ok(html.indexOf('data-act="share-sunan"') !== -1);
+  /* it said again, under the prayers and under the sunan, what the sheet of
+     the night already says, so both hosts were taken out */
+  assert.ok(html.indexOf('home-jumuah') === -1, 'nothing of it under the prayers');
+  assert.ok(html.indexOf('tracker-jumuah') === -1, 'nothing of it under the sunan');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('renderJumuahCard') === -1, 'and no drawing left behind');
+  assert.ok(app.indexOf('jumuahCardKind') === -1);
+  /* the sheets themselves stay, the night's and the day's */
+  assert.ok(app.indexOf('function maybeJumuahNightSheet() {') !== -1);
+  assert.ok(app.indexOf('function maybeFridaySheet() {') !== -1);
+
+  /* and the sunan of the day are a fold of their own, at the head of the list */
+  const { win, doc } = boot({ now: new Date(2026, 8, 11, 9, 0, 0) });
+  win.App.go('tracker');
+  const heads = [...doc.querySelectorAll('#tracker-list .fold-title')].map(function (e) { return e.textContent.trim(); });
+  assert.strictEqual(heads[0], 'سنن الجمعة', 'first, because it is the day itself');
+  const ids = [...doc.querySelectorAll('#tracker-list [data-check^="now:friday:"]')]
+    .map(function (b) { return b.getAttribute('data-check'); });
+  assert.deepStrictEqual(ids, ['now:friday:0', 'now:friday:1', 'now:friday:2', 'now:friday:3',
+    'now:friday:4', 'now:friday:5', 'now:friday:6'],
+    'under the same names the hour card ticks, so one marking serves both screens');
+  /* folded shut when it arrives, like every other */
+  const section = doc.querySelector('#tracker-list [data-fold="friday"]');
+  assert.ok(section && !section.classList.contains('is-open'));
+
+  /* the meter already counted these seven, so the list and the tally agree */
+  const total = /if \(friday && typeof FRIDAY_SUNNAH !== 'undefined'\) total \+= FRIDAY_SUNNAH\.items\.length;/.test(app);
+  assert.ok(total, 'the seven are counted once, on friday');
+
+  /* and on any other day it is not there at all */
+  const sat = boot({ now: new Date(2026, 8, 12, 9, 0, 0) });
+  sat.win.App.go('tracker');
+  assert.strictEqual(sat.doc.querySelector('#tracker-list [data-fold="friday"]'), null);
+
+  /* the picture of the day's sunan still reads the names off the screen */
   const lines = /function todaySunanLines\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(lines.indexOf("querySelectorAll('.check-label')") !== -1,
-    'the picture reads the names off the screen, so the two cannot differ');
+    'so the picture and the list cannot say different things');
+  assert.ok(html.indexOf('data-act="share-sunan"') !== -1);
 });
 
 test('every map server is asked at once, and the first sound answer taken', () => {
@@ -6956,31 +6980,9 @@ test('the my-place button on the map takes the reading afresh', () => {
   assert.ok(app.indexOf("if (typeof then === 'function') then();") !== -1);
 });
 
-test('the sunnahs of jumuah sit at the foot of the daily sunnahs', () => {
-  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  /* they are the last thing in the list, not the first */
-  assert.ok(html.indexOf('<div id="tracker-list"></div>') < html.indexOf('<div id="tracker-jumuah"></div>'),
-    'the card comes after the list');
+test('every card name still fits its one line', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  /* and every card name still fits its one line */
   assert.ok(css.indexOf('font-size: .74rem; line-height: 1.7;') !== -1);
-});
-
-test('the sunnahs of jumuah stand on the home screen too, under the hour\'s sunnahs', () => {
-  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  /* directly beneath the fold that holds the sunnahs of this hour */
-  assert.ok(html.indexOf('<div id="home-jumuah"></div>') !== -1);
-  assert.ok(html.indexOf('id="now-fold"') < html.indexOf('<div id="home-jumuah"></div>'),
-    'it comes after the sunnahs of the hour, not before them');
-
-  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  /* one drawing serves both places, so the two can never disagree */
-  assert.ok(app.indexOf('function renderJumuahCard(where) {') !== -1);
-  assert.ok(app.indexOf("renderJumuahCard('home-jumuah');") !== -1, 'drawn when the home screen is drawn');
-  assert.ok(app.indexOf('renderJumuahCard();') !== -1, 'and in the sunnah screen as before');
-  /* and it clears itself away outside its hours, in both */
-  const fn = /function renderJumuahCard\(where\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf("if (!kind) { host.innerHTML = ''; return; }") !== -1);
 });
 
 test('a sheet that is due is looked for again whenever the app comes forward', () => {
