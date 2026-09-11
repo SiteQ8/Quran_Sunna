@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.56.0';
+  var VERSION = '8.56.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -195,13 +195,6 @@
       return window.navigator.clipboard.writeText(text);
     }
     return Promise.reject(new Error('no clipboard'));
-  }
-
-  function shareText(title, text) {
-    if (window.navigator && window.navigator.share) {
-      return window.navigator.share({ title: title, text: text }).catch(function () { return null; });
-    }
-    return copyText(text).then(function () { toast('نُسخ النص'); }, function () { toast('تعذّرت المشاركة'); });
   }
 
   /* ---------------- appearance ---------------- */
