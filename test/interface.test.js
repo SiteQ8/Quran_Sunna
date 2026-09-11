@@ -96,6 +96,23 @@ function click(win, el) {
   el.dispatchEvent(new win.Event('click', { bubbles: true }));
 }
 
+/* Waits for a thing to become true rather than for a number of milliseconds.
+   A fixed wait is a guess about how fast the machine is, and the one it
+   replaced here, sixty milliseconds for a FileReader, failed once on a loaded
+   box: a test that is right most of the time teaches people to run it again. */
+function until(check, deadline) {
+  const end = Date.now() + (deadline || 3000);
+  return new Promise(function (done, fail) {
+    (function look() {
+      let ok = false;
+      try { ok = check(); } catch (e) { ok = false; }
+      if (ok) return done();
+      if (Date.now() > end) return fail(new Error('waited and it never became true'));
+      setTimeout(look, 10);
+    })();
+  });
+}
+
 function fire(win, el, type) {
   assert.ok(el, 'tried to fire ' + type + ' on an element that is not there');
   el.dispatchEvent(new win.Event(type, { bubbles: true }));
@@ -4533,13 +4550,9 @@ test('sharing a verse shares its picture with its words', () => {
   assert.ok(services.indexOf('ملاحظة') !== -1, 'the freed slot is the note');
   const verseCard = win.App.helpers.verseCard;
   win.App.helpers.sharePicture(Promise.resolve(new win.Blob([new Uint8Array([1, 2, 3])], { type: 'image/png' })), 'ayah-1-7.png', 'x', 'كلمات الآية\nsunnati.3li.info');
-  return new Promise(function (done) {
-    setTimeout(function () {
-      assert.strictEqual(calls.images.length, 1);
-      assert.strictEqual(calls.images[0][2], 'كلمات الآية\nsunnati.3li.info', 'the words go with the picture');
-      void verseCard;
-      done();
-    }, 60);
+  return until(function () { return calls.images.length === 1; }).then(function () {
+    assert.strictEqual(calls.images[0][2], 'كلمات الآية\nsunnati.3li.info', 'the words go with the picture');
+    void verseCard;
   });
 });
 
@@ -4688,29 +4701,60 @@ test('each voice button shows only its own sound playing', () => {
   assert.strictEqual(mark('settings-adhan-try'), '#i-play');
 });
 
-test('the salawat is shown in full, in the very words of the book', () => {
+test('the reader reads exactly what the voice recites, wherever it recites from', () => {
   const { win, doc } = boot();
-  win.App.go('settings');
-  const shown = doc.getElementById('salawat-text').textContent;
-  /* the words are taken from حصن المسلم, never typed beside the recording, so
-     the shown text must be that entry exactly, tashkeel and all */
+  win.App.go('reminders');
+
+  /* The app opens on a recitation of سورة الأحزاب آية ٥٦ from end to end. The
+     file was transcribed before it was wired, because pointing it at the
+     Ibrahimic salawat would have shown one text while another was recited. */
+  const first = win.SALAWAT_VOICES[0];
+  assert.strictEqual(first.id, 'buhendi', 'the recitation opens the list');
+  /* spread, because an array from the page's realm is not reference-equal to
+     one made here even when it holds the same two numbers */
+  assert.deepStrictEqual([...first.q], [33, 56]);
+  assert.strictEqual(win.Store.get('salawatVoice'), 'buhendi', 'and the app opens with it');
+  assert.strictEqual(doc.getElementById('salawat-text').textContent, win.Mushaf.ayah(33, 56),
+    'the words come from the mushaf itself, not typed beside the recording');
+  assert.ok(doc.getElementById('salawat-text').className.indexOf('quran') !== -1,
+    'an ayah is set in the mushaf face');
+  assert.strictEqual(doc.getElementById('salawat-from').textContent, 'سورة الأحزاب، آية 56',
+    'and says which ayah it is, not that it is from حصن المسلم');
+
+  /* every voice points at something that is really there, and has a file */
+  win.SALAWAT_VOICES.forEach(function (v) {
+    if (v.q) {
+      assert.ok(win.Mushaf.ayah(v.q[0], v.q[1]), v.id + ' should point at a real ayah');
+    } else {
+      const c = win.HISN.filter(function (x) { return x.id === v.hisn; })[0];
+      assert.ok(c && c.i.some(function (i) { return i.a === v.a; }), v.id + ' should point into حصن المسلم');
+    }
+    const at = path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
+    assert.ok(fs.existsSync(at) && fs.statSync(at).size > 20000, v.id + ' has no recording');
+  });
+
+  /* the worker keeps the one the app opens with, or it is silent offline */
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'./audio/salawat/" + first.id + ".mp3'") !== -1);
+
+  /* choosing a dua shows that dua, in full and in the naskh */
+  const sel = doc.getElementById('settings-salawat-voice');
+  sel.value = 'ibrahimiyya'; fire(win, sel, 'change');
   const chapter = win.HISN.filter(function (c) { return c.id === 23; })[0];
   const ibrahimiyya = chapter.i.filter(function (i) { return i.a === 53; })[0];
+  const shown = doc.getElementById('salawat-text').textContent;
   assert.strictEqual(shown, ibrahimiyya.t);
-  /* and it is the whole du'a, both halves of it */
+  assert.ok(doc.getElementById('salawat-text').className.indexOf('naskh') !== -1);
+  assert.strictEqual(doc.getElementById('salawat-from').textContent, 'حصن المسلم');
   const bare = shown.replace(/[\u064B-\u0652\u0670]/g, '');
   ['اللهم صل على محمد', 'كما صليت على إبراهيم', 'إنك حميد مجيد', 'بارك على محمد', 'كما باركت على إبراهيم'].forEach(function (part) {
     assert.ok(bare.indexOf(part) !== -1, 'the ibrahimiyya should contain: ' + part);
   });
   assert.strictEqual((bare.match(/إنك حميد مجيد/g) || []).length, 2, 'it closes both halves');
-  win.SALAWAT_VOICES.forEach(function (v) {
-    const c = win.HISN.filter(function (x) { return x.id === v.hisn; })[0];
-    assert.ok(c && c.i.some(function (i) { return i.a === v.a; }), v.id + ' should point into حصن المسلم');
-  });
-  const sel = doc.getElementById('settings-salawat-voice');
-  sel.value = 'azwaj'; fire(win, sel, 'change');
-  const second = chapter.i.filter(function (i) { return i.a === 54; })[0];
-  assert.strictEqual(doc.getElementById('salawat-text').textContent, second.t, 'and it follows the choice');
+
+  /* and the reciter is named where a reciter should be */
+  assert.ok(/SALAWAT_RECITER = \{[^}]*خالد بوهندي/.test(
+    fs.readFileSync(path.join(DOCS, 'data', 'adhan.js'), 'utf8')), 'the reciter is named');
 });
 
 test('the launcher icon is the app\'s own artwork, whole inside the safe middle', () => {
@@ -6542,6 +6586,42 @@ test('the app does not promise that nothing ever leaves the device', () => {
       h + ' is reached by the app but never named in the policy');
   });
 });
+
+test('the handover does not claim as unmade what is made', () => {
+  const doc = fs.readFileSync(path.join(__dirname, '..', 'HANDOVER.md'), 'utf8');
+  const open = doc.slice(doc.indexOf('ما لم يُصنع بعد'), doc.indexOf('وما يلزم في Play Console'));
+  assert.ok(open.length > 200, 'the list of what is not made yet should be there');
+
+  /* Twice now that list has carried something finished: the madinah mushaf was
+     written «بُدئ ولم يتم» above a paragraph describing its completion, and the
+     du'as were counted as unextracted while four hundred and thirty three of
+     them sat in the app. Nothing checked, so nothing said. The claims with a
+     number in them are checked here against the thing they claim about. */
+
+  /* the reciters: fifteen of sixteen have a whole mushaf */
+  const extras = fs.readFileSync(path.join(DOCS, 'data', 'extras.js'), 'utf8');
+  const reciters = [...(/var RECITERS = \[([\s\S]*?)\n\];/.exec(extras)[1])
+    .matchAll(/\{ id: '([^']+)'/g)].map(function (m) { return m[1]; });
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const withAudio = new Set([...(/var SURAH_AUDIO = \{([\s\S]*?)\n  \};/.exec(app)[1])
+    .matchAll(/'([^']+)':/g)].map(function (m) { return m[1]; }));
+  const whole = reciters.filter(function (r) { return withAudio.has(r); }).length;
+  assert.ok(open.indexOf('وفيه ' + toArabic(whole) + ' من ' + toArabic(reciters.length)) !== -1,
+    'the handover says a different count of whole mushafs than the table does: ' +
+    whole + ' of ' + reciters.length);
+
+  /* the du'as: the list must not call them unextracted while they are in */
+  const duas = require(path.join(DOCS, 'data', 'duas.js'));
+  const total = duas.DUA_BOOK.reduce(function (n, t) { return n + t.i.length; }, 0);
+  assert.ok(total > 400, 'the book should be extracted, got ' + total);
+  assert.ok(!/لم تُستخرج/.test(open), 'the handover still calls the du\'as unextracted');
+  assert.ok(open.indexOf(toArabic(total) + ' دعاءً') !== -1,
+    'the handover says a different number of du\'as than the file holds: ' + total);
+});
+
+function toArabic(n) {
+  return String(n).replace(/[0-9]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'[+d]; });
+}
 
 test('the handover names only files that are really there', () => {
   const doc = fs.readFileSync(path.join(__dirname, '..', 'HANDOVER.md'), 'utf8');

@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.61.0';
+var VERSION = 'sunnati-v8.62.0';
 
 var SHELL = [
   './',
@@ -30,6 +30,7 @@ var SHELL = [
   './data/dua-themes.js',
   './data/duas.js',
   './data/umrah.js',
+  './audio/salawat/buhendi.mp3',
   './audio/salawat/ibrahimiyya.mp3',
   './data/content.js',
   './data/extras.js',

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.61.0';
+  var VERSION = '8.62.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -901,11 +901,17 @@
      downloaded and it works with the connection off. */
   /* The book's own recording of الصلاة على النبي, a man reciting it, which
      needs no speech engine at all. Fetched once and kept by the worker. */
-  /* The words of the chosen salawat, taken from حصن المسلم itself so the
-     reader reads exactly what the voice recites. */
+  /* The words of the chosen salawat, taken from wherever that voice recites
+     from, the mushaf or the book, so the reader reads exactly what is recited. */
   function salawatText() {
-    var id = Store.get('salawatVoice') || 'ibrahimiyya';
-    var v = (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).filter(function (x) { return x.id === id; })[0];
+    var v = salawatVoice();
+    /* A recitation of an ayah takes its words from the mushaf, not from the
+       book of duas: the recording that opens the app is سورة الأحزاب آية ٥٦
+       from end to end, and showing the Ibrahimic salawat beside it would have
+       had the reader reading one thing while hearing another. */
+    if (v && v.q && typeof Mushaf !== 'undefined' && Mushaf.ready()) {
+      return Mushaf.ayah(v.q[0], v.q[1]) || '';
+    }
     if (!v || typeof HISN === 'undefined') return '';
     var chapter = HISN.filter(function (c) { return c.id === v.hisn; })[0];
     if (!chapter) return '';
@@ -913,10 +919,30 @@
     return item ? item.t : '';
   }
 
+  /* Where the words of the chosen voice come from, said under them: a surah
+     and an ayah for a recitation, the book for a dua. */
+  function salawatFrom() {
+    var v = salawatVoice();
+    if (!v) return '';
+    if (v.q) {
+      var meta = surahMeta(v.q[0]);
+      return 'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(v.q[1]);
+    }
+    return typeof SALAWAT_SOURCE !== 'undefined' ? SALAWAT_SOURCE.n : '';
+  }
+
+  /* The chosen voice, falling back to the first in the list rather than to a
+     name written out here, which would have to be changed in four places. */
+  function salawatVoice() {
+    var list = typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : [];
+    if (!list.length) return null;
+    var id = Store.get('salawatVoice');
+    return list.filter(function (x) { return x.id === id; })[0] || list[0];
+  }
+
   function salawatUrl() {
-    var id = Store.get('salawatVoice') || 'ibrahimiyya';
-    if (typeof SALAWAT_VOICES !== 'undefined' && !SALAWAT_VOICES.some(function (v) { return v.id === id; })) id = 'ibrahimiyya';
-    return 'audio/salawat/' + id + '.mp3';
+    var v = salawatVoice();
+    return 'audio/salawat/' + (v ? v.id : 'ibrahimiyya') + '.mp3';
   }
 
   function playRecording(url, button) {
@@ -5388,13 +5414,20 @@
     renderAdhanRow();
     fillSelect($('settings-salawat-voice'), (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).map(function (v) {
       return { value: v.id, label: v.n };
-    }), Store.get('salawatVoice') || 'ibrahimiyya');
+    }), (salawatVoice() || {}).id || '');
     var salawatRow = $('settings-salawat-voice') ? $('settings-salawat-voice').closest('.setting') : null;
     if (salawatRow) salawatRow.hidden = (s.voice || 'recording') !== 'recording';
     var shown = $('salawat-text');
     if (shown) {
       shown.hidden = (s.voice || 'recording') !== 'recording';
       shown.textContent = salawatText();
+      /* an ayah is set in the mushaf's own face, a dua in the naskh */
+      shown.className = ((salawatVoice() || {}).q ? 'quran' : 'naskh') + ' salawat-text';
+    }
+    var from = $('salawat-from');
+    if (from) {
+      from.hidden = (s.voice || 'recording') !== 'recording';
+      from.textContent = salawatFrom();
     }
     fillSelect($('settings-voice'), [
       { value: 'recording', label: 'صوت قارئ' },
