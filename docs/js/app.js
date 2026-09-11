@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.52.0';
+  var VERSION = '8.53.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -473,6 +473,9 @@
     handTimesToApp();
     handQiyamToApp();
     handRemindersToApp();
+    /* the times are worked out from the place, so this is where the place is
+       settled and the right moment to hand it over for the next opening */
+    tellPlace();
     return state.times;
   }
 
@@ -1112,6 +1115,17 @@
      the app notifies, rings and shares by itself, with no browser between. */
   function bridge() {
     return typeof window.SunnatiApp !== 'undefined' ? window.SunnatiApp : null;
+  }
+
+  /* The opening screen is a picture made at build time, so it cannot know any
+     city. The wrapper is told this one and greets with it at the next launch. */
+  function tellPlace() {
+    var app = bridge();
+    if (!app || !app.setPlace) return false;
+    var p = place();
+    if (!p || !p.n) return false;
+    try { app.setPlace(String(p.n)); } catch (e) { return false; }
+    return true;
   }
 
   /* The package version beside the page's, so one screenshot shows both. */

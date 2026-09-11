@@ -4174,28 +4174,50 @@ test('a fresh device opens in the sadu red with the sadu weave, before and after
   assert.strictEqual(manifest.theme_color, '#9c2b2b');
 });
 
-test('the mark is the eye of the sadu holding the crescent', () => {
+test('the mark is one sadu diamond with the crescent taken out of it', () => {
   const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
-  assert.ok(svg.indexOf('#8f2323') !== -1 && svg.indexOf('#5a1414') !== -1, 'the red field, deepening downward');
-  assert.ok(svg.indexOf('#f3e9d2') !== -1, 'cream for the bands and the eye');
-  assert.ok(svg.indexOf('#1a1412') !== -1, 'black in the heart of the eye');
-  assert.ok(svg.indexOf('#d9a441') !== -1, 'the gold thread of the cushions');
-  assert.ok(svg.indexOf('#1e6f47') === -1 && svg.indexOf('#268556') === -1, 'no green left in the mark');
-  /* the eye: four nested diamonds, and the crescent cut from two circles */
-  const diamonds = (svg.match(/<path d='M256 \d+ L\d+ 256 L256 \d+ L\d+ 256z'/g) || []).length;
-  assert.ok(diamonds >= 4, 'nested diamonds, found ' + diamonds);
-  assert.strictEqual((svg.match(/<circle /g) || []).length, 2, 'a moon cut from a moon');
-  const teeth = (svg.match(/l[\d.]+ -?\d+ l[\d.]+ -?\d+z/g) || []).length;
-  assert.ok(teeth >= 16, 'the sawtooth bands above and below, found ' + teeth);
+  /* The mark before this was four nested diamonds, two woven bands, two gold
+     rules and a crescent sixty units wide inside five hundred and twelve. At
+     forty eight pixels, which is what a phone draws, it was a red blob and the
+     one shape that said what the app is was the smallest thing in it. */
+  assert.ok(svg.indexOf('#8f2323') !== -1, 'the red field');
+  assert.ok(svg.indexOf('#f3e9d2') !== -1, 'cream for the weave');
+  assert.ok(svg.indexOf('linearGradient') === -1, 'a flat field, not a gradient');
+  assert.ok(svg.indexOf('#1e6f47') === -1 && svg.indexOf('#268556') === -1, 'no green in the mark');
+  /* two shapes and no more: the serrated diamond, and the crescent in it */
+  assert.strictEqual((svg.match(/<path /g) || []).length, 2, 'one weave and one moon, nothing else');
+  assert.strictEqual((svg.match(/<circle /g) || []).length, 0, 'the moon is a path now, not two circles');
+  /* the tooth is what makes it a weave rather than a rhombus */
+  const weave = /<path d="M([^"]+)" fill="#f3e9d2"/.exec(svg)[1];
+  assert.ok(weave.split(' L').length >= 48, 'the sawtooth, found ' + weave.split(' L').length + ' points');
+
   ['icon-192', 'icon-512', 'maskable-512', 'play-1024', 'icon-180'].forEach(function (n) {
     const png = fs.readFileSync(path.join(DOCS, 'icons', n + '.png'));
     assert.ok(png.length > 2000, n + ' is cut');
   });
-  const android = path.join(__dirname, '..', 'android/app/src/main/res');
-  assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
-  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#8f2323') !== -1);
-  assert.ok(/M12,1 L23,12/.test(fs.readFileSync(path.join(android, 'drawable/ic_notification.xml'), 'utf8')), 'the status bar carries the eye');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/logo.py')), 'the mark is drawn by a script, so it can be drawn again');
+});
+
+test('every drawing of the mark comes from the one set of numbers', () => {
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/logo.mjs'), 'utf8');
+  /* the geometry used to live in logo.py while the launcher, the status bar
+     silhouette and the themed icon were each drawn by hand elsewhere, so they
+     could drift apart and nothing would say */
+  ['icon.svg', 'maskable.svg', 'ic_notification.xml', 'ic_launcher_monochrome.xml',
+   'ic_launcher_foreground.png'].forEach(function (out) {
+    assert.ok(tool.indexOf(out) !== -1, tool + ' should draw ' + out);
+  });
+  assert.ok(tool.indexOf('function markPaths') !== -1, 'and from one function');
+
+  const res = path.join(__dirname, '..', 'android/app/src/main/res');
+  ['ic_notification.xml', 'ic_launcher_monochrome.xml'].forEach(function (f) {
+    const v = fs.readFileSync(path.join(res, 'drawable', f), 'utf8');
+    assert.ok(v.indexOf('fillType="evenOdd"') !== -1, f + ': the moon is cut, not painted over');
+    /* An arc flag is not a measurement. Scaling the 512 path down to the 24
+       grid by replacing every number turned «0 1 0» into «0.00 0.05 0.00»,
+       which no renderer accepts, so the shape is drawn at its size instead. */
+    assert.ok(!/0\.\d+ 0\.\d+ 0\.\d+ -?\d/.test(v), f + ': an arc flag was scaled like a number');
+    assert.ok(/ 0 1 0 | 0 0 1 /.test(v), f + ': the arc flags should be flags');
+  });
 });
 
 test('the app and its worker carry the same version, and it is the version in the android package', () => {
@@ -4637,9 +4659,11 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
     assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/ic_launcher_foreground.png');
   });
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
-  assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
-  assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 2, 'one colour only, as the status bar draws it');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the artwork every size is drawn from');
+  assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the moon must be cut not painted');
+  /* one path now, where it used to be two: the weave and the moon are the same
+     shape cut by the even-odd rule rather than two drawings laid on each other */
+  assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 1, 'one colour only, as the status bar draws it');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/logo.mjs')), 'the tool every size is drawn from');
 });
 
 /* ---------------- every arrow points the way the language runs ---------------- */
@@ -5791,6 +5815,11 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
      with the real fonts rather than approximated in canvas */
   assert.ok(/R\.drawable\.splash_art_night/.test(splash) &&
     /R\.drawable\.splash_art(?![_a-zA-Z])/.test(splash), 'a picture for each theme');
+  /* the picture is made at build time and knows nobody, so the greeting is
+     drawn over it from a city the page handed the wrapper last time */
+  assert.ok(splash.indexOf('حيّاك الله في ') !== -1, 'and a greeting that names the city');
+  assert.ok(splash.indexOf('"حيّاك الله"') !== -1, 'and one that does not, before any city is known');
+  assert.ok(splash.indexOf('drawSelvedge') !== -1, 'the woven edge wants the screen, not a square');
   assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
   /* one copy, in nodpi: the picture does not change with the density, and it
      used to sit byte for byte in five folders */
@@ -5799,7 +5828,9 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   });
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
   assert.ok(tool.indexOf('plex-arabic-600-arabic.woff2') !== -1, 'the app\'s own face');
-  assert.ok(tool.indexOf('icons/icon-512.png') !== -1, 'and its own mark, not a drawing of one');
+  /* the mark is read from icon.svg, which logo.mjs draws, so the opening and
+     the launcher can never show two different marks */
+  assert.ok(tool.indexOf('docs/icons/icon.svg') !== -1, 'and its own mark, not a drawing of one');
 });
 
 test('pressing a mosque brings the map onto it and names it', () => {
@@ -6887,11 +6918,19 @@ test('the splash artwork is drawn with the real face, and the build refuses othe
   /* a page made with setContent has no origin, so the browser refused the
      font fetched over http://localhost and drew the name in the system face */
   assert.ok(tool.indexOf("'http://localhost") === -1, 'the face is not fetched over a socket');
-  assert.ok(tool.indexOf("'data:font/woff2;base64,'") !== -1, 'it is carried in the page itself');
-  assert.ok(tool.indexOf('document.fonts.check("600 108px Plex")') !== -1,
+  assert.ok(tool.indexOf("'font/woff2'") !== -1 && tool.indexOf('base64') !== -1,
+    'it is carried in the page itself');
+  assert.ok(/document\.fonts\.check\("600 \d+px Plex"\)/.test(tool),
     'and the render is checked before anything is written');
   assert.ok(tool.indexOf('the splash would be drawn in the wrong font') !== -1,
     'a build that lost the face must fail loudly, not ship quietly');
+  /* The lesson was learnt for the font and not applied to the mark beside it,
+     which kept pointing at a socket and kept failing, so every opening screen
+     shipped for months with a broken-image box where the mark should be. */
+  assert.ok(tool.indexOf("'image/svg+xml'") !== -1, 'the mark is carried in the page too');
+  assert.ok(tool.indexOf('naturalWidth > 0') !== -1, 'and the same question is asked of it');
+  assert.ok(tool.indexOf('the splash would ship a broken image box') !== -1,
+    'a build that lost the mark must fail loudly as well');
   /* and the artwork is really there, once */
   ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
     const at = path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi', f);
