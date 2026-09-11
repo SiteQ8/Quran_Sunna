@@ -3450,7 +3450,7 @@ test('the counter and the settings rows no longer breathe a hall of air', () => 
   assert.ok(!/padding:\s*var\(--s5\)/.test(counter), 'the counter panel is padded to s4, not s5');
   const phrase = /\.counter-phrase \{([^}]*)\}/.exec(css)[1];
   assert.ok(!/var\(--s5\)/.test(phrase), 'the phrase does not push the button down by s5');
-  const setting = /\.setting \{([^}]*)\}/.exec(css)[1];
+  const setting = /^\.setting \{([^}]*)\}/m.exec(css)[1];
   assert.match(setting, /padding:\s*var\(--s2\) 0/, 'a settings row is padded s2, not s3');
 });
 
@@ -3841,7 +3841,9 @@ test('a phone already set to kuwait time is not asked', () => {
 
 test('a settings row keeps its label and its control on one line', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  const row = /\.setting \{([^}]*)\}/.exec(css)[1];
+  /* anchored, or it matches «.setting-sub .setting {» and measures a rule
+     that only turns a border off */
+  const row = /^\.setting \{([^}]*)\}/m.exec(css)[1];
   assert.match(row, /flex-wrap:\s*nowrap/, 'wrapping dropped the control and left half a row empty');
   assert.match(css, /\.setting > span:first-child \{[^}]*flex:\s*1 1 0/, 'the label yields first');
   assert.match(css, /\.setting \.select, \.setting \.voice-pick \{[^}]*max-width:\s*66%/, 'and the control never takes more than two thirds');
@@ -4022,7 +4024,10 @@ test('the real voice is the default, in front, and the phone voice row appears o
   assert.strictEqual(doc.getElementById('settings-voice').value, 'recording');
   assert.strictEqual(doc.getElementById('settings-voice').options[0].text, 'صوت قارئ');
   assert.ok(doc.getElementById('settings-device-voice').hidden, 'no talk of the phone voice unless asked');
-  assert.ok(doc.getElementById('settings-voice-hint').textContent.indexOf('الصلاة الإبراهيمية') !== -1, 'the hint says what the voice recites');
+  /* the recording is no longer always the ibrahimiyya, so the hint names
+     whichever is chosen rather than one of the four by name */
+  assert.ok(doc.getElementById('settings-voice-hint').textContent.indexOf(win.SALAWAT_VOICES[0].n) !== -1,
+    'the hint says what the voice recites');
   const sel = doc.getElementById('settings-voice');
   sel.value = 'speech'; fire(win, sel, 'change');
   assert.ok(!doc.getElementById('settings-device-voice').hidden, 'choosing the phone voice shows its row');

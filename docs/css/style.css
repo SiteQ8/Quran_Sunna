@@ -968,6 +968,15 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* Wiping what was counted does not stand shoulder to shoulder with what only
    nudges it: same card, a rule above, and a quieter voice. Used by the khatma's
    restart and by the tasbih's. */
+/* Settings that belong to the one above them rather than to the card: set in
+   behind a rule, so «which reciter» is plainly the sound of «الصلاة على النبي»
+   and not a setting of the whole app. */
+.setting-sub {
+  margin: 0 0 var(--s3) var(--s4); padding-inline-start: var(--s4);
+  border-inline-start: 2px solid var(--line);
+}
+.setting-sub .setting { border-top: 0; }
+
 .khatma-reset { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
 .khatma-reset .btn { color: var(--ink-3); font-weight: 500; }
 .btn-row > .btn { flex: 1 1 0; min-width: 0; }
