@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.51.0';
+  var VERSION = '8.52.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3968,11 +3968,60 @@
 
   /* ---------------- صفة العمرة ---------------- */
 
+  /* Where the traveller stands: the first stage that is not finished. Not the
+     last one ticked, because a person may tick out of order and would then be
+     told they are behind where they are. */
+  function umrahHere(done) {
+    for (var i = 0; i < UMRAH_STAGES.length; i++) {
+      var stage = UMRAH_STAGES[i];
+      var all = stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; });
+      if (!all) return i;
+    }
+    return UMRAH_STAGES.length;   /* the rite is done */
+  }
+
+  /* The path across the head of the screen, and a word about where you are.
+     A checklist tells you what is left; a journey tells you where you stand,
+     and these are not the same thing to someone standing in a crowd. */
+  function renderUmrahJourney(done) {
+    var path = $('umrah-path');
+    var now = $('umrah-now');
+    var at = umrahHere(done);
+
+    if (path) {
+      path.innerHTML = UMRAH_STAGES.map(function (stage, i) {
+        var cls = 'journey-stop';
+        if (i < at) cls += ' is-past';
+        else if (i === at) cls += ' is-here';
+        return '<li class="' + cls + '"><span class="journey-mark">' +
+          icon(i < at ? 'check' : stage.ic) + '</span>' +
+          '<span class="journey-name">' + esc(stage.t) + '</span></li>';
+      }).join('');
+    }
+
+    if (!now) return;
+    if (at >= UMRAH_STAGES.length) {
+      now.innerHTML = '<p class="journey-kicker">تمّت</p>' +
+        '<p class="journey-title">تقبّل الله منك</p>' +
+        '<p class="journey-calm">حلّ لك كل ما حُرّم عليك بالإحرام. ' +
+        'واحمد الله أن بلّغك بيته وأعانك على إتمام نسكك.</p>';
+      return;
+    }
+    var stage = UMRAH_STAGES[at];
+    var left = stage.i.filter(function (_, ii) { return !done[stage.id + ':' + ii]; });
+    now.innerHTML = '<p class="journey-kicker">أنت الآن في</p>' +
+      '<p class="journey-title">' + esc(stage.t) + '</p>' +
+      (left.length ? '<p class="journey-next"><span class="journey-next-kicker">التالي</span>' +
+        esc(left[0]) + '</p>' : '') +
+      (stage.calm ? '<p class="journey-calm">' + esc(stage.calm) + '</p>' : '');
+  }
+
   function renderUmrah() {
     var host = $('umrah-stages');
     if (!host || typeof UMRAH_STAGES === 'undefined') return;
     var done = Store.get('umrah') || {};
     var total = 0, marked = 0;
+    renderUmrahJourney(done);
     host.innerHTML = UMRAH_STAGES.map(function (stage, si) {
       var mine = stage.i.map(function (text, ii) {
         var key = stage.id + ':' + ii;
@@ -3984,8 +4033,10 @@
       }).join('');
       var stageDone = stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; });
       var here = stage.i.filter(function (_, ii) { return done[stage.id + ':' + ii]; }).length;
-      /* every stage is folded away until the reader opens it, so the whole
-         rite is seen at a glance rather than one stage filling the screen */
+      /* Every fold starts closed, here as everywhere: a screen should show its
+         headings and not its contents. Opening the current stage by itself was
+         tried and it broke that rule for no gain, since the card above already
+         names the stage being walked and the very next thing to do in it. */
       var open = !!(state.umrahOpen && state.umrahOpen[stage.id]);
       return '<section class="fold' + (open ? ' is-open' : '') + '" data-umrah-fold="' + stage.id + '">' +
         '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
@@ -3994,10 +4045,15 @@
         '<span class="fold-tally' + (here === stage.i.length ? ' is-full' : '') + '">' + ar(here) + ' من ' + ar(stage.i.length) + '</span>' +
         icon('chevron', 'fold-arrow') + '</button>' +
         '<div class="fold-body">' + mine +
+        /* the «فلا حرج» of this stage, where someone worried will meet it */
+        (stage.calm ? '<p class="stage-calm">' + icon('heart') + '<span>' + esc(stage.calm) + '</span></p>' : '') +
         '<p class="fold-source">' + esc(UMRAH_SOURCE.b) + '، صفحة ' + ar(stage.p) + '</p></div></section>';
     }).join('');
     if ($('umrah-tally')) $('umrah-tally').textContent = ar(marked) + ' من ' + ar(total);
-    if ($('umrah-source')) $('umrah-source').textContent = UMRAH_SOURCE.b + '، ' + UMRAH_SOURCE.a;
+    if ($('umrah-source')) {
+      $('umrah-source').textContent = UMRAH_SOURCE.b + '، ' + UMRAH_SOURCE.a +
+        (typeof UMRAH_SOURCE_2 !== 'undefined' ? ' — و' + UMRAH_SOURCE_2.b + '، ' + UMRAH_SOURCE_2.a : '');
+    }
     renderUmrahRef();
   }
 

@@ -4703,7 +4703,9 @@ test('the umrah is five stages in the order the rite is performed, each naming i
   /* joined, since an array built inside the page has its own realm's prototype */
   assert.strictEqual(win.UMRAH_STAGES.map((s) => s.id).join(','), 'before,talbiyah,tawaf,sayi,halq',
     'ihram, then talbiyah, then tawaf, then sayi, then the cutting of the hair');
-  assert.strictEqual(win.UMRAH_STAGES.reduce((n, s) => n + s.i.length, 0), 32);
+  /* seven steps were added from the نبذة of ابن باز: الاشتراط, purity as a
+     condition of the tawaf, the woman who is not pure, and the rest */
+  assert.strictEqual(win.UMRAH_STAGES.reduce((n, s) => n + s.i.length, 0), 39);
   let page = 0;
   win.UMRAH_STAGES.forEach(function (st) {
     assert.ok(st.t && st.note && st.i.length, st.id + ' should be whole');
@@ -4733,14 +4735,14 @@ test('a step is ticked and kept, the tally follows, and the reference tabs each 
   const { win, doc } = boot();
   win.App.go('umrah');
   assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold').length, 5);
-  assert.strictEqual(doc.querySelectorAll('[data-umrah-step]').length, 32);
-  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '0 من 32');
+  assert.strictEqual(doc.querySelectorAll('[data-umrah-step]').length, 39);
+  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '0 من 39');
   /* every stage is folded away until asked for */
   assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold.is-open').length, 0);
   click(win, doc.querySelector('#umrah-stages .fold-head'));
   assert.strictEqual(doc.querySelector('#umrah-stages .fold.is-open .fold-title').textContent.indexOf('قبل الإحرام'), 0);
   click(win, doc.querySelector('[data-umrah-step]'));
-  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '1 من 32');
+  assert.strictEqual(doc.getElementById('umrah-tally').textContent, '1 من 39');
   assert.strictEqual(JSON.stringify(win.Store.get('umrah')), '{"before:0":1}');
   click(win, doc.querySelector('[data-umrah-step]'));
   assert.strictEqual(JSON.stringify(win.Store.get('umrah')), '{}', 'pressed again it is cleared');
@@ -7176,6 +7178,74 @@ test('no name in the page belongs to two things', () => {
      resolves #i-plane to the first, so the second was weight nobody saw */
   assert.deepStrictEqual([...new Set(twice)], [],
     'these names are used more than once: ' + [...new Set(twice)].join(', '));
+});
+
+test('the umrah carries what a person can be stopped by', () => {
+  const data = fs.readFileSync(path.join(DOCS, 'data', 'umrah.js'), 'utf8');
+  /* measured against the نبذة of الشيخ ابن باز: these are not refinements,
+     they are things that stop a pilgrim where he stands */
+  assert.ok(data.indexOf('فمحلي حيث حبستني') !== -1,
+    'الاشتراط: one who fears he will be prevented was not told how to');
+  assert.ok(data.indexOf('يُشترط لصحة الطواف أن تكون على طهارة') !== -1,
+    'that purity is a condition of the tawaf and not a courtesy');
+  assert.ok(data.indexOf('لا تطوف بالبيت حتى تطهر') !== -1,
+    'and that a woman does not circle the house until she is pure');
+  /* and the opposite, so the two are not confused */
+  assert.ok(data.indexOf('ولو سعيت على غير طهارة أجزأك ذلك') !== -1,
+    'while the sayi is valid without it, which is the whole point of saying both');
+  assert.ok(data.indexOf('يجعل البيت عن يساره') !== -1);
+  assert.ok(data.indexOf('وليس في الطواف ذكر مخصوص لكل شوط') !== -1);
+
+  /* the second source is named, since it is where these came from */
+  assert.ok(/UMRAH_SOURCE_2 = \{[^}]*بن باز/.test(data), 'and the source of them is named');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('UMRAH_SOURCE_2') !== -1, 'on the screen, not only in the file');
+});
+
+test('the umrah is walked as a journey, and every stage says its فلا حرج', () => {
+  const umrah = require(path.join(DOCS, 'data', 'umrah.js'));
+  /* a pilgrim in a crowd is mostly afraid of getting it wrong, so the thing
+     that settles that fear gets a place of its own rather than being left
+     inside a long step where nobody worried would find it */
+  umrah.UMRAH_STAGES.forEach(function (stage) {
+    assert.ok(stage.calm && stage.calm.length > 20, stage.t + ' has no word of reassurance');
+  });
+
+  const { win, doc } = boot();
+  win.App.go('umrah');
+  const stops = [...doc.querySelectorAll('#umrah-path li')];
+  assert.strictEqual(stops.length, umrah.UMRAH_STAGES.length, 'a stop for every stage');
+  assert.ok(stops[0].className.indexOf('is-here') !== -1, 'nothing ticked, so the first is where you stand');
+  assert.strictEqual(doc.querySelector('#umrah-now .journey-title').textContent,
+    umrah.UMRAH_STAGES[0].t, 'and it is named');
+  /* and the folds below stay shut, as every fold in the app does: the card
+     above already says which stage and which step, so nothing is gained by
+     breaking that rule here */
+  assert.strictEqual(doc.querySelectorAll('#umrah-stages .fold.is-open').length, 0);
+  assert.ok(doc.querySelector('#umrah-now .journey-next').textContent.indexOf(umrah.UMRAH_STAGES[0].i[0]) !== -1,
+    'the next step is named without opening anything');
+
+  /* walk two stages and the road behind you changes */
+  const record = {};
+  ['before', 'talbiyah'].forEach(function (id) {
+    const stage = umrah.UMRAH_STAGES.filter(function (s) { return s.id === id; })[0];
+    stage.i.forEach(function (_, i) { record[id + ':' + i] = true; });
+  });
+  win.Store.set('umrah', record);
+  win.App.go('home'); win.App.go('umrah');
+  const walked = [...doc.querySelectorAll('#umrah-path li')].map(function (e) {
+    return e.className.indexOf('is-past') !== -1 ? 'past'
+      : e.className.indexOf('is-here') !== -1 ? 'here' : 'ahead';
+  });
+  assert.deepStrictEqual(walked, ['past', 'past', 'here', 'ahead', 'ahead']);
+
+  /* and when it is finished it says so, rather than showing a sixth stage */
+  const all = {};
+  umrah.UMRAH_STAGES.forEach(function (s) { s.i.forEach(function (_, i) { all[s.id + ':' + i] = true; }); });
+  win.Store.set('umrah', all);
+  win.App.go('home'); win.App.go('umrah');
+  assert.strictEqual(doc.querySelector('#umrah-now .journey-title').textContent, 'تقبّل الله منك');
+  assert.strictEqual(doc.querySelectorAll('#umrah-path .is-here').length, 0);
 });
 
 test('the two buttons on the prayer card actually do something', () => {
