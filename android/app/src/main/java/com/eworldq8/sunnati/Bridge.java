@@ -26,6 +26,19 @@ public final class Bridge {
     @JavascriptInterface
     public String version() { return BuildConfig.VERSION_NAME; }
 
+    /** Where the reader is, kept so the opening screen can greet by name.
+     *  The picture is made at build time and knows nobody, and the wrapper
+     *  cannot read the page's own store, so the page says it and this holds
+     *  it until the next launch. */
+    @JavascriptInterface
+    public void setPlace(String name) {
+        if (name == null) return;
+        String clean = name.trim();
+        if (clean.length() > 40) return;
+        host.getSharedPreferences(SplashView.PREFS, android.content.Context.MODE_PRIVATE)
+            .edit().putString(SplashView.KEY_PLACE, clean).apply();
+    }
+
     /** The prayer times of the days ahead, as the page computed them for the reader's own place. */
     @JavascriptInterface
     public void setPrayerTimes(String json) {
