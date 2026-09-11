@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.60.0';
+  var VERSION = '8.61.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1423,8 +1423,14 @@
          the other. Saying محسوبة للكويت بطريقة الكويت reads as a stutter and
          tells a person nothing about which body issues the times. */
       $('place-line').innerHTML =
-        '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
-        ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>';
+        '<button class="place-tap" data-go="settings" aria-label="غيّر الموقع وطريقة الحساب">' +
+          '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
+          ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>' +
+        '</button>' +
+        /* the place is read here, so it is fetched here: it used to mean going
+           to the settings or to the qibla to say «my place has changed» */
+        '<button class="place-locate" data-act="locate" aria-label="حدّث موقعي">' +
+          icon('refresh') + '</button>';
     }
   }
 
@@ -5615,6 +5621,9 @@
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the
        button at wire time would be thrown away with the first redraw */
+    /* the home line redraws itself whenever the times are worked out, so a
+       listener put on the button at wire time would not survive the first one */
+    locate: function () { locate(function () { renderHome(); }); },
     'khatma-plus': function () { stepKhatma(1); },
     'khatma-minus': function () { stepKhatma(-1); },
     'khatma-restart': function () {

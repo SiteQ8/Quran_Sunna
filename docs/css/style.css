@@ -282,6 +282,17 @@ button { background: none; border: none; cursor: pointer; }
   width: 100%; margin-top: var(--s2); min-height: 44px; flex-wrap: wrap;
   font-size: var(--step--1); color: var(--ink-3);
 }
+.place-tap {
+  display: inline-flex; align-items: center; gap: var(--s2); flex-wrap: wrap;
+  justify-content: center; min-height: 44px; padding: 0 var(--s2);
+  background: none; border: 0; font: inherit; color: inherit;
+}
+/* small to the eye and wide enough for a thumb, as everything tapped must be */
+.place-locate {
+  display: inline-grid; place-items: center; width: 44px; height: 44px;
+  background: none; border: 0; color: var(--ink-3); flex: none;
+}
+.place-locate .icon { width: 17px; height: 17px; }
 .place-where { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; color: var(--ink-2); }
 .place-where .icon { width: 15px; height: 15px; color: var(--accent-ink); }
 .place-how {

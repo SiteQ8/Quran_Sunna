@@ -43,7 +43,7 @@ docs/                الصفحة، وهي التطبيق نفسه
   data/              نصوص ثابتة: المصحف، الأذكار، الأدعية، العمرة، التفسير
   privacy.html       سياسة الخصوصية، بثوب التطبيق نفسه
 android/             غلاف أندرويد، جافا خالصة بلا androidx
-test/                ٤٦٥ اختباراً في الواجهة، ومجموعات أخرى
+test/                ٤٦٦ اختباراً في الواجهة، ومجموعات أخرى
 tools/               المراجعات وأدوات البناء
 play/                نصوص المتجر ونماذجه
 ```
@@ -66,7 +66,7 @@ play/                نصوص المتجر ونماذجه
 
 ```bash
 python3 -m http.server 8000 --directory docs      # الصفحة
-node --test test/interface.test.js                 # ٤٦٥ اختباراً
+node --test test/interface.test.js                 # ٤٦٦ اختباراً
 node tools/review-ui.js                            # مراجعة الواجهة
 node tools/review-arabic.js                        # مراجعة العربية
 sh tools/android/compile-check.sh                  # ترجمة الغلاف سريعاً
@@ -187,4 +187,4 @@ cd android && ./gradlew --no-daemon bundleRelease assembleRelease
 
 ---
 
-<sub>آخر تحديث لهذا الملف مع الإصدار ٨٫٦٠٫٠.</sub>
+<sub>آخر تحديث لهذا الملف مع الإصدار ٨٫٦١٫٠.</sub>

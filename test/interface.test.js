@@ -2078,7 +2078,10 @@ test('the times line names the place and the reckoning without stuttering', () =
   assert.ok(!/تقويم تقويم/.test(how), 'the word must not be doubled');
   /* محسوبة للكويت بطريقة الكويت said the same word twice and named no authority */
   assert.notStrictEqual(how.replace('تقويم ', ''), where, 'the two must not read as the same word');
-  assert.strictEqual(line.getAttribute('data-go'), 'settings', 'and it should lead to the settings');
+  /* the line holds two buttons now, so the way to the settings is on the one
+     that states the two facts, not on the line itself */
+  assert.strictEqual(line.querySelector('.place-tap').getAttribute('data-go'), 'settings',
+    'and it should lead to the settings');
 });
 
 test('no calculation method is named after a bare country', () => {
@@ -2751,12 +2754,15 @@ test('somewhere it cannot name is given as coordinates, not as nothing', () => {
 
 test('the place and the method do not run into one word', () => {
   const { doc } = boot();
-  const line = doc.getElementById('place-line');
-  const place = line.firstChild.textContent;
-  const how = line.querySelector('.place-how').textContent;
-  assert.ok(line.textContent.indexOf(place + ' ' + how) !== -1 || /\s/.test(line.textContent.replace(place, '').charAt(0)),
-    'they should be two words, got ' + line.textContent.replace(/\s+/g, ' '));
-  assert.ok(!/الكويتتقويم/.test(line.textContent), 'they ran together');
+  /* measured inside the button that states them, since the line also carries
+     the fetch now and its text would swallow the gap */
+  const tap = doc.querySelector('#place-line .place-tap');
+  const where = tap.querySelector('.place-where');
+  const how = tap.querySelector('.place-how');
+  assert.ok(where.nextSibling && /^\s/.test(where.nextSibling.textContent || ''),
+    'something must stand between them, got ' + tap.textContent.replace(/\s+/g, ' '));
+  assert.ok(!/الكويتتقويم/.test(tap.textContent), 'they ran together');
+  void how;
 });
 
 test('the clock stands on a panel, so the numbers never sit on the lattice', () => {
@@ -6107,6 +6113,34 @@ test('choices are laid in an even grid, not pills of every width', () => {
 
   const { doc } = boot();
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
+});
+
+test('the place is fetched where it is read, on the line that states it', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the line was itself a button, so a button could not go inside it */
+  assert.ok(html.indexOf('<div class="place-line" id="place-line"></div>') !== -1,
+    'the line is a container of two now');
+  assert.ok(html.indexOf('<button class="place-line"') === -1);
+
+  const { win, doc } = boot();
+  const line = doc.getElementById('place-line');
+  const kids = [...line.children].map(function (c) { return c.className; });
+  assert.deepStrictEqual(kids, ['place-tap', 'place-locate'],
+    'the two facts first, the fetch after them');
+  assert.strictEqual(line.querySelector('.place-tap').getAttribute('data-go'), 'settings');
+  assert.strictEqual(line.querySelector('.place-locate').getAttribute('data-act'), 'locate');
+  assert.ok(line.querySelector('.place-locate').getAttribute('aria-label'), 'an icon alone needs a name');
+
+  /* the line redraws itself whenever the times are worked out, so the fetch is
+     an action and not a listener put on the button once */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/locate: function \(\) \{ locate\(function \(\) \{ renderHome\(\); \}\); \}/.test(app));
+  assert.ok(app.indexOf("bind('place-locate'") === -1, 'not bound by id, which a redraw throws away');
+
+  /* small to the eye, wide enough for a thumb */
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.place-locate \{[^}]*width: 44px; height: 44px/);
+  void win;
 });
 
 test('no group of controls is left standing on the page itself', () => {
