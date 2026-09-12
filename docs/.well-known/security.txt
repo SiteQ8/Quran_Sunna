@@ -1,0 +1,5 @@
+Contact: mailto:Site@hotmail.com
+Expires: 2027-09-12T00:00:00.000Z
+Preferred-Languages: ar, en
+Canonical: https://sunnati.3li.info/.well-known/security.txt
+Policy: https://sunnati.3li.info/privacy.html

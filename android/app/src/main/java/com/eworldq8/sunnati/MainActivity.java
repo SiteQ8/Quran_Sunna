@@ -151,7 +151,11 @@ public class MainActivity extends Activity {
     /** A shortcut or a link into the app carries its own address; anything else opens the front. */
     private String target(Intent intent) {
         Uri data = intent == null ? null : intent.getData();
-        if (data != null && "sunnati.3li.info".equals(data.getHost())) return data.toString();
+        /* the host and the scheme both: a link is the site's over https, or
+           it is not followed at all */
+        if (data != null && "https".equals(data.getScheme()) && "sunnati.3li.info".equals(data.getHost())) {
+            return data.toString();
+        }
         return SITE;
     }
 
@@ -160,7 +164,8 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         Uri data = intent.getData();
-        if (data != null && "sunnati.3li.info".equals(data.getHost()) && web != null) web.loadUrl(data.toString());
+        if (data != null && "https".equals(data.getScheme()) && "sunnati.3li.info".equals(data.getHost())
+                && web != null) web.loadUrl(data.toString());
         /* the buttons in the shade come back here, and are passed to the page,
            which is what actually holds the recitation */
         String action = intent == null ? null : intent.getAction();

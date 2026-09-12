@@ -8,6 +8,12 @@ import android.content.Intent;
 public final class BootReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
+        /* exported because the system's broadcasts need it to be, which also
+           means any app can send it one; only the four it exists for are heard */
+        String action = intent == null ? null : intent.getAction();
+        if (!Intent.ACTION_BOOT_COMPLETED.equals(action) && !Intent.ACTION_TIME_CHANGED.equals(action)
+                && !Intent.ACTION_TIMEZONE_CHANGED.equals(action)
+                && !Intent.ACTION_MY_PACKAGE_REPLACED.equals(action)) return;
         try { AdhanScheduler.scheduleNext(context);
             SalawatScheduler.scheduleNext(context);
             QiyamScheduler.scheduleNext(context);

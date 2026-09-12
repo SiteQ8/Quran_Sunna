@@ -38,7 +38,7 @@ const ctx = await b.newContext({ viewport: { width: 360, height: 640 }, deviceSc
 const p = await ctx.newPage();
 await p.clock.install({ time: new Date('2026-09-13T15:40:00+03:00') });
 await p.goto('http://localhost:8840/', { waitUntil: 'networkidle' });
-await p.waitForFunction('window.Mushaf && Mushaf.ready()', { timeout: 40000 });
+await p.waitForFunction(() => window.Mushaf && window.Mushaf.ready(), null, { timeout: 40000 });
 await p.evaluate(() => {
   Store.set('placeAsked', true);
   Store.set('notifyAsked', true);
