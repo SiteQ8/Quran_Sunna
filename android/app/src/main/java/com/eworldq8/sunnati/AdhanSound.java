@@ -34,7 +34,15 @@ public final class AdhanSound {
     }
 
     /** Fetches the pair, or forgets them when the reader goes back to the tone. */
+    /** The page only ever hands over the site's own audio, so nothing else is
+     *  fetched: a bridge method that would download any address it was given
+     *  is the kind of thing a decompiled app is searched for. */
+    private static boolean ours(String url) {
+        return url != null && url.startsWith("https://sunnati.3li.info/");
+    }
+
     static void choose(Context c, String url, String fajrUrl) {
+        if (url != null && !url.isEmpty() && !(ours(url) && ours(fajrUrl))) return;
         if (url == null || url.isEmpty()) {
             file(c, false).delete();
             file(c, true).delete();

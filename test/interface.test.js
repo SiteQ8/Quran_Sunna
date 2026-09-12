@@ -3641,8 +3641,14 @@ test('a dhikr and a supplication can be sent as a picture', () => {
 
 test('the app opens in the colour that was chosen, not in green', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  const boot_ = /<script>\s*\/\* Before anything paints[\s\S]*?<\/script>/.exec(html);
-  assert.ok(boot_, 'an inline script must run before first paint');
+  /* It was an inline script until the content policy was written, which
+     refuses inline script outright. It is a file now, loaded in the head
+     before anything is styled, which is the same promise kept differently. */
+  assert.ok(html.indexOf('<script>') === -1, 'no script is inline, the policy would refuse it');
+  const at = html.indexOf('<script src="js/boot.js"></script>');
+  assert.ok(at !== -1 && at < html.indexOf('<link rel="stylesheet"'), 'boot.js runs in the head, before the stylesheet');
+  const boot_ = [fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8')];
+  assert.ok(boot_[0].indexOf('Before anything paints') !== -1, 'it is the pre-paint script');
   assert.ok(boot_[0].indexOf("localStorage.getItem('sunnati.settings')") !== -1, 'it reads the stored choice');
   assert.ok(boot_[0].indexOf("setProperty('--accent'") !== -1, 'and applies the accent');
   assert.ok(boot_[0].indexOf('theme-color') !== -1, 'and the bar the browser paints');
@@ -5988,7 +5994,8 @@ test('the page shows its own splash while it wakes, in the colours already chose
   assert.ok(splash[1].indexOf('سُنّتي') !== -1);
   /* the paper is painted before any stylesheet lands, or a white flash shows
      through in the dark theme */
-  assert.ok(html.indexOf("root.style.backgroundColor = dark ? '#10161a' : '#f6f4ee';") !== -1);
+  const bootjs = fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8');
+  assert.ok(bootjs.indexOf("root.style.backgroundColor = dark ? '#10161a' : '#f6f4ee';") !== -1);
 
   const { win, doc } = boot();
   /* It used to begin going the moment the first screen was drawn, which with
@@ -6164,13 +6171,39 @@ test('choices are laid in an even grid, not pills of every width', () => {
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
 });
 
+test('the page admits script from the site alone, and gives a hole somewhere to be reported', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  /* the wrapper hands the page file writes, notifications and a download of
+     the adhan, so what runs in the page is held to the site alone */
+  const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)">/.exec(html);
+  assert.ok(csp, 'a content policy rides in the page, since Pages sends no headers');
+  const rules = csp[1];
+  assert.ok(/script-src 'self';/.test(rules), 'script from the site alone, and none inline');
+  assert.ok(/object-src 'none'/.test(rules) && /base-uri 'self'/.test(rules));
+  assert.ok(rules.indexOf('unsafe-eval') === -1 && !/script-src[^;]*unsafe-inline/.test(rules),
+    'nothing that would make the rest of it decoration');
+  assert.ok(rules.indexOf('frame-ancestors') === -1, 'header-only, so not claimed in a meta tag');
+  assert.ok(html.indexOf('<script>') === -1, 'and the page keeps its side of it');
+  /* the policy comes before any script it governs */
+  assert.ok(html.indexOf('Content-Security-Policy') < html.indexOf('<script src='));
+
+  const sec = fs.readFileSync(path.join(DOCS, '.well-known', 'security.txt'), 'utf8');
+  assert.ok(/^Contact: mailto:/m.test(sec), 'an address for whoever finds something');
+  assert.ok(/^Expires: 20\d\d-/m.test(sec), 'and a date it goes stale');
+  const contact = /mailto:([^\s]+)/.exec(sec)[1];
+  assert.ok(fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8').indexOf(contact) !== -1,
+    'the same address the privacy page gives, not a second one');
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'./js/boot.js'") !== -1, 'the worker keeps boot.js, or the opening is blank offline');
+});
+
 test('the page greets by the name it showed last time, and never as markup', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* the app's own opening screen greets by city; the page's used not to,
      though the page knows the city better than the wrapper does */
   assert.ok(html.indexOf('id="boot-greet"') !== -1, 'the opening has a line for it');
-  const script = /<script>\s*\/\* The same greeting[\s\S]*?<\/script>/.exec(html);
-  assert.ok(script, 'set by a line of inline script, before any script of the app runs');
+  const script = [fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8')];
+  assert.ok(script[0].indexOf('The same greeting') !== -1, 'set by boot.js, before any script of the app runs');
   assert.ok(script[0].indexOf("localStorage.getItem('sunnati.greet')") !== -1);
   assert.ok(script[0].indexOf('.textContent = line') !== -1 && script[0].indexOf('innerHTML') === -1,
     'written as text, never as markup: it is whatever was stored');

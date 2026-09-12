@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.63.2';
+var VERSION = 'sunnati-v8.64.0';
 
 var SHELL = [
   './',
@@ -19,6 +19,7 @@ var SHELL = [
   './js/hijri.js',
   './js/store.js',
   './js/mushaf.js',
+  './js/boot.js',
   './js/app.js',
   './data/surahs.js',
   './data/azkar.js',

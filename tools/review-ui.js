@@ -110,8 +110,11 @@ const MIN_CONTRAST_LARGE = 3;
        small for a thumb. It reported exactly that, once in five runs, which is
        worse than reporting it every time. */
     const ready = async () => {
-      await page.waitForFunction('window.Mushaf && Mushaf.ready()', { timeout: 40000 });
-      await page.waitForFunction('!document.getElementById("boot-splash")', { timeout: 20000 });
+      /* functions, not strings: a string is evaluated in the page as script,
+         and the page's content policy refuses eval, as it should. The policy
+         caught the tool the first time it ran under it. */
+      await page.waitForFunction(() => window.Mushaf && window.Mushaf.ready(), null, { timeout: 40000 });
+      await page.waitForFunction(() => !document.getElementById('boot-splash'), null, { timeout: 20000 });
     };
 
     await page.goto('http://localhost:' + PORT + '/', { waitUntil: 'networkidle' });
