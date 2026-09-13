@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.66.0';
+  var VERSION = '8.66.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6622,10 +6622,11 @@
        breath, which reads as a flicker rather than an opening. This is a floor
        and not a length: it goes the moment the page is ready once the floor
        has passed, and a slow first visit never waits for it at all. */
-    /* raised from 700 after it was seen on a phone and still went too fast */
-    var since = (window.performance && window.performance.now) ? window.performance.now() : 2000;
-    if (since < 2000) {
-      window.setTimeout(function () { dismissBootSplash(false); }, 2000 - since);
+    /* the same floor as the wrapper, 3200ms measured from when the page began
+       loading: 2000 still went too fast to read the greeting */
+    var since = (window.performance && window.performance.now) ? window.performance.now() : 3200;
+    if (since < 3200) {
+      window.setTimeout(function () { dismissBootSplash(false); }, 3200 - since);
       return;
     }
     splash.style.opacity = '0';
