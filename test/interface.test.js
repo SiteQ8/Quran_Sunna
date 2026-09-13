@@ -2954,6 +2954,44 @@ test('every counted noun takes the form arabic gives it', () => {
   assert.strictEqual(c(286, 'آية واحدة', 'آيتان', 'آيات', 'آية'), '286 آية');
 });
 
+test('the mushaf is whole: thirty juz, six hundred and four pages, fifteen sajdas, each where it belongs', () => {
+  const { win } = boot();
+  const M = win.Mushaf;
+
+  /* the thirty juz begin where they are known to begin. These are fixed points
+     in every printed mushaf, so a wrong one is a wrong one. */
+  const juz = [[1,1],[2,142],[2,253],[3,93],[4,24],[4,148],[5,82],[6,111],[7,88],[8,41],
+    [9,93],[11,6],[12,53],[15,1],[17,1],[18,75],[21,1],[23,1],[25,21],[27,56],
+    [29,46],[33,31],[36,28],[39,32],[41,47],[46,1],[51,31],[58,1],[67,1],[78,1]];
+  const joff = [];
+  juz.forEach(function (jz, i) {
+    const st = M.juzStart(i + 1);
+    if (!st || st.s !== jz[0] || st.a !== jz[1]) joff.push('جزء ' + (i + 1) + ': ' + (st && st.s + ':' + st.a) + ' not ' + jz.join(':'));
+  });
+  assert.strictEqual(joff.length, 0, joff.join('\n'));
+
+  /* the pages: six hundred and four, the first opening on the Fatiha, the last
+     on the Ikhlas, since the three quls close the mushaf on one page */
+  assert.strictEqual(M.pageStart(1).s, 1, 'page one opens the Fatiha');
+  const last = M.pageStart(604);
+  assert.strictEqual(last.s, 112, 'page 604 opens with the Ikhlas');
+  assert.ok(!M.pageStart(605), 'and there is no page 605');
+  /* known start pages, first page that carries the opening verse */
+  const startPage = function (su) { for (var p = 1; p <= 604; p++) { var v = M.pageStart(p); if (v.s > su || (v.s === su && v.a > 1)) return p - 1; } return 604; };
+  [[1,1],[2,2],[18,293],[36,440],[55,531],[67,562],[114,604]].forEach(function (pair) {
+    assert.strictEqual(startPage(pair[0]), pair[1], 'سورة ' + pair[0] + ' starts on page ' + startPage(pair[0]) + ', not ' + pair[1]);
+  });
+
+  /* the fifteen places of prostration, Al-Hajj counted twice as the جمهور do */
+  const saj = M.sajdaList();
+  assert.strictEqual(saj.length, 15, 'fifteen sajdas');
+  assert.strictEqual(saj.filter(function (x) { return x[0] === 22; }).length, 2, 'two in Al-Hajj');
+  assert.ok(saj.some(function (x) { return x[0] === 96 && x[1] === 19; }), 'the last, in Al-Alaq');
+  saj.forEach(function (x) {
+    assert.ok(M.ayah(x[0], x[1]), 'a sajda points at a real verse: ' + x.join(':'));
+  });
+});
+
 test('the surah table agrees with the mushaf: names, verse counts, and the whole of it', () => {
   const { win } = boot();
   /* the numbers are absolute, so they are checked against the mushaf itself,
