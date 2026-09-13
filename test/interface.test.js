@@ -4305,7 +4305,7 @@ test('the worker answers a kept verse from the audio store and keeps the store a
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf("var AUDIO_STORE = 'sunnati-audio'") !== -1);
   assert.ok(sw.indexOf("url.hostname === 'cdn.islamic.network'") !== -1, 'verse audio is looked up in the store first');
-  assert.ok(sw.indexOf("(name === VERSION || name === AUDIO_STORE) ? null : caches.delete(name)") !== -1,
+  assert.ok(sw.indexOf("(name === VERSION || name === AUDIO_STORE || name === TILE_STORE) ? null : caches.delete(name)") !== -1,
     'an update of the app must not throw the recitations away');
 });
 
@@ -4681,7 +4681,7 @@ test('one address for every icon, and the worker holds every one it is asked for
   /* and what the ?v= was there to promise is promised by the cache's own name */
   const sw = read('sw.js');
   assert.ok(/caches\.open\(VERSION\)/.test(sw), 'the cache is named for the version');
-  assert.ok(/name === VERSION \|\| name === AUDIO_STORE\) \? null : caches\.delete\(name\)/.test(sw),
+  assert.ok(/name === VERSION \|\| name === AUDIO_STORE \|\| name === TILE_STORE\) \? null : caches\.delete\(name\)/.test(sw),
     'and every older cache is deleted when the new worker takes over');
 });
 
@@ -6374,6 +6374,32 @@ test('choices are laid in an even grid, not pills of every width', () => {
 
   const { doc } = boot();
   assert.strictEqual(doc.querySelectorAll('#search-scope .chip').length, 8);
+});
+
+test('every external host the app loads is admitted by the content policy', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const csp = /<meta http-equiv="Content-Security-Policy" content="([^"]+)">/.exec(html)[1];
+  const imgSrc = /img-src ([^;]+)/.exec(csp)[1];
+  /* the policy was tightened one day and the mosques map went blank the next,
+     every tile an img to a host the policy did not name. any host the app
+     draws an <img> from must be admitted, or a whole screen breaks in silence. */
+  const hosts = new Set();
+  for (const m of app.matchAll(/<img[^>]*src="https:\/\/([a-z0-9.-]+)/g)) hosts.add(m[1]);
+  const missing = [...hosts].filter(function (h) { return imgSrc.indexOf(h) === -1; });
+  assert.deepStrictEqual(missing, [], 'image hosts the policy does not allow: ' + missing.join(', '));
+  /* it is named, not opened to every https host: a tile cannot run code, but
+     the narrowness is the point */
+  assert.ok(imgSrc.indexOf('tile.openstreetmap.org') !== -1, 'the tile host by name');
+  assert.ok(imgSrc.indexOf('https:') === -1 || imgSrc.indexOf("https://") !== -1,
+    'img-src is not opened to bare https:');
+
+  /* and the worker keeps tiles so the map a reader opened works offline, in a
+     store that survives an app update */
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("hostname === 'tile.openstreetmap.org'") !== -1, 'tiles are cached');
+  assert.ok(/name === VERSION \|\| name === AUDIO_STORE \|\| name === TILE_STORE/.test(sw),
+    'and their store is spared when the app updates');
 });
 
 test('the page admits script from the site alone, and gives a hole somewhere to be reported', () => {

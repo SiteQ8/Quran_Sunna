@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.67.0';
+var VERSION = 'sunnati-v8.66.2';
 
 var SHELL = [
   './',
@@ -83,6 +83,7 @@ function isSettled(pathname) {
    the worker keeps them in the cache since it has no store of its own. */
 var SCHEDULE_KEY = './__schedule';
 var AUDIO_STORE = 'sunnati-audio';
+var TILE_STORE = 'sunnati-tiles';
 
 function keepSchedule(data) {
   return caches.open(VERSION).then(function (cache) {
@@ -177,7 +178,7 @@ self.addEventListener('activate', function (event) {
   event.waitUntil(
     caches.keys().then(function (names) {
       return Promise.all(names.map(function (name) {
-        return (name === VERSION || name === AUDIO_STORE) ? null : caches.delete(name);
+        return (name === VERSION || name === AUDIO_STORE || name === TILE_STORE) ? null : caches.delete(name);
       }));
     }).then(function () { return self.clients.claim(); })
   );
@@ -208,6 +209,30 @@ self.addEventListener('fetch', function (event) {
     return;
   }
   if (url.pathname.indexOf('.mp3') !== -1 || url.hostname.indexOf('Qurango') !== -1) return;
+
+  /* The mosques map draws OpenStreetMap tiles. A tile once seen is kept in its
+     own store and served from it, so the map a reader has opened before comes
+     up without the network and does not throw its tiles away on every app
+     update. The store is bounded: old tiles fall out once it is full. */
+  if (url.hostname === 'tile.openstreetmap.org') {
+    event.respondWith(
+      caches.open(TILE_STORE).then(function (store) {
+        return store.match(request).then(function (hit) {
+          if (hit) return hit;
+          return fetch(request).then(function (res) {
+            if (res && res.ok) {
+              store.put(request, res.clone());
+              store.keys().then(function (keys) {
+                if (keys.length > 300) store.delete(keys[0]);
+              });
+            }
+            return res;
+          }).catch(function () { return hit; });
+        });
+      })
+    );
+    return;
+  }
 
   /* The adhan and the recorded salawat: kept once heard, they never change. */
   if (url.origin === location.origin && url.pathname.indexOf('/audio/') !== -1) {
