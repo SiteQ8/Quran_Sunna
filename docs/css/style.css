@@ -378,13 +378,21 @@ button { background: none; border: none; cursor: pointer; }
     radial-gradient(circle at calc(100% - 12px) 50%, var(--accent-wash) 7px, transparent 8px);
 }
 .surah-frame::before, .surah-frame::after {
-  content: ''; position: absolute; top: 50%; width: 14px; height: 14px;
+  /* aligned to the middle of the name, not the middle of the frame: the naskh
+     face carries a tall band above the letters for the marks, so the name sits
+     a little high and the stars, centred on the frame, sat below it */
+  content: ''; position: absolute; top: 46%; width: 14px; height: 14px;
   margin-top: -7px; opacity: .85;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cg fill='none' stroke='%23b08833' stroke-width='1.2'%3E%3Crect x='2.5' y='2.5' width='9' height='9' rx='1'/%3E%3Crect x='2.5' y='2.5' width='9' height='9' rx='1' transform='rotate(45 7 7)'/%3E%3C/g%3E%3C/svg%3E");
 }
 .surah-frame::before { inset-inline-start: 8px; }
 .surah-frame::after { inset-inline-end: 8px; }
-.surah-frame h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; }
+.surah-frame h2 {
+  font-family: var(--naskh); font-size: var(--step-3); font-weight: 700;
+  /* nudged down so the ink sits in the middle of the frame, not high in it,
+     the same lift the page-foot disc needed for the same reason */
+  margin: 0; padding-top: 4px;
+}
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
 
 /* on the tinted row of today the small hijri figure takes a darker grey */
