@@ -6220,6 +6220,28 @@ test('the phone is asked where it is at boot, quietly, and a city chosen by hand
   assert.strictEqual(win.App.helpers.place().n, 'الرياض');
   assert.strictEqual(win.Store.get('placeFrom'), 'fix');
   assert.strictEqual(win.localStorage.getItem('sunnati.greet'), 'الرياض');
+  /* and the reckoning follows: a fix that named the city without taking its
+     method left Riyadh, Cairo, Dubai, Istanbul and London all on the Ojeiri
+     table, which is Kuwait's */
+  assert.strictEqual(win.Store.get('method'), 'Makkah', 'Riyadh reckons by Umm al-Qura');
+
+  /* a reader who then chooses a different method by hand keeps it while they
+     stay put, and loses it only when the place itself moves */
+  win.Store.set('method', 'MWL');
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.Store.get('method'), 'MWL', 'same place, the hand-set method stands');
+  win.navigator.geolocation = { getCurrentPosition: function (ok) {
+    ok({ coords: { latitude: 30.0444, longitude: 31.2357 } });
+  } };
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.App.helpers.place().n, 'القاهرة');
+  assert.strictEqual(win.Store.get('method'), 'Egypt', 'moved to Cairo, so the Egyptian authority');
+  /* far from any listed city, the League, which is written for nowhere in particular */
+  win.navigator.geolocation = { getCurrentPosition: function (ok) {
+    ok({ coords: { latitude: 22.0, longitude: 44.0 } });
+  } };
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.Store.get('method'), 'MWL');
 
   /* the reader then picks Makkah on purpose; the next boot's fix leaves it */
   const makkah = win.CITIES.findIndex(function (c) { return c.n === 'مكة المكرمة'; });
