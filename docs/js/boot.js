@@ -37,12 +37,20 @@
    already holds: the wrapper has to be told it, the page simply knows it. Read
    with textContent, never as markup, since it is whatever was stored. */
 (function () {
-  var line = 'حيّاكم الله';
+  var name = '';
   try {
     /* the name the app itself showed last time, whatever it was drawn from */
-    var name = localStorage.getItem('sunnati.greet') || '';
-    if (typeof name === 'string' && name.trim() && name.length <= 40) line = 'حيّا الله أهل ' + name.trim();
+    var stored = localStorage.getItem('sunnati.greet') || '';
+    if (typeof stored === 'string' && stored.trim() && stored.length <= 40) name = stored.trim();
   } catch (e) { /* a store that cannot be read greets without a name */ }
-  var put = function () { var el = document.getElementById('boot-greet'); if (el) el.textContent = line; };
-  if (document.getElementById('boot-greet')) put(); else document.addEventListener('DOMContentLoaded', put);
+  /* «حيّ الله أهل» then the city on its own bolder line, matching the wrapper's
+     opening; and a single «حيّاكم الله» when no city is known yet */
+  var put = function () {
+    var hail = document.getElementById('boot-hail');
+    var city = document.getElementById('boot-city');
+    if (!hail || !city) return;
+    hail.textContent = name ? 'حيّ الله أهل' : 'حيّاكم الله';
+    city.textContent = name;
+  };
+  if (document.getElementById('boot-hail')) put(); else document.addEventListener('DOMContentLoaded', put);
 })();
