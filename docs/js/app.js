@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.65.0';
+  var VERSION = '8.65.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -527,13 +527,22 @@
     var lat = pos.coords.latitude, lng = pos.coords.longitude;
     var near = nameForPlace(lat, lng);
     var before = place();
+    var moved = !before || before.n !== (near ? near.n : coordsLabel(lat, lng));
     var next = {
       n: near ? near.n : coordsLabel(lat, lng),
       lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
     };
+    /* The reckoning follows the place: every listed city carries the method
+       its own authority uses, and a fix that named the city without taking
+       its method left five capitals on the Ojeiri table, which is Kuwait's.
+       Far from any listed city the Muslim World League serves, since it is
+       written for nowhere in particular. And the method is set only when the
+       place has moved, so a reader who chose a different method by hand for
+       where they are is not put back every morning. */
+    if (moved || !Store.get('method')) next.method = near ? near.method : 'MWL';
     setPlace(next, true);
     Store.set('placeFrom', 'fix');
-    return !before || before.n !== next.n;
+    return moved;
   }
 
   function locate(then) {
