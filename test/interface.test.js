@@ -6212,7 +6212,7 @@ test('the phone is asked where it is at boot, quietly, and a city chosen by hand
   assert.ok(quiet.indexOf('if (moved) toast') !== -1, 'no word unless the place actually moved');
 
   /* the phone says Riyadh: the place follows, and so does the greeting */
-  const { win } = boot();
+  const { win, doc } = boot();
   win.navigator.geolocation = { getCurrentPosition: function (ok) {
     ok({ coords: { latitude: 24.7136, longitude: 46.6753 } });
   } };
@@ -6225,17 +6225,30 @@ test('the phone is asked where it is at boot, quietly, and a city chosen by hand
      table, which is Kuwait's */
   assert.strictEqual(win.Store.get('method'), 'Makkah', 'Riyadh reckons by Umm al-Qura');
 
-  /* a reader who then chooses a different method by hand keeps it while they
-     stay put, and loses it only when the place itself moves */
-  win.Store.set('method', 'MWL');
+  /* A reader who located with the older code, which left the method on
+     Kuwait's table, and who has not moved since: the first version of this
+     guard asked whether the place had moved, saw it had not, and kept the
+     wrong table. Whether the method was chosen by hand is the question. */
+  win.Store.set('method', 'Ojeiri'); win.Store.set('methodFrom', '');
   await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
-  assert.strictEqual(win.Store.get('method'), 'MWL', 'same place, the hand-set method stands');
+  assert.strictEqual(win.Store.get('method'), 'Makkah', 'a stale table is corrected in place');
+
+  /* a reader who chooses a different method by hand keeps it, moved or not */
+  const sel = doc.getElementById('settings-method');
+  sel.value = 'MWL'; fire(win, sel, 'change');
+  assert.strictEqual(win.Store.get('methodFrom'), 'hand');
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.Store.get('method'), 'MWL', 'the hand-set method stands');
   win.navigator.geolocation = { getCurrentPosition: function (ok) {
     ok({ coords: { latitude: 30.0444, longitude: 31.2357 } });
   } };
   await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
   assert.strictEqual(win.App.helpers.place().n, 'القاهرة');
-  assert.strictEqual(win.Store.get('method'), 'Egypt', 'moved to Cairo, so the Egyptian authority');
+  assert.strictEqual(win.Store.get('method'), 'MWL', 'even after moving, a hand-set method is theirs');
+  /* until they let the app choose again by picking a city or locating on purpose */
+  win.Store.set('methodFrom', '');
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.Store.get('method'), 'Egypt', 'Cairo, so the Egyptian authority');
   /* far from any listed city, the League, which is written for nowhere in particular */
   win.navigator.geolocation = { getCurrentPosition: function (ok) {
     ok({ coords: { latitude: 22.0, longitude: 44.0 } });
