@@ -51,6 +51,7 @@
     voiceName: '',
     placeAsked: false,
     placeFrom: '',
+    methodFrom: '',
     notifyAsked: false,
     inApp: false,
     chromeExplained: false,

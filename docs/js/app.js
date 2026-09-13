@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.65.1';
+  var VERSION = '8.65.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -539,7 +539,15 @@
        written for nowhere in particular. And the method is set only when the
        place has moved, so a reader who chose a different method by hand for
        where they are is not put back every morning. */
-    if (moved || !Store.get('method')) next.method = near ? near.method : 'MWL';
+    /* Whether the place moved is not the question; whether the method was the
+       reader's own choice is. It was, and a reader who had located with the
+       older code, which left the method on Kuwait's table, kept that table for
+       as long as they stayed in their city, since the place had not moved. So
+       the method remembers where it came from: only one set by hand is kept. */
+    if (Store.get('methodFrom') !== 'hand') {
+      next.method = near ? near.method : 'MWL';
+      Store.set('methodFrom', 'fix');
+    }
     setPlace(next, true);
     Store.set('placeFrom', 'fix');
     return moved;
@@ -5526,6 +5534,7 @@
     setPlace({ n: c.n, lat: c.lat, lng: c.lng, tz: c.tz, z: c.z, method: c.method }, true);
     /* chosen by hand, so the fix at boot leaves it alone from now on */
     Store.set('placeFrom', 'pick');
+    Store.set('methodFrom', 'pick');
     toast('ضُبطت المواقيت على ' + c.n);
   }
 
@@ -6232,6 +6241,9 @@
     });
     bind('settings-method', 'change', function (e) {
       Store.set('method', e.target.value);
+      /* chosen by hand: a fix at boot will not put it back while the reader
+         stays where they are */
+      Store.set('methodFrom', 'hand');
       refreshTimes();
       renderHome();
       renderSettings();
