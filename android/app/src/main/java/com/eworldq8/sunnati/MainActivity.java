@@ -282,7 +282,9 @@ public class MainActivity extends Activity {
      *  260ms and start fading out again at once: a flicker, and nobody could
      *  read the greeting on it. This is the floor, not the length: the screen
      *  still goes as soon as the page is ready once the floor has passed. */
-    private static final long SPLASH_HOLD_MS = 1100;
+    /* raised from 1100 after it was tried on a phone: the greeting went before
+       it could be read */
+    private static final long SPLASH_HOLD_MS = 2000;
     private long splashShownAt;
 
     void dismissSplash() {

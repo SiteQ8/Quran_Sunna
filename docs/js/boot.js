@@ -37,11 +37,11 @@
    already holds: the wrapper has to be told it, the page simply knows it. Read
    with textContent, never as markup, since it is whatever was stored. */
 (function () {
-  var line = 'حيّاك الله';
+  var line = 'حيّاكم الله';
   try {
     /* the name the app itself showed last time, whatever it was drawn from */
     var name = localStorage.getItem('sunnati.greet') || '';
-    if (typeof name === 'string' && name.trim() && name.length <= 40) line += ' في ' + name.trim();
+    if (typeof name === 'string' && name.trim() && name.length <= 40) line = 'حيّا الله أهل ' + name.trim();
   } catch (e) { /* a store that cannot be read greets without a name */ }
   var put = function () { var el = document.getElementById('boot-greet'); if (el) el.textContent = line; };
   if (document.getElementById('boot-greet')) put(); else document.addEventListener('DOMContentLoaded', put);

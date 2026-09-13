@@ -36,7 +36,9 @@ final class SplashView extends View {
             .getString(KEY_PLACE, null);
         /* On the very first launch nobody has told us a city, and a greeting
            with a blank in it is worse than one without the name. */
-        greeting = (place == null || place.isEmpty()) ? "حيّاك الله" : "حيّاك الله في " + place;
+        /* «حيّا الله أهل الكويت»، as it is said, and «حيّاكم الله» to nobody in
+           particular when no city is known yet */
+        greeting = (place == null || place.isEmpty()) ? "حيّاكم الله" : "حيّا الله أهل " + place;
         words.setColor(night ? 0xBBBB9036 : 0xBBB08833);
         words.setTextAlign(android.graphics.Paint.Align.CENTER);
 

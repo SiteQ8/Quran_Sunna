@@ -5912,14 +5912,15 @@ test('the opening is held long enough to be seen, and no longer', () => {
      fading out again at once: a flicker, and the greeting on it unreadable */
   assert.ok(/SPLASH_HOLD_MS = \d+/.test(main), 'the opening has a floor');
   const hold = +/SPLASH_HOLD_MS = (\d+)/.exec(main)[1];
-  assert.ok(hold >= 800 && hold <= 1600, 'long enough to read, short enough not to annoy: ' + hold);
+  /* 1100 was tried on a phone and the greeting went before it could be read */
+  assert.ok(hold >= 1500 && hold <= 3000, 'long enough to read, short enough not to annoy: ' + hold);
   /* a floor and not a length: it still goes as soon as the page is ready */
   assert.ok(main.indexOf('SPLASH_HOLD_MS - shown') !== -1, 'it waits out the remainder, it does not sleep a fixed time');
   assert.ok(main.indexOf('}, 4000);') !== -1, 'and a ceiling, for a page that never says it is ready');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function dismissBootSplash\(atOnce\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf('performance.now') !== -1 && fn.indexOf('700') !== -1,
+  assert.ok(fn.indexOf('performance.now') !== -1 && fn.indexOf('2000') !== -1,
     'the page has the same floor, measured from when it started loading');
 });
 
@@ -5932,8 +5933,9 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
   /* the picture is made at build time and knows nobody, so the greeting is
      drawn over it from a city the page handed the wrapper last time */
-  assert.ok(splash.indexOf('حيّاك الله في ') !== -1, 'and a greeting that names the city');
-  assert.ok(splash.indexOf('"حيّاك الله"') !== -1, 'and one that does not, before any city is known');
+  /* «حيّا الله أهل الكويت»، as it is said in the gulf, not «حيّاك الله في» */
+  assert.ok(splash.indexOf('حيّا الله أهل ') !== -1, 'and a greeting that names the people of the city');
+  assert.ok(splash.indexOf('"حيّاكم الله"') !== -1, 'and one to nobody in particular, before any city is known');
   /* one copy, in nodpi: the picture does not change with the density, and it
      used to sit byte for byte in five folders */
   ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
@@ -6002,7 +6004,7 @@ test('the page shows its own splash while it wakes, in the colours already chose
      the worker holding the shell is a few hundred milliseconds: it appeared
      and started fading in the same breath. It is held for a moment first. */
   assert.ok(doc.getElementById('boot-splash'), 'still there while the floor runs');
-  await new Promise(function (done) { setTimeout(done, 900); });
+  await new Promise(function (done) { setTimeout(done, 2300); });
   const still = doc.getElementById('boot-splash');
   assert.ok(!still || still.style.opacity === '0', 'and then it goes');
   win.App.helpers.dismissBootSplash();
@@ -6024,7 +6026,7 @@ test('only one splash shows: inside the app the page yields to the app\'s own', 
   /* with no app around, the page keeps its own, holds it a moment, fades it */
   void win;
   assert.ok(doc.getElementById('boot-splash'), 'held, not flashed');
-  await new Promise(function (done) { setTimeout(done, 900); });
+  await new Promise(function (done) { setTimeout(done, 2300); });
   const left = doc.getElementById('boot-splash');
   assert.ok(!left || left.style.opacity === '0');
 });
