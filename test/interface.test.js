@@ -6099,12 +6099,21 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
      with the real fonts rather than approximated in canvas */
   assert.ok(/R\.drawable\.splash_art_night/.test(splash) &&
     /R\.drawable\.splash_art(?![_a-zA-Z])/.test(splash), 'a picture for each theme');
-  assert.ok(splash.indexOf('Typeface') === -1, 'no face is guessed at in java');
+  assert.ok(splash.indexOf('createFromAsset') !== -1, 'the app face is loaded, not the system face');
   /* the picture is made at build time and knows nobody, so the greeting is
      drawn over it from a city the page handed the wrapper last time */
-  /* «حيّا الله أهل الكويت»، as it is said in the gulf, not «حيّاك الله في» */
-  assert.ok(splash.indexOf('حيّا الله أهل ') !== -1, 'and a greeting that names the people of the city');
+  /* «حيّ الله أهل» over two lines with the city beneath, in the app's own face
+     loaded from assets, not left to the system face as it was */
+  assert.ok(splash.indexOf('"حيّ الله أهل"') !== -1, 'the hail that names the people of the city');
   assert.ok(splash.indexOf('"حيّاكم الله"') !== -1, 'and one to nobody in particular, before any city is known');
+  assert.ok(splash.indexOf('createFromAsset') !== -1 && splash.indexOf('plex-arabic-semibold.ttf') !== -1,
+    'drawn in the app font, bundled as an asset');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/assets/fonts/plex-arabic-semibold.ttf')),
+    'and the font is there to load');
+  /* the page opening says the same thing in two lines */
+  const boot = fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8');
+  assert.ok(boot.indexOf("'حيّ الله أهل'") !== -1 && boot.indexOf('boot-city') !== -1);
+  assert.ok(fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8').indexOf('id="boot-city"') !== -1);
   /* one copy, in nodpi: the picture does not change with the density, and it
      used to sit byte for byte in five folders */
   ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
@@ -6447,13 +6456,14 @@ test('the page greets by the name it showed last time, and never as markup', () 
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* the app's own opening screen greets by city; the page's used not to,
      though the page knows the city better than the wrapper does */
-  assert.ok(html.indexOf('id="boot-greet"') !== -1, 'the opening has a line for it');
-  const script = [fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8')];
-  assert.ok(script[0].indexOf('The same greeting') !== -1, 'set by boot.js, before any script of the app runs');
-  assert.ok(script[0].indexOf("localStorage.getItem('sunnati.greet')") !== -1);
-  assert.ok(script[0].indexOf('.textContent = line') !== -1 && script[0].indexOf('innerHTML') === -1,
+  assert.ok(html.indexOf('id="boot-hail"') !== -1 && html.indexOf('id="boot-city"') !== -1,
+    'the opening has a two-line greeting: the hail and the city beneath it');
+  const bootjs = fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8');
+  assert.ok(bootjs.indexOf("localStorage.getItem('sunnati.greet')") !== -1);
+  /* written as text, never as markup: the city is whatever was stored */
+  assert.ok(bootjs.indexOf('.textContent = name') !== -1 && bootjs.indexOf('innerHTML') === -1,
     'written as text, never as markup: it is whatever was stored');
-  assert.ok(script[0].indexOf('name.length <= 40') !== -1, 'and not a novel');
+  assert.ok(bootjs.indexOf('.length <= 40') !== -1, 'and not a novel');
 
   /* the app leaves the name it showed, so both openings say the same thing */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
