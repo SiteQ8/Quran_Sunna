@@ -4739,7 +4739,7 @@ test('every dhikr that states its count in words is counted that many times', ()
       if (want !== null && it.r !== want) off.push('باب ' + ch.id + ' رقم ' + it.a + ': «' + m[1] + '» but r=' + it.r);
     });
   });
-  assert.deepStrictEqual(off, [], 'the field disagrees with the text:\n' + off.join('\n'));
+  assert.strictEqual(off.length, 0, 'the field disagrees with the text:\n' + off.join('\n'));
 
   /* and the same question of the morning and evening lists */
   const off2 = [];
@@ -4751,11 +4751,31 @@ test('every dhikr that states its count in words is counted that many times', ()
       if (want !== null && (it.c || 1) !== want) off2.push(key + '[' + i + ']: «' + m[1] + '» but c=' + (it.c || 1));
     });
   });
-  assert.deepStrictEqual(off2, [], off2.join('\n'));
+  assert.strictEqual(off2.length, 0, off2.join('\n'));
 
   /* the one that was asked about, by name */
   const hasbi = win.HISN.filter(function (c) { return c.id === 27; })[0].i.filter(function (i) { return i.a === 83; })[0];
   assert.strictEqual(hasbi.r, 7, 'حسبي الله لا إله إلا هو، سبع مرات');
+
+  /* and no counter on a hadith that tells the reward of a dhikr rather than
+     being one: «قال ﷺ: من قال كذا مئة مرة حطت خطاياه» is a narration, and a
+     counter of 100 on it treats the Prophet's telling as a wird. The whole of
+     the merit chapter had this, and three of its twelve carried a counter. */
+  const merit = win.HISN.filter(function (c) { return c.id === 130; })[0];
+  const counted = merit.i.filter(function (it) { return (it.r || 1) !== 1; }).map(function (it) { return it.a; });
+  assert.strictEqual(counted.length, 0, 'the merit chapter counts these: ' + counted.join(', '));
+  /* said as a rule, not for one chapter: any item that opens by quoting the
+     Prophet must not carry a counter */
+  const wrong = [];
+  win.HISN.forEach(function (ch) {
+    ch.i.forEach(function (it) {
+      const t = bare(it.t);
+      if ((it.r || 1) !== 1 && /^(قال|وقال) صلى الله عليه وسلم/.test(t)) {
+        wrong.push('باب ' + ch.id + ' رقم ' + it.a);
+      }
+    });
+  });
+  assert.strictEqual(wrong.length, 0, 'a narration of reward is not a thing to be counted:\n' + wrong.join('\n'));
 });
 
 test('the reader reads exactly what the voice recites, wherever it recites from', () => {
