@@ -2954,6 +2954,40 @@ test('every counted noun takes the form arabic gives it', () => {
   assert.strictEqual(c(286, 'آية واحدة', 'آيتان', 'آيات', 'آية'), '286 آية');
 });
 
+test('the surah table agrees with the mushaf: names, verse counts, and the whole of it', () => {
+  const { win } = boot();
+  /* the numbers are absolute, so they are checked against the mushaf itself,
+     not a list typed here: every surah's verse count is the length of its own
+     array in the book, and the total is the total. A name may be spelled more
+     than one way and is left; a verse count cannot. */
+  assert.strictEqual(win.SURAHS.length, 114, 'a hundred and fourteen');
+  const off = [];
+  win.SURAHS.forEach(function (su) {
+    const real = win.Mushaf.surah(su.n).length;
+    if (real !== su.ay) off.push('سورة ' + su.n + ' ' + su.ar + ': the table says ' + su.ay + ', the mushaf has ' + real);
+  });
+  assert.strictEqual(off.length, 0, off.join('\n'));
+  const total = win.SURAHS.reduce(function (n, s) { return n + s.ay; }, 0);
+  assert.strictEqual(total, 6236, 'the counted total of the mushaf');
+
+  /* the numbers run 1..114 with none missing or doubled */
+  const nums = win.SURAHS.map(function (s) { return s.n; }).sort(function (a, b) { return a - b; });
+  assert.deepStrictEqual(nums.join(','), Array.from({ length: 114 }, function (_, i) { return i + 1; }).join(','));
+
+  /* Meccan or Medinan, against the classification of the King Fahd mushaf: 28
+     Medinan, with Ar-Ra'd among them, which is the جمهور and what the mushaf we
+     follow prints, though some counted it Meccan. */
+  const medinan = win.SURAHS.filter(function (s) { return s.tp === 'مدنية'; }).map(function (s) { return s.n; });
+  assert.strictEqual(medinan.length, 28, 'twenty eight Medinan surahs');
+  assert.ok(medinan.indexOf(13) !== -1, "Ar-Ra'd is Medinan, as the mushaf we follow prints it");
+  ['مكية', 'مدنية'].forEach(function (t) {
+    assert.ok(win.SURAHS.some(function (s) { return s.tp === t; }), t + ' exists');
+  });
+  win.SURAHS.forEach(function (s) {
+    assert.ok(s.tp === 'مكية' || s.tp === 'مدنية', 'سورة ' + s.n + ' is one or the other, not ' + s.tp);
+  });
+});
+
 test('the surah list counts verses correctly for short and long surahs', () => {
   const { win, doc } = boot();
   win.App.go('quran');
