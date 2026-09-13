@@ -4778,6 +4778,37 @@ test('every dhikr that states its count in words is counted that many times', ()
   assert.strictEqual(wrong.length, 0, 'a narration of reward is not a thing to be counted:\n' + wrong.join('\n'));
 });
 
+test('a dhikr that appears in more than one place has one and the same wording', () => {
+  /* the same dua sits in حصن المسلم and in a themed list, and its words must
+     match across them to the letter, بعد طرح الرسم: الشدة على اسم الله، وهمزة
+     الوصل، والفاصلة، والمسافة. A real difference is a different word, and there
+     must be none. */
+  const { win } = boot();
+  const words = function (t) {
+    return t.replace(/[\u064B-\u0652\u0670\u0653-\u065F]/g, '').replace(/[\u0671]/g, 'ا')
+      .replace(/[.،:﴿﴾]/g, '').split(/\s+/).filter(Boolean).join(' ');
+  };
+  const key = function (t) {
+    return words(t).replace(/[\u0649\u064A]/g, 'ي').trim();
+  };
+  const seen = {};
+  const add = function (src, t) {
+    const k = key(t);
+    if (k.length < 25) return;
+    (seen[k] = seen[k] || []).push({ src: src, w: words(t) });
+  };
+  win.HISN.forEach(function (ch) { ch.i.forEach(function (it) { add('حصن ' + ch.id, it.t); }); });
+  Object.keys(win.AZKAR_DB || {}).forEach(function (k) {
+    (win.AZKAR_DB[k].items || []).forEach(function (it) { add(k, it.t); });
+  });
+  const clashes = [];
+  Object.keys(seen).forEach(function (k) {
+    const forms = [...new Set(seen[k].map(function (x) { return x.w; }))];
+    if (forms.length > 1) clashes.push(seen[k].map(function (x) { return x.src; }).join(' / '));
+  });
+  assert.strictEqual(clashes.length, 0, 'same dhikr, different words, at:\n' + clashes.join('\n'));
+});
+
 test('the reader reads exactly what the voice recites, wherever it recites from', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
