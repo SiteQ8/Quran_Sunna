@@ -414,6 +414,11 @@ button { background: none; border: none; cursor: pointer; }
   color: var(--accent-ink); font-family: var(--quran); font-size: 1.2rem; font-weight: 700;
   line-height: 1;
 }
+/* The quran face carries a tall empty band above each glyph for the marks, so
+   the figure sits low in its own box and grid-centring the box leaves the ink
+   below the disc's middle, measured at seven percent of the disc. The figure
+   is lifted by that, so the ink itself is centred, not its box. */
+.page-foot-num { padding-bottom: 13px; }
 .page-nav { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .page-nav .btn { flex: 1; }
 .page-nav .btn:disabled { opacity: .4; }
