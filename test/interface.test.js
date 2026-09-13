@@ -4881,6 +4881,30 @@ test('a dhikr that appears in more than one place has one and the same wording',
   assert.strictEqual(clashes.length, 0, 'same dhikr, different words, at:\n' + clashes.join('\n'));
 });
 
+test('a busy map server is passed over, not mistaken for an empty neighbourhood', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const ask = /function askOverpass\(query\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* Overpass answers a busy request with 200, or 406, or a 504 gateway page,
+     with an HTML or XML body. «r.ok then r.json()» threw on the body and the
+     whole screen read as «no mosques near you». Only real JSON with an
+     elements array is accepted now. */
+  assert.ok(ask.indexOf('r.json()') === -1, 'does not trust the body to be json');
+  assert.ok(ask.indexOf('JSON.parse(text)') !== -1 && ask.indexOf('Array.isArray(data.elements)') !== -1,
+    'accepts only a real json body with elements');
+  assert.ok(/OVERPASS = \[[\s\S]*?\]/.exec(app)[0].split('interpreter').length - 1 >= 4,
+    'four mirrors raced, not two endured');
+
+  /* the mosques are searched around the reader's own place, not a fixed city */
+  const find = /function findMosques\(around\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(find.indexOf('var where = place()') !== -1 && find.indexOf('around(') === -1,
+    'the search centres on place(), which follows the user');
+  assert.ok(find.indexOf('state.mosqueRetried') !== -1, 'and one quiet retry before giving up');
+
+  /* the update banner says an update arrived, not that a copy arrived */
+  assert.ok(app.indexOf('وصل تحديث جديد للتطبيق') !== -1);
+  assert.ok(app.indexOf('وصلت نسخة جديدة') === -1);
+});
+
 test('the reader reads exactly what the voice recites, wherever it recites from', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
@@ -5919,7 +5943,7 @@ test('the mosques are found around the reader and measured from them', () => {
   assert.ok(fn.indexOf('found.sort') !== -1, 'nearest first');
   /* one server being down must not take the screen with it */
   assert.ok(app.indexOf('var OVERPASS = [') !== -1);
-  assert.strictEqual((app.match(/api\/interpreter'/g) || []).length, 3, 'three servers, tried in turn');
+  assert.ok((app.match(/api\/interpreter'/g) || []).length >= 4, 'four servers, raced so a busy one is passed over');
   assert.ok(/OVERPASS\.forEach\(function \(host\) \{/.test(app),
     'every server is asked at once rather than in turn');
 
@@ -6217,7 +6241,7 @@ test('a new version is never taken without the reader saying so', () => {
      for something they did not ask for, however idle the app looks */
   assert.ok(fn.indexOf('window.location.reload(); return;') === -1, 'nothing reloads by itself');
   assert.ok(fn.indexOf('atRest') === -1, 'and no screen counts as idle enough');
-  assert.ok(fn.indexOf("showBanner('وصلت نسخة جديدة من التطبيق', 'حدّث الآن'") !== -1, 'it is offered');
+  assert.ok(fn.indexOf("showBanner('وصل تحديث جديد للتطبيق', 'حدّث الآن'") !== -1, 'it is offered');
 });
 
 test('the next verse is fetched while the last is still sounding', () => {
@@ -6752,8 +6776,8 @@ test('when no mosque is found, the reader may ask again', () => {
   const fn = /'mosques-again': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
   assert.ok(fn.indexOf('state.mosques = null;') !== -1 && fn.indexOf('renderMosques();') !== -1);
   /* the same button is offered when the network refuses */
-  assert.ok(app.indexOf("لم يُجب أيّ خادم للخرائط الآن") !== -1);
-  assert.ok(/لم يُجب أيّ خادم[\s\S]{0,180}mosques-again/.test(app), 'with a way to try once more');
+  assert.ok(app.indexOf("خوادم الخرائط مشغولة الآن") !== -1);
+  assert.ok(/خوادم الخرائط مشغولة[\s\S]{0,180}mosques-again/.test(app), 'with a way to try once more');
 });
 
 test('a mosque on the map can actually be pressed', () => {
@@ -7555,13 +7579,13 @@ test('every map server is asked at once, and the first sound answer taken', () =
      the reader waited out both and believed there were no mosques near him */
   assert.ok(fn.indexOf('OVERPASS.forEach(function (host) {') !== -1, 'all of them, at once');
   assert.ok(fn.indexOf('if (settled) return;') !== -1, 'the first sound answer wins');
-  assert.ok(fn.indexOf('window.setTimeout(function () { fail(); }, 12000)') !== -1,
+  assert.ok(/setTimeout\(function \(\) \{ fail\(\); \}, \d000\)/.test(fn),
     'and none of them may hang for ever');
   assert.ok(fn.indexOf('if (!settled && left <= 0) reject') !== -1,
     'it fails only when every one of them has');
   assert.ok(/askOverpass\(query, which \+ 1\)/.test(app) === false, 'nothing tries them in turn any more');
   /* and the reader is told which of the two things happened */
-  assert.ok(app.indexOf('لم يُجب أيّ خادم للخرائط الآن، وليس معناه أن لا مساجد حولك') !== -1,
+  assert.ok(app.indexOf('خوادم الخرائط مشغولة الآن، وليس معناه أن لا مساجد حولك') !== -1,
     'a silent server is not the same as an empty neighbourhood');
 });
 

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.66.1';
+  var VERSION = '8.67.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4444,30 +4444,35 @@
   var OVERPASS = [
     'https://overpass-api.de/api/interpreter',
     'https://overpass.kumi.systems/api/interpreter',
-    'https://overpass.private.coffee/api/interpreter'
+    'https://overpass.private.coffee/api/interpreter',
+    'https://maps.mail.ru/osm/tools/overpass/api/interpreter'
   ];
 
-  /* All the servers are asked at once and the first sound answer is taken.
-     They used to be tried one after another, so when the first two were busy
-     the reader waited out both before the third was even asked, and gave up
-     believing there were no mosques near him. There are: forty within three
-     kilometres of Kuwait City, on the one server that answered. */
+  /* All the servers are asked at once and the first sound answer is taken. A
+     busy Overpass server does not fail cleanly: it answers 200, or 406, or a
+     504 gateway page, with an HTML or XML body, so «r.ok then r.json()» threw
+     on the body and the whole screen read as «no mosques near you» when the
+     servers were merely overloaded. Now only a real JSON body with elements is
+     accepted, and a server that gives anything else is counted as silent. The
+     wait per server is shorter too, so four are raced rather than two endured. */
   function askOverpass(query) {
     var body = 'data=' + encodeURIComponent(query);
     var left = OVERPASS.length;
     return new Promise(function (resolve, reject) {
       var settled = false;
       OVERPASS.forEach(function (host) {
-        var give = window.setTimeout(function () { fail(); }, 12000);
+        var give = window.setTimeout(function () { fail(); }, 8000);
         fetch(host, {
           method: 'POST', body: body,
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
         }).then(function (r) {
-          if (!r.ok) throw new Error('server ' + r.status);
-          return r.json();
-        }).then(function (data) {
+          return r.text();
+        }).then(function (text) {
           window.clearTimeout(give);
           if (settled) return;
+          var data = null;
+          try { data = JSON.parse(text); } catch (e) { data = null; }
+          if (!data || !Array.isArray(data.elements)) { fail(); return; }
           settled = true;
           resolve(data);
         }).catch(function () { window.clearTimeout(give); fail(); });
@@ -4503,11 +4508,22 @@
         seen[key] = true;
         return true;
       }).slice(0, 20);
+      state.mosqueRetried = false;
       if (state.view === 'mosques') renderMosques();
     }).catch(function () {
+      /* the servers were busy, not empty. One quiet retry after a moment
+         catches the common case where a mirror freed up; only then is the
+         reader shown the button to try again himself. */
+      if (!state.mosqueRetried) {
+        state.mosqueRetried = true;
+        if ($('mosque-list')) $('mosque-list').innerHTML = '<p class="setting-note">جاري البحث عن المساجد حولك…</p>';
+        window.setTimeout(function () { findMosques(around); }, 2500);
+        return;
+      }
+      state.mosqueRetried = false;
       state.mosques = [];
       if ($('mosque-list')) {
-        $('mosque-list').innerHTML = '<p class="setting-note">لم يُجب أيّ خادم للخرائط الآن، وليس معناه أن لا مساجد حولك، فجرّب بعد قليل</p>' +
+        $('mosque-list').innerHTML = '<p class="setting-note">خوادم الخرائط مشغولة الآن، وليس معناه أن لا مساجد حولك، فجرّب بعد قليل</p>' +
           '<button class="btn btn-primary btn-block mosque-again" data-act="mosques-again">تحديث</button>';
       }
     });
@@ -6596,7 +6612,7 @@
       /* Never taken by itself, wherever the reader is. A reload in the middle
          of a page of the mushaf loses their place for a version they did not
          ask for, so it waits for their word however idle the app looks. */
-      showBanner('وصلت نسخة جديدة من التطبيق', 'حدّث الآن', function () { window.location.reload(); });
+      showBanner('وصل تحديث جديد للتطبيق', 'حدّث الآن', function () { window.location.reload(); });
     });
 
     /* Without this the browser may keep serving sw.js from its own cache for a
