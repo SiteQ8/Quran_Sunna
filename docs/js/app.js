@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.66.2';
+  var VERSION = '8.66.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2361,10 +2361,14 @@
 
     var first = verses[0], last = verses[verses.length - 1];
     var firstMeta = surahMeta(first.s), lastMeta = surahMeta(last.s);
-    if ($('page-title')) $('page-title').textContent = 'صفحة ' + ar(n);
+    /* the page's own figure in the mushaf's arabic digits, to match the one
+       footing the page below; ar() elsewhere stays latin, a taste not forced */
+    if ($('page-title')) $('page-title').textContent = 'صفحة ' + mushafDigits(n);
     if ($('page-meta')) {
       /* a mushaf names the quarter reached by the end of the page */
-      $('page-meta').textContent = 'الجزء ' + ar(Mushaf.juzOf(first.s, first.a)) + '، ' + hizbLabel(last.s, last.a) + '، ' +
+      /* arabic digits here too, so the whole of this quranic screen speaks one
+         set of figures: the title, this line, and the figure footing the page */
+      $('page-meta').textContent = 'الجزء ' + mushafDigits(Mushaf.juzOf(first.s, first.a)) + '، ' + hizbLabel(last.s, last.a, true) + '، ' +
         (first.s === last.s ? 'سورة ' + firstMeta.ar : 'من ' + firstMeta.ar + ' إلى ' + lastMeta.ar);
     }
 
@@ -2489,13 +2493,14 @@
 
   /* The hizb and its quarter of a verse, from the two hundred and forty
      quarter starts. */
-  function hizbLabel(s, a) {
+  function hizbLabel(s, a, arabicDigits) {
     if (typeof HIZB_QUARTERS === 'undefined') return '';
     var g = Mushaf.globalIndex(s, a);
     var q = 0;
     for (var i = 0; i < HIZB_QUARTERS.length; i++) { if (HIZB_QUARTERS[i] <= g) q = i; else break; }
     var hizb = Math.floor(q / 4) + 1, part = q % 4;
-    return 'الحزب ' + ar(hizb) + (part ? ' ' + ['', 'وربعه', 'ونصفه', 'وثلاثة أرباعه'][part] : '');
+    var fig = arabicDigits ? mushafDigits(hizb) : ar(hizb);
+    return 'الحزب ' + fig + (part ? ' ' + ['', 'وربعه', 'ونصفه', 'وثلاثة أرباعه'][part] : '');
   }
 
   function turnPage(by) {
