@@ -3361,12 +3361,14 @@ test('the mushaf can be read page by page, as a printed one turns', () => {
   win.App.go('quran');
   click(win, doc.querySelector('[data-go="page"]'));
   assert.ok(doc.getElementById('v-page').classList.contains('is-open'));
-  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 1');
+  /* the mushaf page title is in the mushaf's own arabic digits, to match the
+     figure footing the page; ar() elsewhere stays latin */
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة ١');
   assert.strictEqual(doc.querySelectorAll('#page-body .ayah').length, 7, 'the first page is the fatiha');
   assert.ok(doc.getElementById('page-prev').disabled, 'nothing before the first page');
 
   click(win, doc.getElementById('page-next'));
-  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 2');
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة ٢');
   assert.ok(doc.querySelector('#page-body .surah-frame'), 'a surah that opens on the page is named in its cartouche');
   assert.ok(doc.querySelector('#page-body .basmala'), 'with its basmala');
   assert.strictEqual(doc.querySelector('#page-body .ayah').getAttribute('data-ayah'), '2:1');
@@ -3416,12 +3418,12 @@ test('اذهب إلى takes you to a page, a juz or a verse', () => {
 
   doc.getElementById('goto-page').value = '300';
   click(win, doc.querySelector('[data-act="goto-page"]'));
-  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 300');
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة ٣٠٠');
 
   click(win, doc.getElementById('page-jump'));
   doc.getElementById('goto-juz').value = '30';
   click(win, doc.querySelector('[data-act="goto-juz"]'));
-  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة 582');
+  assert.strictEqual(doc.getElementById('page-title').textContent, 'صفحة ٥٨٢');
   assert.ok(doc.getElementById('page-meta').textContent.indexOf('النبأ') !== -1);
 
   click(win, doc.getElementById('page-jump'));
@@ -4562,11 +4564,16 @@ test('the basmala stands centred on its own line in the page view as well as the
 test('the page names its juz and the hizb reached by its end, as a mushaf does', () => {
   const { win, doc } = boot();
   win.App.helpers.openPage(249);
-  assert.strictEqual(doc.getElementById('page-meta').textContent, 'الجزء 13، الحزب 25 وثلاثة أرباعه، سورة الرعد');
+  /* the mushaf screen speaks one set of figures, arabic-indic: the title, this
+     line, the ayah markers and the figure footing the page */
+  assert.strictEqual(doc.getElementById('page-meta').textContent, 'الجزء ١٣، الحزب ٢٥ وثلاثة أرباعه، سورة الرعد');
   win.App.helpers.openPage(248);
-  assert.ok(doc.getElementById('page-meta').textContent.indexOf('الحزب 25 ونصفه') !== -1, 'page 248 ends in the half');
+  assert.ok(doc.getElementById('page-meta').textContent.indexOf('الحزب ٢٥ ونصفه') !== -1, 'page 248 ends in the half');
+  /* hizbLabel is latin by default and arabic only when asked, as the page line
+     asks it: elsewhere, in a latin screen, it stays latin */
   assert.strictEqual(win.App.helpers.hizbLabel(1, 1), 'الحزب 1');
   assert.strictEqual(win.App.helpers.hizbLabel(114, 6), 'الحزب 60 وثلاثة أرباعه');
+  assert.strictEqual(win.App.helpers.hizbLabel(1, 1, true), 'الحزب ١', 'and arabic when the page asks');
   assert.strictEqual(win.HIZB_QUARTERS.length, 240);
 });
 
@@ -4578,7 +4585,7 @@ test('inside the mushaf the figures are its own: markers and the page foot in ar
   assert.strictEqual(doc.querySelector('.page-foot-num').textContent, '٢٤٩');
   assert.strictEqual(doc.querySelector('.page-foot-num').getAttribute('aria-label'), 'صفحة 249', 'read aloud in the figures the reader chose');
   /* the chrome around the page keeps the app's figures */
-  assert.ok(doc.getElementById('page-title').textContent.indexOf('249') !== -1);
+  assert.ok(doc.getElementById('page-title').textContent.indexOf('٢٤٩') !== -1);
 });
 
 test('a verse is marked as one of four kinds, and the marks screen groups them', () => {
@@ -4982,11 +4989,12 @@ test('the play mark points the way arabic runs, and every step arrow agrees with
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* the triangle opens toward the left, as the reading does */
   assert.match(html, /<g id="i-play"><path d="M17 4\.5 5 12 17 19\.5z"\/><\/g>/, 'a play mark pointing right reads backwards in an arabic interface');
-  /* the step before and after are plain chevrons; the return arrow keeps its
-     tail, so two arrows side by side in the reader bar are told apart */
+  /* every direction arrow is a plain chevron now; the return arrow was a long
+     tailed arrow that read as «forward» rather than «back», and a chevron
+     pointing the way the text runs is the plainer sign of going back */
   assert.match(html, /<g id="i-step-prev"><path d="m10 5 7 7-7 7"\/><\/g>/, 'the step before points right');
   assert.match(html, /<g id="i-step-next"><path d="m14 5-7 7 7 7"\/><\/g>/, 'the step after points left');
-  assert.match(html, /<g id="i-back">.*M21 12H3/, 'the return arrow has a tail');
+  assert.match(html, /<g id="i-back"><path d="m9 6 6 6-6 6"\/><\/g>/, 'the return arrow is a right chevron');
 
   const { win, doc } = boot();
   const drawn = { 'i-back': 'right', 'i-step-prev': 'right', 'i-step-next': 'left', 'i-next': 'left', 'i-play': 'left' };
