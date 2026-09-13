@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.67.0';
+  var VERSION = '8.67.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2390,7 +2390,7 @@
         current = v.s;
         if (v.a === 1) {
           var meta = surahMeta(v.s);
-          html += '<div class="surah-frame page-surah"><h2>سورة ' + esc(meta.ar) + '</h2></div>';
+          html += '<div class="surah-frame page-surah"><span class="surah-star"></span><h2>سورة ' + esc(meta.ar) + '</h2><span class="surah-star"></span></div>';
           if (v.s !== 1 && v.s !== 9) html += '<p class="basmala">' + esc(Mushaf.basmala()) + '</p>';
         }
       }
@@ -2452,7 +2452,7 @@
       if (first && starts[first[0]] && !opened[first[0]] && first[1] === 1 && first[2] === 1) {
         opened[first[0]] = true;
         var meta = surahMeta(first[0]);
-        html += '<div class="surah-frame page-surah"><h2>سورة ' + esc(meta.ar) + '</h2></div>';
+        html += '<div class="surah-frame page-surah"><span class="surah-star"></span><h2>سورة ' + esc(meta.ar) + '</h2><span class="surah-star"></span></div>';
         if (first[0] !== 1 && first[0] !== 9) html += '<p class="basmala">' + esc(Mushaf.basmala()) + '</p>';
       }
       html += '<div class="mad-line">' + line.map(function (run) {
