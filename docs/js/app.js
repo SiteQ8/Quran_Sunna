@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.64.1';
+  var VERSION = '8.64.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1143,14 +1143,22 @@
      city. The wrapper is told this one and greets with it at the next launch. */
   function tellPlace() {
     var p = place();
-    if (!p || !p.n) return false;
-    /* the page's own opening screen reads this before any script of the app
-       has run, so the name is left where a line of inline script can find it */
-    try { window.localStorage.setItem('sunnati.greet', String(p.n)); } catch (e) { /* no store, no name */ }
+    /* The greeting names where the person is, and the built-in place is where
+       nobody is until they say so: it is the app's fallback for reckoning the
+       times, and a reader in Riyadh who has not yet let the app locate them
+       was being greeted as one of the people of Kuwait. A name is passed on
+       only once the place is the reader's own, found or chosen; until then
+       the opening greets nobody in particular. */
+    var own = p && p !== DEFAULT_PLACE && p.n && p.n !== 'موقعك';
+    var name = own ? String(p.n) : '';
+    try {
+      if (name) window.localStorage.setItem('sunnati.greet', name);
+      else window.localStorage.removeItem('sunnati.greet');
+    } catch (e) { /* no store, no name */ }
     var app = bridge();
     if (!app || !app.setPlace) return false;
-    try { app.setPlace(String(p.n)); } catch (e) { return false; }
-    return true;
+    try { app.setPlace(name); } catch (e) { return false; }
+    return !!name;
   }
 
   /* The package version beside the page's, so one screenshot shows both. */

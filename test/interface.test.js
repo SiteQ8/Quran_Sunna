@@ -6214,9 +6214,21 @@ test('the page greets by the name it showed last time, and never as markup', () 
   /* the app leaves the name it showed, so both openings say the same thing */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const tell = /function tellPlace\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(tell.indexOf("localStorage.setItem('sunnati.greet', String(p.n))") !== -1);
+  assert.ok(tell.indexOf("localStorage.setItem('sunnati.greet', name)") !== -1);
   assert.ok(tell.indexOf('sunnati.greet') < tell.indexOf('bridge()'),
     'left for the page before the wrapper is even asked for, so a browser gets it too');
+
+  /* The built-in place is where nobody is until they say so. A reader in
+     Riyadh who had not yet let the app locate them was greeted as one of the
+     people of Kuwait. No name is passed until the place is the reader's own. */
+  assert.ok(tell.indexOf('p !== DEFAULT_PLACE') !== -1, 'the fallback place is never greeted by name');
+  const fresh = boot();
+  assert.strictEqual(fresh.win.localStorage.getItem('sunnati.greet'), null,
+    'nothing chosen and nothing found, so nobody in particular');
+  /* the app's own setPlace, remembered, as choosing a city or locating does */
+  fresh.win.App.helpers.setPlace({ n: 'الرياض', lat: 24.7136, lng: 46.6753, tz: 3, z: 'Asia/Riyadh', method: 'MWL' }, true);
+  assert.strictEqual(fresh.win.localStorage.getItem('sunnati.greet'), 'الرياض',
+    'and the reader\'s own place once there is one');
 });
 
 test('the place is fetched where it is read, on the line that states it', () => {
