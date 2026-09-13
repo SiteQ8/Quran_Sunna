@@ -284,7 +284,9 @@ public class MainActivity extends Activity {
      *  still goes as soon as the page is ready once the floor has passed. */
     /* raised from 1100 after it was tried on a phone: the greeting went before
        it could be read */
-    private static final long SPLASH_HOLD_MS = 2000;
+    /* raised to 3200 after 2000 still felt quick on a phone: long enough to
+       read «حيّ الله أهل» and the city under it */
+    private static final long SPLASH_HOLD_MS = 3200;
     private long splashShownAt;
 
     void dismissSplash() {
