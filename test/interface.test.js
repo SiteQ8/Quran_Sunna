@@ -4712,6 +4712,52 @@ test('each voice button shows only its own sound playing', () => {
   assert.strictEqual(mark('settings-adhan-try'), '#i-play');
 });
 
+test('every dhikr that states its count in words is counted that many times', () => {
+  /* «حسبي الله لا إله إلا هو» says «(سبع مرات)» in its own text and its counter
+     read one. Three such in حصن المسلم, found by asking of every item whether
+     the number in the brackets is the number in the field. */
+  const bare = function (t) { return t.replace(/[\u064B-\u0652\u0670]/g, ''); };
+  const wanted = function (p) {
+    if (/ثلاث[اً]? وثلاثين/.test(p)) return 33;
+    if (/مئة|مائة/.test(p)) return 100;
+    if (/عشر/.test(p)) return 10;
+    if (/سبع/.test(p)) return 7;
+    if (/خمس/.test(p)) return 5;
+    if (/أربع/.test(p)) return 4;
+    if (/ثلاث/.test(p)) return 3;
+    if (/مرتين/.test(p)) return 2;
+    if (/مرة واحدة/.test(p)) return 1;
+    return null;
+  };
+  const { win } = boot();
+  const off = [];
+  win.HISN.forEach(function (ch) {
+    ch.i.forEach(function (it) {
+      const m = /\(([^)]*مر[اةت][^)]*)\)/.exec(bare(it.t));
+      if (!m) return;
+      const want = wanted(m[1]);
+      if (want !== null && it.r !== want) off.push('باب ' + ch.id + ' رقم ' + it.a + ': «' + m[1] + '» but r=' + it.r);
+    });
+  });
+  assert.deepStrictEqual(off, [], 'the field disagrees with the text:\n' + off.join('\n'));
+
+  /* and the same question of the morning and evening lists */
+  const off2 = [];
+  Object.keys(win.AZKAR_DB || {}).forEach(function (key) {
+    (win.AZKAR_DB[key].items || []).forEach(function (it, i) {
+      const m = /\(([^)]*مر[اةت][^)]*)\)/.exec(bare(it.t));
+      if (!m) return;
+      const want = wanted(m[1]);
+      if (want !== null && (it.c || 1) !== want) off2.push(key + '[' + i + ']: «' + m[1] + '» but c=' + (it.c || 1));
+    });
+  });
+  assert.deepStrictEqual(off2, [], off2.join('\n'));
+
+  /* the one that was asked about, by name */
+  const hasbi = win.HISN.filter(function (c) { return c.id === 27; })[0].i.filter(function (i) { return i.a === 83; })[0];
+  assert.strictEqual(hasbi.r, 7, 'حسبي الله لا إله إلا هو، سبع مرات');
+});
+
 test('the reader reads exactly what the voice recites, wherever it recites from', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
