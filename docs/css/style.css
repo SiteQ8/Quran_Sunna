@@ -397,14 +397,22 @@ button { background: none; border: none; cursor: pointer; }
 .page-meta { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
 .page-body { min-height: 60vh; }
 .page-surah { margin: var(--s3) 0; }
-.page-foot { text-align: center; margin-top: var(--s4); }
-/* The page's own figure between two short gold rules, one above and one below,
-   as a mushaf foots its page. It was a lozenge whose border a clip-path was
-   cutting away, so the figure sat bare between broken hairs. */
+/* The page's own figure, centred on a gold hair, the figure sitting in a round
+   disc so it is dead centre and nothing crosses behind it. An earlier lozenge
+   used a clip-path whose cut took the border and pushed the number off centre;
+   a flex row with the disc over the line is simpler and lands the figure true. */
+.page-foot { display: flex; align-items: center; justify-content: center; margin-top: var(--s4); }
+.page-foot::before, .page-foot::after {
+  content: ''; height: 1px; width: 28%; max-width: 130px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+.page-foot::after { transform: scaleX(-1); }
 .page-foot-num {
-  display: inline-grid; place-items: center; min-width: 44px; padding: 6px 16px;
-  color: var(--accent-ink); font-family: var(--quran); font-size: 1.3rem; font-weight: 700;
-  border-top: 1.5px solid var(--gold); border-bottom: 1.5px solid var(--gold);
+  flex: none; display: inline-grid; place-items: center;
+  width: 42px; height: 42px; margin: 0 12px; border-radius: 50%;
+  background: var(--raised); border: 1.5px solid var(--gold);
+  color: var(--accent-ink); font-family: var(--quran); font-size: 1.2rem; font-weight: 700;
+  line-height: 1;
 }
 .page-nav { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .page-nav .btn { flex: 1; }
@@ -1241,7 +1249,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    square; only the one that reads aloud takes the room that is left. */
 .reader-bar {
   display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s2);
-  position: sticky; top: 3px; z-index: 30; padding: var(--s2) 0; background: var(--paper);
+  /* pinned to the very top, not three pixels below it, so the bar meets the
+     screen edge and no line of the page shows in the gap above it as it
+     scrolls behind. the shadow marks where it ends. */
+  position: sticky; top: 0; z-index: 30; padding: var(--s3) 0 var(--s2); background: var(--paper);
   box-shadow: 0 8px 12px -8px rgba(0, 0, 0, .16);
 }
 
