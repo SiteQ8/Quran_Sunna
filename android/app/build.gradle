@@ -9,7 +9,7 @@ android {
         minSdk 26
         targetSdk 36
         versionCode 223
-        versionName "8.67.0"
+        versionName "8.66.2"
 
         /* The address the wrapper opens. Everything the app does lives there, so
            a fix published to the site reaches anyone who installed this without
