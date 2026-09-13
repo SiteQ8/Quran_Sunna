@@ -389,9 +389,11 @@ button { background: none; border: none; cursor: pointer; }
 .surah-frame::after { inset-inline-end: 8px; }
 .surah-frame h2 {
   font-family: var(--naskh); font-size: var(--step-3); font-weight: 700;
-  /* nudged down so the ink sits in the middle of the frame, not high in it,
-     the same lift the page-foot disc needed for the same reason */
-  margin: 0; padding-top: 4px;
+  /* The ink measures centred, but the naskh line box reserves a tall band
+     above the letters for the marks, so the name reads as sitting high. A
+     line-height near the glyph height trims that reserved band, and the two
+     gaps above and below the ink come even. */
+  margin: 0; line-height: 1.05;
 }
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
 
