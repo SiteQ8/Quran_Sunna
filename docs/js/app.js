@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.64.2';
+  var VERSION = '8.65.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -519,6 +519,23 @@
     return Math.abs(lat).toFixed(2) + '° ' + ns + '، ' + Math.abs(lng).toFixed(2) + '° ' + ew;
   }
 
+  /* Takes a fix and makes it the place. Returns whether the place moved. */
+  function adoptFix(pos) {
+    var tz = -new Date().getTimezoneOffset() / 60;
+    var zone = null;
+    try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
+    var lat = pos.coords.latitude, lng = pos.coords.longitude;
+    var near = nameForPlace(lat, lng);
+    var before = place();
+    var next = {
+      n: near ? near.n : coordsLabel(lat, lng),
+      lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
+    };
+    setPlace(next, true);
+    Store.set('placeFrom', 'fix');
+    return !before || before.n !== next.n;
+  }
+
   function locate(then) {
     if (!window.navigator || !window.navigator.geolocation) {
       toast('تعذّر تحديد موقعك، فاختر مدينة من القائمة');
@@ -526,20 +543,28 @@
     }
     toast('جاري تحديد موقعك');
     window.navigator.geolocation.getCurrentPosition(function (pos) {
-      var tz = -new Date().getTimezoneOffset() / 60;
-      var zone = null;
-      try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
-      var lat = pos.coords.latitude, lng = pos.coords.longitude;
-      var near = nameForPlace(lat, lng);
-      setPlace({
-        n: near ? near.n : coordsLabel(lat, lng),
-        lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
-      }, true);
-      toast('ضُبطت المواقيت على ' + (near ? near.n : 'موقعك'));
+      adoptFix(pos);
+      toast('ضُبطت المواقيت على ' + place().n);
       if (typeof then === 'function') then();
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
     }, { enableHighAccuracy: true, timeout: 9000 });
+  }
+
+  /* The same, at boot, without a word unless there is news. A fix the phone
+     already has is taken rather than waited for, and a phone that says no is
+     not asked to explain. A city the reader picked by hand is left alone. */
+  function locateQuietly(then) {
+    var done = function (ok) { if (typeof then === 'function') then(ok); };
+    if (Store.get('placeFrom') === 'pick') return done(true);
+    if (!window.navigator || !window.navigator.geolocation) return done(false);
+    window.navigator.geolocation.getCurrentPosition(function (pos) {
+      var moved = adoptFix(pos);
+      if (moved) toast('ضُبطت المواقيت على ' + place().n);
+      done(true);
+    }, function () {
+      done(false);
+    }, { enableHighAccuracy: false, maximumAge: 600000, timeout: 8000 });
   }
 
   /* Minutes since midnight as a float, so the arc moves smoothly. */
@@ -657,7 +682,10 @@
       if (Store.get('pageLayout') === 'madinah') loadMadinahLines().then(function () { if (state.view === 'page') renderPage(); });
       window.setTimeout(function () {
         maybeExplainChrome();
-        if (!showDueSheets()) maybeAskPlace();
+        var sheet = showDueSheets();
+        /* the phone is asked where it is; the banner that asks the reader to
+           say so is only for when the phone will not */
+        locateQuietly(function (found) { if (!found && !sheet) maybeAskPlace(); });
       }, 1500);
     }
   }
@@ -5487,6 +5515,8 @@
     var c = CITIES[index];
     if (!c) return;
     setPlace({ n: c.n, lat: c.lat, lng: c.lng, tz: c.tz, z: c.z, method: c.method }, true);
+    /* chosen by hand, so the fix at boot leaves it alone from now on */
+    Store.set('placeFrom', 'pick');
     toast('ضُبطت المواقيت على ' + c.n);
   }
 
@@ -5673,6 +5703,7 @@
     /* the home line redraws itself whenever the times are worked out, so a
        listener put on the button at wire time would not survive the first one */
     locate: function () { locate(function () { renderHome(); }); },
+    /* the tap on the line is the reader asking on purpose, so it is the loud one */
     'khatma-plus': function () { stepKhatma(1); },
     'khatma-minus': function () { stepKhatma(-1); },
     'khatma-restart': function () {
@@ -6610,7 +6641,7 @@
     state: state,
     clockState: clockState,
     computeTimes: computeTimes,
-    setPlace: setPlace,
+    setPlace: setPlace, locateQuietly: locateQuietly,
     render: RENDERERS,
     actions: ACTIONS,
     helpers: {
@@ -6624,7 +6655,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone

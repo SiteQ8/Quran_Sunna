@@ -6199,6 +6199,46 @@ test('the page admits script from the site alone, and gives a hole somewhere to 
   assert.ok(sw.indexOf("'./js/boot.js'") !== -1, 'the worker keeps boot.js, or the opening is blank offline');
 });
 
+test('the phone is asked where it is at boot, quietly, and a city chosen by hand is left alone', async () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* until now a person was located only when they tapped for it */
+  assert.ok(/locateQuietly\(function \(found\) \{ if \(!found && !sheet\) maybeAskPlace\(\); \}\);/.test(app),
+    'asked at boot, and the banner only when the phone will not say');
+  const quiet = /function locateQuietly\(then\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(quiet.indexOf("Store.get('placeFrom') === 'pick'") !== -1,
+    'a city picked by hand is not run over every morning');
+  assert.ok(quiet.indexOf('enableHighAccuracy: false') !== -1 && quiet.indexOf('maximumAge') !== -1,
+    'a fix the phone already has is taken, not waited for');
+  assert.ok(quiet.indexOf('if (moved) toast') !== -1, 'no word unless the place actually moved');
+
+  /* the phone says Riyadh: the place follows, and so does the greeting */
+  const { win } = boot();
+  win.navigator.geolocation = { getCurrentPosition: function (ok) {
+    ok({ coords: { latitude: 24.7136, longitude: 46.6753 } });
+  } };
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(win.App.helpers.place().n, 'الرياض');
+  assert.strictEqual(win.Store.get('placeFrom'), 'fix');
+  assert.strictEqual(win.localStorage.getItem('sunnati.greet'), 'الرياض');
+
+  /* the reader then picks Makkah on purpose; the next boot's fix leaves it */
+  const makkah = win.CITIES.findIndex(function (c) { return c.n === 'مكة المكرمة'; });
+  win.App.helpers.setPlace(Object.assign({}, win.CITIES[makkah]), true);
+  win.Store.set('placeFrom', 'pick');
+  let asked = false;
+  win.navigator.geolocation = { getCurrentPosition: function () { asked = true; } };
+  await new Promise(function (done) { win.App.helpers.locateQuietly(function () { done(); }); });
+  assert.strictEqual(asked, false, 'the phone is not even asked over a chosen city');
+  assert.strictEqual(win.App.helpers.place().n, 'مكة المكرمة');
+
+  /* and a phone that says no changes nothing and says nothing */
+  win.Store.set('placeFrom', '');
+  win.navigator.geolocation = { getCurrentPosition: function (_ok, fail) { fail({ code: 1 }); } };
+  const found = await new Promise(function (done) { win.App.helpers.locateQuietly(done); });
+  assert.strictEqual(found, false);
+  assert.strictEqual(win.App.helpers.place().n, 'مكة المكرمة', 'left as it was');
+});
+
 test('the page greets by the name it showed last time, and never as markup', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* the app's own opening screen greets by city; the page's used not to,
@@ -7664,7 +7704,9 @@ test('a sheet that is due is looked for again whenever the app comes forward', (
     'the eid first, then the night of jumuah, and nothing for the day itself');
   assert.ok(fn.indexOf("classList.contains('is-open')") !== -1,
     'and one already open is not opened over');
-  assert.ok(app.indexOf('if (!showDueSheets()) maybeAskPlace();') !== -1, 'still checked at boot');
+  /* the phone is asked first now, and the banner is for when it will not say */
+  assert.ok(app.indexOf('locateQuietly(function (found) { if (!found && !sheet) maybeAskPlace(); });') !== -1,
+    'still checked at boot, after the phone has been asked');
 
   const main = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
   assert.ok(main.indexOf('if (started) tellPage("App.helpers.showDueSheets()");') !== -1,

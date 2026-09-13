@@ -50,6 +50,7 @@
     voice: 'recording',
     voiceName: '',
     placeAsked: false,
+    placeFrom: '',
     notifyAsked: false,
     inApp: false,
     chromeExplained: false,
