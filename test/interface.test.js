@@ -4791,6 +4791,48 @@ test('each voice button shows only its own sound playing', () => {
   assert.strictEqual(mark('settings-adhan-try'), '#i-play');
 });
 
+test('the after-prayer list says what حصن المسلم says, dhikr for dhikr, count for count', () => {
+  /* The short list had drifted: it fused two dhikr into one, hung the ten
+     repetitions on the wrong one, dropped يحيي ويميت entirely, and had no
+     Ayat al-Kursi, no muawwidhat, no du'a of fajr. Nothing said so, because
+     nothing held it against the book. This does. */
+  const { win } = boot();
+  /* spaces dropped too: the book itself has «حسد﴾،بسم» with no space, a
+     typo of the source, and the list rightly puts one there */
+  const bare = function (t) { return t.replace(/[\u064B-\u0652\u0670]/g, '').replace(/[ٱ]/g, 'ا').replace(/[\u0649]/g, 'ي').replace(/[،,.:﴿﴾*\s]/g, '').trim(); };
+  const list = win.AZKAR_DB.afterprayer.items;
+  const book = win.HISN.filter(function (c) { return c.id === 25; })[0].i;
+
+  /* every dhikr in the list is found in the book, to the letter. The book
+     writes «أستغفر الله (ثلاثاً)» once with a count; the list says it three
+     times in full, which is the same instruction, so that one is matched by
+     its single form. */
+  const bookText = book.map(function (it) { return bare(it.t); }).join('');
+  const misses = [];
+  list.forEach(function (it, i) {
+    let words = bare(it.t);
+    if (i === 0) words = bare('أستغفر الله');
+    if (bookText.indexOf(words) === -1) misses.push((i + 1) + ': ' + words.slice(0, 50));
+  });
+  assert.strictEqual(misses.length, 0, 'not in the book as written:\n' + misses.join('\n'));
+
+  /* the two that used to be fused stand apart and carry the right count */
+  const fused = list.filter(function (it) { return bare(it.t).indexOf(bare('لا حول ولا قوة')) !== -1; })[0];
+  assert.ok(fused, 'لا حول ولا قوة is there');
+  assert.strictEqual(fused.c, 1, 'and said once, not ten times');
+  assert.ok(bare(fused.t).indexOf(bare('مخلصين له الدين')) !== -1, 'with its own ending, not cut short');
+  const ten = list.filter(function (it) { return it.c === 10; })[0];
+  assert.ok(ten, 'something is said ten times');
+  assert.ok(bare(ten.t).indexOf(bare('يحيي ويميت')) !== -1, 'and it is the one with يحيي ويميت, after fajr and maghrib');
+
+  /* the three that were missing */
+  assert.ok(list.some(function (it) { return bare(it.t).indexOf(bare('لا تأخذه سنة ولا نوم')) !== -1; }), 'Ayat al-Kursi');
+  assert.ok(list.some(function (it) { return bare(it.t).indexOf(bare('قل أعوذ برب الفلق')) !== -1; }), 'the muawwidhat');
+  assert.ok(list.some(function (it) { return bare(it.t).indexOf(bare('علما نافعا')) !== -1; }), 'the du\'a after fajr');
+  /* and the counts of the tasbih */
+  assert.strictEqual(list.filter(function (it) { return it.c === 33; }).length, 3, 'three said thirty-three times');
+});
+
 test('every dhikr that states its count in words is counted that many times', () => {
   /* «حسبي الله لا إله إلا هو» says «(سبع مرات)» in its own text and its counter
      read one. Three such in حصن المسلم, found by asking of every item whether
