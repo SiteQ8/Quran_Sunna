@@ -4799,15 +4799,35 @@ test('the sheet after a prayer opens on the istighfar, not on Ayat al-Kursi', ()
   win.Store.set('afterPrayerShown', ''); win.Store.set('afterPrayerOff', false);
   assert.ok(win.App.helpers.offerAfterPrayer('maghrib'));
   const bare = function (t) { return t.replace(/[\u064B-\u0652\u0670]/g, ''); };
-  const lines = [...doc.querySelectorAll('#sheet .dua-line')];
-  assert.strictEqual(lines.length, 4);
-  assert.ok(bare(lines[0].textContent).indexOf('أستغفر الله') === 0, 'begins with the istighfar');
-  assert.ok(bare(lines[3].textContent).indexOf('سبحان الله') === 0, 'ends with the tasbih');
-  assert.strictEqual(lines[3].querySelector('.topic-count').textContent, '33', 'and shows its count');
-  assert.ok(!lines.some(function (l) { return bare(l.textContent).indexOf('لا تأخذه سنة') !== -1; }),
-    'Ayat al-Kursi is not among the first four after a prayer');
+  /* they are tapped and counted, not read off a box: the same dhikr card the
+     rest of the app uses, with a ring that fills */
+  const cards = [...doc.querySelectorAll('#sheet .dhikr')];
+  assert.strictEqual(cards.length, 5, 'the four of the book, with the istighfar standing on its own');
+  assert.ok(bare(cards[0].textContent).indexOf('أستغفر الله') === 0, 'begins with the istighfar');
+  assert.strictEqual(cards[0].querySelector('.dhikr-left').textContent.trim(), '3',
+    'said three times, not «(ثلاثاً)» written in brackets');
+  assert.ok(bare(cards[4].textContent).indexOf('سبحان الله') === 0, 'ends with the tasbih');
+  assert.strictEqual(cards[4].querySelector('.dhikr-left').textContent.trim(), '33');
+  assert.ok(!cards.some(function (c) { return bare(c.textContent).indexOf('لا تأخذه سنة') !== -1; }),
+    'Ayat al-Kursi is not among those said at the salam');
+
+  /* three taps finish the istighfar; the rest are untouched */
+  click(win, cards[0]); click(win, doc.querySelectorAll('#sheet .dhikr')[0]);
+  click(win, doc.querySelectorAll('#sheet .dhikr')[0]);
+  const after = [...doc.querySelectorAll('#sheet .dhikr')];
+  assert.ok(after[0].classList.contains('is-done'), 'the istighfar is done');
+  assert.strictEqual(after[4].querySelector('.dhikr-left').textContent.trim(), '33', 'the tasbih is untouched');
+  /* one tap on the tasbih takes one off */
+  click(win, after[4]);
+  assert.strictEqual([...doc.querySelectorAll('#sheet .dhikr')][4].querySelector('.dhikr-left').textContent.trim(), '32');
+  /* and the two buttons under them survive the redraw */
+  assert.ok(doc.querySelector('#sheet [data-act="open-after-prayer"]'), 'the full chapter is still one tap away');
+  assert.ok(doc.querySelector('#sheet [data-act="after-prayer-off"]'));
+
+  /* the card carries its own kind, or a tap would count a dhikr on another screen */
+  assert.strictEqual(after[0].getAttribute('data-kind'), 'after');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function offerAfterPrayer\(key\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  const fn = /function afterPrayerItems\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf('c.id === 25') !== -1 && fn.indexOf('c.id === 27') === -1, 'chapter 25, the adhkar after the salam');
 });
 
@@ -5706,7 +5726,8 @@ test('the adhkar of a prayer are offered the moment it is marked prayed, once, a
   const { win, doc } = boot();
   assert.strictEqual(win.App.helpers.offerAfterPrayer('dhuhr'), true);
   assert.strictEqual(doc.getElementById('sheet-title').textContent, 'أذكار ما بعد الظهر');
-  assert.ok(doc.querySelectorAll('#sheet .dua-line').length >= 3, 'the first of them, in place');
+  /* they are countable dhikr cards now, not static lines */
+  assert.ok(doc.querySelectorAll('#sheet .dhikr').length >= 3, 'the first of them, in place');
   assert.strictEqual(win.App.helpers.offerAfterPrayer('dhuhr'), false, 'not twice for the same prayer');
   assert.strictEqual(win.App.helpers.offerAfterPrayer('asr'), true, 'but each prayer has its own');
   click(win, doc.querySelector('#sheet [data-act="after-prayer-off"]'));

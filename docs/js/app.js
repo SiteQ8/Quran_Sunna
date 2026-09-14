@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.68.2';
+  var VERSION = '8.69.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3829,7 +3829,10 @@
     var foot = item.r ? esc(item.r) : '';
     if (target > 1) foot += (foot ? '، ' : '') + count(target, 'مرة واحدة', 'مرتان', 'مرات', 'مرة');
     return '<div class="dhikr' + (isDone ? ' is-done' : '') + '" data-dhikr="' + i + '"' +
-      (kind === 'hisn' ? ' data-kind="hisn"' : '') + ' role="button" tabindex="0">' +
+      /* the kind travels with the card whatever it is: it used to be written
+         for hisn alone, so a card of any other kind was counted as if it
+         belonged to the azkar screen */
+      (kind ? ' data-kind="' + kind + '"' : '') + ' role="button" tabindex="0">' +
       '<p class="dhikr-text">' + esc(item.t) + '</p>' +
       (item.n ? '<p class="dhikr-note">' + esc(item.n) + '</p>' : '') +
       '<div class="dhikr-foot"><span class="source">' + foot + '</span>' +
@@ -4225,6 +4228,56 @@
 
   var PRAYER_NAMES = { fajr: 'الفجر', dhuhr: 'الظهر', asr: 'العصر', maghrib: 'المغرب', isha: 'العشاء' };
 
+  /* The four said the moment one gives salam, in the order a person says
+     them. The istighfar is three, not one with «(ثلاثاً)» written beside it,
+     so it is given its own entry and its own count; the rest come from باب ٢٥
+     as the book has them. */
+  function afterPrayerItems() {
+    var chapter = (typeof HISN !== 'undefined' ? HISN : []).filter(function (c) { return c.id === 25; })[0];
+    if (!chapter) return [];
+    var book = function (a) { return chapter.i.filter(function (x) { return x.a === a; })[0]; };
+    var salam = book(66);
+    var out = [{ t: 'أَسْتَغْفِرُ اللَّهَ', n: 'يقولها فور التسليم', r: 3 }];
+    if (salam) {
+      /* the book joins the istighfar and «اللهم أنت السلام» in one line; the
+         second half stands on its own here, since the first is now counted */
+      var rest = salam.t.replace(/^[\s\S]*?\)\s*/, '');
+      out.push({ t: rest || salam.t, n: '', r: 1 });
+    }
+    [67, 68, 69].forEach(function (a) {
+      var it = book(a);
+      if (it) out.push({ t: it.t, n: '', r: it.r || 1 });
+    });
+    return out;
+  }
+
+  /* how many of each are still owed, for this sheet only: the adhkar of a
+     prayer are said at its salam, not carried across the day */
+  function afterPrayerHtml() {
+    var items = afterPrayerItems();
+    if (!state.afterPrayerLeft) {
+      state.afterPrayerLeft = items.map(function (it) { return it.r || 1; });
+    }
+    return items.map(function (it, i) {
+      var target = it.r || 1;
+      var left = state.afterPrayerLeft[i];
+      return dhikrCard({ t: it.t, n: it.n }, i, target, left, left <= 0, 'after');
+    }).join('');
+  }
+
+  /* one tap, one said; the ring fills and the sheet redraws in place */
+  function countAfterPrayer(index) {
+    if (!state.afterPrayerLeft || state.afterPrayerLeft[index] === undefined) return;
+    if (state.afterPrayerLeft[index] <= 0) return;
+    state.afterPrayerLeft[index] -= 1;
+    buzz(state.afterPrayerLeft[index] === 0 ? 24 : 8);
+    var body = $('sheet-body');
+    if (!body) return;
+    var tail = body.innerHTML.slice(body.innerHTML.indexOf('<button class="btn btn-primary'));
+    body.innerHTML = afterPrayerHtml() + tail;
+    if (state.afterPrayerLeft.every(function (n) { return n <= 0; })) toast('تقبّل الله');
+  }
+
   /* The adhkar said after a prescribed prayer, offered the moment one is
      marked prayed. Shown at most once for each prayer each day. */
   function offerAfterPrayer(key) {
@@ -4238,13 +4291,9 @@
        istighfar and tasbih. The count in the book is r, not c, and it never
        showed. Now the five short ones that open the chapter, each with its
        count, in the order a person says them. */
-    var chapter = (typeof HISN !== 'undefined' ? HISN : []).filter(function (c) { return c.id === 25; })[0];
-    var items = chapter ? chapter.i.slice(0, 4) : [];
+    state.afterPrayerLeft = null;
     openSheet('أذكار ما بعد ' + PRAYER_NAMES[key],
-      items.map(function (it) {
-        return '<div class="dua-line"><span class="dua-text naskh">' + esc(it.t) + '</span>' +
-          (it.r > 1 ? '<span class="topic-count">' + ar(it.r) + '</span>' : '') + '</div>';
-      }).join('') +
+      afterPrayerHtml() +
       '<button class="btn btn-primary btn-block" data-act="open-after-prayer" style="margin-top:10px">افتح الباب كاملاً</button>' +
       '<button class="btn btn-ghost btn-block" data-act="after-prayer-off" style="margin-top:8px">لا تعرضها بعد كل صلاة</button>');
     return true;
@@ -6033,6 +6082,16 @@
           shareTextCard(chapter.t, chapter.i[index].t, 'dhikr-' + chapter.id + '-' + index + '.png',
             'حصن المسلم، الباب ' + ar(chapter.id) + (chapter.i[index].r > 1 ? '، ' + count(chapter.i[index].r, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''));
         }
+      } else if (ref[0] === 'after') {
+        /* the sheet after a prayer keeps its own four; without this branch the
+           share button would have pictured a dhikr from whichever list the
+           azkar screen happened to be on */
+        var after = afterPrayerItems()[index];
+        if (after) {
+          shareTextCard('أذكار ما بعد الصلاة', after.t, 'after-prayer-' + index + '.png',
+            'حصن المسلم، الأذكار بعد السلام من الصلاة' +
+            (after.r > 1 ? '، ' + count(after.r, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''));
+        }
       } else {
         var def = AZKAR_DB[state.azkarKey || 'morning'];
         if (def && def.items[index]) {
@@ -6045,7 +6104,12 @@
     }
 
     var dhikr = target.closest('[data-dhikr]');
-    if (dhikr) { countDhikr(+dhikr.getAttribute('data-dhikr'), dhikr.getAttribute('data-kind') === 'hisn'); return; }
+    if (dhikr) {
+      var kind = dhikr.getAttribute('data-kind');
+      if (kind === 'after') { countAfterPrayer(+dhikr.getAttribute('data-dhikr')); return; }
+      countDhikr(+dhikr.getAttribute('data-dhikr'), kind === 'hisn');
+      return;
+    }
 
     var scope = target.closest('[data-scope]');
     if (scope) { state.scope = scope.getAttribute('data-scope'); renderSearch(); return; }
