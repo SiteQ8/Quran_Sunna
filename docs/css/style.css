@@ -375,16 +375,26 @@ button { background: none; border: none; cursor: pointer; }
      size does. Five earlier tries chased a padding to line the name up against
      absolutely-placed stars; a row that centres its children needs no such
      guessing. align-items:center does what the padding kept missing. */
-  display: flex; align-items: center; justify-content: center; gap: var(--s3);
+  /* stars at the two edges of the frame as they always were, the name in the
+     true middle between them: space-between with the name as the only middle
+     item gives equal room on both sides */
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
   padding: var(--s4) var(--s6); margin-bottom: var(--s4);
   border: 1.5px solid var(--accent-ink); border-radius: var(--r-md);
 }
 .surah-frame .surah-star {
+  /* each star sits on a soft blue wash, as it did before the row was rebuilt;
+     the rebuild dropped the wash by mistake and it is restored, unchanged */
   flex: none; width: 14px; height: 14px; opacity: .85;
+  border-radius: 50%; box-shadow: 0 0 0 7px var(--accent-wash);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 14 14'%3E%3Cg fill='none' stroke='%23b08833' stroke-width='1.2'%3E%3Crect x='2.5' y='2.5' width='9' height='9' rx='1'/%3E%3Crect x='2.5' y='2.5' width='9' height='9' rx='1' transform='rotate(45 7 7)'/%3E%3C/g%3E%3C/svg%3E");
 }
 .surah-frame h2 {
-  flex: 1; text-align: center; margin: 0;
+  /* No flex:1: with it the name swelled to fill the row and its text sat at
+     the start edge, twelve pixels from one star and a hundred and forty from
+     the other. At its natural width, justify-content:center on the row puts
+     the name in the true middle with the same gap to each star. */
+  flex: none; text-align: center; margin: 0;
   font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; line-height: 1;
   /* The letter bodies, not the ink box, must sit on the middle. The naskh box
      reserves a tall band above for the marks, so a box centred by measurement
