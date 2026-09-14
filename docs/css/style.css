@@ -401,7 +401,7 @@ button { background: none; border: none; cursor: pointer; }
      leaves the bodies riding high, which is what the eye caught five times over
      while the numbers read centred. Nudged down so the bodies meet the middle,
      verified against a red centre line drawn in the live app, not a guess. */
-  transform: translateY(0.32em);
+  transform: translateY(0.16em);
 }
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
 
