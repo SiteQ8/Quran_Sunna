@@ -17,6 +17,10 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     public static final String CHANNEL = "adhan";
     public static final String CHANNEL_REMINDERS = "reminders";
+    /* A channel per sound the reader can choose, since a channel's sound is
+       fixed once made and cannot follow a per-reminder choice. */
+    public static final String CHANNEL_CHIME = "reminders_chime";
+    public static final String CHANNEL_QUIET = "reminders_quiet";
     /* when the app sounds the adhan itself, the notification keeps quiet */
     public static final String CHANNEL_SILENT = "adhan_quiet";
 
@@ -26,7 +30,11 @@ public final class AdhanReceiver extends BroadcastReceiver {
             try {
                 String title = intent.getStringExtra(NoteScheduler.EXTRA_TITLE);
                 String body = intent.getStringExtra(NoteScheduler.EXTRA_BODY);
-                if (title != null && !title.isEmpty()) post(context, title, body, "note", CHANNEL_REMINDERS);
+                String sound = intent.getStringExtra(NoteScheduler.EXTRA_SOUND);
+                /* the reader chose a sound for this reminder; the channel carries it */
+                String channel = "chime".equals(sound) ? CHANNEL_CHIME
+                    : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
+                if (title != null && !title.isEmpty()) post(context, title, body, "note", channel);
             } catch (Exception e) {
                 Log.w("sunnati", "note not shown", e);
             }
@@ -90,6 +98,21 @@ public final class AdhanReceiver extends BroadcastReceiver {
         if (manager.getNotificationChannel(CHANNEL_REMINDERS) == null) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_REMINDERS, "تذكيرات", NotificationManager.IMPORTANCE_DEFAULT);
             channel.setDescription("الصلاة على النبي وما تطلبه من التطبيق");
+            manager.createNotificationChannel(channel);
+        }
+        if (manager.getNotificationChannel(CHANNEL_CHIME) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_CHIME, "تذكيرات بنغمة هادئة", NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription("التذكيرات التي اخترت لها النغمة الهادئة");
+            android.net.Uri chime = android.net.Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.chime);
+            channel.setSound(chime, new android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            manager.createNotificationChannel(channel);
+        }
+        if (manager.getNotificationChannel(CHANNEL_QUIET) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_QUIET, "تذكيرات صامتة", NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("التذكيرات التي اخترت أن تصل بلا صوت");
+            channel.setSound(null, null);
             manager.createNotificationChannel(channel);
         }
     }
