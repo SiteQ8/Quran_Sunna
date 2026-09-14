@@ -20,6 +20,7 @@ public final class NoteScheduler {
     static final String KEY = "notes";
     static final String EXTRA_TITLE = "title";
     static final String EXTRA_BODY = "body";
+    static final String EXTRA_SOUND = "sound";
     private static final int REQUEST = 4151;
 
     private NoteScheduler() { }
@@ -40,9 +41,9 @@ public final class NoteScheduler {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
         JSONObject soonest = soonest(context, System.currentTimeMillis());
-        if (soonest == null) { alarms.cancel(pending(context, null, null)); return; }
+        if (soonest == null) { alarms.cancel(pending(context, null, null, null)); return; }
         long at = soonest.optLong("at");
-        PendingIntent pending = pending(context, soonest.optString("t"), soonest.optString("b"));
+        PendingIntent pending = pending(context, soonest.optString("t"), soonest.optString("b"), soonest.optString("s", "device"));
         boolean exact = Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
@@ -66,11 +67,12 @@ public final class NoteScheduler {
         return best;
     }
 
-    private static PendingIntent pending(Context context, String title, String body) {
+    private static PendingIntent pending(Context context, String title, String body, String sound) {
         Intent intent = new Intent(context, AdhanReceiver.class);
         intent.setAction("com.eworldq8.sunnati.NOTE");
         intent.putExtra(EXTRA_TITLE, title == null ? "" : title);
         intent.putExtra(EXTRA_BODY, body == null ? "" : body);
+        intent.putExtra(EXTRA_SOUND, sound == null ? "device" : sound);
         return PendingIntent.getBroadcast(context, REQUEST, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }

@@ -5469,6 +5469,56 @@ test('the call to rise falls at the last third of the night, and the app is told
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
 });
 
+test('five reminders the reader turns on, each with its own sound, and a bedtime', () => {
+  const { win, doc } = boot();
+  win.App.go('reminders');
+  const keys = ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'];
+  /* all off until the reader says so */
+  keys.forEach(function (k) {
+    assert.strictEqual(win.Store.get(k), false, k + ' is off by default');
+    assert.ok(doc.getElementById('settings-' + k), k + ' has a switch');
+    assert.ok(doc.querySelector('[data-sound="' + k + '"]'), k + ' has a sound select');
+  });
+  assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return /الاستغفار|الملك|الكرسي|الصباح|المساء/.test(r.t); }).length, 0,
+    'nothing scheduled while all are off');
+
+  /* istighfar on, at the bedtime, with a chime */
+  click(win, doc.getElementById('settings-sleepIstighfar'));
+  const sel = doc.querySelector('[data-sound="sleepIstighfar"]');
+  sel.value = 'chime'; fire(win, sel, 'change');
+  const list = win.App.helpers.reminderList().filter(function (r) { return r.t === 'الاستغفار قبل النوم'; });
+  assert.ok(list.length >= 7, 'one each night for the week ahead');
+  assert.strictEqual(list[0].s, 'chime', 'and it carries the sound the reader chose');
+  const at = new Date(list[0].at);
+  assert.strictEqual(at.getHours() * 60 + at.getMinutes(), 22 * 60 + 30, 'at the default bedtime');
+
+  /* the bedtime moves, and the reminders with it */
+  const time = doc.getElementById('settings-sleep-at');
+  time.value = '23:15'; fire(win, time, 'change');
+  const later = new Date(win.App.helpers.reminderList().filter(function (r) { return r.t === 'الاستغفار قبل النوم'; })[0].at);
+  assert.strictEqual(later.getHours() * 60 + later.getMinutes(), 23 * 60 + 15);
+
+  /* the three night ones do not all fire at the same second */
+  click(win, doc.getElementById('settings-sleepMulk'));
+  click(win, doc.getElementById('settings-sleepKursi'));
+  const night = win.App.helpers.reminderList().filter(function (r) { return /النوم/.test(r.t); }).slice(0, 3).map(function (r) { return r.at; });
+  assert.ok(night[1] > night[0] && night[2] > night[1], 'a minute apart, so one does not bury the next');
+
+  /* morning follows fajr, evening follows asr */
+  click(win, doc.getElementById('settings-morningAdhkar'));
+  const morning = win.App.helpers.reminderList().filter(function (r) { return r.t === 'أذكار الصباح'; })[0];
+  assert.ok(morning, 'morning adhkar scheduled');
+  assert.strictEqual(morning.s, 'device', 'device sound unless changed');
+
+  /* the wrapper has a channel for each sound */
+  const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(recv.indexOf('CHANNEL_CHIME') !== -1 && recv.indexOf('CHANNEL_QUIET') !== -1, 'a channel per sound');
+  assert.ok(recv.indexOf('R.raw.chime') !== -1, 'the chime is bundled');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/res/raw/chime.ogg')));
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/NoteScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('EXTRA_SOUND') !== -1, 'the sound travels with the alarm');
+});
+
 test('the reminders are the reader\'s to turn on and off', () => {
   const { win, doc } = boot();
   win.App.go('reminders');

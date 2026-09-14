@@ -34,6 +34,16 @@
     eidShown: '',
     qiyam: false,
     duha: false,
+    /* the reader's own reminders, off until turned on */
+    morningAdhkar: false,
+    eveningAdhkar: false,
+    sleepIstighfar: false,
+    sleepMulk: false,
+    sleepKursi: false,
+    sleepAt: '22:30',
+    /* the sound each makes: device, chime, or silent */
+    remindSound: { morningAdhkar: 'device', eveningAdhkar: 'device', sleepIstighfar: 'device',
+      sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device' },
     wirdAt: '',
     jumuahBefore: 0,
     jumuahNight: true,

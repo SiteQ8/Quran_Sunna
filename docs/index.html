@@ -775,6 +775,47 @@
   </div>
 
   <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-moon"/></svg>الأذكار والنوم</h2></div>
+    <p class="setting-note" style="margin-bottom:var(--s3)">تذكيرات تفعّلها كما تشاء، ولكلٍّ صوتها: صوت الجهاز، أو نغمة هادئة، أو صامت.</p>
+    <div class="setting setting-remind"><span><span class="setting-label">أذكار الصباح</span><br><span class="setting-note">بعد الفجر بنصف ساعة</span></span>
+      <span class="remind-controls">
+        <select class="select select-sound" data-sound="morningAdhkar" aria-label="صوت أذكار الصباح">
+          <option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option>
+        </select>
+        <button class="switch" id="settings-morningAdhkar" role="switch" aria-checked="false" aria-label="أذكار الصباح"></button>
+      </span></div>
+    <div class="setting setting-remind"><span><span class="setting-label">أذكار المساء</span><br><span class="setting-note">بعد العصر بنصف ساعة</span></span>
+      <span class="remind-controls">
+        <select class="select select-sound" data-sound="eveningAdhkar" aria-label="صوت أذكار المساء">
+          <option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option>
+        </select>
+        <button class="switch" id="settings-eveningAdhkar" role="switch" aria-checked="false" aria-label="أذكار المساء"></button>
+      </span></div>
+    <div class="setting"><span><span class="setting-label">وقت النوم</span><br><span class="setting-note">تصلك عنده تذكيرات ما قبل النوم التي تفعّلها تحت</span></span>
+      <input class="select" type="time" id="settings-sleep-at" value="22:30" aria-label="وقت النوم"></div>
+    <div class="setting setting-remind"><span><span class="setting-label">الاستغفار قبل النوم</span><br><span class="setting-note">أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه</span></span>
+      <span class="remind-controls">
+        <select class="select select-sound" data-sound="sleepIstighfar" aria-label="صوت الاستغفار قبل النوم">
+          <option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option>
+        </select>
+        <button class="switch" id="settings-sleepIstighfar" role="switch" aria-checked="false" aria-label="الاستغفار قبل النوم"></button>
+      </span></div>
+    <div class="setting setting-remind"><span><span class="setting-label">سورة الملك قبل النوم</span><br><span class="setting-note">كان النبي ﷺ لا ينام حتى يقرأها</span></span>
+      <span class="remind-controls">
+        <select class="select select-sound" data-sound="sleepMulk" aria-label="صوت سورة الملك قبل النوم">
+          <option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option>
+        </select>
+        <button class="switch" id="settings-sleepMulk" role="switch" aria-checked="false" aria-label="سورة الملك قبل النوم"></button>
+      </span></div>
+    <div class="setting setting-remind"><span><span class="setting-label">آية الكرسي قبل النوم</span><br><span class="setting-note">لن يزال عليك من الله حافظ ولا يقربك شيطان حتى تصبح</span></span>
+      <span class="remind-controls">
+        <select class="select select-sound" data-sound="sleepKursi" aria-label="صوت آية الكرسي قبل النوم">
+          <option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option>
+        </select>
+        <button class="switch" id="settings-sleepKursi" role="switch" aria-checked="false" aria-label="آية الكرسي قبل النوم"></button>
+      </span></div>
+  </div>
+  <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن والمواسم</h2></div>
     <div class="next-fast" id="fast-next"></div>
     <div class="setting"><span><span class="setting-label">ليلة الجمعة</span><br><span class="setting-note">تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ</span></span>

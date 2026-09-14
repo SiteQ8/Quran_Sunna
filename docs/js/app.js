@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.67.5';
+  var VERSION = '8.68.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3046,6 +3046,12 @@
     return false;
   }
 
+  /* the sound the reader chose for one reminder, device unless changed */
+  function soundFor(key) {
+    var all = Store.get('remindSound') || {};
+    return all[key] || 'device';
+  }
+
   function reminderList() {
     var out = [];
     var now = new Date();
@@ -3061,7 +3067,7 @@
         var portion = wirdFor(day);
         if (at.getTime() > Date.now() && portion) {
           out.push({ at: at.getTime(), t: 'وردك اليوم',
-            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to) });
+            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: soundFor('wird') });
         }
       }
       if (Store.get('duha')) {
@@ -3070,8 +3076,44 @@
           var atDuha = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, duha.best, 0, 0);
           if (atDuha.getTime() > Date.now()) {
             out.push({ at: atDuha.getTime(), t: 'صلاة الضحى',
-              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال' });
+              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال', s: soundFor('duha') });
           }
+        }
+      }
+
+      /* The reader's own reminders. Morning adhkar half an hour after fajr,
+         evening adhkar half an hour after asr, and the night ones at the
+         bedtime the reader set. Each is off until turned on, and each carries
+         the sound the reader chose for it. */
+      var dayTimes = computeTimes(day);
+      if (Store.get('morningAdhkar') && typeof dayTimes.fajr === 'number') {
+        var atMorning = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.fajr + 30, 0, 0);
+        if (atMorning.getTime() > Date.now()) {
+          out.push({ at: atMorning.getTime(), t: 'أذكار الصباح',
+            b: 'أصبحنا وأصبح الملك لله', s: soundFor('morningAdhkar') });
+        }
+      }
+      if (Store.get('eveningAdhkar') && typeof dayTimes.asr === 'number') {
+        var atEvening = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.asr + 30, 0, 0);
+        if (atEvening.getTime() > Date.now()) {
+          out.push({ at: atEvening.getTime(), t: 'أذكار المساء',
+            b: 'أمسينا وأمسى الملك لله', s: soundFor('eveningAdhkar') });
+        }
+      }
+      var sleepParts = String(Store.get('sleepAt') || '22:30').split(':');
+      var atSleep = new Date(day.getFullYear(), day.getMonth(), day.getDate(), +sleepParts[0], +sleepParts[1], 0, 0);
+      if (atSleep.getTime() > Date.now()) {
+        if (Store.get('sleepIstighfar')) {
+          out.push({ at: atSleep.getTime(), t: 'الاستغفار قبل النوم',
+            b: 'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه', s: soundFor('sleepIstighfar') });
+        }
+        if (Store.get('sleepMulk')) {
+          out.push({ at: atSleep.getTime() + 60000, t: 'سورة الملك قبل النوم',
+            b: 'كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك', s: soundFor('sleepMulk') });
+        }
+        if (Store.get('sleepKursi')) {
+          out.push({ at: atSleep.getTime() + 120000, t: 'آية الكرسي قبل النوم',
+            b: 'إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ', s: soundFor('sleepKursi') });
         }
       }
       /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
@@ -5487,6 +5529,14 @@
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
     setSwitch($('settings-duha'), !!Store.get('duha'));
+    /* the reader's own reminders and the sound each makes */
+    ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'].forEach(function (key) {
+      setSwitch($('settings-' + key), !!Store.get(key));
+    });
+    if ($('settings-sleep-at')) $('settings-sleep-at').value = Store.get('sleepAt') || '22:30';
+    document.querySelectorAll('.select-sound').forEach(function (sel) {
+      sel.value = soundFor(sel.getAttribute('data-sound'));
+    });
     showQiyamTime();
     showDuhaTime();
     fillAdhanVoices();
@@ -6353,6 +6403,32 @@
       renderNextFast();
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير في ليلة اليوم الذي يُستحب صيامه' : 'أُوقف تذكير الصيام');
+    });
+    /* five switches of one shape: flip, keep, hand to the wrapper, say so */
+    [['morningAdhkar', 'أذكار الصباح'], ['eveningAdhkar', 'أذكار المساء'],
+     ['sleepIstighfar', 'الاستغفار قبل النوم'], ['sleepMulk', 'سورة الملك قبل النوم'],
+     ['sleepKursi', 'آية الكرسي قبل النوم']].forEach(function (pair) {
+      bind('settings-' + pair[0], 'click', function () {
+        var on = !Store.get(pair[0]);
+        Store.set(pair[0], on);
+        setSwitch($('settings-' + pair[0]), on);
+        handRemindersToApp();
+        toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
+      });
+    });
+    bind('settings-sleep-at', 'change', function (e) {
+      Store.set('sleepAt', e.target.value || '22:30');
+      handRemindersToApp();
+      toast('وقت النوم ' + e.target.value);
+    });
+    /* the sound of each reminder, kept under its key */
+    document.querySelectorAll('.select-sound').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        var all = Store.get('remindSound') || {};
+        all[sel.getAttribute('data-sound')] = sel.value;
+        Store.set('remindSound', all);
+        handRemindersToApp();
+      });
     });
     bind('settings-duha', 'click', function () {
       var on = !Store.get('duha');

@@ -1012,6 +1012,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .setting-sub .setting { border-top: 0; }
 
+/* a reminder row carries two controls, the sound it makes and its switch, side
+   by side and never wrapping under the label */
+.remind-controls { display: inline-flex; align-items: center; gap: var(--s2); flex: none; }
+.select-sound { min-width: 0; width: 118px; }
+
 .khatma-reset { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
 .khatma-reset .btn { color: var(--ink-3); font-weight: 500; }
 .btn-row > .btn { flex: 1 1 0; min-width: 0; }
