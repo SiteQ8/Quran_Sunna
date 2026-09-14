@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.68.1';
+  var VERSION = '8.68.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4232,12 +4232,18 @@
     var mark = Store.dayKey() + ':' + key;
     if (Store.get('afterPrayerShown') === mark) return false;
     Store.set('afterPrayerShown', mark);
-    var chapter = (typeof HISN !== 'undefined' ? HISN : []).filter(function (c) { return c.id === 27; })[0];
+    /* Chapter 25 is the adhkar after the salam; 27 is morning and evening,
+       and this sheet drew its first four from 27 for a long while, so a
+       prayer ended with Ayat al-Kursi and the muawwidhat instead of the
+       istighfar and tasbih. The count in the book is r, not c, and it never
+       showed. Now the five short ones that open the chapter, each with its
+       count, in the order a person says them. */
+    var chapter = (typeof HISN !== 'undefined' ? HISN : []).filter(function (c) { return c.id === 25; })[0];
     var items = chapter ? chapter.i.slice(0, 4) : [];
     openSheet('أذكار ما بعد ' + PRAYER_NAMES[key],
       items.map(function (it) {
         return '<div class="dua-line"><span class="dua-text naskh">' + esc(it.t) + '</span>' +
-          (it.c > 1 ? '<span class="topic-count">' + ar(it.c) + '</span>' : '') + '</div>';
+          (it.r > 1 ? '<span class="topic-count">' + ar(it.r) + '</span>' : '') + '</div>';
       }).join('') +
       '<button class="btn btn-primary btn-block" data-act="open-after-prayer" style="margin-top:10px">افتح الباب كاملاً</button>' +
       '<button class="btn btn-ghost btn-block" data-act="after-prayer-off" style="margin-top:8px">لا تعرضها بعد كل صلاة</button>');
