@@ -4791,6 +4791,26 @@ test('each voice button shows only its own sound playing', () => {
   assert.strictEqual(mark('settings-adhan-try'), '#i-play');
 });
 
+test('the sheet after a prayer opens on the istighfar, not on Ayat al-Kursi', () => {
+  /* It drew its first four from chapter 27, morning and evening, so a prayer
+     ended with Ayat al-Kursi and the muawwidhat. The adhkar after the salam
+     are chapter 25, and their count is r, which never showed as c. */
+  const { win, doc } = boot();
+  win.Store.set('afterPrayerShown', ''); win.Store.set('afterPrayerOff', false);
+  assert.ok(win.App.helpers.offerAfterPrayer('maghrib'));
+  const bare = function (t) { return t.replace(/[\u064B-\u0652\u0670]/g, ''); };
+  const lines = [...doc.querySelectorAll('#sheet .dua-line')];
+  assert.strictEqual(lines.length, 4);
+  assert.ok(bare(lines[0].textContent).indexOf('أستغفر الله') === 0, 'begins with the istighfar');
+  assert.ok(bare(lines[3].textContent).indexOf('سبحان الله') === 0, 'ends with the tasbih');
+  assert.strictEqual(lines[3].querySelector('.topic-count').textContent, '33', 'and shows its count');
+  assert.ok(!lines.some(function (l) { return bare(l.textContent).indexOf('لا تأخذه سنة') !== -1; }),
+    'Ayat al-Kursi is not among the first four after a prayer');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function offerAfterPrayer\(key\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('c.id === 25') !== -1 && fn.indexOf('c.id === 27') === -1, 'chapter 25, the adhkar after the salam');
+});
+
 test('the after-prayer list says what حصن المسلم says, dhikr for dhikr, count for count', () => {
   /* The short list had drifted: it fused two dhikr into one, hung the ten
      repetitions on the wrong one, dropped يحيي ويميت entirely, and had no
