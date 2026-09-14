@@ -386,6 +386,12 @@ button { background: none; border: none; cursor: pointer; }
 .surah-frame h2 {
   flex: 1; text-align: center; margin: 0;
   font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; line-height: 1;
+  /* The letter bodies, not the ink box, must sit on the middle. The naskh box
+     reserves a tall band above for the marks, so a box centred by measurement
+     leaves the bodies riding high, which is what the eye caught five times over
+     while the numbers read centred. Nudged down so the bodies meet the middle,
+     verified against a red centre line drawn in the live app, not a guess. */
+  transform: translateY(7px);
 }
 .surah-frame p { font-size: var(--step--1); color: var(--ink-3); margin-top: 3px; }
 
