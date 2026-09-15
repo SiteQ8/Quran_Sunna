@@ -4826,6 +4826,14 @@ test('the sheet after a prayer opens on the istighfar, not on Ayat al-Kursi', ()
 
   /* the card carries its own kind, or a tap would count a dhikr on another screen */
   assert.strictEqual(after[0].getAttribute('data-kind'), 'after');
+
+  /* «افتح الباب كاملاً» opens the chapter of the salam, not morning and evening:
+     the sheet was moved to 25 and this button was left behind on 27 */
+  click(win, doc.querySelector('#sheet [data-act="open-after-prayer"]'));
+  assert.strictEqual(win.App.state.hisn, 25);
+  assert.strictEqual(doc.getElementById('hisn-title').textContent, 'الأذكار بعد السلام من الصلاة');
+  assert.ok(bare(doc.querySelector('#hisn-list .dhikr-text').textContent).indexOf('أستغفر الله') === 0,
+    'and it opens on the istighfar');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function afterPrayerItems\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf('c.id === 25') !== -1 && fn.indexOf('c.id === 27') === -1, 'chapter 25, the adhkar after the salam');

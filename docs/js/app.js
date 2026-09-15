@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.69.0';
+  var VERSION = '8.69.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5876,7 +5876,10 @@
       toast('لن تُذكّر بليلة الجمعة، وتعيدها من الإعدادات');
       renderSettings();
     },
-    'open-after-prayer': function () { closeSheet(); state.hisn = 27; go('hisn'); },
+    /* chapter 25 is الأذكار بعد السلام من الصلاة; 27 is morning and evening.
+       The sheet was fixed to read 25 and this button was left on 27, so «افتح
+       الباب كاملاً» opened the wrong chapter. */
+    'open-after-prayer': function () { closeSheet(); state.hisn = 25; go('hisn'); },
     'after-prayer-off': function () {
       Store.set('afterPrayerOff', true);
       closeSheet();
