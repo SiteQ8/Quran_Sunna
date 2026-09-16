@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.73.3';
+  var VERSION = '8.73.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5615,8 +5615,12 @@
     document.body.appendChild(panel);
     var r = btn.getBoundingClientRect();
     var room = window.innerHeight - r.bottom;
-    panel.style.minWidth = Math.max(r.width, 140) + 'px';
-    panel.style.insetInlineEnd = (window.innerWidth - r.right) + 'px';
+    /* Under the button and the width of it, placed by left and width rather
+       than by inset-inline-end: in a right to left page that end is measured
+       from the other side, and the panel slid away from the control it
+       belongs to. */
+    panel.style.left = Math.round(r.left) + 'px';
+    panel.style.width = Math.round(r.width) + 'px';
     /* below the button when there is room, above it when there is not */
     if (room < 220 && r.top > room) {
       panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
