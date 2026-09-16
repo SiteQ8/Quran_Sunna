@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.69.1';
+  var VERSION = '8.70.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3046,6 +3046,26 @@
     return false;
   }
 
+  /* The same two soft bells the wrapper plays, drawn here with the audio the
+     browser already has, so «اسمع الصوت» sounds the very thing that will come
+     out of the phone rather than a stand-in. */
+  function playChime() {
+    try {
+      var Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return;
+      var ctx = new Ctx();
+      [880, 1320, 1760].forEach(function (hz, i) {
+        var osc = ctx.createOscillator(), gain = ctx.createGain();
+        osc.frequency.value = hz;
+        gain.gain.setValueAtTime([0.55, 0.30, 0.15][i] * 0.5, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 1);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(); osc.stop(ctx.currentTime + 1);
+      });
+      window.setTimeout(function () { try { ctx.close(); } catch (e) { /* closed already */ } }, 1400);
+    } catch (e) { /* no audio here, and the phone will still sound it */ }
+  }
+
   /* the sound the reader chose for one reminder, device unless changed */
   function soundFor(key) {
     var all = Store.get('remindSound') || {};
@@ -3125,7 +3145,7 @@
         var putOff = +Store.get('jumuahNightAt') || 0;
         if (putOff > Date.now()) {
           out.push({ at: putOff, t: 'ليلة الجمعة',
-            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
+            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: soundFor('jumuahNight') });
         }
       }
       if (Store.get('jumuahNight') && day.getDay() === 4 && !already(out, 'ليلة الجمعة')) {
@@ -3144,7 +3164,7 @@
           }
           if (at > Date.now()) {
             out.push({ at: at, t: 'ليلة الجمعة',
-              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه' });
+              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: soundFor('jumuahNight') });
           }
         }
       }
@@ -3161,7 +3181,7 @@
             var callFast = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eveTimes.maghrib + 90, 0, 0);
             if (callFast.getTime() > Date.now()) {
               out.push({ at: callFast.getTime(), t: 'صيام الغد',
-                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور' });
+                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور', s: soundFor('fastNote') });
             }
           }
         }
@@ -3172,7 +3192,7 @@
           var call = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, times.dhuhr - before, 0, 0);
           if (call.getTime() > Date.now()) {
             out.push({ at: call.getTime(), t: 'الجمعة',
-              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة' });
+              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة', s: soundFor('jumuahBefore') });
           }
         }
       }
@@ -6493,6 +6513,18 @@
       Store.set('sleepAt', e.target.value || '22:30');
       handRemindersToApp();
       toast('وقت النوم ' + e.target.value);
+    });
+    /* «اسمع الصوت»: the chime plays here in the page; the device sound and
+       silence cannot be sounded by a page, so it says so rather than doing
+       nothing and leaving the reader wondering whether the button works. */
+    document.querySelectorAll('.try-sound').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var key = btn.getAttribute('data-try');
+        var pick = soundFor(key);
+        if (pick === 'silent') { toast('هذا التذكير يصل بلا صوت'); return; }
+        if (pick === 'device') { toast('يصل بصوت الإشعارات في هاتفك'); return; }
+        playChime();
+      });
     });
     /* the sound of each reminder, kept under its key */
     document.querySelectorAll('.select-sound').forEach(function (sel) {

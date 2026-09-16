@@ -5562,6 +5562,23 @@ test('the call to rise falls at the last third of the night, and the app is told
 test('five reminders the reader turns on, each with its own sound, and a bedtime', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
+  /* every reminder on the screen carries a sound and a way to hear it, not
+     just the five that were added with the card */
+  const sounds = [...doc.querySelectorAll('.select-sound')].map(function (s) { return s.getAttribute('data-sound'); });
+  ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi',
+   'jumuahNight', 'fastNote', 'jumuahBefore', 'duha', 'qiyam', 'wird'].forEach(function (k) {
+    assert.ok(sounds.indexOf(k) !== -1, k + ' has a sound select');
+    assert.ok(doc.querySelector('[data-try="' + k + '"]'), k + ' has a button to hear it');
+  });
+  assert.strictEqual(doc.querySelectorAll('.try-sound').length, sounds.length,
+    'one ear button for each sound select');
+  /* and the choice reaches the list the wrapper is handed */
+  const pick = doc.querySelector('[data-sound="duha"]');
+  pick.value = 'silent'; fire(win, pick, 'change');
+  if (!win.Store.get('duha')) click(win, doc.getElementById('settings-duha'));
+  const duha = win.App.helpers.reminderList().filter(function (r) { return r.t === 'صلاة الضحى'; })[0];
+  assert.ok(duha && duha.s === 'silent', 'the sound travels with the reminder');
+
   const keys = ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'];
   /* all off until the reader says so */
   keys.forEach(function (k) {

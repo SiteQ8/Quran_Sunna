@@ -1014,8 +1014,24 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* a reminder row carries two controls, the sound it makes and its switch, side
    by side and never wrapping under the label */
-.remind-controls { display: inline-flex; align-items: center; gap: var(--s2); flex: none; }
-.select-sound { min-width: 0; width: 118px; }
+/* A reminder row carries its words, the sound it makes, a button to hear it,
+   and its switch. Four things do not fit one line on a phone, and the setting
+   row is nowrap, so the words were squeezed to one per line. Here the row
+   wraps: the words take the full width and the controls sit beneath them,
+   ranged to the end. */
+.setting-remind { flex-wrap: wrap; }
+/* the words take the whole width, the controls sit beneath them in one line */
+.setting-remind > span:first-child { flex: 1 1 100%; margin-bottom: var(--s2); }
+.remind-controls {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  flex-wrap: nowrap; justify-content: flex-end; margin-inline-start: auto;
+}
+/* narrow enough that the sound, the ear and the switch share one line even on
+   the row that also carries a «متى» list */
+.select-sound { min-width: 0; width: 104px; font-size: .82rem; padding-inline: var(--s2); flex: none; }
+.remind-controls .btn-icon { width: 40px; height: 40px; min-height: 40px; flex: none; }
+.remind-controls .switch { flex: none; }
+.remind-controls > .select:not(.select-sound) { width: 108px; font-size: .82rem; flex: none; }
 
 .khatma-reset { margin-top: var(--s3); padding-top: var(--s3); border-top: 1px solid var(--line); }
 .khatma-reset .btn { color: var(--ink-3); font-weight: 500; }
