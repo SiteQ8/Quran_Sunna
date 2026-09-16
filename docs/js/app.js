@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.77.3';
+  var VERSION = '8.77.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3133,7 +3133,11 @@
   /* The three that used to be switched off from inside their own list. Each
      has an «off» value it holds when silent; the switch writes that value or
      puts back what the reader last chose. */
-  var WHEN_OFF = { jumuahBefore: 0, salawat: 0, wird: '' };
+  /* «wirdAt» is the key the store actually holds. «wird» is not among its
+     defaults, and the store rebuilds itself from those at every start, so a
+     value written under that name was wiped on the next launch: that is why
+     the wird switch kept turning itself off after an update. */
+  var WHEN_OFF = { jumuahBefore: 0, salawat: 0, wirdAt: '' };
 
   function whenIsOn(key) {
     var v = Store.get(key);
@@ -3142,8 +3146,14 @@
 
   function setWhenOn(key, on) {
     var last = Store.get('lastWhen') || {};
+    var fallback = key === 'wirdAt' ? '20:00' : 60;
     if (on) {
-      Store.set(key, last[key] !== undefined ? last[key] : (key === 'wird' ? '20:00' : 60));
+      /* «!== undefined» was not enough: the remembered value can itself be the
+         off value, an empty string, which turned the reminder straight back
+         off. Anything that is not a real choice falls back. */
+      var kept = last[key];
+      var real = kept !== undefined && kept !== null && String(kept) !== String(WHEN_OFF[key]);
+      Store.set(key, real ? kept : fallback);
     } else {
       /* what it was is kept, so turning it on again is not a fresh guess */
       last[key] = Store.get(key);
@@ -5931,8 +5941,11 @@
        is dimmed while it is off so it is plain which one is in charge */
     ['jumuahBefore', 'salawat', 'wird'].forEach(function (key) {
       var on = whenIsOn(key);
-      setSwitch($('settings-' + key + '-on'), on);
-      var list = $('settings-' + (key === 'jumuahBefore' ? 'jumuah-before' : key));
+      setSwitch($('settings-' + (key === 'jumuahBefore' ? 'jumuah-before' : key === 'wirdAt' ? 'wird' : key) + '-on'), on);
+      /* the ids in the page are settings-wird and settings-wird-on; only the
+         stored key is wirdAt */
+      var slug = key === 'jumuahBefore' ? 'jumuah-before' : key === 'wirdAt' ? 'wird' : key;
+      var list = $('settings-' + slug);
       if (list) {
         /* while it is off the stored value is the off one, which is no longer
            an option, so the list would show blank. It shows the last real
@@ -6905,8 +6918,8 @@
         handRemindersToApp();
       });
     });
-    [['jumuahBefore', 'نداء الجمعة'], ['salawat', 'الصلاة على النبي ﷺ'], ['wird', 'ورد اليوم']].forEach(function (pair) {
-      bind('settings-' + pair[0] + '-on', 'click', function () {
+    [['jumuahBefore', 'نداء الجمعة'], ['salawat', 'الصلاة على النبي ﷺ'], ['wirdAt', 'ورد اليوم']].forEach(function (pair) {
+      bind('settings-' + (pair[0] === 'wirdAt' ? 'wird' : pair[0]) + '-on', 'click', function () {
         var on = !whenIsOn(pair[0]);
         setWhenOn(pair[0], on);
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
@@ -7269,7 +7282,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
