@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.77.5';
+  var VERSION = '8.78.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3942,8 +3942,24 @@
     if ($('hisn-meta')) {
       $('hisn-meta').textContent = 'الباب ' + ar(chapter.id) + '، ' + ar(done) + ' من ' + ar(chapter.i.length);
     }
+    /* A chapter the reciter has recorded carries a strip to hear it, above the
+       words. Only the qunut has one for now; the map is here so another can be
+       added by a line rather than by a branch. */
+    var heard = HISN_AUDIO[chapter.id];
+    if (heard) {
+      html = '<div class="hisn-listen"><span class="row-body">' +
+        '<span class="row-title">استمع للدعاء</span>' +
+        '<span class="row-note">بصوت ' + esc(heard.n) + '</span></span>' +
+        '<button class="btn btn-ghost btn-icon" data-act="hear-hisn" data-ref="' + chapter.id +
+        '" aria-label="استمع للدعاء بصوت ' + esc(heard.n) + '">' + icon('play') + '</button></div>' + html;
+    }
     host.innerHTML = html;
   }
+
+  /* الأدعية المسجّلة بصوت قارئ التطبيق، مفتاحها رقم الباب في حصن المسلم */
+  var HISN_AUDIO = {
+    32: { f: 'qunut-buhendi.mp3', n: 'خالد بوهندي' }
+  };
 
   /* One dhikr on a card: the words, how often it is said, and a ring that
      fills as it is counted. Tapping anywhere on the card counts it. */
@@ -6252,6 +6268,14 @@
        The sheet was fixed to read 25 and this button was left on 27, so «افتح
        الباب كاملاً» opened the wrong chapter. */
     'open-after-prayer': function () { closeSheet(); state.hisn = 25; go('hisn'); },
+    /* hear the chapter in the reciter's own voice, or stop it if it is playing */
+    'hear-hisn': function (ref) {
+      var heard = HISN_AUDIO[+ref];
+      if (!heard) return;
+      if (state.voiceClip) { stopSpeaking(); return; }
+      playRecording('audio/dua/' + heard.f, null);
+      toast('بصوت ' + heard.n);
+    },
     'after-prayer-off': function () {
       Store.set('afterPrayerOff', true);
       closeSheet();
