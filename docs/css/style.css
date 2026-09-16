@@ -1662,6 +1662,16 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .hisn-listen .row-body { flex: 1; min-width: 0; }
 .hisn-listen .row-title { display: block; font-weight: 600; color: var(--accent-ink); }
 
+/* the eid greeting: a card that says the day and wishes the reader well */
+.eid-card {
+  padding: var(--s4) var(--s3); margin-bottom: var(--s3);
+  border-radius: var(--r-md); text-align: center;
+  background: var(--accent-wash); border: 1px solid color-mix(in srgb, var(--accent) 26%, transparent);
+}
+.eid-greet { margin: 0; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); }
+.eid-when { margin: var(--s2) 0 0; font-size: var(--step-0); color: var(--ink); }
+.eid-from { margin: var(--s3) 0 0; font-size: var(--step--1); color: var(--ink-3); }
+
 /* Two play triangles side by side said nothing about which was which: one is
    the notification's own tone, the other the reciter's voice. The reciter's
    carries the accent, so the eye tells them apart before the finger does. */

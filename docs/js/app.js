@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.82.0';
+  var VERSION = '8.83.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1024,7 +1024,9 @@
       var clip = new window.Audio();
       clip.src = url;
       state.voiceClip = clip;
-      state.voiceButton = button || 'settings-voice-try';
+      /* the element when we have one, an id when the caller only knows that */
+      if (button && button.nodeType === 1) { state.voiceEl = button; state.voiceButton = null; }
+      else { state.voiceButton = button || 'settings-voice-try'; state.voiceEl = null; }
       clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); clearMediaSession(); } };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
@@ -1085,16 +1087,23 @@
   /* The one button starts the sample and, while it plays, stops it. */
   /* Only the button that started the sound shows that it is playing; hearing
      the adhan must not light the reminder's button beside it. */
+  /* Every button that can start a clip shows a pause while it plays. This used
+     to name two buttons and no more, so the ones added later kept their play
+     triangle while the sound ran, and there was no way to stop it from the row
+     that had started it. The element itself is remembered, not just an id. */
   function markVoiceButton(playing) {
-    ['settings-voice-try', 'settings-adhan-try'].forEach(function (id) {
-      var btn = $(id);
-      if (!btn) return;
-      var mine = playing && (state.voiceButton || 'settings-voice-try') === id;
-      btn.innerHTML = icon(mine ? 'pause' : 'play');
-      btn.setAttribute('aria-label', mine ? 'أوقف الصوت' : (id === 'settings-adhan-try' ? 'اسمع الأذان' : 'اسمع الصوت'));
-      btn.classList.toggle('is-playing', mine);
-    });
-    if (!playing) state.voiceButton = null;
+    var mineEl = state.voiceEl || null;
+    var mineId = state.voiceButton || null;
+    document.querySelectorAll('.try-sound, [data-hear], [data-act="hear-hisn"], #settings-voice-try, #settings-adhan-try')
+      .forEach(function (btn) {
+        var mine = !!playing && (btn === mineEl || (mineId && btn.id === mineId));
+        var was = btn.getAttribute('data-label') || btn.getAttribute('aria-label') || 'اسمع الصوت';
+        if (!btn.getAttribute('data-label')) btn.setAttribute('data-label', was);
+        btn.innerHTML = icon(mine ? 'pause' : 'play');
+        btn.setAttribute('aria-label', mine ? 'أوقف الصوت' : btn.getAttribute('data-label'));
+        btn.classList.toggle('is-playing', mine);
+      });
+    if (!playing) { state.voiceButton = null; state.voiceEl = null; }
   }
 
   function speak(text, why) {
@@ -1537,6 +1546,39 @@
      «بعد 152 يوماً» is answered with the date itself. */
   /* the nearest day it is recommended to fast, within the coming forty days,
      with when it falls said in words */
+  /* The takbeer is not a calendar entry to be played any day of the year: it
+     belongs to the days around the eid. Within three days of one, the app
+     greets the reader once and offers the takbeer there, and says nothing for
+     the rest of the year. Shown at most once each day. */
+  function eidSoon() {
+    var list = Hijri.upcoming(new Date(), Store.get('hijriAdjust')) || [];
+    for (var i = 0; i < list.length; i++) {
+      if (/عيد/.test(list[i].name) && list[i].days >= 0 && list[i].days <= 3) return list[i];
+    }
+    return null;
+  }
+
+  function offerEid() {
+    var eid = eidSoon();
+    if (!eid) return false;
+    var mark = 'eid:' + eid.name + ':' + new Date().toDateString();
+    if (Store.get('eidShown') === mark) return false;
+    Store.set('eidShown', mark);
+    var when = eid.days === 0 ? 'اليوم' : eid.days === 1 ? 'غداً' : 'بعد ' + daysOf(eid.days);
+    openSheet(eid.name,
+      '<div class="eid-card">' +
+        '<p class="eid-greet">كل عام وأنتم بخير</p>' +
+        '<p class="eid-when">' + esc(eid.name + '، ' + when) + '</p>' +
+        '<p class="eid-from">تهنئة من سُنّتي</p>' +
+      '</div>' +
+      '<div class="hisn-listen"><span class="row-body">' +
+        '<span class="row-title">تكبيرات العيد</span>' +
+        '<span class="row-note">بصوت خالد بوهندي</span></span>' +
+        '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
+        ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button></div>');
+    return true;
+  }
+
   function nextFast() {
     var today = new Date();
     for (var d = 0; d < 40; d++) {
@@ -1579,9 +1621,6 @@
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '، ' + whenItFalls(o.date) + '</span></span>' +
-        /* the takbeer belongs to the two eids, and is heard from their row */
-        (/عيد/.test(o.name) ? '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
-          ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button>' : '') +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');
@@ -3243,6 +3282,10 @@
       Store.set(key, WHEN_OFF[key]);
     }
     handRemindersToApp();
+    /* the salawat keeps its own alarm inside the wrapper: turning it off in
+       the page means nothing until the wrapper is told, which is why a
+       reminder went on arriving after the reader had switched it off */
+    if (key === 'salawat') handSalawatToApp();
     renderSettings();
   }
 
@@ -5543,9 +5586,6 @@
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '<br>' + whenItFalls(o.date) + '</span></span>' +
-        /* the takbeer belongs to the two eids, and is heard from their row */
-        (/عيد/.test(o.name) ? '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
-          ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button>' : '') +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');
@@ -6385,11 +6425,12 @@
        الباب كاملاً» opened the wrong chapter. */
     'open-after-prayer': function () { closeSheet(); state.hisn = 25; go('hisn'); },
     /* hear the chapter in the reciter's own voice, or stop it if it is playing */
-    'hear-hisn': function (ref) {
+    'hear-hisn': function (ref, el) {
       var heard = HISN_AUDIO[+ref];
       if (!heard) return;
       if (state.voiceClip) { stopSpeaking(); return; }
-      playRecording('audio/dua/' + heard.f, null, HISN.filter(function (c) { return c.id === +ref; })[0].t);
+      /* the button itself, so it can show a pause while it plays */
+      playRecording('audio/dua/' + heard.f, el, HISN.filter(function (c) { return c.id === +ref; })[0].t);
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -6622,7 +6663,7 @@
     if (hear) {
       if (state.voiceClip) { stopSpeaking(); return; }
       /* the name shown in the phone's own player comes from the button's label */
-      playRecording('audio/dua/' + hear.getAttribute('data-hear'), null,
+      playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear,
         (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي');
       return;
     }
@@ -7058,7 +7099,7 @@
            the reader chose the reciter, not a chime */
         if (pick === 'buhendi') {
           var f = RECITED_SOUND[key];
-          if (f) { playRecording('audio/dua/' + f.f, null, f.n); return; }
+          if (f) { playRecording('audio/dua/' + f.f, btn, f.n); return; }
         }
         playChime();
       });
@@ -7405,6 +7446,8 @@
     wire();
     followAddress();
     renderSettings();
+    /* the eid greets the reader once, on the days around it */
+    window.setTimeout(offerEid, 1200);
     /* every select becomes our own menu, once the page is built */
     enhanceSelects();
     watchHeading();
@@ -7436,7 +7479,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
