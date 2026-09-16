@@ -5621,6 +5621,15 @@ test('silence on the salawat means silent, and hearing it does not change it', (
   assert.ok(/hush \? CHANNEL_QUIET : CHANNEL_REMINDERS/.test(recv), 'and it arrives on the quiet channel');
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   assert.ok(bridge.indexOf('setSalawatSilent') !== -1);
+
+  /* A channel keeps the sound and vibration it was made with, for ever. When
+     either changes the channel needs a new name, or the phones that already
+     have it never hear the difference: that is why a reader who had chosen
+     silence months ago still heard the tone. */
+  assert.ok(/CHANNEL_QUIET = "reminders_hush_v2"/.test(recv), 'the quiet channel was remade under a new name');
+  const quiet = /new NotificationChannel\(CHANNEL_QUIET[\s\S]*?createNotificationChannel/.exec(recv)[0];
+  assert.ok(quiet.indexOf('setSound(null, null)') !== -1, 'with no sound');
+  assert.ok(quiet.indexOf('enableVibration(false)') !== -1, 'and no buzz');
 });
 
 test('the adhan can arrive silent, as every other reminder can', () => {

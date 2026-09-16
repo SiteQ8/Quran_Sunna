@@ -20,7 +20,13 @@ public final class AdhanReceiver extends BroadcastReceiver {
     /* A channel per sound the reader can choose, since a channel's sound is
        fixed once made and cannot follow a per-reminder choice. */
     public static final String CHANNEL_CHIME = "reminders_chime";
-    public static final String CHANNEL_QUIET = "reminders_quiet";
+    /* A channel keeps whatever it was given when it was first made: sound,
+       vibration, importance. Changing the code changes nothing on a phone that
+       already has it, which is why a reader who chose silence still heard the
+       tone. This name is new, so every phone makes it afresh, truly silent and
+       still. The old one is left alone rather than deleted, since a reader may
+       have tuned it themselves. */
+    public static final String CHANNEL_QUIET = "reminders_hush_v2";
     /* when the app sounds the adhan itself, the notification keeps quiet */
     public static final String CHANNEL_SILENT = "adhan_quiet";
     /* A channel's sound is fixed when it is made and never changes after, so a
