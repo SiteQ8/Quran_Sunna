@@ -3131,7 +3131,9 @@ test('the reminder is offered in the settings with sensible intervals', () => {
   assert.ok(doc.getElementById('settings-salawat-on'), 'and a switch says whether');
 
   /* the three that were the odd ones out all have one now */
-  ['jumuahBefore', 'salawat', 'wird'].forEach(function (k) {
+  /* the ids are hyphenated where the stored key is not: jumuahBefore's row is
+     settings-jumuah-before, and wirdAt's is settings-wird */
+  ['jumuah-before', 'salawat', 'wird'].forEach(function (k) {
     assert.ok(doc.getElementById('settings-' + k + '-on'), k + ' has a switch');
   });
 
@@ -5785,11 +5787,38 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
     assert.ok(r.querySelector('.row-title').textContent.indexOf('عيد') !== -1, 'and only an eid row does');
   });
 
+  /* A clip played from the page is invisible to the phone, so the only way to
+     stop it was to find the app again. It names itself to the media session,
+     which puts a player in the notification shade with pause and stop. */
+  const app3 = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app3.indexOf('navigator.mediaSession') !== -1, 'the phone is told what is playing');
+  assert.ok(/setActionHandler\('pause'/.test(app3), 'and pause stops it');
+  assert.ok(/setActionHandler\('stop'/.test(app3), 'and so does stop');
+  assert.ok(app3.indexOf('clearMediaSession') !== -1, 'and it is cleared when the clip ends');
+
+  /* the reciter's button is told apart from the notification tone's */
+  const css2 = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css2, /\[data-hear\] \{[^}]*color: var\(--accent-ink\)/, 'the recitation carries the accent');
+
+  /* and the jumuah switch is bound to the id its row actually has: the two
+     were written by hand in three places and drifted, so it did nothing */
+  assert.ok(app3.indexOf('function slugFor') !== -1, 'one place turns a key into its id');
+  const html2 = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html2.indexOf('id="settings-jumuah-before-on"') !== -1);
+  win.App.go('reminders');
+  const jsw = doc.getElementById('settings-jumuah-before-on');
+  assert.ok(jsw, 'the jumuah switch is there');
+  click(win, jsw);
+  assert.strictEqual(String(win.Store.get('jumuahBefore')), '60', 'and turning it on takes hold');
+
   /* and the jumuah verse is heard from the reminder it belongs to */
   win.App.go('reminders');
   const call = doc.querySelector('[data-hear="jumuah-buhendi.mp3"]');
   assert.ok(call, 'the jumuah call offers its verse');
-  assert.ok(call.textContent.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
+  /* it sits among the row's controls now, so the reciter is named on the
+     label rather than in text that pushed the row out of line */
+  assert.ok((call.getAttribute('aria-label') || '').indexOf('خالد بوهندي') !== -1, 'and names the reciter');
+  assert.ok(call.closest('.remind-controls'), 'and stands with the row controls');
 });
 
 test('the next fast says when it is in words, not only as a date', () => {

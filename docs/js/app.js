@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.80.0';
+  var VERSION = '8.80.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1007,21 +1007,54 @@
     return 'audio/salawat/' + (v ? v.id : 'ibrahimiyya') + '.mp3';
   }
 
-  function playRecording(url, button) {
+  function playRecording(url, button, title) {
     try {
       var clip = new window.Audio();
       clip.src = url;
       state.voiceClip = clip;
       state.voiceButton = button || 'settings-voice-try';
-      clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); } };
+      clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); clearMediaSession(); } };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
+      if (title) showInMediaSession(title);
       return true;
     } catch (e) { return chime(); }
   }
 
+  /* A clip played from the page is invisible to the phone: nothing appears in
+     the notification shade, so the only way to stop it is to find the app
+     again. Naming it to the media session puts it there, with pause and stop
+     where the reader expects them. */
+  function showInMediaSession(title) {
+    try {
+      var ms = navigator.mediaSession;
+      if (!ms) return;
+      if (window.MediaMetadata) {
+        ms.metadata = new window.MediaMetadata({
+          title: title,
+          artist: 'بصوت خالد بوهندي',
+          album: 'سُنّتي'
+        });
+      }
+      ms.playbackState = 'playing';
+      ms.setActionHandler('pause', function () { stopSpeaking(); });
+      ms.setActionHandler('stop', function () { stopSpeaking(); });
+      ms.setActionHandler('play', function () { if (state.voiceClip) state.voiceClip.play(); });
+    } catch (e) { /* an older phone without a media session */ }
+  }
+
+  function clearMediaSession() {
+    try {
+      if (navigator.mediaSession) {
+        navigator.mediaSession.playbackState = 'none';
+        navigator.mediaSession.metadata = null;
+      }
+    } catch (e) { /* nothing to clear */ }
+  }
+
   /* Whatever the sample is, a clip or the phone's own speech, one call ends it. */
   function stopSpeaking() {
+    clearMediaSession();
     if (state.voiceClip) {
       try { state.voiceClip.pause(); state.voiceClip.removeAttribute('src'); state.voiceClip.load(); } catch (e) { /* gone */ }
       state.voiceClip = null;
@@ -3141,6 +3174,13 @@
      value written under that name was wiped on the next launch: that is why
      the wird switch kept turning itself off after an update. */
   var WHEN_OFF = { jumuahBefore: 0, salawat: 0, wirdAt: '' };
+
+  /* One place turns a stored key into the id its row carries in the page. The
+     two were written out by hand in three places and drifted apart, so the
+     jumuah switch was bound to an id that no longer existed and did nothing. */
+  function slugFor(key) {
+    return key === 'jumuahBefore' ? 'jumuah-before' : key === 'wirdAt' ? 'wird' : key;
+  }
 
   function whenIsOn(key) {
     var v = Store.get(key);
@@ -5990,10 +6030,10 @@
        is dimmed while it is off so it is plain which one is in charge */
     ['jumuahBefore', 'salawat', 'wird'].forEach(function (key) {
       var on = whenIsOn(key);
-      setSwitch($('settings-' + (key === 'jumuahBefore' ? 'jumuah-before' : key === 'wirdAt' ? 'wird' : key) + '-on'), on);
+      setSwitch($('settings-' + slug + '-on'), on);
       /* the ids in the page are settings-wird and settings-wird-on; only the
          stored key is wirdAt */
-      var slug = key === 'jumuahBefore' ? 'jumuah-before' : key === 'wirdAt' ? 'wird' : key;
+      var slug = slugFor(key);
       var list = $('settings-' + slug);
       if (list) {
         /* while it is off the stored value is the off one, which is no longer
@@ -6306,7 +6346,7 @@
       var heard = HISN_AUDIO[+ref];
       if (!heard) return;
       if (state.voiceClip) { stopSpeaking(); return; }
-      playRecording('audio/dua/' + heard.f, null);
+      playRecording('audio/dua/' + heard.f, null, HISN.filter(function (c) { return c.id === +ref; })[0].t);
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -6538,7 +6578,9 @@
     var hear = target.closest('[data-hear]');
     if (hear) {
       if (state.voiceClip) { stopSpeaking(); return; }
-      playRecording('audio/dua/' + hear.getAttribute('data-hear'), null);
+      /* the name shown in the phone's own player comes from the button's label */
+      playRecording('audio/dua/' + hear.getAttribute('data-hear'), null,
+        (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي');
       return;
     }
     var pick = target.closest('[data-pick]');
@@ -6982,7 +7024,7 @@
       });
     });
     [['jumuahBefore', 'نداء الجمعة'], ['salawat', 'الصلاة على النبي ﷺ'], ['wirdAt', 'ورد اليوم']].forEach(function (pair) {
-      bind('settings-' + (pair[0] === 'wirdAt' ? 'wird' : pair[0]) + '-on', 'click', function () {
+      bind('settings-' + slugFor(pair[0]) + '-on', 'click', function () {
         var on = !whenIsOn(pair[0]);
         setWhenOn(pair[0], on);
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
