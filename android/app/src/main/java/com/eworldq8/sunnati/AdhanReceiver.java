@@ -23,6 +23,11 @@ public final class AdhanReceiver extends BroadcastReceiver {
     public static final String CHANNEL_QUIET = "reminders_quiet";
     /* when the app sounds the adhan itself, the notification keeps quiet */
     public static final String CHANNEL_SILENT = "adhan_quiet";
+    /* A channel's sound is fixed when it is made and never changes after, so a
+       phone that has had an earlier version keeps whatever that version set.
+       This one is new, and it neither sounds nor vibrates: it is for the
+       reader who asked for silence, not for the app sounding the adhan itself. */
+    public static final String CHANNEL_HUSH = "adhan_hush_v2";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -74,7 +79,7 @@ public final class AdhanReceiver extends BroadcastReceiver {
                 boolean quiet = context.getSharedPreferences("sunnati_adhan", Context.MODE_PRIVATE)
                     .getBoolean("silent", false);
                 post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan",
-                    (own || quiet) ? CHANNEL_SILENT : CHANNEL);
+                    quiet ? CHANNEL_HUSH : own ? CHANNEL_SILENT : CHANNEL);
                 if (own && !quiet) AdhanSound.play(context, fajr);
             }
         } catch (Exception e) {
@@ -103,6 +108,13 @@ public final class AdhanReceiver extends BroadcastReceiver {
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
         }
+        if (manager.getNotificationChannel(CHANNEL_HUSH) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_HUSH, "أوقات الصلاة، بلا صوت", NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("التنبيه يصل بلا صوت ولا اهتزاز، كما اخترت");
+            channel.setSound(null, null);
+            channel.enableVibration(false);
+            manager.createNotificationChannel(channel);
+        }
         if (manager.getNotificationChannel(CHANNEL_REMINDERS) == null) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_REMINDERS, "تذكيرات", NotificationManager.IMPORTANCE_DEFAULT);
             channel.setDescription("الصلاة على النبي وما تطلبه من التطبيق");
@@ -121,6 +133,8 @@ public final class AdhanReceiver extends BroadcastReceiver {
             NotificationChannel channel = new NotificationChannel(CHANNEL_QUIET, "تذكيرات صامتة", NotificationManager.IMPORTANCE_LOW);
             channel.setDescription("التذكيرات التي اخترت أن تصل بلا صوت");
             channel.setSound(null, null);
+            /* silence means silence: a buzz is a sound to anyone holding the phone */
+            channel.enableVibration(false);
             manager.createNotificationChannel(channel);
         }
     }

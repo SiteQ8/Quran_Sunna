@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.77.2';
+  var VERSION = '8.77.3';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6655,6 +6655,11 @@
     });
     bind('settings-adhan-try', 'click', function () {
       if (isSpeaking()) { stopSpeaking(); return; }
+      /* silence is a choice; hearing it plays nothing and says so, rather than
+         sounding a muadhin the reader has turned off */
+      var pick = Store.get('adhanVoice') || 'none';
+      if (pick === 'silent') { toast('يصل التنبيه بلا صوت'); return; }
+      if (pick === 'none') { toast('يصل بنغمة التنبيه في هاتفك'); return; }
       playAdhanSample();
     });
 
