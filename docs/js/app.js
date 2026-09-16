@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.77.1';
+  var VERSION = '8.77.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2936,7 +2936,14 @@
   function handSalawatToApp() {
     var app = bridge();
     if (!app || !app.setSalawatEvery) return false;
-    try { app.setSalawatEvery(+Store.get('salawat') || 0); return true; } catch (e) { return false; }
+    try {
+      app.setSalawatEvery(+Store.get('salawat') || 0);
+      /* «صامت» must reach the wrapper: the notification was always posted on
+         the ringing channel, so a reader who chose silence still heard the
+         phone's tone. An older package without the call keeps its old way. */
+      if (app.setSalawatSilent) app.setSalawatSilent((Store.get('voice') || 'recording') === 'none');
+      return true;
+    } catch (e) { return false; }
   }
 
   /* The last third of the night: from maghrib the night runs to the next
@@ -6954,10 +6961,12 @@
     });
     bind('settings-voice-try', 'click', function () {
       if (isSpeaking()) { stopSpeaking(); return; }
+      /* «اسمع» used to switch the reader's own choice from «صامت» to a
+         recording and then play it: pressing hear changed the setting behind
+         their back. Silence is a choice; the button says so and plays nothing. */
       if ((Store.get('voice') || 'recording') === 'none') {
-        Store.set('voice', 'recording');
-        if ($('settings-voice')) $('settings-voice').value = 'recording';
-        showDeviceVoiceRow();
+        toast('هذا التذكير يصل بلا صوت');
+        return;
       }
       speak('اللهم صلِّ وسلِّم على نبينا محمد', 'try');
     });

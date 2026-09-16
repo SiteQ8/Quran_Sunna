@@ -52,7 +52,10 @@ public final class AdhanReceiver extends BroadcastReceiver {
         }
         if ("com.eworldq8.sunnati.SALAWAT".equals(intent.getAction())) {
             try {
-                post(context, "صلِّ على النبي ﷺ", "اللهم صلِّ وسلِّم على نبينا محمد", "salawat", CHANNEL_REMINDERS);
+                boolean hush = context.getSharedPreferences("sunnati_salawat", Context.MODE_PRIVATE)
+                    .getBoolean("silent", false);
+                post(context, "صلِّ على النبي ﷺ", "اللهم صلِّ وسلِّم على نبينا محمد", "salawat",
+                    hush ? CHANNEL_QUIET : CHANNEL_REMINDERS);
             } catch (Exception e) {
                 Log.w("sunnati", "salawat not shown", e);
             }

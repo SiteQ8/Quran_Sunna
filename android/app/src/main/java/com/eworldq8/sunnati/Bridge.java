@@ -75,6 +75,14 @@ public final class Bridge {
     @JavascriptInterface
     public void setSalawatEvery(int minutes) { SalawatScheduler.setEvery(host, minutes); }
 
+    /** Whether the reminder to send prayers upon the Prophet should arrive
+     *  with no sound at all. */
+    @JavascriptInterface
+    public void setSalawatSilent(boolean silent) {
+        host.getSharedPreferences("sunnati_salawat", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("silent", silent).apply();
+    }
+
     @JavascriptInterface
     public int salawatEvery() { return SalawatScheduler.every(host); }
 
