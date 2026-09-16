@@ -5842,13 +5842,29 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
      begins again, so nothing is clipped mid word. */
   const takbeer = fs.statSync(path.join(DOCS, 'audio', 'dua', 'takbeer-buhendi.mp3')).size / (1024 * 1024);
   assert.ok(takbeer < 1.5, 'the takbeer is cut to a cycle: ' + takbeer.toFixed(1) + 'MB');
+  /* The takbeer is not a calendar entry to be played any day of the year: it
+     belongs to the days around the eid. The row no longer carries it; a
+     greeting sheet does, and only when an eid is within three days. */
   win.App.go('home');
-  const eid = [...doc.querySelectorAll('#home-upcoming .row')]
-    .filter(function (r) { return r.querySelector('[data-hear="takbeer-buhendi.mp3"]'); });
-  assert.ok(eid.length >= 1, 'an eid row offers the takbeer');
-  eid.forEach(function (r) {
-    assert.ok(r.querySelector('.row-title').textContent.indexOf('عيد') !== -1, 'and only an eid row does');
-  });
+  assert.ok(!doc.querySelector('#home-upcoming [data-hear="takbeer-buhendi.mp3"]'),
+    'the calendar row no longer plays it all year');
+
+  win.Hijri.upcoming = function () {
+    return [{ name: 'عيد الفطر', days: 2, date: new Date(Date.now() + 2 * 86400000) }];
+  };
+  win.Store.set('eidShown', '');
+  assert.strictEqual(win.App.helpers.offerEid(), true, 'an eid within three days greets the reader');
+  const body = doc.getElementById('sheet-body');
+  assert.ok(body.textContent.indexOf('كل عام وأنتم بخير') !== -1, 'with a greeting');
+  assert.ok(body.textContent.indexOf('سُنّتي') !== -1, 'from the app');
+  assert.ok(body.querySelector('[data-hear="takbeer-buhendi.mp3"]'), 'and the takbeer is offered there');
+  assert.strictEqual(win.App.helpers.offerEid(), false, 'and it greets once a day, not at every start');
+
+  win.Hijri.upcoming = function () {
+    return [{ name: 'شهر رمضان المبارك', days: 40, date: new Date() }];
+  };
+  win.Store.set('eidShown', '');
+  assert.strictEqual(win.App.helpers.offerEid(), false, 'and says nothing the rest of the year');
 
   /* A clip played from the page is invisible to the phone, so the only way to
      stop it was to find the app again. It names itself to the media session,

@@ -50,6 +50,8 @@
       sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device',
       jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device' },
     wirdAt: '',
+    /* which eid greeting was already shown, so it greets once a day */
+    eidShown: '',
     jumuahBefore: 0,
     jumuahNight: true,
     fastNote: true,
