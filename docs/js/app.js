@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.75.1';
+  var VERSION = '8.75.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5813,8 +5813,13 @@
       var weekday = Hijri.WEEKDAYS[day.getDay()];
       var dated = (names.indexOf(weekday) === -1 ? weekday + ' ' : '') +
         ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()];
-      var note = d === 0 ? 'اليوم'
-        : d === 1 ? dated + '، والتنبيه الليلة بعد المغرب بساعة ونصف'
+      /* «١٧ سبتمبر» is a date, not an answer: the code knows the day is
+         tomorrow and used to keep it to itself. It says so first, and the
+         date after it for anyone who wants it. */
+      var note = d === 0 ? 'اليوم، والتنبيه وصلك ليلته'
+        : d === 1 ? 'غداً ' + dated + '، والتنبيه الليلة بعد المغرب بساعة ونصف'
+        : d < 7 ? 'بعد ' + count(d, 'يوم', 'يومين', 'أيام', 'يوماً') + '، ' + dated +
+            '، والتنبيه ليلته بعد المغرب بساعة ونصف'
         : dated + '، والتنبيه ليلته بعد المغرب بساعة ونصف';
       strip('', 'أقرب صيام: ' + names, note);
       return;

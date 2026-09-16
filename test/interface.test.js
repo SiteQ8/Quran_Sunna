@@ -5663,6 +5663,27 @@ test('every menu is ours to draw, and the select under it still holds the value'
   assert.ok(/function fillSelect[\s\S]*?syncPicker\(el\);/.test(app), 'fillSelect refreshes the button');
 });
 
+test('the next fast says when it is in words, not only as a date', () => {
+  /* «١٧ سبتمبر» is a date the reader has to work out. The code already knows
+     the day is tomorrow, or three days off; it says so, and keeps the date
+     after for anyone who wants it. */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function renderNextFast[\s\S]*?\n  \}\n/.exec(app);
+  const body = fn ? fn[0] : app;
+  assert.ok(body.indexOf("'غداً '") !== -1, 'tomorrow is named');
+  assert.ok(/d < 7 \?/.test(body) && body.indexOf("'بعد '") !== -1, 'and the days within the week are counted');
+  assert.ok(body.indexOf("d === 0 ? 'اليوم") !== -1, 'today too');
+
+  const { win, doc } = boot();
+  win.Store.set('fastNote', true);
+  win.App.go('reminders');
+  const note = doc.querySelector('.next-fast-note');
+  assert.ok(note, 'the strip is there');
+  /* whichever day it lands on today, it opens with a word, never a bare date */
+  assert.match(note.textContent, /^(اليوم|غداً|بعد|الأحد|الإثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|السبت|[٠-٩])/,
+    'it opens by saying when: ' + note.textContent.slice(0, 40));
+});
+
 test('five reminders the reader turns on, each with its own sound, and a bedtime', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
