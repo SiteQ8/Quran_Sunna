@@ -5644,8 +5644,22 @@ test('the adhan can arrive silent, as every other reminder can', () => {
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   assert.ok(bridge.indexOf('setAdhanSilent') !== -1, 'the bridge carries it');
   const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
-  assert.ok(/\(own \|\| quiet\) \? CHANNEL_SILENT : CHANNEL/.test(recv), 'and the notification keeps quiet');
+  /* A channel's sound is fixed when it is made and never changes, so a phone
+     that has had an earlier version keeps whatever that version set. Silence
+     goes on a channel of its own, made new, that neither sounds nor buzzes:
+     a buzz is a sound to anyone holding the phone. */
+  assert.ok(/quiet \? CHANNEL_HUSH : own \? CHANNEL_SILENT : CHANNEL/.test(recv),
+    'silence has its own channel');
+  const hush = /new NotificationChannel\(CHANNEL_HUSH[\s\S]*?createNotificationChannel/.exec(recv);
+  assert.ok(hush, 'and that channel is made');
+  assert.ok(hush[0].indexOf('setSound(null, null)') !== -1, 'with no sound');
+  assert.ok(hush[0].indexOf('enableVibration(false)') !== -1, 'and no buzz');
   assert.ok(recv.indexOf('if (own && !quiet)') !== -1, 'and no recording is played over it');
+
+  /* nor does the hear button sound a muadhin the reader has turned off */
+  const app2 = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const tryFn = /bind\('settings-adhan-try'[\s\S]*?\n    \}\);/.exec(app2)[0];
+  assert.ok(tryFn.indexOf("pick === 'silent'") !== -1, 'hearing silence plays nothing');
 });
 
 test('every menu is ours to draw, and the select under it still holds the value', () => {
