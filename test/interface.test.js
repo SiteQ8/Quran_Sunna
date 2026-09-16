@@ -5755,11 +5755,28 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
   win.App.go('hisn');
   assert.ok(!doc.querySelector('.hisn-listen'), 'and a chapter without one says nothing');
 
-  /* the file is really there, at the app's own audio size */
-  const file = path.join(DOCS, 'audio', 'dua', 'qunut-buhendi.mp3');
-  assert.ok(fs.existsSync(file), 'the recording is bundled');
-  const mb = fs.statSync(file).size / (1024 * 1024);
-  assert.ok(mb < 4, 'and kept small enough to ship: ' + mb.toFixed(1) + 'MB');
+  /* every recording is really there, at the app's own audio size */
+  ['qunut-buhendi.mp3', 'kursi-buhendi.mp3', 'jumuah-buhendi.mp3'].forEach(function (f) {
+    const file = path.join(DOCS, 'audio', 'dua', f);
+    assert.ok(fs.existsSync(file), f + ' is bundled');
+    const mb = fs.statSync(file).size / (1024 * 1024);
+    assert.ok(mb < 4, f + ' is small enough to ship: ' + mb.toFixed(1) + 'MB');
+  });
+
+  /* Ayat al-Kursi sits in three chapters, so its recording is matched on the
+     words rather than keyed to one chapter: it is heard wherever it appears */
+  [27, 28, 25].forEach(function (id) {
+    win.App.state.hisn = id;
+    win.App.go('hisn');
+    assert.ok(doc.querySelector('#hisn-list [data-hear="kursi-buhendi.mp3"]'),
+      'Ayat al-Kursi can be heard in chapter ' + id);
+  });
+
+  /* and the jumuah verse is heard from the reminder it belongs to */
+  win.App.go('reminders');
+  const call = doc.querySelector('[data-hear="jumuah-buhendi.mp3"]');
+  assert.ok(call, 'the jumuah call offers its verse');
+  assert.ok(call.textContent.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
 });
 
 test('the next fast says when it is in words, not only as a date', () => {
