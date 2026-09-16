@@ -1009,10 +1009,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* Settings that belong to the one above them rather than to the card: set in
    behind a rule, so «which reciter» is plainly the sound of «الصلاة على النبي»
    and not a setting of the whole app. */
-.setting-sub {
-  margin: 0 0 var(--s3) var(--s4); padding-inline-start: var(--s4);
-  border-inline-start: 2px solid var(--line);
-}
+/* The salawat's sound rows belong to the reminder above them, not to a panel
+   of their own: the rule and the inset read as a separate section, which is
+   what «why is صوت التذكير in its own section» was asking about. They are
+   plain rows now, and the reminder they follow is what ties them. */
+.setting-sub { margin: 0; padding: 0; border: 0; }
 .setting-sub .setting { border-top: 0; }
 
 /* a reminder row carries two controls, the sound it makes and its switch, side
@@ -1519,11 +1520,17 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .setting > .voice-pick, .setting > .remind-controls, .setting > input {
   grid-column: 1 / -1; grid-row: 2; justify-self: stretch; margin: 0;
 }
-/* a row with no switch keeps its control beside the words as before */
+/* A row with no switch keeps a small control beside the words, but a time
+   field is as wide as a list and belongs on the line beneath with the rest:
+   sitting up beside the title it rode high and out of line with every row
+   around it. */
 .setting:not(:has(> .switch)) > .picker,
 .setting:not(:has(> .switch)) > .select,
-.setting:not(:has(> .switch)) > .field,
-.setting:not(:has(> .switch)) > input { grid-column: 2; grid-row: 1; }
+.setting:not(:has(> .switch)) > .field { grid-column: 2; grid-row: 1; }
+.setting > input[type="time"] {
+  grid-column: 1 / -1; grid-row: 2; justify-self: start;
+  min-height: 48px; font-size: var(--step-0); padding-inline: var(--s3);
+}
 
 /* A list that waits on its switch is dimmed, and says so when tapped, rather
    than looking broken: «greyed out and I cannot pick the time». */
