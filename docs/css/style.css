@@ -1486,6 +1486,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .setting-remind > span:first-child { margin-bottom: var(--s2); }
 .setting > .picker, .setting > .select, .setting > .field, .setting > .switch,
 .setting > .voice-pick, .setting > .remind-controls, .setting > input { margin-inline-start: auto; }
+/* A row that wraps puts its controls on their own line. The switch is the
+   last of them and was sliding past the card edge, so the controls are held
+   inside the row rather than allowed to overflow it. */
+.setting { overflow: hidden; }
+.setting > .switch { margin-inline-start: var(--s3); margin-inline-end: 0; flex: none; }
 .setting-label { font-size: var(--step-0); }
 .setting-note { font-size: var(--step--1); color: var(--ink-3); }
 

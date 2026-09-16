@@ -62,6 +62,9 @@
     voiceName: '',
     placeAsked: false,
     placeFrom: '',
+    /* what each of the three was set to before it was switched off, so
+       turning it back on returns the reader to their own choice */
+    lastWhen: { jumuahBefore: 60, salawat: 60, wird: '20:00' },
     methodFrom: '',
     notifyAsked: false,
     inApp: false,
