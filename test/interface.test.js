@@ -5583,6 +5583,31 @@ test('the call to rise falls at the last third of the night, and the app is told
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
 });
 
+test('the adhan can arrive silent, as every other reminder can', () => {
+  const { win, doc } = boot();
+  win.App.go('reminders');
+  const sel = doc.getElementById('settings-adhan-voice');
+  const labels = [...sel.options].map(function (o) { return o.text; });
+  /* the phone's tone, no sound at all, or one of the muadhins */
+  assert.strictEqual(labels[0], 'نغمة الجهاز');
+  assert.strictEqual(labels[1], 'صامت');
+  assert.ok(labels.length > 3, 'and the recorded adhans after them');
+
+  sel.value = 'silent'; fire(win, sel, 'change');
+  assert.strictEqual(win.Store.get('adhanVoice'), 'silent');
+  assert.strictEqual(doc.getElementById('settings-adhan-note').textContent, 'يصل التنبيه بلا صوت');
+
+  /* silence is neither a recording nor the phone's tone, so the wrapper is
+     told separately; without that it would fall back to the tone */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("app.setAdhanSilent(id === 'silent')") !== -1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('setAdhanSilent') !== -1, 'the bridge carries it');
+  const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(/\(own \|\| quiet\) \? CHANNEL_SILENT : CHANNEL/.test(recv), 'and the notification keeps quiet');
+  assert.ok(recv.indexOf('if (own && !quiet)') !== -1, 'and no recording is played over it');
+});
+
 test('every menu is ours to draw, and the select under it still holds the value', () => {
   /* A <select> is drawn by the phone: a different shape on every skin, its own
      face, and on some a full screen list. Ours is drawn here. The select stays

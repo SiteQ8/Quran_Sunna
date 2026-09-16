@@ -60,6 +60,14 @@ public final class Bridge {
     @JavascriptInterface
     public void setAdhanEnabled(boolean on) { AdhanScheduler.setEnabled(host, on); }
 
+    /** Whether the call to prayer should arrive with no sound at all: neither
+     *  a recorded adhan nor the phone's own notification tone. */
+    @JavascriptInterface
+    public void setAdhanSilent(boolean silent) {
+        host.getSharedPreferences("sunnati_adhan", android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean("silent", silent).apply();
+    }
+
     /** Whether the phone lets the app notify at all. */
     /** How often to remind the reader to send prayers upon the Prophet ﷺ,
      *  in minutes, or zero for never. The app holds its own alarm for this,
