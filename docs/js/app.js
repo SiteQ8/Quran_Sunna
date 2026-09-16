@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.83.0';
+  var VERSION = '8.83.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3433,7 +3433,14 @@
       var at = qiyamAt(new Date(now.getFullYear(), now.getMonth(), now.getDate() + d));
       if (at && at.getTime() > Date.now()) out.push(at.getTime());
     }
-    try { app.setQiyamTimes(JSON.stringify(out)); return true; } catch (e) { return false; }
+    try {
+      app.setQiyamTimes(JSON.stringify(out));
+      /* qiyam is scheduled by its own bridge, which never read the sound the
+         reader chose: it was always posted on the ringing channel, so silence
+         was ignored. The wrapper is told, as the adhan and the salawat are. */
+      if (app.setQiyamSound) app.setQiyamSound(channelFor('qiyam'));
+      return true;
+    } catch (e) { return false; }
   }
 
   /* On a friday the app opens with the two sunnahs of the day before it: the
@@ -7110,7 +7117,14 @@
         var all = Store.get('remindSound') || {};
         all[sel.getAttribute('data-sound')] = sel.value;
         Store.set('remindSound', all);
+        /* Three reminders are scheduled by bridges of their own, not from the
+           reminder list: qiyam, the salawat and the adhan. Telling only the
+           list left their sound at whatever it was, which is why «صامت» on
+           qiyam still rang. Every bridge hears the change. */
         handRemindersToApp();
+        handQiyamToApp();
+        handSalawatToApp();
+        handAdhanSoundToApp();
       });
     });
     [['jumuahBefore', 'نداء الجمعة'], ['salawat', 'الصلاة على النبي ﷺ'], ['wirdAt', 'ورد اليوم']].forEach(function (pair) {

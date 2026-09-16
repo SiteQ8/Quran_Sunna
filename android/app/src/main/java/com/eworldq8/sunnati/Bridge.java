@@ -78,6 +78,12 @@ public final class Bridge {
     /** Whether the reminder to send prayers upon the Prophet should arrive
      *  with no sound at all. */
     @JavascriptInterface
+    public void setQiyamSound(String sound) {
+        host.getSharedPreferences("sunnati_qiyam", android.content.Context.MODE_PRIVATE)
+            .edit().putString("sound", sound == null ? "device" : sound).apply();
+    }
+
+    @JavascriptInterface
     public void setSalawatSilent(boolean silent) {
         host.getSharedPreferences("sunnati_salawat", android.content.Context.MODE_PRIVATE)
             .edit().putBoolean("silent", silent).apply();

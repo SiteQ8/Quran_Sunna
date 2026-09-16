@@ -54,7 +54,10 @@ public final class AdhanReceiver extends BroadcastReceiver {
         }
         if ("com.eworldq8.sunnati.QIYAM".equals(intent.getAction())) {
             try {
-                post(context, "قيام الليل", "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى", "qiyam", CHANNEL_REMINDERS);
+                String qs = context.getSharedPreferences("sunnati_qiyam", Context.MODE_PRIVATE)
+                    .getString("sound", "device");
+                post(context, "قيام الليل", "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى", "qiyam",
+                    "silent".equals(qs) ? CHANNEL_QUIET : "chime".equals(qs) ? CHANNEL_CHIME : CHANNEL_REMINDERS);
             } catch (Exception e) {
                 Log.w("sunnati", "qiyam not shown", e);
             }

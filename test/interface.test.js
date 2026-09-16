@@ -5775,6 +5775,36 @@ test('a reminder may be sounded by the reciter, and the wrapper is told a channe
   assert.ok(css.indexOf('.ic-play,') !== -1, 'the play fill is reachable by class');
 });
 
+test('the sound a reader picks reaches whichever bridge schedules that reminder', () => {
+  /* Qiyam, the salawat and the adhan are scheduled by bridges of their own,
+     not from the reminder list. Telling only the list left their sound at
+     whatever it was, so silence on qiyam still rang. */
+  const { win, doc } = boot();
+  const told = {};
+  win.SunnatiApp = {
+    setQiyamTimes: function () {}, setQiyamSound: function (v) { told.qiyam = v; },
+    setReminders: function () {}, setSalawatEvery: function () {},
+    setSalawatSilent: function () {}, setAdhanSound: function () {}, setAdhanSilent: function () {},
+    isAdhanEnabled: function () { return true; }, canNotify: function () { return true; }
+  };
+  win.App.go('reminders');
+  if (!win.Store.get('qiyam')) click(win, doc.getElementById('settings-qiyam'));
+  const sel = doc.querySelector('[data-sound="qiyam"]');
+  sel.value = 'silent'; fire(win, sel, 'change');
+  assert.strictEqual((win.Store.get('remindSound') || {}).qiyam, 'silent', 'the choice is kept');
+  assert.strictEqual(told.qiyam, 'silent', 'and the bridge that schedules qiyam is told');
+
+  const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(recv.indexOf('sunnati_qiyam') !== -1, 'the receiver reads the qiyam sound');
+
+  /* every sound key in the page reaches the wrapper through some bridge */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const keys = [...new Set([...html.matchAll(/data-sound="([a-zA-Z]+)"/g)].map(function (m) { return m[1]; }))];
+  const orphans = keys.filter(function (k) { return app.indexOf("channelFor('" + k + "')") === -1; });
+  assert.deepStrictEqual(orphans, [], 'these sounds reach no bridge');
+});
+
 test('every reminder switch actually turns its reminder on', () => {
   /* Three of them did nothing: the sync block listed «wird», a key the store
      does not hold, and used its slug variable a line before declaring it, so
