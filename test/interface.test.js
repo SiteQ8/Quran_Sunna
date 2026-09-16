@@ -3943,14 +3943,25 @@ test('a phone already set to kuwait time is not asked', () => {
 
 /* ---------------- no half empty rows, and a picture that names its source ---------------- */
 
-test('a settings row keeps its label and its control on one line', () => {
+test('a settings row puts its switch beside the title and its control beneath', () => {
+  /* It used to be one nowrap line with the control capped at two thirds, which
+     squeezed the words to one per line on a phone. It is a small grid now: the
+     words and the switch on the first line, anything wider on the second. */
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  /* anchored, or it matches «.setting-sub .setting {» and measures a rule
-     that only turns a border off */
-  const row = /^\.setting \{([^}]*)\}/m.exec(css)[1];
-  assert.match(row, /flex-wrap:\s*nowrap/, 'wrapping dropped the control and left half a row empty');
-  assert.match(css, /\.setting > span:first-child \{[^}]*flex:\s*1 1 0/, 'the label yields first');
-  assert.match(css, /\.setting \.select, \.setting \.voice-pick \{[^}]*max-width:\s*66%/, 'and the control never takes more than two thirds');
+  const rows = [...css.matchAll(/^\.setting \{([^}]*)\}/gm)].map(function (m) { return m[1]; });
+  assert.ok(rows.some(function (r) { return /display:\s*grid/.test(r); }), 'the row is a grid');
+  assert.match(css, /\.setting > \.switch \{[^}]*grid-row: 1/, 'the switch answers the title, beside it');
+  assert.match(css, /\.setting > \.picker[^{]*\{[^}]*grid-row: 2/, 'and a list takes the line beneath');
+
+  /* Every list is the same size whichever row it sits in. The adhan sound and
+     the salawat reciter were built with .voice-pick before the reminder rows
+     existed, so a widening written for .remind-controls left them small while
+     everything around them grew. jsdom does not cascade, so the rules are read
+     rather than measured. */
+  ['.remind-controls', '.voice-pick', '.setting > .picker'].forEach(function (sel) {
+    const rule = new RegExp(sel.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ' \\.picker-btn \\{[^}]*min-height:\\s*48px');
+    assert.match(css, rule, sel + ' menus are the same height as the rest');
+  });
 });
 
 test('a shared picture names where its words come from, and the maker', () => {
