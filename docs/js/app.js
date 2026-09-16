@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.75.0';
+  var VERSION = '8.75.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5587,6 +5587,9 @@
 
   function syncPickers() {
     document.querySelectorAll('select[data-picked="1"]').forEach(syncPicker);
+    /* the bedtime button is written in the reader's own clock, so it is
+       redrawn whenever the settings are, not only when it is first built */
+    document.querySelectorAll('input[type="time"][data-picked="1"]').forEach(syncTime);
   }
 
   /* An <input type="time"> is drawn by the phone: android gives it a width of
@@ -5595,9 +5598,11 @@
      hour clock: no morning and evening to read past, just the hour you want.
      The element keeps its id and its «HH:MM» value, so the handler bound to it
      goes on working. */
+  /* the bedtime is written the way the reader set their clock, twelve hours or
+     twenty four, like every other time the app shows */
   function timeLabel(hhmm) {
     var parts = String(hhmm || '00:00').split(':');
-    return ar(parts[0]) + ':' + ar(parts[1]);
+    return clockText(+parts[0] * 60 + +parts[1]);
   }
 
   function enhanceTime(input) {
@@ -5639,12 +5644,21 @@
     panel.setAttribute('role', 'dialog');
     /* «upTo», not «count»: a local by that name hides the count helper, and
        any call to it inside this scope would fail */
+    var twelve = Store.get('clock') !== '24';
     var col = function (kind, upTo, step, chosen) {
       var out = '<div class="timecol" data-timecol="' + kind + '">';
       for (var v = 0; v < upTo; v += step) {
         var t = String(v).padStart(2, '0');
+        /* on a twelve hour clock the hours read 12, 1, 2 … with the half of
+           the day beside them, while the value stored stays the full hour */
+        var shown = t;
+        if (kind === 'h' && twelve) {
+          shown = ar(v % 12 === 0 ? 12 : v % 12) + ' ' + (v < 12 ? 'ص' : 'م');
+        } else {
+          shown = ar(t);
+        }
         out += '<button type="button" class="timecell' + (t === chosen ? ' is-on' : '') +
-          '" data-time="' + kind + ':' + t + '">' + esc(ar(t)) + '</button>';
+          '" data-time="' + kind + ':' + t + '">' + esc(shown) + '</button>';
       }
       return out + '</div>';
     };
@@ -5852,6 +5866,7 @@
     if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
+    syncPickers();
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
@@ -7181,7 +7196,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,
