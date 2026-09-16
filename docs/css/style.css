@@ -1553,7 +1553,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .setting:not(:has(> .switch)) > .picker,
 .setting:not(:has(> .switch)) > .select,
 .setting:not(:has(> .switch)) > .field { grid-column: 2; grid-row: 1; }
-.setting > input[type="time"] {
+/* The rule above uses :not(:has(...)), whose weight is higher than a plain
+   child selector, so it won this on the bedtime row however late this came.
+   Matching that weight puts the field back on its own line. */
+.setting:not(:has(> .nothing)) > input[type="time"] {
   grid-column: 1 / -1; grid-row: 2; justify-self: start;
   min-height: 48px; font-size: var(--step-0); padding-inline: var(--s3);
 }
