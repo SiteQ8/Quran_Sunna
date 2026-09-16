@@ -66,8 +66,13 @@ public final class AdhanReceiver extends BroadcastReceiver {
                 /* the chosen adhan is sounded through the alarm stream, and the
                    channel is told to keep quiet so the two do not overlap */
                 boolean own = AdhanSound.have(context, fajr);
-                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan", own ? CHANNEL_SILENT : CHANNEL);
-                if (own) AdhanSound.play(context, fajr);
+                /* the reader may have asked for no sound at all, in which case
+                   neither the recording nor the channel's tone is used */
+                boolean quiet = context.getSharedPreferences("sunnati_adhan", Context.MODE_PRIVATE)
+                    .getBoolean("silent", false);
+                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan",
+                    (own || quiet) ? CHANNEL_SILENT : CHANNEL);
+                if (own && !quiet) AdhanSound.play(context, fajr);
             }
         } catch (Exception e) {
             Log.w("sunnati", "adhan not shown", e);

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.72.1';
+  var VERSION = '8.73.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2867,13 +2867,17 @@
   function fillAdhanVoices() {
     var sel = $('settings-adhan-voice');
     if (!sel || typeof ADHAN_VOICES === 'undefined') return;
-    fillSelect(sel, [{ value: 'none', label: 'نغمة الجهاز' }].concat(ADHAN_VOICES.map(function (v) {
-      return { value: v.id, label: v.n + (v.fajr ? '، أذان الفجر' : '') };
-    })), Store.get('adhanVoice') || 'none');
+    /* three kinds of sound, as every other reminder has: the phone's own
+       notification tone, one of the muadhins, or nothing at all */
+    fillSelect(sel, [{ value: 'none', label: 'نغمة الجهاز' }, { value: 'silent', label: 'صامت' }]
+      .concat(ADHAN_VOICES.map(function (v) {
+        return { value: v.id, label: v.n + (v.fajr ? '، أذان الفجر' : '') };
+      })), Store.get('adhanVoice') || 'none');
     var note = $('settings-adhan-note');
     if (note) {
-      note.textContent = (Store.get('adhanVoice') || 'none') === 'none'
-        ? 'نغمة التنبيه المعتادة في هاتفك'
+      var pick = Store.get('adhanVoice') || 'none';
+      note.textContent = pick === 'silent' ? 'يصل التنبيه بلا صوت'
+        : pick === 'none' ? 'نغمة التنبيه المعتادة في هاتفك'
         : 'يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم';
     }
     handAdhanSoundToApp();
@@ -3425,10 +3429,16 @@
     var app = bridge();
     if (!app || !app.setAdhanSound) return;
     var id = Store.get('adhanVoice') || 'none';
+    var recorded = id !== 'none' && id !== 'silent';
     try {
-      app.setAdhanSound(id === 'none' ? '' : location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, false),
-        id === 'none' ? '' : location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, true));
+      app.setAdhanSound(recorded ? location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, false) : '',
+        recorded ? location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, true) : '');
     } catch (e) { /* an older package without the call */ }
+    /* «صامت» is neither a recording nor the phone's tone: the notification
+       must arrive with no sound at all, which only the wrapper can do, so it
+       is told separately. An older package without the call simply keeps the
+       phone's tone, which is what it did before this choice existed. */
+    try { if (app.setAdhanSilent) app.setAdhanSilent(id === 'silent'); } catch (e) { /* older package */ }
   }
 
   function renderAdhanRow() {
@@ -6461,7 +6471,7 @@
       Store.set('adhanVoice', e.target.value);
       stopSpeaking();
       fillAdhanVoices();
-      if (e.target.value !== 'none') playAdhanSample();
+      if (e.target.value !== 'none' && e.target.value !== 'silent') playAdhanSample();
     });
     bind('settings-adhan-try', 'click', function () {
       if (isSpeaking()) { stopSpeaking(); return; }
