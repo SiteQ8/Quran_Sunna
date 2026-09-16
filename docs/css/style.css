@@ -1556,9 +1556,17 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The rule above uses :not(:has(...)), whose weight is higher than a plain
    child selector, so it won this on the bedtime row however late this came.
    Matching that weight puts the field back on its own line. */
+/* The time field is given its width outright. Android draws this input at a
+   width of its own choosing, wider than the box a desktop browser gives it,
+   so the row that measured tidily here ran the whole width on a phone while
+   every list beside it began at the reading edge. */
 .setting:not(:has(> .nothing)) > input[type="time"] {
+  /* ranged to the same edge the sound lists begin at, so the column of
+     controls reads as one */
   grid-column: 1 / -1; grid-row: 2; justify-self: start;
+  width: 150px; min-width: 150px; max-width: 150px; box-sizing: border-box;
   min-height: 48px; font-size: var(--step-0); padding-inline: var(--s3);
+  text-align: center;
 }
 
 /* A list that waits on its switch is dimmed, and says so when tapped, rather
