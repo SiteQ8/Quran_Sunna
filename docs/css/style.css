@@ -1078,7 +1078,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The ear keeps its own square beside the list: without a border it read as a
    bare arrow floating next to the box. btn-ghost strips the border and sets
    its own width, so this has to name both classes to outweigh it. */
-.remind-controls .btn.btn-ghost.try-sound {
+/* the recitation button is the same square as the tone button beside it: it
+   was left at the default and stood a third smaller, which is what made the
+   row look broken */
+.remind-controls .btn.btn-ghost.try-sound,
+.remind-controls .btn.btn-ghost[data-hear] {
   width: 48px; height: 48px; min-height: 48px; flex: none; padding: 0;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
 }
@@ -1646,7 +1650,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* Two play triangles side by side said nothing about which was which: one is
    the notification's own tone, the other the reciter's voice. The reciter's
    carries the accent, so the eye tells them apart before the finger does. */
-[data-hear] { color: var(--accent-ink); }
+/* The reciter's button and the notification tone's sat side by side as two
+   identical triangles. The recitation carries the accent so the eye tells them
+   apart; named with .btn to outweigh btn-ghost, which sets its own colour. */
+.btn[data-hear], [data-hear] { color: var(--accent-ink); }
 [data-hear] .icon { fill: currentColor; }
 
 /* a line of the note that can be tapped to hear the verse it describes */
