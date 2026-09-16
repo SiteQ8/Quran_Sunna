@@ -5704,8 +5704,26 @@ test('five reminders the reader turns on, each with its own sound, and a bedtime
   assert.strictEqual(at.getHours() * 60 + at.getMinutes(), 22 * 60 + 30, 'at the default bedtime');
 
   /* the bedtime moves, and the reminders with it */
+  /* The bedtime is picked from two columns of our own, hours and minutes on
+     the twenty four hour clock. The input stays and keeps the «HH:MM» value,
+     hidden, so what reads it goes on working; what the reader taps is ours. */
   const time = doc.getElementById('settings-sleep-at');
-  time.value = '23:15'; fire(win, time, 'change');
+  assert.strictEqual(time.type, 'time', 'the input still holds the value');
+  assert.ok(time.hidden, 'and is hidden, since the phone would draw it');
+  const timeWrap = time.parentNode;
+  assert.ok(timeWrap.classList.contains('timepick') && timeWrap.querySelector('.picker-btn'),
+    'what is seen and tapped is our own button');
+  assert.strictEqual(timeWrap.querySelector('.picker-label').textContent, '22:30',
+    'shown on the twenty four hour clock, with no morning or evening to read past');
+
+  /* opening it gives a column of hours and a column of minutes */
+  click(win, timeWrap.querySelector('.picker-btn'));
+  assert.strictEqual(doc.querySelectorAll('[data-timecol="h"] .timecell').length, 24);
+  assert.strictEqual(doc.querySelectorAll('[data-timecol="m"] .timecell').length, 12, 'every five minutes');
+  click(win, doc.querySelector('[data-time="h:23"]'));
+  click(win, doc.querySelector('[data-time="m:15"]'));
+  assert.strictEqual(time.value, '23:15');
+  assert.strictEqual(win.Store.get('sleepAt'), '23:15', 'and the choice is kept');
   const later = new Date(win.App.helpers.reminderList().filter(function (r) { return r.t === 'الاستغفار قبل النوم'; })[0].at);
   assert.strictEqual(later.getHours() * 60 + later.getMinutes(), 23 * 60 + 15);
 
