@@ -5702,6 +5702,43 @@ test('the next fast says when it is in words, not only as a date', () => {
     'it opens by saying when: ' + note.textContent.slice(0, 40));
 });
 
+test('the app says what it offers a reader who needs it, under the universal symbol', () => {
+  const { win, doc } = boot();
+  win.App.go('settings');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+
+  /* the symbol people look for, not a word buried in a list */
+  assert.ok(html.indexOf('<g id="i-access">') !== -1, 'the universal symbol is drawn');
+  assert.ok(html.indexOf('سهولة الوصول') !== -1, 'and the card is named for it');
+
+  const contrast = doc.getElementById('settings-contrast');
+  const motion = doc.getElementById('settings-motion');
+  assert.ok(contrast && motion, 'both are offered');
+  assert.strictEqual(contrast.getAttribute('role'), 'switch');
+
+  /* each takes hold at once and is kept */
+  click(win, contrast);
+  assert.ok(doc.documentElement.classList.contains('want-contrast'));
+  assert.strictEqual(win.Store.get('contrast'), true);
+  click(win, motion);
+  assert.ok(doc.documentElement.classList.contains('less-motion'));
+  assert.strictEqual(win.Store.get('lessMotion'), true);
+
+  /* with no answer yet the phone's own setting is followed, so a reader who
+     has already asked their phone does not ask twice */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("prefers('(prefers-contrast: more)')") !== -1);
+  assert.ok(app.indexOf("prefers('(prefers-reduced-motion: reduce)')") !== -1);
+
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.want-contrast \{[^}]*--line:/, 'contrast strengthens the lines');
+  assert.match(css, /\.less-motion \*[^{]*\{[^}]*transition-duration: 1ms/, 'and stillness stops the motion');
+
+  /* a skip link is a website's habit, not an app's: there is no keyboard here
+     to walk a navigation with */
+  assert.ok(html.indexOf('skip-link') === -1, 'no skip link');
+});
+
 test('five reminders the reader turns on, each with its own sound, and a bedtime', () => {
   const { win, doc } = boot();
   win.App.go('reminders');

@@ -13,6 +13,10 @@
     accent: 'sadu',
     pattern: 'sadu',
     fontScale: 100,
+    /* null means «whatever the phone is set to»; true or false is the reader
+       saying otherwise here */
+    contrast: null,
+    lessMotion: null,
     quranFont: 'amiri',
     method: 'Ojeiri',
     asr: 'shafi',
