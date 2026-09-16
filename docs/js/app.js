@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.72.0';
+  var VERSION = '8.72.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6285,6 +6285,12 @@
     var pick = target.closest('[data-pick]');
     if (pick) { choosePicker(+pick.getAttribute('data-pick')); return; }
     var pickBtn = target.closest('.picker-btn');
+    if (pickBtn && pickBtn.disabled) {
+      /* a dimmed list is waiting on its switch; saying so beats leaving the
+         reader tapping something that looks broken */
+      toast('شغّل التذكير أولاً من المفتاح');
+      return;
+    }
     if (pickBtn) {
       if (state.pickerFor === pickBtn) closePicker(); else openPicker(pickBtn);
       return;
