@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.76.0';
+  var VERSION = '8.77.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -207,6 +207,23 @@
       dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  }
+
+  /* The reader's answer wins; with no answer the phone's own setting does.
+     Someone who has already asked their phone for stronger contrast or less
+     motion should not have to ask a second time here. */
+  function prefers(query) {
+    return !!(window.matchMedia && window.matchMedia(query).matches);
+  }
+
+  function applyAccess() {
+    var root = document.documentElement;
+    var contrast = Store.get('contrast');
+    var motion = Store.get('lessMotion');
+    root.classList.toggle('want-contrast',
+      contrast === null || contrast === undefined ? prefers('(prefers-contrast: more)') : !!contrast);
+    root.classList.toggle('less-motion',
+      motion === null || motion === undefined ? prefers('(prefers-reduced-motion: reduce)') : !!motion);
   }
 
   function applyFont() {
@@ -5899,6 +5916,9 @@
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
+    /* a switch with no answer yet shows what the phone is set to */
+    setSwitch($('settings-contrast'), document.documentElement.classList.contains('want-contrast'));
+    setSwitch($('settings-motion'), document.documentElement.classList.contains('less-motion'));
     setSwitch($('settings-duha'), !!Store.get('duha'));
     /* the three whose list says when: the switch says whether, and the list
        is dimmed while it is off so it is plain which one is in charge */
@@ -6880,6 +6900,15 @@
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
       });
     });
+    [['contrast', 'settings-contrast', 'التباين الأعلى'], ['lessMotion', 'settings-motion', 'تقليل الحركة']].forEach(function (p) {
+      bind(p[1], 'click', function () {
+        var on = !document.documentElement.classList.contains(p[0] === 'contrast' ? 'want-contrast' : 'less-motion');
+        Store.set(p[0], on);
+        applyAccess();
+        setSwitch($(p[1]), on);
+        toast(on ? 'شُغّل ' + p[2] : 'أُوقف ' + p[2]);
+      });
+    });
     bind('settings-duha', 'click', function () {
       var on = !Store.get('duha');
       Store.set('duha', on);
@@ -7189,6 +7218,7 @@
     Store.prune();
     applyTheme();
     applyFont();
+    applyAccess();
     computeQibla();
     refreshTimes();
     wire();

@@ -1629,6 +1629,30 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .picker-item.is-on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
 .picker-item .icon { width: 18px; height: 18px; flex: none; }
 
+/* ---------- سهولة الوصول ----------
+   Two things a person reaches for when the default is hard to use: lines and
+   letters that stand out more, and stillness instead of motion. Both follow
+   the phone's own setting until the reader says otherwise here, so someone who
+   has already asked their phone for them does not ask twice. */
+.want-contrast {
+  --line: color-mix(in srgb, var(--ink) 38%, transparent);
+  --line-soft: color-mix(in srgb, var(--ink) 24%, transparent);
+  --ink-3: color-mix(in srgb, var(--ink) 78%, transparent);
+}
+.want-contrast .setting-note,
+.want-contrast .row-note { color: var(--ink-3); }
+.want-contrast .btn, .want-contrast .picker-btn, .want-contrast .card { border-width: 1.5px; }
+.want-contrast .switch { outline: 1.5px solid var(--line); outline-offset: 1px; }
+
+/* stillness: nothing slides, fades or spins, and anything already moving stops
+   where it is rather than snapping back */
+.less-motion *, .less-motion *::before, .less-motion *::after {
+  animation-duration: 1ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 1ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* The bedtime is picked from two columns of numbers on the twenty four hour
    clock: no AM and PM to read past, and nothing the phone draws. */
 .timepick { min-width: 118px; }
