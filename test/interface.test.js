@@ -5798,7 +5798,13 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
 
   /* the reciter's button is told apart from the notification tone's */
   const css2 = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  assert.match(css2, /\[data-hear\] \{[^}]*color: var\(--accent-ink\)/, 'the recitation carries the accent');
+  /* named with .btn so it outweighs btn-ghost, which sets its own colour: the
+     two triangles were identical until this was specific enough to win */
+  assert.match(css2, /\.btn\[data-hear\][^{]*\{[^}]*color: var\(--accent-ink\)/,
+    'the recitation carries the accent');
+  /* and it is the same square as the tone button beside it, not a third smaller */
+  assert.ok(css2.indexOf('.remind-controls .btn.btn-ghost[data-hear]') !== -1,
+    'and the same size as its sibling');
 
   /* and the jumuah switch is bound to the id its row actually has: the two
      were written by hand in three places and drifted, so it did nothing */
