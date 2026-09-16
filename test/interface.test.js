@@ -5713,8 +5713,14 @@ test('five reminders the reader turns on, each with its own sound, and a bedtime
   const timeWrap = time.parentNode;
   assert.ok(timeWrap.classList.contains('timepick') && timeWrap.querySelector('.picker-btn'),
     'what is seen and tapped is our own button');
-  assert.strictEqual(timeWrap.querySelector('.picker-label').textContent, '22:30',
-    'shown on the twenty four hour clock, with no morning or evening to read past');
+  /* written in the clock the reader chose in the settings, like every other
+     time the app shows: it was fixed at twenty four whatever they had set */
+  assert.strictEqual(timeWrap.querySelector('.picker-label').textContent, '10:30 م', 'twelve by default');
+  win.Store.set('clock', '24');
+  win.App.helpers.renderSettings();
+  assert.strictEqual(timeWrap.querySelector('.picker-label').textContent, '22:30', 'and twenty four when set');
+  win.Store.set('clock', '12');
+  win.App.helpers.renderSettings();
 
   /* opening it gives a column of hours and a column of minutes */
   click(win, timeWrap.querySelector('.picker-btn'));
