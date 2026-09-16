@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.71.1';
+  var VERSION = '8.72.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3072,6 +3072,30 @@
     return all[key] || 'device';
   }
 
+  /* The three that used to be switched off from inside their own list. Each
+     has an «off» value it holds when silent; the switch writes that value or
+     puts back what the reader last chose. */
+  var WHEN_OFF = { jumuahBefore: 0, salawat: 0, wird: '' };
+
+  function whenIsOn(key) {
+    var v = Store.get(key);
+    return String(v === null || v === undefined ? '' : v) !== String(WHEN_OFF[key]);
+  }
+
+  function setWhenOn(key, on) {
+    var last = Store.get('lastWhen') || {};
+    if (on) {
+      Store.set(key, last[key] !== undefined ? last[key] : (key === 'wird' ? '20:00' : 60));
+    } else {
+      /* what it was is kept, so turning it on again is not a fresh guess */
+      last[key] = Store.get(key);
+      Store.set('lastWhen', last);
+      Store.set(key, WHEN_OFF[key]);
+    }
+    handRemindersToApp();
+    renderSettings();
+  }
+
   function reminderList() {
     var out = [];
     var now = new Date();
@@ -5702,8 +5726,8 @@
     if ($('settings-highlat')) $('settings-highlat').value = s.highLat;
     if ($('settings-theme')) $('settings-theme').value = s.theme;
 
+    /* the list says when, never whether: the switch beside it says that */
     fillSelect($('settings-salawat'), [
-      { value: '0', label: 'بلا تذكير' },
       { value: '60', label: 'كل ساعة' },
       { value: '120', label: 'كل ساعتين' },
       { value: '180', label: 'كل ثلاث ساعات' },
@@ -5720,6 +5744,22 @@
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
     setSwitch($('settings-duha'), !!Store.get('duha'));
+    /* the three whose list says when: the switch says whether, and the list
+       is dimmed while it is off so it is plain which one is in charge */
+    ['jumuahBefore', 'salawat', 'wird'].forEach(function (key) {
+      var on = whenIsOn(key);
+      setSwitch($('settings-' + key + '-on'), on);
+      var list = $('settings-' + (key === 'jumuahBefore' ? 'jumuah-before' : key));
+      if (list) {
+        /* while it is off the stored value is the off one, which is no longer
+           an option, so the list would show blank. It shows the last real
+           choice instead, dimmed: the reader sees what turning it on returns. */
+        var last = (Store.get('lastWhen') || {})[key];
+        list.value = String(on ? Store.get(key) : (last !== undefined ? last : (key === 'wird' ? '20:00' : 60)));
+        list.disabled = !on;
+        syncPicker(list);
+      }
+    });
     /* the reader's own reminders and the sound each makes */
     ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'].forEach(function (key) {
       setSwitch($('settings-' + key), !!Store.get(key));
@@ -6658,6 +6698,13 @@
         all[sel.getAttribute('data-sound')] = sel.value;
         Store.set('remindSound', all);
         handRemindersToApp();
+      });
+    });
+    [['jumuahBefore', 'نداء الجمعة'], ['salawat', 'الصلاة على النبي ﷺ'], ['wird', 'ورد اليوم']].forEach(function (pair) {
+      bind('settings-' + pair[0] + '-on', 'click', function () {
+        var on = !whenIsOn(pair[0]);
+        setWhenOn(pair[0], on);
+        toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
       });
     });
     bind('settings-duha', 'click', function () {

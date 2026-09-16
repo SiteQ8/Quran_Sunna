@@ -3121,9 +3121,28 @@ test('the reminder is offered in the settings with sensible intervals', () => {
   win.App.go('settings');
   const sel = doc.getElementById('settings-salawat');
   assert.ok(sel);
+  /* the list says when and only when; whether is the switch beside it, as it
+     is on every other reminder. It used to carry «بلا تذكير» as its first
+     option, so one row was turned off from inside its own list while ten
+     others were turned off with a switch. */
   const values = [...sel.options].map((o) => o.value);
-  assert.deepStrictEqual(values, ['0', '60', '120', '180', '360']);
-  assert.strictEqual(sel.options[0].text, 'بلا تذكير');
+  assert.deepStrictEqual(values, ['60', '120', '180', '360']);
+  assert.ok(![...sel.options].some(function (o) { return o.text === 'بلا تذكير'; }));
+  assert.ok(doc.getElementById('settings-salawat-on'), 'and a switch says whether');
+
+  /* the three that were the odd ones out all have one now */
+  ['jumuahBefore', 'salawat', 'wird'].forEach(function (k) {
+    assert.ok(doc.getElementById('settings-' + k + '-on'), k + ' has a switch');
+  });
+
+  /* turning it off keeps what was chosen, and turning it on gives it back */
+  click(win, doc.getElementById('settings-salawat-on'));
+  sel.value = '180'; fire(win, sel, 'change');
+  assert.strictEqual(String(win.Store.get('salawat')), '180');
+  click(win, doc.getElementById('settings-salawat-on'));
+  assert.strictEqual(String(win.Store.get('salawat')), '0', 'off');
+  click(win, doc.getElementById('settings-salawat-on'));
+  assert.strictEqual(String(win.Store.get('salawat')), '180', 'and back to the reader\'s own choice');
 });
 
 test('the worker answers a tap on a notification and a periodic wake', () => {
