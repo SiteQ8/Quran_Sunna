@@ -1036,14 +1036,20 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    with the rest of the row empty beneath the words. The list now grows to
    take that room, so it reads as part of the setting; the general .picker is
    flex:none, which is why this has to say otherwise. */
-.remind-controls { width: 100%; }
+.remind-controls { width: 100%; gap: var(--s2); }
 .remind-controls .picker { flex: 1 1 auto; min-width: 0; max-width: none; }
-.remind-controls .picker-btn { font-size: var(--step--1); white-space: nowrap; }
+/* the list is the setting's own control, so it is given the height and the
+   type of one: a full row under the words, not a small box in a corner */
+.remind-controls .picker-btn {
+  min-height: 48px; font-size: var(--step-0); white-space: nowrap;
+  justify-content: space-between; padding-inline: var(--s3);
+}
+.remind-controls .picker-caret { color: var(--accent-ink); }
 /* The ear keeps its own square beside the list: without a border it read as a
    bare arrow floating next to the box. btn-ghost strips the border and sets
    its own width, so this has to name both classes to outweigh it. */
 .remind-controls .btn.btn-ghost.try-sound {
-  width: 44px; height: 44px; min-height: 44px; flex: none; padding: 0;
+  width: 48px; height: 48px; min-height: 48px; flex: none; padding: 0;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
 }
 .select-sound { min-width: 0; font-size: .82rem; flex: none; }
