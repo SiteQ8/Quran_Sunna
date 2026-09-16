@@ -3800,7 +3800,9 @@ test('a recorded human voice is offered, and the worker keeps it', () => {
   assert.ok(app.indexOf("function salawatUrl()") !== -1, 'the recordings ship with the app');
   const { win } = boot();
   win.SALAWAT_VOICES.forEach(function (v) {
-    const f = path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
+    /* a recitation may carry its own path when its file already serves the
+       chapter it belongs to, rather than being copied under a second name */
+    const f = v.f ? path.join(DOCS, v.f) : path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
     assert.ok(fs.existsSync(f), 'missing ' + v.id);
     assert.ok(fs.statSync(f).size > 100000, v.id + ' is a stub');
   });
@@ -5067,7 +5069,9 @@ test('the reader reads exactly what the voice recites, wherever it recites from'
       const c = win.HISN.filter(function (x) { return x.id === v.hisn; })[0];
       assert.ok(c && c.i.some(function (i) { return i.a === v.a; }), v.id + ' should point into حصن المسلم');
     }
-    const at = path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
+    /* a recitation may carry its own path, when the file already lives with
+       the chapter it belongs to: one file, not a copy under another name */
+    const at = v.f ? path.join(DOCS, v.f) : path.join(DOCS, 'audio', 'salawat', v.id + '.mp3');
     assert.ok(fs.existsSync(at) && fs.statSync(at).size > 20000, v.id + ' has no recording');
   });
 
@@ -5736,6 +5740,32 @@ test('a reminder switch writes to a key the store actually keeps', () => {
   win.App.go('reminders');
   click(win, doc.getElementById('settings-wird-on'));
   assert.strictEqual(win.Store.get('wirdAt'), '20:00', 'turned on to a real time');
+});
+
+test('every reminder switch actually turns its reminder on', () => {
+  /* Three of them did nothing: the sync block listed «wird», a key the store
+     does not hold, and used its slug variable a line before declaring it, so
+     setSwitch was handed undefined for all three. Nothing caught it because
+     nothing had ever clicked them all. */
+  const { win, doc } = boot();
+  win.SunnatiApp = {
+    isAdhanEnabled: function () { return true; }, canNotify: function () { return true; },
+    setAdhanEnabled: function () {}, setAdhanSound: function () {}, setAdhanSilent: function () {},
+    setSalawatEvery: function () {}, setSalawatSilent: function () {}, setReminders: function () {}
+  };
+  win.App.go('reminders');
+  const dead = [];
+  [...doc.querySelectorAll('#v-reminders .switch')].forEach(function (sw) {
+    /* the web notification row is hidden inside the wrapper and asks the
+       browser for permission, which a test cannot grant */
+    if (sw.id === 'settings-notify') return;
+    const row = sw.closest('.setting');
+    const name = ((row && row.querySelector('.setting-label')) || {}).textContent || sw.id;
+    const before = sw.getAttribute('aria-checked');
+    click(win, sw);
+    if (sw.getAttribute('aria-checked') === before) dead.push(name.trim());
+  });
+  assert.deepStrictEqual(dead, [], 'these switches do nothing: ' + dead.join(' , '));
 });
 
 test('a chapter the reciter has recorded offers itself to be heard', () => {

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.80.2';
+  var VERSION = '8.81.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1004,6 +1004,9 @@
 
   function salawatUrl() {
     var v = salawatVoice();
+    /* a recitation may live under audio/dua, where the chapter it belongs to
+       already uses it: one file, not a second copy under another name */
+    if (v && v.f) return v.f;
     return 'audio/salawat/' + (v ? v.id : 'ibrahimiyya') + '.mp3';
   }
 
@@ -6028,19 +6031,23 @@
     setSwitch($('settings-duha'), !!Store.get('duha'));
     /* the three whose list says when: the switch says whether, and the list
        is dimmed while it is off so it is plain which one is in charge */
-    ['jumuahBefore', 'salawat', 'wird'].forEach(function (key) {
+    /* Two faults lived here at once. The list said «wird», which the store does
+       not hold, so whenIsOn read undefined for it and the switch never showed
+       as on. And slug was used a line before it was declared, so setSwitch was
+       handed undefined and set nothing for any of the three. */
+    ['jumuahBefore', 'salawat', 'wirdAt'].forEach(function (key) {
       var on = whenIsOn(key);
-      setSwitch($('settings-' + slug + '-on'), on);
-      /* the ids in the page are settings-wird and settings-wird-on; only the
-         stored key is wirdAt */
       var slug = slugFor(key);
+      setSwitch($('settings-' + slug + '-on'), on);
       var list = $('settings-' + slug);
       if (list) {
         /* while it is off the stored value is the off one, which is no longer
            an option, so the list would show blank. It shows the last real
            choice instead, dimmed: the reader sees what turning it on returns. */
         var last = (Store.get('lastWhen') || {})[key];
-        list.value = String(on ? Store.get(key) : (last !== undefined ? last : (key === 'wird' ? '20:00' : 60)));
+        var fallback = key === 'wirdAt' ? '20:00' : 60;
+        var real = last !== undefined && last !== null && String(last) !== String(WHEN_OFF[key]);
+        list.value = String(on ? Store.get(key) : (real ? last : fallback));
         list.disabled = !on;
         syncPicker(list);
       }
