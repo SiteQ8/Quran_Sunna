@@ -5597,6 +5597,32 @@ test('the call to rise falls at the last third of the night, and the app is told
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
 });
 
+test('silence on the salawat means silent, and hearing it does not change it', () => {
+  /* Two faults the reader met at once: the notification was always posted on
+     the ringing channel however they set the sound, and the hear button
+     switched their choice from silence to a recording and then played it. */
+  const { win, doc } = boot();
+  const handed = {};
+  win.SunnatiApp = {
+    setSalawatEvery: function () {},
+    setSalawatSilent: function (v) { handed.silent = v; }
+  };
+  win.App.go('reminders');
+  const sel = doc.getElementById('settings-voice');
+  sel.value = 'none'; fire(win, sel, 'change');
+  assert.strictEqual(win.Store.get('voice'), 'none');
+  assert.strictEqual(handed.silent, true, 'the wrapper is told, or the phone rings anyway');
+
+  /* pressing hear leaves the choice alone */
+  click(win, doc.getElementById('settings-voice-try'));
+  assert.strictEqual(win.Store.get('voice'), 'none', 'still silent after pressing hear');
+
+  const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(/hush \? CHANNEL_QUIET : CHANNEL_REMINDERS/.test(recv), 'and it arrives on the quiet channel');
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('setSalawatSilent') !== -1);
+});
+
 test('the adhan can arrive silent, as every other reminder can', () => {
   const { win, doc } = boot();
   win.App.go('reminders');
