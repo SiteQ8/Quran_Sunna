@@ -1556,16 +1556,14 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The rule above uses :not(:has(...)), whose weight is higher than a plain
    child selector, so it won this on the bedtime row however late this came.
    Matching that weight puts the field back on its own line. */
-/* The time field is given its width outright. Android draws this input at a
-   width of its own choosing, wider than the box a desktop browser gives it,
-   so the row that measured tidily here ran the whole width on a phone while
-   every list beside it began at the reading edge. */
+/* The bedtime sits beside its title, on the first line, the way a switch does
+   on every other row: it is the row's one answer, not a control that needs a
+   line of its own. Its width is pinned because android draws this input wider
+   than a desktop browser does, which is what made it sprawl on the phone. */
 .setting:not(:has(> .nothing)) > input[type="time"] {
-  /* ranged to the same edge the sound lists begin at, so the column of
-     controls reads as one */
-  grid-column: 1 / -1; grid-row: 2; justify-self: start;
-  width: 150px; min-width: 150px; max-width: 150px; box-sizing: border-box;
-  min-height: 48px; font-size: var(--step-0); padding-inline: var(--s3);
+  grid-column: 2; grid-row: 1; align-self: center; justify-self: start;
+  width: 132px; min-width: 132px; max-width: 132px; box-sizing: border-box;
+  min-height: 44px; font-size: var(--step--1); padding-inline: var(--s2);
   text-align: center;
 }
 
