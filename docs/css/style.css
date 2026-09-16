@@ -1031,10 +1031,28 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The widths belong to the picker now: the select it wraps is hidden, so a
    width set on the select does nothing. Wide enough for «نغمة هادئة» and its
    arrow without the label being cut. */
-.remind-controls .picker { flex: none; min-width: 130px; max-width: none; }
-.remind-controls .picker-btn { font-size: .82rem; padding-inline: var(--s2); white-space: nowrap; }
-.select-sound { min-width: 0; width: 104px; font-size: .82rem; padding-inline: var(--s2); flex: none; }
-.remind-controls .btn-icon { width: 40px; height: 40px; min-height: 40px; flex: none; }
+/* the menu is as wide as its word needs, not a fixed slab */
+/* The controls line was a narrow list and a small button huddled at one end,
+   with the rest of the row empty beneath the words. The list now grows to
+   take that room, so it reads as part of the setting; the general .picker is
+   flex:none, which is why this has to say otherwise. */
+.remind-controls { width: 100%; }
+.remind-controls .picker { flex: 1 1 auto; min-width: 0; max-width: none; }
+.remind-controls .picker-btn { font-size: var(--step--1); white-space: nowrap; }
+/* The ear keeps its own square beside the list: without a border it read as a
+   bare arrow floating next to the box. btn-ghost strips the border and sets
+   its own width, so this has to name both classes to outweigh it. */
+.remind-controls .btn.btn-ghost.try-sound {
+  width: 44px; height: 44px; min-height: 44px; flex: none; padding: 0;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
+}
+.select-sound { min-width: 0; font-size: .82rem; flex: none; }
+/* the ear is a mark beside the menu, not a boxed button of its own */
+.remind-controls .btn-icon {
+  width: 34px; height: 34px; min-height: 34px; flex: none;
+  border: 0; background: none; color: var(--ink-3);
+}
+.remind-controls .btn-icon:active { color: var(--accent); }
 .remind-controls .switch { flex: none; }
 .remind-controls > .select:not(.select-sound) { width: 108px; font-size: .82rem; flex: none; }
 
@@ -1493,7 +1511,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    they read as belonging to nothing. */
 .setting > .picker, .setting > .select, .setting > .field,
 .setting > .voice-pick, .setting > .remind-controls, .setting > input {
-  grid-column: 1 / -1; grid-row: 2; justify-self: start; margin: 0;
+  grid-column: 1 / -1; grid-row: 2; justify-self: stretch; margin: 0;
 }
 /* a row with no switch keeps its control beside the words as before */
 .setting:not(:has(> .switch)) > .picker,
@@ -1542,7 +1560,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   width: 100%; height: 100%; appearance: none;
 }
 .picker-btn {
-  display: inline-flex; align-items: center; justify-content: space-between; gap: var(--s2);
+  /* The caret sits against the word rather than at the far end of a wide empty
+     box: space-between pushed them apart and left a slab of nothing between,
+     which read as heavy beside the small controls next to it. */
+  display: inline-flex; align-items: center; justify-content: flex-start; gap: 4px;
+  /* forty four, the least a thumb needs, which the interface review enforces */
   width: 100%; min-height: 44px; padding: 9px var(--s3);
   border: 1px solid var(--line); border-radius: var(--r-sm);
   background: var(--raised); color: var(--ink); font: inherit; font-size: var(--step--1);
