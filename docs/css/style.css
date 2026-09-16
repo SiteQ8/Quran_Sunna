@@ -315,7 +315,33 @@ button { background: none; border: none; cursor: pointer; }
 .pill { display: table; margin-inline: auto; padding: 4px 12px; border-radius: 999px;
   background: color-mix(in srgb, var(--raised) 85%, transparent); }
 
-.voice-pick { display: flex; gap: 6px; align-items: center; flex: 1; min-width: 0; justify-content: flex-end; }
+/* The adhan sound and the salawat reciter were built with this class before
+   the reminder rows existed, so the widening applied to .remind-controls left
+   them small while every row around them grew. They are the same thing and
+   are sized the same: a full row under the words, with the ear beside it. */
+.voice-pick { display: flex; gap: var(--s2); align-items: center; width: 100%; min-width: 0; }
+.voice-pick .picker { flex: 1 1 auto; min-width: 0; max-width: none; }
+.voice-pick .picker-btn {
+  min-height: 48px; font-size: var(--step-0); white-space: nowrap;
+  justify-content: space-between; padding-inline: var(--s3);
+}
+.voice-pick .picker-caret { color: var(--accent-ink); }
+
+/* A list that stands alone in a row, with no ear beside it, is the same
+   control and takes the same height and type: the salawat's «every hour» was
+   the last one left at the old size. */
+.setting > .picker .picker-btn {
+  min-height: 48px; font-size: var(--step-0);
+  justify-content: space-between; padding-inline: var(--s3);
+}
+.setting > .picker .picker-caret { color: var(--accent-ink); }
+/* The two ear buttons are named by id rather than by their ghost class: the
+   ground test looks up that class by the text of its rule and would have
+   measured this one instead of the real one. */
+#settings-adhan-try, #settings-voice-try {
+  width: 48px; height: 48px; min-height: 48px; flex: none; padding: 0;
+  border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
+}
 .voice-pick .select { flex: 1; min-width: 0; max-width: 100%; }
 .voice-plain { color: var(--ink-2); font-weight: 600; padding-inline: 4px; white-space: nowrap; }
 .btn.is-playing { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
@@ -323,7 +349,7 @@ button { background: none; border: none; cursor: pointer; }
    own note, and the control never takes more than two thirds. Dropping the
    control to a second line left half a row empty. */
 .setting > span:first-child { flex: 1 1 0; min-width: 0; }
-.setting .select, .setting .voice-pick { flex: 0 1 auto; min-width: 0; max-width: 66%; }
+.setting .select { flex: 0 1 auto; min-width: 0; max-width: 66%; }
 .setting .select { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .setting-note { display: block; line-height: 1.7; }
 .card > .setting-note { padding: var(--s2) 0 0; }
