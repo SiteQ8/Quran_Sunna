@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.79.0';
+  var VERSION = '8.80.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1534,6 +1534,9 @@
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '، ' + whenItFalls(o.date) + '</span></span>' +
+        /* the takbeer belongs to the two eids, and is heard from their row */
+        (/عيد/.test(o.name) ? '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
+          ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button>' : '') +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');
@@ -5461,6 +5464,9 @@
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
         '<br>' + whenItFalls(o.date) + '</span></span>' +
+        /* the takbeer belongs to the two eids, and is heard from their row */
+        (/عيد/.test(o.name) ? '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
+          ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button>' : '') +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
     }).join('');

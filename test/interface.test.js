@@ -5756,7 +5756,7 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
   assert.ok(!doc.querySelector('.hisn-listen'), 'and a chapter without one says nothing');
 
   /* every recording is really there, at the app's own audio size */
-  ['qunut-buhendi.mp3', 'kursi-buhendi.mp3', 'jumuah-buhendi.mp3'].forEach(function (f) {
+  ['qunut-buhendi.mp3', 'kursi-buhendi.mp3', 'jumuah-buhendi.mp3', 'takbeer-buhendi.mp3'].forEach(function (f) {
     const file = path.join(DOCS, 'audio', 'dua', f);
     assert.ok(fs.existsSync(file), f + ' is bundled');
     const mb = fs.statSync(file).size / (1024 * 1024);
@@ -5770,6 +5770,19 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
     win.App.go('hisn');
     assert.ok(doc.querySelector('#hisn-list [data-hear="kursi-buhendi.mp3"]'),
       'Ayat al-Kursi can be heard in chapter ' + id);
+  });
+
+  /* The takbeer came in at an hour and eighty five megabytes, fifty six times
+     any other file here. It is cut to one whole cycle, ending where the reciter
+     begins again, so nothing is clipped mid word. */
+  const takbeer = fs.statSync(path.join(DOCS, 'audio', 'dua', 'takbeer-buhendi.mp3')).size / (1024 * 1024);
+  assert.ok(takbeer < 1.5, 'the takbeer is cut to a cycle: ' + takbeer.toFixed(1) + 'MB');
+  win.App.go('home');
+  const eid = [...doc.querySelectorAll('#home-upcoming .row')]
+    .filter(function (r) { return r.querySelector('[data-hear="takbeer-buhendi.mp3"]'); });
+  assert.ok(eid.length >= 1, 'an eid row offers the takbeer');
+  eid.forEach(function (r) {
+    assert.ok(r.querySelector('.row-title').textContent.indexOf('عيد') !== -1, 'and only an eid row does');
   });
 
   /* and the jumuah verse is heard from the reminder it belongs to */
