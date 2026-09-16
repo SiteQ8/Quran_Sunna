@@ -6310,7 +6310,11 @@ test('the app never speaks of a browser', () => {
     assert.ok(src.indexOf('متصفح') === -1, f + ' still mentions one');
   });
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(app.indexOf('التنبيه يصل من التطبيق نفسه في دقيقته') !== -1);
+  /* that line was removed: when all is well it told the reader nothing and
+     took a line of the screen. What it stood for here is the wording, and
+     the note that remains still says «التطبيق» rather than «المتصفح». */
+  assert.ok(app.indexOf('الإشعارات مغلقة لسُنّتي في إعدادات الهاتف') !== -1,
+    'the note that speaks does so in the app\'s own words');
 });
 
 test('the opening is held long enough to be seen, and no longer', () => {

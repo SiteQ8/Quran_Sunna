@@ -1022,9 +1022,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    row is nowrap, so the words were squeezed to one per line. Here the row
    wraps: the words take the full width and the controls sit beneath them,
    ranged to the end. */
-.setting-remind { flex-wrap: wrap; }
-/* the words take the whole width, the controls sit beneath them in one line */
-.setting-remind > span:first-child { flex: 1 1 100%; margin-bottom: var(--s2); }
 .remind-controls {
   display: inline-flex; align-items: center; gap: var(--s2);
   flex-wrap: nowrap; justify-content: flex-end; margin-inline-start: auto;
@@ -1478,6 +1475,17 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 .setting { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
 .setting:last-child { border-bottom: none; }
+
+/* Every setting row wraps. A row holding a label, a note and any control
+   squeezed the words to one per line, and on the وردك row the note ran behind
+   the controls. The words take the full width, the controls sit beneath them
+   ranged to the end. This must come after the .setting rule above, whose
+   nowrap would otherwise win. */
+.setting { flex-wrap: wrap; }
+.setting > span:first-child { flex: 1 1 100%; }
+.setting-remind > span:first-child { margin-bottom: var(--s2); }
+.setting > .picker, .setting > .select, .setting > .field, .setting > .switch,
+.setting > .voice-pick, .setting > .remind-controls, .setting > input { margin-inline-start: auto; }
 .setting-label { font-size: var(--step-0); }
 .setting-note { font-size: var(--step--1); color: var(--ink-3); }
 

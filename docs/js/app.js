@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.71.0';
+  var VERSION = '8.71.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3416,9 +3416,14 @@
     if (!app || !app.isAdhanEnabled) { row.hidden = true; return; }
     row.hidden = false;
     if (webRow) webRow.hidden = true;
-    if (note) note.textContent = app.canNotify && !app.canNotify()
-      ? 'الإشعارات مغلقة لسُنّتي في إعدادات الهاتف، فافتحها ليصلك الأذان'
-      : 'التنبيه يصل من التطبيق نفسه في دقيقته';
+    /* the note speaks only when something is wrong; saying «التنبيه يصل من
+       التطبيق نفسه في دقيقته» when all is well told the reader nothing they
+       needed and took a line of the screen */
+    if (note) {
+      var blocked = app.canNotify && !app.canNotify();
+      note.textContent = blocked ? 'الإشعارات مغلقة لسُنّتي في إعدادات الهاتف، فافتحها ليصلك الأذان' : '';
+      note.hidden = !blocked;
+    }
     var on = false;
     try { on = !!app.isAdhanEnabled(); } catch (e) { on = true; }
     setSwitch($('settings-adhan'), on);
@@ -5751,7 +5756,7 @@
       { value: 'recording', label: 'صوت قارئ' },
       { value: 'tone', label: 'نغمة' },
       { value: 'speech', label: 'صوت الهاتف ينطقها' },
-      { value: 'none', label: 'بلا صوت' }
+      { value: 'none', label: 'صامت' }
     ], s.voice || 'recording');
     showDeviceVoiceRow();
     fillSelect($('settings-accent'),
