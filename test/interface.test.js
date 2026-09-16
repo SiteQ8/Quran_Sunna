@@ -5736,6 +5736,32 @@ test('a reminder switch writes to a key the store actually keeps', () => {
   assert.strictEqual(win.Store.get('wirdAt'), '20:00', 'turned on to a real time');
 });
 
+test('a chapter the reciter has recorded offers itself to be heard', () => {
+  /* The qunut is in حصن المسلم by its words already, so the recording is
+     attached to that chapter rather than added as a second copy of the text.
+     The map keys on the chapter number, so another du'a is one line. */
+  const { win, doc } = boot();
+  win.App.state.hisn = 32;
+  win.App.go('hisn');
+  assert.strictEqual(doc.getElementById('hisn-title').textContent, 'دعاء قنوت الوتر');
+  const strip = doc.querySelector('.hisn-listen');
+  assert.ok(strip, 'the chapter says it can be heard');
+  assert.ok(strip.textContent.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
+  const btn = strip.querySelector('[data-act="hear-hisn"]');
+  assert.ok(btn && btn.getAttribute('data-ref') === '32');
+
+  /* a chapter with no recording carries no strip */
+  win.App.state.hisn = 25;
+  win.App.go('hisn');
+  assert.ok(!doc.querySelector('.hisn-listen'), 'and a chapter without one says nothing');
+
+  /* the file is really there, at the app's own audio size */
+  const file = path.join(DOCS, 'audio', 'dua', 'qunut-buhendi.mp3');
+  assert.ok(fs.existsSync(file), 'the recording is bundled');
+  const mb = fs.statSync(file).size / (1024 * 1024);
+  assert.ok(mb < 4, 'and kept small enough to ship: ' + mb.toFixed(1) + 'MB');
+});
+
 test('the next fast says when it is in words, not only as a date', () => {
   /* «١٧ سبتمبر» is a date the reader has to work out. The code already knows
      the day is tomorrow, or three days off; it says so, and keeps the date

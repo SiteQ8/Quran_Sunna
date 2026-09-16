@@ -1629,6 +1629,17 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .picker-item.is-on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
 .picker-item .icon { width: 18px; height: 18px; flex: none; }
 
+/* a chapter the reciter has recorded says so above its words */
+.hisn-listen {
+  display: flex; align-items: center; gap: var(--s3); margin-bottom: var(--s3);
+  padding: var(--s3); border-radius: var(--r-md);
+  /* a solid ground, or the page pattern shows through the strip */
+  background: var(--raised); border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  box-shadow: var(--shadow);
+}
+.hisn-listen .row-body { flex: 1; min-width: 0; }
+.hisn-listen .row-title { display: block; font-weight: 600; color: var(--accent-ink); }
+
 /* ---------- سهولة الوصول ----------
    Two things a person reaches for when the default is hard to use: lines and
    letters that stand out more, and stillness instead of motion. Both follow
