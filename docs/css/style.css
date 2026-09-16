@@ -749,7 +749,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* Day, month and year on one line, as a date is read: the month takes the
    room it needs and the two numbers take the rest, so nothing is cut. */
 .convert-hijri { display: grid; grid-template-columns: 76px 1fr 100px; gap: 8px; align-items: stretch; }
-.convert-hijri .select, .convert-hijri .field { min-width: 0; width: 100%; max-width: none; }
+/* the month select is wrapped by its picker now, so the grid cell is the
+   picker and the button inside it must fill it */
+.convert-hijri .picker, .convert-hijri .select, .convert-hijri .field { min-width: 0; width: 100%; max-width: none; }
+.convert-hijri .picker-btn { width: 100%; padding-inline-start: 8px; }
 .convert-hijri .select { padding-inline-start: 8px; }
 .convert-out {
   margin-top: 8px; font-weight: 600; color: var(--accent-ink); min-height: 1.4em;
@@ -1028,6 +1031,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 /* narrow enough that the sound, the ear and the switch share one line even on
    the row that also carries a «متى» list */
+/* The widths belong to the picker now: the select it wraps is hidden, so a
+   width set on the select does nothing. Wide enough for «نغمة هادئة» and its
+   arrow without the label being cut. */
+.remind-controls .picker { flex: none; min-width: 130px; max-width: none; }
+.remind-controls .picker-btn { font-size: .82rem; padding-inline: var(--s2); white-space: nowrap; }
 .select-sound { min-width: 0; width: 104px; font-size: .82rem; padding-inline: var(--s2); flex: none; }
 .remind-controls .btn-icon { width: 40px; height: 40px; min-height: 40px; flex: none; }
 .remind-controls .switch { flex: none; }
@@ -1477,6 +1485,45 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   padding: 9px var(--s3); border-radius: var(--r-sm); border: 1px solid var(--line);
   background: var(--raised); font-size: var(--step--1); max-width: 62%;
 }
+
+/* ---------- our own menus ----------
+   The native select is drawn by the phone: a different shape on every skin,
+   its own face and colours, and on some a full screen list. It stays in the
+   DOM holding the value, hidden, and what the reader sees is ours. */
+/* the old select capped itself at 62% of the row; our button holds a whole
+   word and an arrow, so it takes what it needs and only then is capped */
+.picker { position: relative; display: inline-flex; min-width: 122px; max-width: 70%; }
+.picker > select {
+  position: absolute; inset: 0; opacity: 0; pointer-events: none;
+  width: 100%; height: 100%; appearance: none;
+}
+.picker-btn {
+  display: inline-flex; align-items: center; justify-content: space-between; gap: var(--s2);
+  width: 100%; min-height: 44px; padding: 9px var(--s3);
+  border: 1px solid var(--line); border-radius: var(--r-sm);
+  background: var(--raised); color: var(--ink); font: inherit; font-size: var(--step--1);
+  text-align: start; cursor: pointer;
+}
+.picker-btn:disabled { opacity: .5; }
+.picker-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.picker-caret { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
+.picker-btn[aria-expanded="true"] { border-color: var(--accent); }
+
+.picker-veil { position: fixed; inset: 0; z-index: 60; }
+.picker-panel {
+  position: fixed; z-index: 61; overflow-y: auto; padding: var(--s2);
+  background: var(--raised); border: 1px solid var(--line); border-radius: var(--r-md);
+  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, .28);
+}
+.picker-item {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--s3);
+  width: 100%; min-height: 44px; padding: var(--s2) var(--s3);
+  background: none; border: 0; border-radius: var(--r-sm);
+  color: var(--ink); font: inherit; font-size: var(--step--1); text-align: start; cursor: pointer;
+}
+.picker-item + .picker-item { margin-top: 2px; }
+.picker-item.is-on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
+.picker-item .icon { width: 18px; height: 18px; flex: none; }
 
 .switch { width: 46px; height: 27px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s; flex: none; }
 .switch::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: transform .2s; }

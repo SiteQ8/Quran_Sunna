@@ -3464,10 +3464,15 @@ test('a nudged hijri date is marked as such and one tap puts it back', () => {
 test('the converter shows a hijri date on one line, day then month then year, with room for the month', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.convert-hijri \{[^}]*grid-template-columns:\s*76px 1fr 100px/, 'the month takes the middle, the numbers their own columns');
-  assert.match(css, /\.convert-hijri \.select, \.convert-hijri \.field \{[^}]*max-width:\s*none/, 'the general cap on a select would narrow the month');
+  assert.match(css, /\.convert-hijri \.picker, \.convert-hijri \.select, \.convert-hijri \.field \{[^}]*max-width:\s*none/, 'the general cap on a select would narrow the month');
   const { doc } = boot();
   const row = doc.querySelector('.convert-hijri');
-  assert.deepStrictEqual([...row.children].map((e) => e.id), ['conv-hd', 'conv-hm', 'conv-hy'], 'read as a date is read');
+  /* the month select sits inside its own picker now, so the middle cell is
+     that wrapper; the order a date is read in is unchanged */
+  const ids = [...row.children].map(function (e) {
+    return e.id || (e.querySelector('select, input') || {}).id;
+  });
+  assert.deepStrictEqual(ids, ['conv-hd', 'conv-hm', 'conv-hy'], 'read as a date is read');
 });
 
 /* ---------------- a man's voice, and one you can choose ---------------- */
@@ -5557,6 +5562,50 @@ test('the call to rise falls at the last third of the night, and the app is told
   assert.ok(doc.getElementById('settings-qiyam-note').textContent.indexOf('الليلة عند') !== -1);
   const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/QiyamScheduler.java'), 'utf8');
   assert.ok(sched.indexOf('setExactAndAllowWhileIdle') !== -1 && sched.indexOf('scheduleNext') !== -1);
+});
+
+test('every menu is ours to draw, and the select under it still holds the value', () => {
+  /* A <select> is drawn by the phone: a different shape on every skin, its own
+     face, and on some a full screen list. Ours is drawn here. The select stays
+     and keeps the value, so the seventy odd places that read .value and the
+     handlers bound to change are untouched. */
+  const { win, doc } = boot();
+  win.App.go('reminders');
+  const selects = [...doc.querySelectorAll('select')];
+  assert.ok(selects.length > 20, 'there are many menus');
+  selects.forEach(function (sel) {
+    assert.ok(sel.parentNode.classList.contains('picker'), (sel.id || sel.className) + ' is wrapped');
+    assert.ok(sel.parentNode.querySelector('.picker-btn'), 'and has our button');
+  });
+
+  /* the button says what the select holds */
+  const sound = doc.querySelector('[data-sound="duha"]');
+  const btn = sound.parentNode.querySelector('.picker-btn');
+  assert.strictEqual(btn.querySelector('.picker-label').textContent, 'صوت الجهاز');
+
+  /* opening draws our own panel, one item per option, the chosen one marked */
+  click(win, btn);
+  const panel = doc.querySelector('.picker-panel');
+  assert.ok(panel, 'our panel, not the system list');
+  assert.strictEqual(panel.querySelectorAll('.picker-item').length, sound.options.length);
+  assert.strictEqual(panel.querySelectorAll('.is-on').length, 1);
+
+  /* choosing sets the select and fires the very change a native tap would */
+  let fired = 0;
+  sound.addEventListener('change', function () { fired += 1; });
+  click(win, panel.querySelectorAll('.picker-item')[2]);
+  assert.strictEqual(sound.value, 'silent', 'the select holds the value');
+  assert.strictEqual(fired, 1, 'and change fired once');
+  assert.ok(!doc.querySelector('.picker-panel'), 'the panel closes');
+  assert.strictEqual(sound.parentNode.querySelector('.picker-label').textContent, 'صامت');
+  assert.strictEqual((win.Store.get('remindSound') || {}).duha, 'silent', 'so the app kept it');
+
+  /* the button does not inherit .select, whose width cap cut the label */
+  assert.ok(!btn.classList.contains('select'));
+
+  /* and refilling a menu refreshes its button */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/function fillSelect[\s\S]*?syncPicker\(el\);/.test(app), 'fillSelect refreshes the button');
 });
 
 test('five reminders the reader turns on, each with its own sound, and a bedtime', () => {

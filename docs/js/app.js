@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.70.0';
+  var VERSION = '8.71.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5504,6 +5504,116 @@
 
   /* ---------------- settings ---------------- */
 
+  /* Our own menu, drawn over the native select.
+
+     The select is kept and keeps the value: everything that reads .value or
+     listens for change goes on working untouched. What the reader sees and
+     taps is ours, so one shape and one face on every phone rather than
+     whatever the system draws. Choosing sets the select and fires change, the
+     same event a tap on the native control would have fired. */
+  function enhanceSelect(sel) {
+    if (!sel || sel.dataset.picked === '1' || sel.multiple) return;
+    sel.dataset.picked = '1';
+    var wrap = document.createElement('span');
+    wrap.className = 'picker';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    /* the select's own classes are not copied onto the button: .select caps
+       itself at a share of the row, which cut our label to «نـ…». Only the
+       marker classes travel, so a rule meant for one kind of menu still finds
+       its button. */
+    btn.className = 'picker-btn' +
+      (sel.classList.contains('select-sound') ? ' for-sound' : '') +
+      (sel.id ? ' for-' + sel.id : '');
+    btn.setAttribute('aria-haspopup', 'listbox');
+    btn.setAttribute('aria-expanded', 'false');
+    if (sel.getAttribute('aria-label')) btn.setAttribute('aria-label', sel.getAttribute('aria-label'));
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    wrap.appendChild(btn);
+    syncPicker(sel);
+  }
+
+  /* the button says what the select holds; called after anything refills it */
+  function syncPicker(sel) {
+    var wrap = sel.parentNode;
+    if (!wrap || !wrap.classList.contains('picker')) return;
+    var btn = wrap.querySelector('.picker-btn');
+    if (!btn) return;
+    var chosen = sel.options[sel.selectedIndex];
+    btn.innerHTML = '<span class="picker-label">' + esc(chosen ? chosen.text : '') + '</span>' +
+      '<svg class="icon picker-caret" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"/></svg>';
+    btn.disabled = sel.disabled;
+  }
+
+  function syncPickers() {
+    document.querySelectorAll('select[data-picked="1"]').forEach(syncPicker);
+  }
+
+  function enhanceSelects() {
+    document.querySelectorAll('select').forEach(enhanceSelect);
+  }
+
+  /* The panel is fixed and measured off the button, so a card that clips its
+     own overflow cannot cut the list in half. */
+  function openPicker(btn) {
+    closePicker();
+    var sel = btn.parentNode.querySelector('select');
+    if (!sel || !sel.options.length) return;
+    var panel = document.createElement('div');
+    panel.className = 'picker-panel';
+    panel.setAttribute('role', 'listbox');
+    panel.innerHTML = Array.prototype.map.call(sel.options, function (o, i) {
+      return '<button type="button" class="picker-item' + (i === sel.selectedIndex ? ' is-on' : '') +
+        '" role="option" aria-selected="' + (i === sel.selectedIndex) + '" data-pick="' + i + '">' +
+        '<span>' + esc(o.text) + '</span>' +
+        (i === sel.selectedIndex ? '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>' : '') +
+        '</button>';
+    }).join('');
+    var veil = document.createElement('div');
+    veil.className = 'picker-veil';
+    document.body.appendChild(veil);
+    document.body.appendChild(panel);
+    var r = btn.getBoundingClientRect();
+    var room = window.innerHeight - r.bottom;
+    panel.style.minWidth = Math.max(r.width, 140) + 'px';
+    panel.style.insetInlineEnd = (window.innerWidth - r.right) + 'px';
+    /* below the button when there is room, above it when there is not */
+    if (room < 220 && r.top > room) {
+      panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+      panel.style.maxHeight = Math.min(300, r.top - 16) + 'px';
+    } else {
+      panel.style.top = (r.bottom + 6) + 'px';
+      panel.style.maxHeight = Math.min(300, room - 16) + 'px';
+    }
+    btn.setAttribute('aria-expanded', 'true');
+    state.pickerFor = btn;
+    var on = panel.querySelector('.is-on');
+    if (on) on.scrollIntoView({ block: 'nearest' });
+  }
+
+  function closePicker() {
+    var open = document.querySelector('.picker-panel');
+    if (open) open.remove();
+    var veil = document.querySelector('.picker-veil');
+    if (veil) veil.remove();
+    if (state.pickerFor) state.pickerFor.setAttribute('aria-expanded', 'false');
+    state.pickerFor = null;
+  }
+
+  function choosePicker(index) {
+    var btn = state.pickerFor;
+    if (!btn) return;
+    var sel = btn.parentNode.querySelector('select');
+    closePicker();
+    if (!sel || !sel.options[index]) return;
+    if (sel.selectedIndex === index) return;
+    sel.selectedIndex = index;
+    syncPicker(sel);
+    /* the very event a tap on the native control would have fired */
+    sel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
   function fillSelect(el, options, value) {
     if (!el) return;
     el.innerHTML = options.map(function (o) {
@@ -5511,6 +5621,7 @@
         '>' + esc(o.label) + '</option>';
     }).join('');
     el.value = String(value);
+    syncPicker(el);
   }
 
   function setSwitch(el, on) {
@@ -6125,6 +6236,15 @@
       }
       return;
     }
+
+    var pick = target.closest('[data-pick]');
+    if (pick) { choosePicker(+pick.getAttribute('data-pick')); return; }
+    var pickBtn = target.closest('.picker-btn');
+    if (pickBtn) {
+      if (state.pickerFor === pickBtn) closePicker(); else openPicker(pickBtn);
+      return;
+    }
+    if (state.pickerFor && !target.closest('.picker-panel')) closePicker();
 
     var dhikr = target.closest('[data-dhikr]');
     if (dhikr) {
@@ -6849,6 +6969,8 @@
     wire();
     followAddress();
     renderSettings();
+    /* every select becomes our own menu, once the page is built */
+    enhanceSelects();
     watchHeading();
     watchInstall();
     watchNetwork();
