@@ -5706,6 +5706,27 @@ test('every menu is ours to draw, and the select under it still holds the value'
   assert.ok(/function fillSelect[\s\S]*?syncPicker\(el\);/.test(app), 'fillSelect refreshes the button');
 });
 
+test('a reminder switch writes to a key the store actually keeps', () => {
+  /* The wird switch wrote to «wird», which is not among the store's defaults.
+     The store rebuilds itself from those at every start and drops the rest, so
+     the reader turned it on and found it off again after each update. Every
+     key these switches use must be one the store knows. */
+  const { win, doc } = boot();
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const off = /var WHEN_OFF = \{([^}]*)\}/.exec(app)[1];
+  const keys = [...off.matchAll(/(\w+):/g)].map(function (m) { return m[1]; });
+  assert.ok(keys.length >= 3, 'the switches whose off value hides in a list');
+  keys.forEach(function (k) {
+    assert.ok(Object.prototype.hasOwnProperty.call(win.Store.DEFAULTS, k),
+      k + ' is not a key the store keeps, so it would be wiped at the next start');
+  });
+
+  /* and turning it on writes a real time, not the off value back again */
+  win.App.go('reminders');
+  click(win, doc.getElementById('settings-wird-on'));
+  assert.strictEqual(win.Store.get('wirdAt'), '20:00', 'turned on to a real time');
+});
+
 test('the next fast says when it is in words, not only as a date', () => {
   /* «١٧ سبتمبر» is a date the reader has to work out. The code already knows
      the day is tomorrow, or three days off; it says so, and keeps the date
