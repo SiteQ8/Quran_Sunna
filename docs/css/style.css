@@ -181,8 +181,11 @@ button { background: none; border: none; cursor: pointer; }
 /* the play and pause marks are shapes, not lines */
 /* the play triangle is a shape and wants filling; the pause is two strokes,
    and filling it left nothing to see at all */
-.icon:has(use[href='#i-play']) { fill: currentColor; stroke: none; }
 .icon { width: 1.25em; height: 1.25em; fill: none; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+/* The play triangle is a solid shape, not an outline. This has to come after
+   the rule above, which sets fill:none on every icon: while it came first the
+   triangle was drawn hollow and read as a back arrow. */
+.icon:has(use[href='#i-play']) { fill: currentColor; stroke: none; }
 
 /* ---------- tab bar ---------- */
 
@@ -1639,6 +1642,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .hisn-listen .row-body { flex: 1; min-width: 0; }
 .hisn-listen .row-title { display: block; font-weight: 600; color: var(--accent-ink); }
+
+/* Two play triangles side by side said nothing about which was which: one is
+   the notification's own tone, the other the reciter's voice. The reciter's
+   carries the accent, so the eye tells them apart before the finger does. */
+[data-hear] { color: var(--accent-ink); }
+[data-hear] .icon { fill: currentColor; }
 
 /* a line of the note that can be tapped to hear the verse it describes */
 .linkish {
