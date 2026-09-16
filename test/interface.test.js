@@ -5826,6 +5826,16 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
   assert.ok(/setActionHandler\('stop'/.test(app3), 'and so does stop');
   assert.ok(app3.indexOf('clearMediaSession') !== -1, 'and it is cleared when the clip ends');
 
+  /* Every clip names itself, or the phone shows no player for it. The adhan and
+     the salawat were played with no title at all, which is why the reader had
+     to go back into the app to stop them. */
+  const plays = app3.split('\n').filter(function (l) {
+    return l.indexOf('playRecording(') !== -1 && l.indexOf('function playRecording') === -1;
+  });
+  assert.ok(plays.length >= 5, 'the places a clip is played');
+  const unnamed = plays.filter(function (l) { return /playRecording\([^)]*\);/.test(l) && l.split(',').length < 3; });
+  assert.deepStrictEqual(unnamed, [], 'these play with no name');
+
   /* the reciter's button is told apart from the notification tone's */
   const css2 = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* named with .btn so it outweighs btn-ghost, which sets its own colour: the

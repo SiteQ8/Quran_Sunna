@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.81.0';
+  var VERSION = '8.81.1';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1002,6 +1002,12 @@
     return list.filter(function (x) { return x.id === id; })[0] || list[0];
   }
 
+  /* the name of the chosen recitation, for the player the phone shows */
+  function salawatName() {
+    var v = salawatVoice();
+    return v ? v.n : 'الصلاة على النبي';
+  }
+
   function salawatUrl() {
     var v = salawatVoice();
     /* a recitation may live under audio/dua, where the chapter it belongs to
@@ -1092,7 +1098,7 @@
     var mode = Store.get('voice') || 'recording';
     if (mode === 'none') return false;
     if (mode === 'tone') return chime();
-    if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(salawatUrl(), 'settings-voice-try');
+    if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(salawatUrl(), 'settings-voice-try', salawatName());
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
     try {
       var line = new window.SpeechSynthesisUtterance(text);
@@ -2048,17 +2054,27 @@
   /* The button on the bar shows what pressing it will do: pause while the
      sound plays, play while it is paused. Any clip the app starts reports its
      pauses and plays back here, so the button is never stale. */
+  /* the muadhin's name, for the player the phone shows */
+  function adhanName(id) {
+    var list = typeof ADHAN_VOICES !== 'undefined' ? ADHAN_VOICES : [];
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) return list[i].n;
+    return 'سُنّتي';
+  }
+
   function playAdhanSample() {
     var id = Store.get('adhanVoice') || 'none';
     if (id === 'none') { chime(); return; }
-    playRecording(adhanUrl(id, false), 'settings-adhan-try');
+    /* named, or the phone shows no player and the only way to stop it is to
+       find the app again: the reader asked for this twice */
+    playRecording(adhanUrl(id, false), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
   }
 
   /* at the prayer, with the app open, the adhan is heard in its voice */
   function soundAdhan(key) {
     var id = Store.get('adhanVoice') || 'none';
     if (id === 'none') return false;
-    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try');
+    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try',
+      'أذان ' + PRAYER_NAMES[key] + '، ' + adhanName(id));
   }
 
   /* ---------------- وضع القراءة ---------------- */
@@ -6308,7 +6324,7 @@
       var text = topic.i[+parts[1]];
       if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', ''), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
     },
-    'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try'); },
+    'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try', salawatName()); },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the
        button at wire time would be thrown away with the first redraw */
@@ -6770,7 +6786,7 @@
       Store.set('salawatVoice', e.target.value);
       stopSpeaking();
       renderSettings();
-      playRecording(salawatUrl(), 'settings-voice-try');
+      playRecording(salawatUrl(), 'settings-voice-try', salawatName());
     });
     bind('settings-adhan-voice', 'change', function (e) {
       Store.set('adhanVoice', e.target.value);
