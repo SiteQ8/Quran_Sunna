@@ -5742,6 +5742,39 @@ test('a reminder switch writes to a key the store actually keeps', () => {
   assert.strictEqual(win.Store.get('wirdAt'), '20:00', 'turned on to a real time');
 });
 
+test('a reminder may be sounded by the reciter, and the wrapper is told a channel it knows', () => {
+  /* The wrapper knows «chime» and «silent» and nothing else: any other value
+     falls through to the ringing channel, so a reader who chose a reciter
+     would have heard the phone's own tone instead. */
+  const { win, doc } = boot();
+  win.App.go('reminders');
+  const sel = doc.querySelector('[data-sound="sleepKursi"]');
+  assert.ok([...sel.options].some(function (o) { return o.value === 'buhendi'; }), 'the reciter is offered');
+  const jm = doc.querySelector('[data-sound="jumuahBefore"]');
+  assert.ok([...jm.options].some(function (o) { return o.value === 'buhendi'; }), 'and for the jumuah call');
+
+  /* the extra play button is gone: the choice lives in the list */
+  assert.ok(!doc.querySelector('[data-hear="jumuah-buhendi.mp3"]'), 'no second button beside the list');
+
+  sel.value = 'buhendi'; fire(win, sel, 'change');
+  if (!win.Store.get('sleepKursi')) click(win, doc.getElementById('settings-sleepKursi'));
+  assert.strictEqual((win.Store.get('remindSound') || {}).sleepKursi, 'buhendi');
+  const row = win.App.helpers.reminderList().filter(function (r) { return r.t.indexOf('الكرسي') !== -1; })[0];
+  assert.ok(row, 'the reminder is in the list');
+  assert.strictEqual(row.s, 'silent', 'and the wrapper is handed a channel it understands');
+
+  /* :has() is missing on older android browsers, where the whole rule is
+     dropped: the play triangle stayed hollow and the rows lost their layout */
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const live = css.split('\n').filter(function (l) {
+    return l.indexOf(':has(') !== -1 && l.trim().indexOf('/*') !== 0 && l.trim().indexOf('*') !== 0;
+  });
+  live.forEach(function (l) {
+    assert.ok(/^\s*\.ic-/.test(l), 'a rule needs :has with no fallback: ' + l.trim().slice(0, 60));
+  });
+  assert.ok(css.indexOf('.ic-play,') !== -1, 'the play fill is reachable by class');
+});
+
 test('every reminder switch actually turns its reminder on', () => {
   /* Three of them did nothing: the sync block listed «wird», a key the store
      does not hold, and used its slug variable a line before declaring it, so
@@ -5859,12 +5892,13 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
 
   /* and the jumuah verse is heard from the reminder it belongs to */
   win.App.go('reminders');
-  const call = doc.querySelector('[data-hear="jumuah-buhendi.mp3"]');
-  assert.ok(call, 'the jumuah call offers its verse');
-  /* it sits among the row's controls now, so the reciter is named on the
-     label rather than in text that pushed the row out of line */
-  assert.ok((call.getAttribute('aria-label') || '').indexOf('خالد بوهندي') !== -1, 'and names the reciter');
-  assert.ok(call.closest('.remind-controls'), 'and stands with the row controls');
+  /* the verse is a choice in the row's own sound list now, not a second play
+     button beside it: two identical triangles said nothing about which was
+     which, and the reader asked for one control, not two */
+  const jmList = doc.querySelector('[data-sound="jumuahBefore"]');
+  const recited = [...jmList.options].filter(function (o) { return o.value === 'buhendi'; })[0];
+  assert.ok(recited, 'the jumuah call offers its verse');
+  assert.ok(recited.text.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
 });
 
 test('the next fast says when it is in words, not only as a date', () => {

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.81.1';
+  var VERSION = '8.82.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -94,7 +94,10 @@
     /* The sprite is drawn in a twenty four unit square. Without saying so, the
        browser shows only the top left corner of it at whatever size the icon
        is given, which crops every glyph in the app. */
-    return '<svg class="icon' + (cls ? ' ' + cls : '') +
+    /* the name travels as a class too: :has() is not on every android browser,
+       and a rule that needs it silently does nothing there, which is why the
+       play triangle stayed hollow on the reader's phone */
+    return '<svg class="icon ic-' + name + (cls ? ' ' + cls : '') +
       '" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-' + name + '"/></svg>';
   }
 
@@ -3180,9 +3183,26 @@
   }
 
   /* the sound the reader chose for one reminder, device unless changed */
+  /* A reminder may be sounded by the app's own reciter instead of a tone. The
+     file is the one the chapter already uses, so nothing is duplicated. */
+  var RECITED_SOUND = {
+    sleepKursi: { f: 'kursi-buhendi.mp3', n: 'آية الكرسي، بصوت خالد بوهندي' },
+    jumuahBefore: { f: 'jumuah-buhendi.mp3', n: 'آية الجمعة، بصوت خالد بوهندي' }
+  };
+
   function soundFor(key) {
     var all = Store.get('remindSound') || {};
     return all[key] || 'device';
+  }
+
+  /* The wrapper knows «chime» and «silent» and nothing else; anything else
+     falls through to the ringing channel. A recitation cannot be a
+     notification sound, so the notification arrives quiet and the reader hears
+     the recitation in the app. Without this the phone would ring with its own
+     tone for a reader who asked for a reciter. */
+  function channelFor(key) {
+    var pick = soundFor(key);
+    return RECITED_SOUND[key] && pick === 'buhendi' ? 'silent' : pick;
   }
 
   /* The three that used to be switched off from inside their own list. Each
@@ -3241,7 +3261,7 @@
         var portion = wirdFor(day);
         if (at.getTime() > Date.now() && portion) {
           out.push({ at: at.getTime(), t: 'وردك اليوم',
-            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: soundFor('wird') });
+            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: channelFor('wird') });
         }
       }
       if (Store.get('duha')) {
@@ -3250,7 +3270,7 @@
           var atDuha = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, duha.best, 0, 0);
           if (atDuha.getTime() > Date.now()) {
             out.push({ at: atDuha.getTime(), t: 'صلاة الضحى',
-              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال', s: soundFor('duha') });
+              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال', s: channelFor('duha') });
           }
         }
       }
@@ -3264,14 +3284,14 @@
         var atMorning = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.fajr + 30, 0, 0);
         if (atMorning.getTime() > Date.now()) {
           out.push({ at: atMorning.getTime(), t: 'أذكار الصباح',
-            b: 'أصبحنا وأصبح الملك لله', s: soundFor('morningAdhkar') });
+            b: 'أصبحنا وأصبح الملك لله', s: channelFor('morningAdhkar') });
         }
       }
       if (Store.get('eveningAdhkar') && typeof dayTimes.asr === 'number') {
         var atEvening = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.asr + 30, 0, 0);
         if (atEvening.getTime() > Date.now()) {
           out.push({ at: atEvening.getTime(), t: 'أذكار المساء',
-            b: 'أمسينا وأمسى الملك لله', s: soundFor('eveningAdhkar') });
+            b: 'أمسينا وأمسى الملك لله', s: channelFor('eveningAdhkar') });
         }
       }
       var sleepParts = String(Store.get('sleepAt') || '22:30').split(':');
@@ -3279,15 +3299,15 @@
       if (atSleep.getTime() > Date.now()) {
         if (Store.get('sleepIstighfar')) {
           out.push({ at: atSleep.getTime(), t: 'الاستغفار قبل النوم',
-            b: 'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه', s: soundFor('sleepIstighfar') });
+            b: 'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه', s: channelFor('sleepIstighfar') });
         }
         if (Store.get('sleepMulk')) {
           out.push({ at: atSleep.getTime() + 60000, t: 'سورة الملك قبل النوم',
-            b: 'كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك', s: soundFor('sleepMulk') });
+            b: 'كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك', s: channelFor('sleepMulk') });
         }
         if (Store.get('sleepKursi')) {
           out.push({ at: atSleep.getTime() + 120000, t: 'آية الكرسي قبل النوم',
-            b: 'إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ', s: soundFor('sleepKursi') });
+            b: 'إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ', s: channelFor('sleepKursi') });
         }
       }
       /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
@@ -3299,7 +3319,7 @@
         var putOff = +Store.get('jumuahNightAt') || 0;
         if (putOff > Date.now()) {
           out.push({ at: putOff, t: 'ليلة الجمعة',
-            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: soundFor('jumuahNight') });
+            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight') });
         }
       }
       if (Store.get('jumuahNight') && day.getDay() === 4 && !already(out, 'ليلة الجمعة')) {
@@ -3318,7 +3338,7 @@
           }
           if (at > Date.now()) {
             out.push({ at: at, t: 'ليلة الجمعة',
-              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: soundFor('jumuahNight') });
+              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight') });
           }
         }
       }
@@ -3335,7 +3355,7 @@
             var callFast = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eveTimes.maghrib + 90, 0, 0);
             if (callFast.getTime() > Date.now()) {
               out.push({ at: callFast.getTime(), t: 'صيام الغد',
-                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور', s: soundFor('fastNote') });
+                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور', s: channelFor('fastNote') });
             }
           }
         }
@@ -3346,7 +3366,7 @@
           var call = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, times.dhuhr - before, 0, 0);
           if (call.getTime() > Date.now()) {
             out.push({ at: call.getTime(), t: 'الجمعة',
-              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة', s: soundFor('jumuahBefore') });
+              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة', s: channelFor('jumuahBefore') });
           }
         }
       }
@@ -7034,6 +7054,12 @@
         var pick = soundFor(key);
         if (pick === 'silent') { toast('هذا التذكير يصل بلا صوت'); return; }
         if (pick === 'device') { toast('يصل بصوت الإشعارات في هاتفك'); return; }
+        /* a reminder whose sound is a recitation plays it, rather than a tone:
+           the reader chose the reciter, not a chime */
+        if (pick === 'buhendi') {
+          var f = RECITED_SOUND[key];
+          if (f) { playRecording('audio/dua/' + f.f, null, f.n); return; }
+        }
         playChime();
       });
     });
