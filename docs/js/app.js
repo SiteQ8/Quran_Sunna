@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.78.0';
+  var VERSION = '8.79.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3956,10 +3956,31 @@
     host.innerHTML = html;
   }
 
-  /* الأدعية المسجّلة بصوت قارئ التطبيق، مفتاحها رقم الباب في حصن المسلم */
+  /* What the app's own reciter has recorded. A chapter whose whole subject is
+     the recording is keyed by its number; a single dhikr that appears in
+     several chapters, like Ayat al-Kursi, is matched by its opening words so
+     one file serves every chapter it sits in. */
   var HISN_AUDIO = {
     32: { f: 'qunut-buhendi.mp3', n: 'خالد بوهندي' }
   };
+
+  var DHIKR_AUDIO = [
+    { starts: 'اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ', f: 'kursi-buhendi.mp3', n: 'خالد بوهندي', t: 'آية الكرسي' }
+  ];
+
+  function bareWords(t) {
+    return String(t || '').replace(/[\u064B-\u0652\u0670\u0621]/g, '').replace(/[ٱآأإ]/g, 'ا').replace(/\s+/g, '');
+  }
+
+  /* the recording for one dhikr, matched on its words with the marks stripped
+     so a difference in vowelling between chapters does not miss it */
+  function dhikrAudio(text) {
+    var bare = bareWords(text);
+    for (var i = 0; i < DHIKR_AUDIO.length; i++) {
+      if (bare.indexOf(bareWords(DHIKR_AUDIO[i].starts)) !== -1) return DHIKR_AUDIO[i];
+    }
+    return null;
+  }
 
   /* One dhikr on a card: the words, how often it is said, and a ring that
      fills as it is counted. Tapping anywhere on the card counts it. */
@@ -3975,6 +3996,12 @@
       '<p class="dhikr-text">' + esc(item.t) + '</p>' +
       (item.n ? '<p class="dhikr-note">' + esc(item.n) + '</p>' : '') +
       '<div class="dhikr-foot"><span class="source">' + foot + '</span>' +
+      /* a dhikr the reciter has recorded can be heard from its own card */
+      (function () {
+        var heard = dhikrAudio(item.t);
+        return heard ? '<button class="dhikr-share" data-hear="' + esc(heard.f) +
+          '" aria-label="استمع لـ' + esc(heard.t) + ' بصوت ' + esc(heard.n) + '">' + icon('play') + '</button>' : '';
+      }()) +
       '<button class="dhikr-share" data-picture="' + kind + ':' + i + '" aria-label="صورة للمشاركة">' + icon('share') + '</button>' +
       '<span class="dhikr-count' + (isDone ? ' is-done' : '') + '">' +
       ring(said, target) + '<span class="dhikr-left">' + (isDone ? icon('check') : ar(left)) + '</span></span></div></div>';
@@ -6502,6 +6529,12 @@
       return;
     }
 
+    var hear = target.closest('[data-hear]');
+    if (hear) {
+      if (state.voiceClip) { stopSpeaking(); return; }
+      playRecording('audio/dua/' + hear.getAttribute('data-hear'), null);
+      return;
+    }
     var pick = target.closest('[data-pick]');
     if (pick) { choosePicker(+pick.getAttribute('data-pick')); return; }
     var cell = target.closest('[data-time]');
