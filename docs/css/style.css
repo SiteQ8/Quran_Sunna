@@ -1488,9 +1488,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .setting > span:first-child { grid-column: 1; grid-row: 1; }
 .setting > .switch { grid-column: 2; grid-row: 1; align-self: center; flex: none; }
 /* everything else takes the line beneath, ranged to the end */
+/* The controls sit under the words and start where the words start, at the
+   reading edge, rather than being pushed to the far side of the row where
+   they read as belonging to nothing. */
 .setting > .picker, .setting > .select, .setting > .field,
 .setting > .voice-pick, .setting > .remind-controls, .setting > input {
-  grid-column: 1 / -1; grid-row: 2; justify-self: end; margin: 0;
+  grid-column: 1 / -1; grid-row: 2; justify-self: start; margin: 0;
 }
 /* a row with no switch keeps its control beside the words as before */
 .setting:not(:has(> .switch)) > .picker,
@@ -1503,12 +1506,22 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .picker-btn:disabled { opacity: .45; cursor: not-allowed; }
 
 /* The jumuah row carries four things at once: a sound, an ear, a «when» list
-   and a switch. On the second line they ran past the card edge, so that line
-   wraps and ranges to the end. */
+   and a switch. They share the second line, ranged to the end, and wrap onto
+   a third only if they must. */
 .setting > .remind-controls, .setting > .picker, .setting > .select { max-width: 100%; }
-.setting-remind { row-gap: var(--s2); }
-.setting-remind > .picker, .setting-remind > .select { grid-column: 1 / -1; grid-row: 3; justify-self: end; }
+.setting-remind > .remind-controls { grid-column: 1 / -1; grid-row: 2; }
+.setting-remind > .picker, .setting-remind > .select { grid-column: 1 / -1; grid-row: 3; justify-self: start; }
 .remind-controls { flex-wrap: wrap; }
+
+/* The switch keeps the first line beside the title whatever else the row
+   carries: it was falling to a line of its own under the controls, so «is this
+   on» sat at the bottom of a tall row instead of beside the question. */
+.setting > .switch { grid-column: 2; grid-row: 1; }
+/* rows are a touch tighter: eight above and below plus an eight gap made every
+   reminder a hundred and fifteen tall, and a screenful held only four */
+.setting { padding: var(--s2) 0; gap: 6px var(--s3); }
+.setting-remind > span:first-child { margin-bottom: 0; }
+.setting-note { line-height: 1.5; }
 .setting-label { font-size: var(--step-0); }
 .setting-note { font-size: var(--step--1); color: var(--ink-3); }
 
