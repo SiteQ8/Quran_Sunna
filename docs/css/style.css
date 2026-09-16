@@ -1556,16 +1556,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* The rule above uses :not(:has(...)), whose weight is higher than a plain
    child selector, so it won this on the bedtime row however late this came.
    Matching that weight puts the field back on its own line. */
-/* The bedtime sits beside its title, on the first line, the way a switch does
-   on every other row: it is the row's one answer, not a control that needs a
-   line of its own. Its width is pinned because android draws this input wider
-   than a desktop browser does, which is what made it sprawl on the phone. */
-.setting:not(:has(> .nothing)) > input[type="time"] {
-  grid-column: 2; grid-row: 1; align-self: center; justify-self: start;
-  width: 132px; min-width: 132px; max-width: 132px; box-sizing: border-box;
-  min-height: 44px; font-size: var(--step--1); padding-inline: var(--s2);
-  text-align: center;
-}
 
 /* A list that waits on its switch is dimmed, and says so when tapped, rather
    than looking broken: «greyed out and I cannot pick the time». */
@@ -1638,6 +1628,23 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .picker-item + .picker-item { margin-top: 2px; }
 .picker-item.is-on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
 .picker-item .icon { width: 18px; height: 18px; flex: none; }
+
+/* The bedtime is picked from two columns of numbers on the twenty four hour
+   clock: no AM and PM to read past, and nothing the phone draws. */
+.timepick { min-width: 118px; }
+.picker-btn.for-time { justify-content: space-between; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
+.timepick-panel { padding: var(--s2); }
+/* a clock reads hour then minute left to right, even on an arabic page, so
+   the columns keep that order whatever the page direction */
+.timecols { display: flex; align-items: stretch; gap: var(--s2); direction: ltr; }
+.timecol { flex: 1; max-height: 232px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; }
+.timesep { align-self: center; color: var(--ink-3); font-weight: 700; }
+.timecell {
+  min-height: 40px; border: 0; border-radius: var(--r-sm); background: none;
+  color: var(--ink); font: inherit; font-size: var(--step-0); cursor: pointer;
+  font-variant-numeric: tabular-nums;
+}
+.timecell.is-on { background: var(--accent-wash); color: var(--accent-ink); font-weight: 700; }
 
 .switch { width: 46px; height: 27px; border-radius: 999px; background: var(--line); position: relative; transition: background .2s; flex: none; }
 .switch::after { content: ''; position: absolute; top: 3px; inset-inline-start: 3px; width: 21px; height: 21px; border-radius: 50%; background: #fff; transition: transform .2s; }

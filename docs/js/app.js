@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.74.0';
+  var VERSION = '8.75.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5589,7 +5589,105 @@
     document.querySelectorAll('select[data-picked="1"]').forEach(syncPicker);
   }
 
+  /* An <input type="time"> is drawn by the phone: android gives it a width of
+     its own and a clock dialog of its own, neither of which is ours. It is
+     replaced by a picker of two columns, hours and minutes, on the twenty four
+     hour clock: no morning and evening to read past, just the hour you want.
+     The element keeps its id and its «HH:MM» value, so the handler bound to it
+     goes on working. */
+  function timeLabel(hhmm) {
+    var parts = String(hhmm || '00:00').split(':');
+    return ar(parts[0]) + ':' + ar(parts[1]);
+  }
+
+  function enhanceTime(input) {
+    if (!input || input.dataset.picked === '1') return;
+    input.dataset.picked = '1';
+    var value = input.value || '22:30';
+    var wrap = document.createElement('span');
+    wrap.className = 'picker timepick';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'picker-btn for-time';
+    btn.setAttribute('aria-haspopup', 'dialog');
+    if (input.getAttribute('aria-label')) btn.setAttribute('aria-label', input.getAttribute('aria-label'));
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    wrap.appendChild(btn);
+    input.hidden = true;
+    input.style.display = 'none';
+    syncTime(input);
+  }
+
+  function syncTime(input) {
+    var wrap = input.parentNode;
+    if (!wrap || !wrap.classList.contains('timepick')) return;
+    var btn = wrap.querySelector('.picker-btn');
+    if (!btn) return;
+    btn.innerHTML = '<span class="picker-label">' + esc(timeLabel(input.value)) + '</span>' +
+      '<svg class="icon picker-caret" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"/></svg>';
+  }
+
+  /* two columns of numbers, the chosen one marked, as the app marks anything */
+  function openTimePicker(btn) {
+    closePicker();
+    var input = btn.parentNode.querySelector('input[type="time"]');
+    if (!input) return;
+    var now = String(input.value || '22:30').split(':');
+    var panel = document.createElement('div');
+    panel.className = 'picker-panel timepick-panel';
+    panel.setAttribute('role', 'dialog');
+    /* «upTo», not «count»: a local by that name hides the count helper, and
+       any call to it inside this scope would fail */
+    var col = function (kind, upTo, step, chosen) {
+      var out = '<div class="timecol" data-timecol="' + kind + '">';
+      for (var v = 0; v < upTo; v += step) {
+        var t = String(v).padStart(2, '0');
+        out += '<button type="button" class="timecell' + (t === chosen ? ' is-on' : '') +
+          '" data-time="' + kind + ':' + t + '">' + esc(ar(t)) + '</button>';
+      }
+      return out + '</div>';
+    };
+    panel.innerHTML = '<div class="timecols">' +
+      col('h', 24, 1, now[0]) + '<span class="timesep">:</span>' + col('m', 60, 5, now[1]) +
+      '</div>';
+    var veil = document.createElement('div');
+    veil.className = 'picker-veil';
+    document.body.appendChild(veil);
+    document.body.appendChild(panel);
+    var r = btn.getBoundingClientRect();
+    panel.style.left = Math.round(Math.max(8, Math.min(r.left, window.innerWidth - 232))) + 'px';
+    panel.style.width = '224px';
+    var room = window.innerHeight - r.bottom;
+    if (room < 260 && r.top > room) panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
+    else panel.style.top = (r.bottom + 6) + 'px';
+    state.pickerFor = btn;
+    panel.querySelectorAll('.is-on').forEach(function (on) { on.scrollIntoView({ block: 'center' }); });
+  }
+
+  function chooseTime(ref) {
+    var btn = state.pickerFor;
+    if (!btn) return;
+    var input = btn.parentNode.querySelector('input[type="time"]');
+    if (!input) return;
+    var parts = String(input.value || '22:30').split(':');
+    var bits = ref.split(':');
+    if (bits[0] === 'h') parts[0] = bits[1]; else parts[1] = bits[1];
+    input.value = parts[0] + ':' + parts[1];
+    syncTime(input);
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+    /* the panel stays open: an hour and a minute are two choices, and closing
+       after the first would make the reader open it twice */
+    var panel = document.querySelector('.timepick-panel');
+    if (panel) {
+      panel.querySelectorAll('[data-time^="' + bits[0] + ':"]').forEach(function (c) {
+        c.classList.toggle('is-on', c.getAttribute('data-time') === ref);
+      });
+    }
+  }
+
   function enhanceSelects() {
+    document.querySelectorAll('input[type="time"]').forEach(enhanceTime);
     document.querySelectorAll('select').forEach(enhanceSelect);
   }
 
@@ -6298,6 +6396,13 @@
 
     var pick = target.closest('[data-pick]');
     if (pick) { choosePicker(+pick.getAttribute('data-pick')); return; }
+    var cell = target.closest('[data-time]');
+    if (cell) { chooseTime(cell.getAttribute('data-time')); return; }
+    var timeBtn = target.closest('.timepick .picker-btn');
+    if (timeBtn) {
+      if (state.pickerFor === timeBtn) closePicker(); else openTimePicker(timeBtn);
+      return;
+    }
     var pickBtn = target.closest('.picker-btn');
     if (pickBtn && pickBtn.disabled) {
       /* a dimmed list is waiting on its switch; saying so beats leaving the
@@ -6694,10 +6799,14 @@
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
       });
     });
-    bind('settings-sleep-at', 'change', function (e) {
+    /* Bound on the document, not on the element: the bedtime input is replaced
+       by our own list at boot, and a handler attached to the old element goes
+       with it. The choice was being made and quietly dropped. */
+    document.addEventListener('change', function (e) {
+      if (!e.target || e.target.id !== 'settings-sleep-at') return;
       Store.set('sleepAt', e.target.value || '22:30');
       handRemindersToApp();
-      toast('وقت النوم ' + e.target.value);
+      toast('وقت النوم ' + timeLabel(e.target.value));
     });
     /* «اسمع الصوت»: the chime plays here in the page; the device sound and
        silence cannot be sounded by a page, so it says so rather than doing
