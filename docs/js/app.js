@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.75.2';
+  var VERSION = '8.76.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1473,6 +1473,24 @@
 
   /* The day an occasion falls on, in the reckoning the reader lives by, so
      «بعد 152 يوماً» is answered with the date itself. */
+  /* the nearest day it is recommended to fast, within the coming forty days,
+     with when it falls said in words */
+  function nextFast() {
+    var today = new Date();
+    for (var d = 0; d < 40; d++) {
+      var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
+      var why = fastToday(day);
+      if (!why.length) continue;
+      return {
+        date: day,
+        days: d,
+        names: why.map(function (w) { return w.name; }).join(' و'),
+        when: d === 0 ? 'اليوم' : d === 1 ? 'غداً' : 'بعد ' + daysOf(d)
+      };
+    }
+    return null;
+  }
+
   function whenItFalls(g) {
     return Hijri.WEEKDAYS[g.getDay()] + ' ' + ar(g.getDate()) + ' ' + GREG_MONTHS[g.getMonth()] + ' ' + ar(g.getFullYear());
   }
@@ -1481,8 +1499,20 @@
     var host = $('home-upcoming');
     if (!host) return;
     var list = Hijri.upcoming(new Date(), Store.get('hijriAdjust')).slice(0, 3);
-    if (!list.length) { host.innerHTML = empty('لا مناسبة قريبة'); return; }
-    host.innerHTML = list.map(function (o) {
+    /* The nearest voluntary fast belongs here too: it is the occasion closest
+       to the reader nearly every week, and it was only on the reminders
+       screen, which is not where one looks to see what is coming. */
+    var fast = nextFast();
+    var head = '';
+    if (fast) {
+      head = '<div class="row" style="cursor:default"><span class="row-mark">' + icon('fast') + '</span>' +
+        '<span class="row-body"><span class="row-title">' + esc(fast.names) + '</span>' +
+        '<span class="row-note">' + esc(fast.when + '، ' + whenItFalls(fast.date)) + '</span></span>' +
+        '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(fast.names) + '|' + fast.date.getTime() +
+        '" aria-label="أضف ' + esc(fast.names) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
+    }
+    if (!list.length && !head) { host.innerHTML = empty('لا مناسبة قريبة'); return; }
+    host.innerHTML = head + list.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
         '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
@@ -5802,26 +5832,20 @@
       strip('is-off', 'تذكير الصيام موقوف', 'شغّله ليصلك التنبيه ليلة اليوم الذي يُستحب صيامه');
       return;
     }
-    var today = new Date();
-    for (var d = 0; d < 40; d++) {
-      var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
-      var why = fastToday(day);
-      if (!why.length) continue;
-      var names = why.map(function (w) { return w.name; }).join(' و');
+    /* one place knows which day is next and how to say when: nextFast(), which
+       the home calendar reads too */
+    var next = nextFast();
+    if (next) {
       /* «صيام الإثنين» already says which day it is, so the date does not say
          it again: أقرب صيام الإثنين الإثنين ١٤ سبتمبر reads like a stutter */
-      var weekday = Hijri.WEEKDAYS[day.getDay()];
-      var dated = (names.indexOf(weekday) === -1 ? weekday + ' ' : '') +
-        ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()];
-      /* «١٧ سبتمبر» is a date, not an answer: the code knows the day is
-         tomorrow and used to keep it to itself. It says so first, and the
-         date after it for anyone who wants it. */
-      var note = d === 0 ? 'اليوم، والتنبيه وصلك ليلته'
-        : d === 1 ? 'غداً ' + dated + '، والتنبيه الليلة بعد المغرب بساعة ونصف'
-        : d < 7 ? 'بعد ' + count(d, 'يوم', 'يومين', 'أيام', 'يوماً') + '، ' + dated +
-            '، والتنبيه ليلته بعد المغرب بساعة ونصف'
-        : dated + '، والتنبيه ليلته بعد المغرب بساعة ونصف';
-      strip('', 'أقرب صيام: ' + names, note);
+      var weekday = Hijri.WEEKDAYS[next.date.getDay()];
+      var dated = (next.names.indexOf(weekday) === -1 ? weekday + ' ' : '') +
+        ar(next.date.getDate()) + ' ' + GREG_MONTHS[next.date.getMonth()];
+      var tail = next.days === 1 ? '، والتنبيه الليلة بعد المغرب بساعة ونصف'
+        : '، والتنبيه ليلته بعد المغرب بساعة ونصف';
+      var note = next.days === 0 ? 'اليوم، والتنبيه وصلك ليلته'
+        : next.when + ' ' + dated + tail;
+      strip('', 'أقرب صيام: ' + next.names, note);
       return;
     }
     host.className = 'next-fast';
@@ -7201,7 +7225,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,

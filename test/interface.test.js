@@ -5545,9 +5545,12 @@ test('an upcoming occasion says the very day it falls on', () => {
   const { win, doc } = boot();
   const list = win.Hijri.upcoming(new Date(), 0);
   assert.ok(list.length, 'there is always something ahead');
-  const note = doc.querySelector('#home-upcoming .row-note').textContent;
+  /* the nearest voluntary fast heads the list now, so the first hijri occasion
+     is looked up by its name rather than assumed to be the first row */
   const first = list[0];
-  assert.ok(note.indexOf(win.App.helpers.whenItFalls(first.date)) !== -1,
+  const notes = [...doc.querySelectorAll('#home-upcoming .row')]
+    .map(function (r) { return r.querySelector('.row-note').textContent; });
+  assert.ok(notes.some(function (n) { return n.indexOf(win.App.helpers.whenItFalls(first.date)) !== -1; }),
     'the countdown alone does not tell a reader when to prepare');
   /* the day, the date, the month and the year, in the words the app uses */
   const written = win.App.helpers.whenItFalls(first.date);
@@ -5667,12 +5670,27 @@ test('the next fast says when it is in words, not only as a date', () => {
   /* «١٧ سبتمبر» is a date the reader has to work out. The code already knows
      the day is tomorrow, or three days off; it says so, and keeps the date
      after for anyone who wants it. */
+  /* one function knows when the next fast is and how to say it, and both the
+     reminders strip and the home calendar read it */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function renderNextFast[\s\S]*?\n  \}\n/.exec(app);
-  const body = fn ? fn[0] : app;
-  assert.ok(body.indexOf("'غداً '") !== -1, 'tomorrow is named');
-  assert.ok(/d < 7 \?/.test(body) && body.indexOf("'بعد '") !== -1, 'and the days within the week are counted');
-  assert.ok(body.indexOf("d === 0 ? 'اليوم") !== -1, 'today too');
+  const fn = /function nextFast\(\)[\s\S]*?\n  \}\n/.exec(app);
+  assert.ok(fn, 'nextFast is the one place that knows');
+  const body = fn[0];
+  assert.ok(body.indexOf("'غداً'") !== -1, 'tomorrow is named');
+  assert.ok(body.indexOf("'اليوم'") !== -1, 'today too');
+  assert.ok(body.indexOf("'بعد '") !== -1, 'and the days between are counted');
+
+  /* and it heads the home calendar: the fast is the occasion nearest the
+     reader nearly every week, and it used to live only on the reminders
+     screen, which is not where one looks to see what is coming */
+  const { win: w2, doc: d2 } = boot();
+  const rows = [...d2.querySelectorAll('#home-upcoming .row')];
+  const fast = w2.App.helpers.nextFast();
+  assert.ok(fast, 'there is a fast within the coming weeks');
+  assert.strictEqual(rows[0].querySelector('.row-title').textContent, fast.names, 'it comes first');
+  assert.ok(rows[0].querySelector('[data-act="to-calendar"]'), 'and can be added to a calendar like the rest');
+  assert.ok(rows[0].querySelector('.row-note').textContent.indexOf(fast.when) === 0,
+    'its note opens with when it is');
 
   const { win, doc } = boot();
   win.Store.set('fastNote', true);
@@ -5802,10 +5820,11 @@ test('an occasion can be put in the reader\'s own calendar, and no longer repeat
   win.SunnatiApp = { addToCalendar: function (t, n, s, e) { handed.push({ t: t, s: s, e: e }); return true; } };
   click(win, btn);
   assert.strictEqual(handed.length, 1);
-  const first = win.Hijri.upcoming(new win.Date(), 0)[0];
-  assert.strictEqual(handed[0].t, first.name);
-  assert.strictEqual(new Date(handed[0].s).toDateString(), first.date.toDateString(), 'on the day it falls');
-  assert.ok(handed[0].e > handed[0].s, 'and a day long');
+  /* whatever heads the list, the fast or a hijri occasion, the button hands
+     over that row's own name and day */
+  const title = row.querySelector('.row-title').textContent;
+  assert.strictEqual(handed[0].t, title);
+  assert.ok(handed[0].s > 0 && handed[0].e > handed[0].s, 'a real day is handed over');
   /* in a browser it becomes a file every calendar understands */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function addToCalendar\(name, date\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
