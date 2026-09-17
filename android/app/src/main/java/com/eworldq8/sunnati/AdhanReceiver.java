@@ -153,9 +153,17 @@ public final class AdhanReceiver extends BroadcastReceiver {
         ensureChannels(context);
         NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         if (manager == null) return;
+        /* The notification carries which reminder it was, so tapping it opens
+           the app on that subject rather than wherever the reader last left
+           it: a friday night reminder used to open the app and then say
+           nothing more about friday night. */
         Intent open = new Intent(context, MainActivity.class);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent tap = PendingIntent.getActivity(context, 0, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        open.putExtra("kind", tag);
+        /* a request code of its own per kind, or android hands back the first
+           pending intent it made and every notification opens the same thing */
+        PendingIntent tap = PendingIntent.getActivity(context, tag.hashCode(), open,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification n = new Notification.Builder(context, channel)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title)
