@@ -20,4 +20,13 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     window = w
     return true
   }
+
+  /* sunnati://screen/<name> is how the screenshot job asks for a screen */
+  func application(_ app: UIApplication, open url: URL,
+                   options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    guard url.scheme == "sunnati", url.host == "screen" else { return false }
+    let name = url.lastPathComponent
+    (window?.rootViewController as? ReaderController)?.show(name)
+    return true
+  }
 }

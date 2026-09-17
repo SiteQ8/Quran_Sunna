@@ -22,6 +22,14 @@
   <!-- the prayer times are computed for where the reader is -->
   <key>NSLocationWhenInUseUsageDescription</key>
   <string>لحساب أوقات الصلاة واتجاه القبلة لمكانك</string>
+  <!-- a scheme of our own, used by the screenshot job to reach each screen -->
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key><string>com.eworldq8.sunnati</string>
+      <key>CFBundleURLSchemes</key><array><string>sunnati</string></array>
+    </dict>
+  </array>
   <key>ITSAppUsesNonExemptEncryption</key><false/>
 </dict>
 </plist>

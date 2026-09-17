@@ -160,27 +160,15 @@ jobs:
             mkdir -p "$OUT"
             xcrun simctl io "$DEVICE" screenshot "$OUT/1-home.png"
 
-            # The page has no url routing, so the screens are reached the way a
-            # reader reaches them: by tapping the bar along the bottom. Five
-            # tabs, evenly spaced, each at a known fraction of the width just
-            # above the bottom edge. They run right to left: home is rightmost.
-            SIZE=$(xcrun simctl io "$DEVICE" enumerate 2>/dev/null | grep -m1 -oE "[0-9]+ x [0-9]+")
-            W=$(echo "$SIZE" | cut -d" " -f1); W=${W:-1320}
-            H=$(echo "$SIZE" | cut -d" " -f3); H=${H:-2868}
-            Y=$(( H * 96 / 100 ))
-
-            tab () {
-              N="$1"; NAME="$2"
-              X=$(( W * (11 - 2 * N) / 10 ))
-              xcrun simctl io "$DEVICE" tap "$X" "$Y" 2>/dev/null || true
+            # simctl has no tap command, and guessing where a tab sits would
+            # silently photograph the same screen six times. The app answers a
+            # scheme of its own instead, so each screen is asked for by name.
+            for pair in "azkar:2-azkar" "quran:3-quran" "tasbih:4-tasbih" "hisn:5-hisn" "more:6-more"; do
+              VIEW="${pair%%:*}"; NAME="${pair##*:}"
+              xcrun simctl openurl "$DEVICE" "sunnati://screen/$VIEW"
               sleep 5
               xcrun simctl io "$DEVICE" screenshot "$OUT/$NAME.png"
-            }
-            tab 2 "2-quran"
-            tab 3 "3-tasbih"
-            tab 4 "4-sunan"
-            tab 5 "5-more"
-            tab 1 "6-home-again"
+            done
 
             xcrun simctl shutdown "$DEVICE" || true
           }
