@@ -170,6 +170,9 @@ jobs:
               VIEW="${pair%%:*}"; NAME="${pair##*:}"
               xcrun simctl terminate "$DEVICE" com.eworldq8.sunnati || true
               sleep 2
+              # granted again each time: relaunching brings the question back,
+              # and a permission dialog in a store screenshot is a rejection
+              xcrun simctl privacy "$DEVICE" grant location com.eworldq8.sunnati || true
               xcrun simctl launch "$DEVICE" com.eworldq8.sunnati -screen "$VIEW"
               sleep 18
               xcrun simctl io "$DEVICE" screenshot "$OUT/$NAME.png"
@@ -183,8 +186,11 @@ jobs:
           # the other: some screenshots are better than none.
           xcrun simctl list devices available | grep -E "iPhone" | head -20
 
+          # The image carries no older iPhones, so the second size comes from
+          # the 16 Plus at 6.7 inch, which App Store Connect accepts for the
+          # smaller class. iPhone 11 Pro Max simply is not there any more.
           shoot "iPhone 16 Pro Max" "6.9-inch" || echo "::warning::6.9 inch failed"
-          shoot "iPhone 11 Pro Max" "6.5-inch" || echo "::warning::6.5 inch failed"
+          shoot "iPhone 16 Plus" "6.7-inch" || echo "::warning::6.7 inch failed"
 
       - name: احفظ الصور
         if: always()
