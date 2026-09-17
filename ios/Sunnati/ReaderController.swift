@@ -182,6 +182,18 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
   }
 
   /* links to other sites open in the phone's browser, not inside the app */
+  /* Once the page has loaded, open whichever screen was named on the command
+     line. The screenshot job passes -screen azkar and so on; a url scheme made
+     iOS ask "Open in سُنّتي?" first, and that dialog then sat in the middle of
+     every photograph. A launch argument asks nobody. */
+  func webView(_ w: WKWebView, didFinish navigation: WKNavigation!) {
+    let args = ProcessInfo.processInfo.arguments
+    guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return }
+    let name = args[i + 1].filter { $0.isLetter }
+    /* the page settles after loading, so the screen is asked for a moment later */
+    DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.show(name) }
+  }
+
   func webView(_ w: WKWebView, decidePolicyFor action: WKNavigationAction,
                decisionHandler done: @escaping (WKNavigationActionPolicy) -> Void) {
     if let url = action.request.url, url.host != site.host, action.navigationType == .linkActivated {

@@ -153,28 +153,38 @@ jobs:
 
             APP="$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Sunnati.app"
             xcrun simctl install "$DEVICE" "$APP"
-            xcrun simctl launch "$DEVICE" com.eworldq8.sunnati
-            sleep 30
-
             OUT="$RUNNER_TEMP/shots/$TAG"
             mkdir -p "$OUT"
+
+            xcrun simctl launch "$DEVICE" com.eworldq8.sunnati
+            sleep 30
             xcrun simctl io "$DEVICE" screenshot "$OUT/1-home.png"
 
             # simctl has no tap command, and guessing where a tab sits would
             # silently photograph the same screen six times. The app answers a
             # scheme of its own instead, so each screen is asked for by name.
+            # The app is relaunched for each screen with -screen <name>. A url
+            # scheme made iOS ask "Open in سُنّتي?" and that dialog then sat in
+            # the middle of every photograph; a launch argument asks nobody.
             for pair in "azkar:2-azkar" "quran:3-quran" "tasbih:4-tasbih" "hisn:5-hisn" "more:6-more"; do
               VIEW="${pair%%:*}"; NAME="${pair##*:}"
-              xcrun simctl openurl "$DEVICE" "sunnati://screen/$VIEW"
-              sleep 5
+              xcrun simctl terminate "$DEVICE" com.eworldq8.sunnati || true
+              sleep 2
+              xcrun simctl launch "$DEVICE" com.eworldq8.sunnati -screen "$VIEW"
+              sleep 18
               xcrun simctl io "$DEVICE" screenshot "$OUT/$NAME.png"
             done
 
             xcrun simctl shutdown "$DEVICE" || true
           }
 
-          shoot "iPhone 16 Pro Max" "6.9-inch"
-          shoot "iPhone 11 Pro Max" "6.5-inch"
+          # The devices are listed first, so a missing name shows in the log
+          # rather than as a bare failure. And one size failing does not lose
+          # the other: some screenshots are better than none.
+          xcrun simctl list devices available | grep -E "iPhone" | head -20
+
+          shoot "iPhone 16 Pro Max" "6.9-inch" || echo "::warning::6.9 inch failed"
+          shoot "iPhone 11 Pro Max" "6.5-inch" || echo "::warning::6.5 inch failed"
 
       - name: احفظ الصور
         if: always()
