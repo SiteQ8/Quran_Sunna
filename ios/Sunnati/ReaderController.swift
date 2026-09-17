@@ -1,6 +1,14 @@
 import UIKit
 import WebKit
 import AVFoundation
+import WidgetKit
+
+/* wrapped so the app still builds where WidgetKit is missing */
+enum WidgetCentre {
+  static func reload() {
+    if #available(iOS 14.0, *) { WidgetCenter.shared.reloadAllTimelines() }
+  }
+}
 
 /* The site in a web view, plus the bridge the page already talks to. Android
    exposes SunnatiApp with seventeen methods; the page checks for each before
@@ -66,7 +74,9 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
 
     case "setPrayerTimes":
       guard let json = args.first as? String else { return }
-      Notifier.shared.replace(parse(json), prefix: "adhan-")
+      let times = parse(json)
+      Notifier.shared.replace(times, prefix: "adhan-")
+      shareWithWidget(times)
 
     case "shareText":
       guard let text = args.first as? String else { return }
@@ -97,6 +107,20 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         title: row["t"] as? String ?? "سُنّتي",
         text: row["b"] as? String ?? "",
         chime: Chime(rawValue: row["s"] as? String ?? "device") ?? .device)
+    }
+  }
+
+  /* The widget shows the same times the reader sees, so the app hands them
+     over rather than letting the widget compute its own and drift. */
+  private func shareWithWidget(_ times: [Reminder]) {
+    guard let store = UserDefaults(suiteName: "group.com.eworldq8.sunnati") else { return }
+    let payload = [
+      "names": times.map(\.title),
+      "at": times.map { $0.at.timeIntervalSince1970 }
+    ] as [String: Any]
+    if let data = try? JSONSerialization.data(withJSONObject: payload) {
+      store.set(data, forKey: "times")
+      WidgetCentre.reload()
     }
   }
 
