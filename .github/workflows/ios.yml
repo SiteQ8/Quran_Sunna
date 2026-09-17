@@ -131,36 +131,69 @@ jobs:
       # iOS, and it produces the screenshots App Store Connect asks for. What
       # it cannot show is the part that matters most: notifications arriving
       # with the app closed. Those need a real phone.
-      - name: صوّره في المحاكي
+      # App Store Connect wants screenshots at two sizes, and they must show
+      # the app doing its work, not a permission dialog. So location is granted
+      # before launch rather than answered after, and each screen is reached by
+      # its own url on the site the app loads.
+      - name: صوّر لقطات المتجر
         run: |
           cd ios
-          DEVICE="iPhone 16 Pro Max"
-          xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
-            -destination "platform=iOS Simulator,name=$DEVICE" \
-            -derivedDataPath "$RUNNER_TEMP/dd" \
-            -configuration Debug \
-            CODE_SIGNING_ALLOWED=NO build
+          shoot () {
+            DEVICE="$1"; TAG="$2"
+            xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
+              -destination "platform=iOS Simulator,name=$DEVICE" \
+              -derivedDataPath "$RUNNER_TEMP/dd" -configuration Debug \
+              CODE_SIGNING_ALLOWED=NO build
 
-          xcrun simctl boot "$DEVICE" || true
-          xcrun simctl bootstatus "$DEVICE" -b
+            xcrun simctl boot "$DEVICE" || true
+            xcrun simctl bootstatus "$DEVICE" -b
 
-          APP="$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Sunnati.app"
-          xcrun simctl install "$DEVICE" "$APP"
-          xcrun simctl launch "$DEVICE" com.eworldq8.sunnati
+            # granted up front, so no dialog stands in front of the app
+            xcrun simctl privacy "$DEVICE" grant location com.eworldq8.sunnati || true
 
-          mkdir -p "$RUNNER_TEMP/shots"
-          # the site loads over the network, so it is given time to arrive
-          sleep 25
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/shots/1-home.png"
-          sleep 5
-          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/shots/2-home-again.png"
+            APP="$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Sunnati.app"
+            xcrun simctl install "$DEVICE" "$APP"
+            xcrun simctl launch "$DEVICE" com.eworldq8.sunnati
+            sleep 30
+
+            OUT="$RUNNER_TEMP/shots/$TAG"
+            mkdir -p "$OUT"
+            xcrun simctl io "$DEVICE" screenshot "$OUT/1-home.png"
+
+            # The page has no url routing, so the screens are reached the way a
+            # reader reaches them: by tapping the bar along the bottom. Five
+            # tabs, evenly spaced, each at a known fraction of the width just
+            # above the bottom edge. They run right to left: home is rightmost.
+            SIZE=$(xcrun simctl io "$DEVICE" enumerate 2>/dev/null | grep -m1 -oE "[0-9]+ x [0-9]+")
+            W=$(echo "$SIZE" | cut -d" " -f1); W=${W:-1320}
+            H=$(echo "$SIZE" | cut -d" " -f3); H=${H:-2868}
+            Y=$(( H * 96 / 100 ))
+
+            tab () {
+              N="$1"; NAME="$2"
+              X=$(( W * (11 - 2 * N) / 10 ))
+              xcrun simctl io "$DEVICE" tap "$X" "$Y" 2>/dev/null || true
+              sleep 5
+              xcrun simctl io "$DEVICE" screenshot "$OUT/$NAME.png"
+            }
+            tab 2 "2-quran"
+            tab 3 "3-tasbih"
+            tab 4 "4-sunan"
+            tab 5 "5-more"
+            tab 1 "6-home-again"
+
+            xcrun simctl shutdown "$DEVICE" || true
+          }
+
+          shoot "iPhone 16 Pro Max" "6.9-inch"
+          shoot "iPhone 11 Pro Max" "6.5-inch"
 
       - name: احفظ الصور
         if: always()
         uses: actions/upload-artifact@v5
         with:
           name: sunnati-ios-shots
-          path: ${{ runner.temp }}/shots/*.png
+          path: ${{ runner.temp }}/shots/
           retention-days: 14
 
       - name: احفظ الحزمة
