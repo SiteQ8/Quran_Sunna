@@ -125,6 +125,44 @@ jobs:
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/out"
 
+      # A signed build cannot be installed anywhere without a developer
+      # account, so until there is one the app is run in the simulator and
+      # photographed. That shows it opens, that the arabic lays out right on
+      # iOS, and it produces the screenshots App Store Connect asks for. What
+      # it cannot show is the part that matters most: notifications arriving
+      # with the app closed. Those need a real phone.
+      - name: صوّره في المحاكي
+        run: |
+          cd ios
+          DEVICE="iPhone 16 Pro Max"
+          xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
+            -destination "platform=iOS Simulator,name=$DEVICE" \
+            -derivedDataPath "$RUNNER_TEMP/dd" \
+            -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build
+
+          xcrun simctl boot "$DEVICE" || true
+          xcrun simctl bootstatus "$DEVICE" -b
+
+          APP="$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Sunnati.app"
+          xcrun simctl install "$DEVICE" "$APP"
+          xcrun simctl launch "$DEVICE" com.eworldq8.sunnati
+
+          mkdir -p "$RUNNER_TEMP/shots"
+          # the site loads over the network, so it is given time to arrive
+          sleep 25
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/shots/1-home.png"
+          sleep 5
+          xcrun simctl io "$DEVICE" screenshot "$RUNNER_TEMP/shots/2-home-again.png"
+
+      - name: احفظ الصور
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: sunnati-ios-shots
+          path: ${{ runner.temp }}/shots/*.png
+          retention-days: 14
+
       - name: احفظ الحزمة
         if: steps.signing.outputs.ready == 'yes'
         uses: actions/upload-artifact@v5
