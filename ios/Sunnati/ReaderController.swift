@@ -28,6 +28,16 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     /* The page calls SunnatiApp.someMethod(...); each call is posted here as a
        message naming the method and its arguments. Declaring it before the
        page loads means the page finds the bridge on its first look. */
+    /* While the store screenshots are taken the page must not ask for the
+       location: the system dialog then stands in the middle of every picture.
+       Passing -shooting removes the geolocation api before the page loads, so
+       the page falls back to the city it already knows and asks nobody. */
+    if ProcessInfo.processInfo.arguments.contains("-shooting") {
+      let hide = "try { Object.defineProperty(navigator, 'geolocation', { get: function () { return undefined; } }); } catch (e) {}"
+      setup.userContentController.addUserScript(
+        WKUserScript(source: hide, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+    }
+
     let bridge = """
     window.SunnatiApp = new Proxy({}, {
       get: function (_, name) {
