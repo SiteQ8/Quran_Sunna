@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.86.4';
+  var VERSION = '8.87.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -23,7 +23,22 @@
 
   /* The midday prayer keeps its slot all week, but on Friday it is the
      jumuah, so the screen should call it by the name people are waiting for. */
-  function isFriday(date) { return (date || new Date()).getDay() === 5; }
+  /* A day in the sharia begins at maghrib, not at midnight. So the sunan of
+     friday are due from the maghrib of thursday and are done by the fajr of
+     friday: someone reading them at eleven on thursday night is in ليلة
+     الجمعة, and the app used to answer that it was still thursday because the
+     calendar said so.
+     A date handed in is still read as the calendar day it is, since it came
+     from a calendar and a stored record should not shift by three hours. */
+  function isFriday(date) {
+    if (date) return date.getDay() === 5;
+    var now = new Date();
+    if (now.getDay() === 5) return true;
+    if (now.getDay() !== 4) return false;
+    var t = computeTimes(now);
+    if (typeof t.maghrib !== 'number') return false;
+    return (now.getHours() * 60 + now.getMinutes()) >= t.maghrib;
+  }
 
   function prayerName(key, date) {
     if (key === 'dhuhr' && isFriday(date)) return 'الجمعة';
@@ -717,6 +732,17 @@
       if (app && app.pageReady) { try { app.pageReady(); } catch (e) { /* older package */ } }
       dismissBootSplash(!!app);
       if (Store.get('pageLayout') === 'madinah') loadMadinahLines().then(function () { if (state.view === 'page') renderPage(); });
+      /* The sheets are checked when the app opens, and again whenever the
+         reader comes back to it. Without the second check a phone left open
+         since before maghrib never learns that friday night began, and the
+         reader who taps the notification finds the app as he left it. */
+      document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) window.setTimeout(showDueSheets, 300);
+      });
+      /* the wrapper opens the site with ?from=<kind> when a notification was
+         tapped and the app was not already running */
+      var from = (window.location.search.match(/[?&]from=([a-zA-Z]+)/) || [])[1];
+      if (from) window.setTimeout(function () { cameFrom(from); }, 1800);
       window.setTimeout(function () {
         maybeExplainChrome();
         var sheet = showDueSheets();
@@ -1599,6 +1625,17 @@
         '<button class="btn btn-ghost btn-icon" data-hear="takbeer-buhendi.mp3"' +
         ' aria-label="استمع لتكبيرات العيد بصوت خالد بوهندي">' + icon('play') + '</button></div>');
     return true;
+  }
+
+  /* A tapped notification says which reminder it was, and the app opens on
+     that subject. Otherwise the reader taps a friday night reminder and lands
+     on the home screen, which says nothing about friday night. */
+  function cameFrom(kind) {
+    if (kind === 'jumuahNight' || kind === 'salawat') { showDueSheets(); return; }
+    if (kind === 'wird') { go('quran'); return; }
+    if (kind === 'morningAdhkar' || kind === 'eveningAdhkar') { go('azkar'); return; }
+    if (kind === 'qiyam' || kind === 'adhan') { go('home'); return; }
+    showDueSheets();
   }
 
   function nextFast() {
@@ -7531,7 +7568,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
       isFriday: isFriday, totalSunnahCount: totalSunnahCount,

@@ -6011,6 +6011,25 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
   assert.ok(recited.text.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
 });
 
+test('friday begins at the maghrib of thursday, as the day does in the sharia', () => {
+  /* A golden rule of the app: the sunan of friday are due from the maghrib of
+     thursday and are done by the fajr of friday. Someone reading them at
+     eleven on thursday night is in ليلة الجمعة, and the app used to answer
+     that it was still thursday because the calendar said so. */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function isFriday\(date\)[\s\S]*?\n  \}/.exec(app);
+  assert.ok(fn, 'isFriday is there');
+  const body = fn[0];
+  assert.ok(body.indexOf('maghrib') !== -1, 'it looks at maghrib');
+  assert.ok(/getDay\(\) !== 4/.test(body) || /getDay\(\) === 4/.test(body),
+    'and thursday evening counts as friday');
+
+  /* a date handed in is still asked about as a calendar day: it came from a
+     calendar, and a stored record should not shift by three hours */
+  assert.ok(/if \(date\) return date\.getDay\(\) === 5/.test(body),
+    'a given date is read as the calendar day it is');
+});
+
 test('a fast that has already been broken is not still offered', () => {
   /* A fast ends at maghrib. Saying «صيام الخميس، اليوم» at eight in the
      evening tells the reader about something he has already finished, and the

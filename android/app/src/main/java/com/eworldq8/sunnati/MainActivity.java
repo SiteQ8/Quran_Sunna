@@ -156,6 +156,11 @@ public class MainActivity extends Activity {
         if (data != null && "https".equals(data.getScheme()) && "sunnati.3li.info".equals(data.getHost())) {
             return data.toString();
         }
+        /* A tapped notification says which reminder it was, and the site is
+           opened on that subject: a friday night reminder that opens the app
+           and then says nothing more about friday night has wasted the tap. */
+        String kind = intent == null ? null : intent.getStringExtra("kind");
+        if (kind != null && kind.length() > 0) return SITE + "?from=" + Uri.encode(kind);
         return SITE;
     }
 
@@ -166,6 +171,16 @@ public class MainActivity extends Activity {
         Uri data = intent.getData();
         if (data != null && "https".equals(data.getScheme()) && "sunnati.3li.info".equals(data.getHost())
                 && web != null) web.loadUrl(data.toString());
+        /* the app was already running when the notification was tapped, so the
+           page is told rather than reloaded */
+        else if (web != null) {
+            String kind = intent.getStringExtra("kind");
+            if (kind != null && kind.length() > 0) {
+                web.evaluateJavascript(
+                    "window.App && App.helpers && App.helpers.cameFrom && App.helpers.cameFrom('"
+                    + kind.replaceAll("[^a-zA-Z]", "") + "')", null);
+            }
+        }
         /* the buttons in the shade come back here, and are passed to the page,
            which is what actually holds the recitation */
         String action = intent == null ? null : intent.getAction();
