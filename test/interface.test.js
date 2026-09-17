@@ -5817,6 +5817,31 @@ test('the sound a reader picks reaches whichever bridge schedules that reminder'
   assert.deepStrictEqual(orphans, [], 'these sounds reach no bridge');
 });
 
+test('the three places that carry a version number agree', () => {
+  /* The version lives in four files now that iOS exists, and one of them was
+     already a release behind after a single bump: nothing had ever checked. A
+     wrapper shipping an older version than the page it loads is the kind of
+     thing that is noticed by a reviewer, not by us. */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const web = /var VERSION = '([\d.]+)'/.exec(app)[1];
+
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  assert.ok(sw.indexOf("'sunnati-v" + web + "'") !== -1, 'the worker matches the page: ' + web);
+
+  const gradle = fs.readFileSync(path.join(__dirname, '..', 'android/app/build.gradle'), 'utf8');
+  const android = /versionName "([\d.]+)"/.exec(gradle)[1];
+  assert.strictEqual(android, web, 'android matches the page');
+
+  const ios = fs.readFileSync(path.join(__dirname, '..', 'ios/project.yml'), 'utf8');
+  const marketing = /MARKETING_VERSION: "([\d.]+)"/.exec(ios)[1];
+  assert.strictEqual(marketing, web, 'ios matches the page');
+
+  /* and the build number matches android's, since both count the same releases */
+  const code = /versionCode (\d+)/.exec(gradle)[1];
+  const build = /CURRENT_PROJECT_VERSION: "(\d+)"/.exec(ios)[1];
+  assert.strictEqual(build, code, 'the ios build number matches versionCode');
+});
+
 test('every reminder switch actually turns its reminder on', () => {
   /* Three of them did nothing: the sync block listed «wird», a key the store
      does not hold, and used its slug variable a line before declaring it, so

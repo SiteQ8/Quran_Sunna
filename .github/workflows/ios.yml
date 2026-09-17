@@ -62,10 +62,14 @@ jobs:
         if: steps.signing.outputs.ready == 'no'
         run: |
           cd ios
+          # the real device, not the simulator: a widget extension is not built
+          # for the simulator destination, so a simulator build would pass while
+          # the widget stayed broken
           xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
-            -destination 'generic/platform=iOS Simulator' \
+            -destination 'generic/platform=iOS' \
             -configuration Release \
-            CODE_SIGNING_ALLOWED=NO build
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build
 
       # The certificate goes into a keychain made for this run and thrown away
       # with the machine. A keychain of its own, not the login one, so nothing
