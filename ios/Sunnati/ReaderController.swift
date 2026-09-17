@@ -66,6 +66,15 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       name: UIApplication.willEnterForegroundNotification, object: nil)
   }
 
+  /* Opening sunnati://screen/quran moves the page to that screen. It exists so
+     the store screenshots can be taken without pretending to be a finger:
+     simctl has no tap command, and guessing pixel positions for a tab bar is
+     the kind of thing that silently photographs the same screen six times. */
+  func show(_ view: String) {
+    let safe = view.filter { $0.isLetter }
+    web.evaluateJavaScript("window.App && App.go && App.go('\(safe)')")
+  }
+
   @objc private func refresh() {
     /* the four bridges the page schedules through, called by name rather than
        through a render pass that may or may not reach them */
