@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+  <!-- Without CFBundleExecutable the extension builds but will not install:
+       "missing or invalid CFBundleExecutable in its Info.plist". The app's own
+       plist had it; the widget's was written without it. -->
+  <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
+  <key>CFBundlePackageType</key><string>XPC!</string>
+  <key>CFBundleDevelopmentRegion</key><string>ar</string>
   <key>CFBundleDisplayName</key><string>أوقات الصلاة</string>
   <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
   <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>

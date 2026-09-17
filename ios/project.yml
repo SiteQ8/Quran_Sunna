@@ -12,8 +12,8 @@ options:
   # holding the generator back.
   xcodeVersion: "16.4"
 settings:
-  MARKETING_VERSION: "8.85.7"
-  CURRENT_PROJECT_VERSION: "288"
+  MARKETING_VERSION: "8.85.8"
+  CURRENT_PROJECT_VERSION: "289"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
