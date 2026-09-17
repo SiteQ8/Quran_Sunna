@@ -4024,10 +4024,13 @@ test('with nothing to choose the row says صوت الهاتف, with voices it li
     win.App.go('settings');
     const sel = doc.getElementById('settings-voice-name');
     const plain = doc.getElementById('settings-voice-plain');
-    assert.strictEqual(sel.hidden, c[1], 'a sentence does not belong in a list');
+    /* the select sits inside the picker we draw, so the wrapper is what hides:
+       hiding the select alone left an empty box beside the words */
+    const box = sel.parentNode.classList.contains('picker') ? sel.parentNode : sel;
+    assert.strictEqual(box.hidden, c[1], 'a sentence does not belong in a list');
     assert.strictEqual(plain.hidden, !c[1]);
     if (c[1]) {
-      assert.strictEqual(plain.textContent, 'صوت الهاتف');
+      assert.strictEqual(plain.textContent, 'يختاره هاتفك');
       assert.ok(doc.getElementById('settings-voice-note').textContent.indexOf('تحويل النص إلى كلام') !== -1, 'and says where it changes');
     } else {
       assert.strictEqual(sel.options[0].text, 'الأنسب من أصوات جهازك');
@@ -4143,10 +4146,14 @@ test('the real voice is the default, in front, and the phone voice row appears o
   assert.strictEqual(doc.getElementById('settings-voice').value, 'recording');
   assert.strictEqual(doc.getElementById('settings-voice').options[0].text, 'صوت قارئ');
   assert.ok(doc.getElementById('settings-device-voice').hidden, 'no talk of the phone voice unless asked');
-  /* the recording is no longer always the ibrahimiyya, so the hint names
-     whichever is chosen rather than one of the four by name */
-  assert.ok(doc.getElementById('settings-voice-hint').textContent.indexOf(win.SALAWAT_VOICES[0].n) !== -1,
-    'the hint says what the voice recites');
+  /* the sound moved into the salawat row itself, as every other reminder has
+     it, so the row no longer carries a hint line of its own */
+  assert.ok(!doc.getElementById('settings-voice-hint'), 'no separate sound row for the salawat');
+  const salRow = [...doc.querySelectorAll('#v-reminders .setting')].filter(function (r) {
+    return ((r.querySelector('.setting-label') || {}).textContent || '').indexOf('الصلاة على النبي') === 0;
+  })[0];
+  assert.ok(salRow && salRow.contains(doc.getElementById('settings-voice')),
+    'its sound sits in its own row');
   const sel = doc.getElementById('settings-voice');
   sel.value = 'speech'; fire(win, sel, 'change');
   assert.ok(!doc.getElementById('settings-device-voice').hidden, 'choosing the phone voice shows its row');

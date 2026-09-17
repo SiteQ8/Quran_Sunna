@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.84.2';
+  var VERSION = '8.85.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1189,6 +1189,14 @@
      no list of voices at all, so an empty list means the phone chooses, not
      that it has no arabic. The words say which of the two it is, and where
      on the phone the voice is changed. */
+  /* show or hide a select together with the picker drawn over it */
+  function showPicker(sel, on) {
+    if (!sel) return;
+    var wrap = sel.parentNode && sel.parentNode.classList.contains('picker') ? sel.parentNode : sel;
+    wrap.hidden = !on;
+    if (wrap !== sel) sel.hidden = false;
+  }
+
   function fillVoiceList() {
     var sel = $('settings-voice-name');
     if (!sel) return;
@@ -1205,14 +1213,17 @@
           return { value: v.name, label: 'الصوت ' + ar(i + 1) + '، ' + short };
         }));
       fillSelect(sel, options, current);
-      sel.hidden = false;
+      /* the select now lives inside the picker we draw, and hiding the select
+         leaves that wrapper on screen: an empty box beside the words. The
+         wrapper is what shows or hides. */
+      showPicker(sel, true);
       if (plain) plain.hidden = true;
       if (note) note.textContent = 'اختر صوتاً واضغط زر السماع';
     } else {
       /* a sentence does not fit in a list, so with nothing to choose from
          the list goes and two plain words take its place */
-      sel.hidden = true;
-      if (plain) { plain.hidden = false; plain.textContent = 'صوت الهاتف'; }
+      showPicker(sel, false);
+      if (plain) { plain.hidden = false; plain.textContent = 'يختاره هاتفك'; }
       if (note) note.textContent = 'لتغييره افتح إعدادات الهاتف، ثم تحويل النص إلى كلام، ثم اللغة العربية';
     }
   }
