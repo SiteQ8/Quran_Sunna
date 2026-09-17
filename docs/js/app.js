@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.83.1';
+  var VERSION = '8.84.0';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1044,10 +1044,16 @@
       var ms = navigator.mediaSession;
       if (!ms) return;
       if (window.MediaMetadata) {
+        /* android often shows no player at all when the metadata carries no
+           artwork, which is why nothing appeared in the shade to stop it with */
         ms.metadata = new window.MediaMetadata({
           title: title,
           artist: 'بصوت خالد بوهندي',
-          album: 'سُنّتي'
+          album: 'سُنّتي',
+          artwork: [
+            { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
+            { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }
+          ]
         });
       }
       ms.playbackState = 'playing';
@@ -1566,10 +1572,15 @@
     Store.set('eidShown', mark);
     var when = eid.days === 0 ? 'اليوم' : eid.days === 1 ? 'غداً' : 'بعد ' + daysOf(eid.days);
     openSheet(eid.name,
+      /* the card wears the reader's own pattern and accent, not a look of its
+         own: it is the app greeting them, in the app's clothes */
       '<div class="eid-card">' +
-        '<p class="eid-greet">كل عام وأنتم بخير</p>' +
-        '<p class="eid-when">' + esc(eid.name + '، ' + when) + '</p>' +
-        '<p class="eid-from">تهنئة من سُنّتي</p>' +
+        '<div class="eid-inner">' +
+          '<span class="eid-lamp">' + icon('crescent') + '</span>' +
+          '<p class="eid-greet">كل عام وأنتم بخير</p>' +
+          '<p class="eid-when">' + esc(eid.name + ' ' + when) + '</p>' +
+          '<p class="eid-from">تهنئة من سُنّتي</p>' +
+        '</div>' +
       '</div>' +
       '<div class="hisn-listen"><span class="row-body">' +
         '<span class="row-title">تكبيرات العيد</span>' +
@@ -3038,7 +3049,11 @@
       /* «صامت» must reach the wrapper: the notification was always posted on
          the ringing channel, so a reader who chose silence still heard the
          phone's tone. An older package without the call keeps its old way. */
-      if (app.setSalawatSilent) app.setSalawatSilent((Store.get('voice') || 'recording') === 'none');
+      /* The silence was read from «voice», which is the recitation the app
+         plays while open, not the sound of the notification. The reader's own
+         choice sits in the row's sound list, so silence there was written to a
+         key nobody read and the phone went on ringing. */
+      if (app.setSalawatSilent) app.setSalawatSilent(channelFor('salawatNote') === 'silent');
       return true;
     } catch (e) { return false; }
   }
