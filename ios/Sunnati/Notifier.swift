@@ -54,7 +54,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let parts = Calendar.current.dateComponents(
           [.year, .month, .day, .hour, .minute], from: item.at)
         let when = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
-        centre.add(UNNotificationRequest(identifier: "\(prefix)\(i)", content: body, trigger: when))
+        self.centre.add(UNNotificationRequest(identifier: "\(prefix)\(i)", content: body, trigger: when))
       }
     }
   }
