@@ -6,14 +6,14 @@ options:
   bundleIdPrefix: com.eworldq8
   deploymentTarget:
     iOS: "15.0"
-  # XcodeGen writes the newest format it knows, which Xcode 15 refuses to open:
-  # "in a future Xcode project file format (77)". Pinning it keeps the two in
-  # step whichever xcodegen homebrew happens to install that week.
-  xcodeVersion: "15.4"
-  objectVersion: 56
+  # The build runs on Xcode 16.4, which reads what xcodegen writes. The earlier
+  # pin to 15.4 did not take: xcodegen kept writing format 77 and the build
+  # could not open its own project. Updating the toolchain was the fix, not
+  # holding the generator back.
+  xcodeVersion: "16.4"
 settings:
-  MARKETING_VERSION: "8.85.4"
-  CURRENT_PROJECT_VERSION: "285"
+  MARKETING_VERSION: "8.85.5"
+  CURRENT_PROJECT_VERSION: "286"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
