@@ -122,6 +122,12 @@ body {
   overflow-x: hidden;
   line-height: 1.6;
   padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--banner-room, 0px));
+  /* The page is drawn edge to edge, so on a phone with a notch or a dynamic
+     island the first thing on the screen sits underneath it. Android has no
+     such cutout and never showed this; iOS hid the date and the two head
+     buttons behind the black pill. The inset is zero everywhere it is not
+     needed, so this costs nothing elsewhere. */
+  padding-top: env(safe-area-inset-top);
   -webkit-font-smoothing: antialiased;
 }
 
