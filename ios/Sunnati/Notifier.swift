@@ -28,6 +28,15 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     }
   }
 
+  /* iOS keeps at most sixty four pending notifications for an app and drops
+     anything past that without saying so. The page sends more than ninety when
+     every reminder is on: a week of prayers, a week of qiyam, and fifty odd
+     reminders. So each kind gets a share of the sixty four rather than one
+     kind quietly eating it and the others vanishing. The nearest ones are
+     kept, since the app reschedules whenever it opens. */
+  private static let room = 64
+  private static let share = ["adhan-": 25, "remind-": 32, "qiyam-": 7]
+
   /* The page hands over the whole list each time, so the old ones go first:
      rescheduling must not leave yesterday's reminders behind. Reminders and
      adhans are cleared separately, since each has its own bridge. */
@@ -35,7 +44,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     centre.getPendingNotificationRequests { pending in
       let mine = pending.map(\.identifier).filter { $0.hasPrefix(prefix) }
       self.centre.removePendingNotificationRequests(withIdentifiers: mine)
-      for (i, item) in items.enumerated() where item.at > Date() {
+      let keep = Notifier.share[prefix] ?? 16
+      let soonest = items.filter { $0.at > Date() }.sorted { $0.at < $1.at }.prefix(keep)
+      for (i, item) in soonest.enumerated() {
         let body = UNMutableNotificationContent()
         body.title = item.title
         body.body = item.text
