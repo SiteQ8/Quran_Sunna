@@ -5844,6 +5844,21 @@ test('each iOS bundle declares what it cannot install without', () => {
     });
 });
 
+test('the build actions are not left on a runtime github has retired', () => {
+  /* GitHub warned twice that pinned actions still targeted Node 20, which it
+     had retired: once for checkout and setup-node, and again for
+     upload-artifact after only two of the three were raised. Nothing in the
+     repo compared them, so each lapse was found by reading a warning. */
+  const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  const pinned = [...flow.matchAll(/actions\/([a-z-]+)@v(\d+)/g)]
+    .map(function (m) { return { name: m[1], major: +m[2] }; });
+  assert.ok(pinned.length >= 3, 'the workflow pins some actions');
+  const stale = pinned.filter(function (a) { return a.major < 7; })
+    .map(function (a) { return a.name + '@v' + a.major; });
+  assert.deepStrictEqual([...new Set(stale)], [],
+    'these actions are behind and may run on a retired node');
+});
+
 test('the three places that carry a version number agree', () => {
   /* The version lives in four files now that iOS exists, and one of them was
      already a release behind after a single bump: nothing had ever checked. A
