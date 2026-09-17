@@ -34,6 +34,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: ثبّت ما تحتاجه الاختبارات
+        run: npm install --no-audit --no-fund
+
       - name: الاختبارات
         run: node --test test/interface.test.js
 
