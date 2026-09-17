@@ -5614,10 +5614,19 @@ test('silence on the salawat means silent, and hearing it does not change it', (
     setSalawatSilent: function (v) { handed.silent = v; }
   };
   win.App.go('reminders');
+  /* The silence of the notification is its own row now. It used to be read
+     from «voice», which is the recitation the app plays while open, so the
+     reader's choice was written to a key nobody read and the phone rang on. */
+  const note = doc.querySelector('[data-sound="salawatNote"]');
+  assert.ok(note, 'the salawat reminder has a sound of its own');
+  note.value = 'silent'; fire(win, note, 'change');
+  assert.strictEqual((win.Store.get('remindSound') || {}).salawatNote, 'silent');
+  assert.strictEqual(handed.silent, true, 'the wrapper is told, or the phone rings anyway');
+
+  /* and the older row still chooses what is recited inside the app */
   const sel = doc.getElementById('settings-voice');
   sel.value = 'none'; fire(win, sel, 'change');
   assert.strictEqual(win.Store.get('voice'), 'none');
-  assert.strictEqual(handed.silent, true, 'the wrapper is told, or the phone rings anyway');
 
   /* pressing hear leaves the choice alone */
   click(win, doc.getElementById('settings-voice-try'));
