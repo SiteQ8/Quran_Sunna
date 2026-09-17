@@ -7,8 +7,8 @@ options:
   deploymentTarget:
     iOS: "15.0"
 settings:
-  MARKETING_VERSION: "8.85.0"
-  CURRENT_PROJECT_VERSION: "281"
+  MARKETING_VERSION: "8.85.2"
+  CURRENT_PROJECT_VERSION: "283"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
@@ -46,6 +46,11 @@ targets:
       TARGETED_DEVICE_FAMILY: "1"
       CODE_SIGN_STYLE: Manual
       SKIP_INSTALL: YES
+      # a widget is built as a swiftui extension, and xcode needs telling
+      LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
+    dependencies:
+      - sdk: WidgetKit.framework
+      - sdk: SwiftUI.framework
     entitlements:
       path: Widget/Widget.entitlements
       properties:
