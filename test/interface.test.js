@@ -6,7 +6,16 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const { JSDOM } = require('/tmp/node_modules/jsdom');
+/* jsdom is found wherever it happens to live: it sits in /tmp in the container
+   these tests were written in, and in node_modules anywhere else. An absolute
+   path to /tmp meant the suite could only ever run on one machine, and it
+   failed the moment CI tried. */
+const { JSDOM } = (function () {
+  for (const where of ['jsdom', '/tmp/node_modules/jsdom']) {
+    try { return require(where); } catch (e) { /* try the next */ }
+  }
+  throw new Error('jsdom is missing: run  npm install jsdom');
+}());
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
