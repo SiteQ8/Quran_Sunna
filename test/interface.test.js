@@ -5826,6 +5826,24 @@ test('the sound a reader picks reaches whichever bridge schedules that reminder'
   assert.deepStrictEqual(orphans, [], 'these sounds reach no bridge');
 });
 
+test('each iOS bundle declares what it cannot install without', () => {
+  /* The widget built fine and then refused to install: "missing or invalid
+     CFBundleExecutable in its Info.plist". The app's plist had it, the
+     widget's did not, and nothing said so until a simulator tried. */
+  const keysIn = function (where) {
+    const raw = fs.readFileSync(path.join(__dirname, '..', where), 'utf8');
+    return [...raw.matchAll(/<key>([^<]+)<\/key>/g)].map(function (m) { return m[1]; });
+  };
+  const needed = ['CFBundleExecutable', 'CFBundleIdentifier', 'CFBundleName',
+                  'CFBundleVersion', 'CFBundleShortVersionString', 'CFBundlePackageType'];
+  [['ios/Sunnati/Info.plist', 'the app'], ['ios/Widget/Info.plist', 'the widget']]
+    .forEach(function (pair) {
+      const keys = keysIn(pair[0]);
+      const gone = needed.filter(function (k) { return keys.indexOf(k) === -1; });
+      assert.deepStrictEqual(gone, [], pair[1] + ' is missing a required key');
+    });
+});
+
 test('the three places that carry a version number agree', () => {
   /* The version lives in four files now that iOS exists, and one of them was
      already a release behind after a single bump: nothing had ever checked. A
