@@ -80,7 +80,13 @@ used on device only, to compute prayer times and the qibla direction.
 
 ## سياسة الخصوصية
 
-**إلزامية، ولن يقبلوا بدونها.** تُنشر على `sunnati.3li.info/privacy`:
+**جاهزة ومنشورة**، بالعربية والإنجليزية:
+
+- `https://sunnati.3li.info/privacy.html`
+- `https://sunnati.3li.info/privacy-en.html` ← **ضع هذا في App Store Connect**،
+  فالمراجع لا يقرأ العربية
+
+وما يلي نصّها للمراجعة:
 
 ```
 سياسة خصوصية سُنّتي
