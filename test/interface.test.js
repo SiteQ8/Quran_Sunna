@@ -6011,6 +6011,18 @@ test('a chapter the reciter has recorded offers itself to be heard', () => {
   assert.ok(recited.text.indexOf('خالد بوهندي') !== -1, 'and names the reciter');
 });
 
+test('a fast that has already been broken is not still offered', () => {
+  /* A fast ends at maghrib. Saying «صيام الخميس، اليوم» at eight in the
+     evening tells the reader about something he has already finished, and the
+     calendar should have moved on to the next one. */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function nextFast\(\)[\s\S]*?\n  \}\n/.exec(app);
+  assert.ok(fn, 'nextFast is there');
+  const body = fn[0];
+  assert.ok(body.indexOf('t.maghrib') !== -1, 'it looks at maghrib');
+  assert.ok(/d === 0 && past/.test(body), 'and skips today once maghrib has passed');
+});
+
 test('the next fast says when it is in words, not only as a date', () => {
   /* «١٧ سبتمبر» is a date the reader has to work out. The code already knows
      the day is tomorrow, or three days off; it says so, and keeps the date

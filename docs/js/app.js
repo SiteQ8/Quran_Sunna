@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.86.3';
+  var VERSION = '8.86.4';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1603,7 +1603,17 @@
 
   function nextFast() {
     var today = new Date();
+    /* A fast ends at maghrib, so after maghrib today's fast is over and the
+       reader is looking for the next one, not the one he has just broken.
+       Saying «صيام الخميس، اليوم» at eight in the evening is telling him about
+       something already finished. */
+    var past = false;
+    var t = computeTimes(today);
+    if (typeof t.maghrib === 'number') {
+      past = (today.getHours() * 60 + today.getMinutes()) >= t.maghrib;
+    }
     for (var d = 0; d < 40; d++) {
+      if (d === 0 && past) continue;
       var day = new Date(today.getFullYear(), today.getMonth(), today.getDate() + d);
       var why = fastToday(day);
       if (!why.length) continue;
