@@ -22,3 +22,32 @@ targets:
       INFOPLIST_FILE: Sunnati/Info.plist
       TARGETED_DEVICE_FAMILY: "1"
       CODE_SIGN_STYLE: Manual
+      ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    dependencies:
+      - target: Widget
+        embed: true
+    entitlements:
+      path: Sunnati/Sunnati.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.eworldq8.sunnati
+
+  # The widget is what a website cannot be: the next prayer on the home screen.
+  # It reads the times the app wrote to the shared group rather than computing
+  # its own, so the two never disagree.
+  Widget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Widget
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.eworldq8.sunnati.widget
+      INFOPLIST_FILE: Widget/Info.plist
+      TARGETED_DEVICE_FAMILY: "1"
+      CODE_SIGN_STYLE: Manual
+      SKIP_INSTALL: YES
+    entitlements:
+      path: Widget/Widget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.eworldq8.sunnati
