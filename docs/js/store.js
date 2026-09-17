@@ -48,8 +48,7 @@
     /* the sound each makes: device, chime, or silent */
     remindSound: { morningAdhkar: 'device', eveningAdhkar: 'device', sleepIstighfar: 'device',
       sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device',
-      jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device',
-      salawatNote: 'device' },
+      jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device' },
     wirdAt: '',
     /* which eid greeting was already shown, so it greets once a day */
     eidShown: '',

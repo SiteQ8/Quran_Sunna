@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.84.1';
+  var VERSION = '8.84.2';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3053,7 +3053,9 @@
          plays while open, not the sound of the notification. The reader's own
          choice sits in the row's sound list, so silence there was written to a
          key nobody read and the phone went on ringing. */
-      if (app.setSalawatSilent) app.setSalawatSilent(channelFor('salawatNote') === 'silent');
+      /* silence in the reminder's own sound row silences the notification too:
+         a reader who asks for silence means the phone, not just the page */
+      if (app.setSalawatSilent) app.setSalawatSilent((Store.get('voice') || 'recording') === 'none');
       return true;
     } catch (e) { return false; }
   }
