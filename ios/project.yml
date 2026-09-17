@@ -1,0 +1,24 @@
+# The Xcode project is generated from this, not committed as a .pbxproj: that
+# file is thousands of lines of machine ids that no one can review and that
+# conflict on every merge. XcodeGen builds it from these twenty lines.
+name: Sunnati
+options:
+  bundleIdPrefix: com.eworldq8
+  deploymentTarget:
+    iOS: "15.0"
+settings:
+  MARKETING_VERSION: "8.85.0"
+  CURRENT_PROJECT_VERSION: "281"
+  DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
+  SWIFT_VERSION: "5.0"
+targets:
+  Sunnati:
+    type: application
+    platform: iOS
+    sources:
+      - path: Sunnati
+    settings:
+      PRODUCT_BUNDLE_IDENTIFIER: com.eworldq8.sunnati
+      INFOPLIST_FILE: Sunnati/Info.plist
+      TARGETED_DEVICE_FAMILY: "1"
+      CODE_SIGN_STYLE: Manual

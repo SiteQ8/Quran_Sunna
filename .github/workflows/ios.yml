@@ -1,0 +1,128 @@
+# Builds سُنّتي for iOS on GitHub's own mac, so no mac is needed here.
+#
+# Two ways to run it:
+#   • push a tag like ios-v8.85.0, or press "Run workflow" in the Actions tab
+#   • with no signing secrets set, it still builds and runs the tests: that is
+#     worth having on its own, since it catches a broken build before anyone
+#     goes near a certificate
+#
+# The four secrets it wants, when you are ready to sign:
+#   IOS_CERT_P12        the distribution certificate, base64 of the .p12
+#   IOS_CERT_PASSWORD   the password you gave that .p12
+#   IOS_PROFILE         the provisioning profile, base64 of the .mobileprovision
+#   IOS_TEAM_ID         the ten characters Apple calls your Team ID
+#
+# Making them is written out in ios/README.md.
+
+name: iOS
+
+on:
+  push:
+    tags: ['ios-v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-14
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # the same six gates the site goes through, so a broken page never
+      # reaches a phone wrapped in a shell
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: الاختبارات
+        run: node --test test/interface.test.js
+
+      - name: Xcode
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app
+
+      - name: XcodeGen
+        run: brew install xcodegen
+
+      - name: اصنع المشروع
+        run: cd ios && xcodegen generate
+
+      # Without secrets the build stops here, having proved it compiles. With
+      # them it goes on to sign and package.
+      - name: هل هناك توقيع
+        id: signing
+        run: |
+          if [ -n "${{ secrets.IOS_CERT_P12 }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::لا أسرار توقيع، سيُبنى بلا توقيع للتحقق فقط"
+          fi
+
+      - name: ابنِ بلا توقيع
+        if: steps.signing.outputs.ready == 'no'
+        run: |
+          cd ios
+          xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            CODE_SIGNING_ALLOWED=NO build
+
+      # The certificate goes into a keychain made for this run and thrown away
+      # with the machine. A keychain of its own, not the login one, so nothing
+      # here can reach anything else.
+      - name: ضع الشهادة
+        if: steps.signing.outputs.ready == 'yes'
+        env:
+          CERT: ${{ secrets.IOS_CERT_P12 }}
+          CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
+          PROFILE: ${{ secrets.IOS_PROFILE }}
+        run: |
+          KEYCHAIN="$RUNNER_TEMP/build.keychain"
+          PASS=$(openssl rand -base64 24)
+          security create-keychain -p "$PASS" "$KEYCHAIN"
+          security set-keychain-settings -lut 1800 "$KEYCHAIN"
+          security unlock-keychain -p "$PASS" "$KEYCHAIN"
+
+          echo "$CERT" | base64 --decode > "$RUNNER_TEMP/cert.p12"
+          security import "$RUNNER_TEMP/cert.p12" -k "$KEYCHAIN" \
+            -P "$CERT_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$KEYCHAIN"
+          security list-keychain -d user -s "$KEYCHAIN"
+
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$PROFILE" | base64 --decode > \
+            ~/Library/MobileDevice/Provisioning\ Profiles/sunnati.mobileprovision
+
+          rm -f "$RUNNER_TEMP/cert.p12"
+
+      - name: ابنِ ووقّع
+        if: steps.signing.outputs.ready == 'yes'
+        env:
+          DEVELOPMENT_TEAM: ${{ secrets.IOS_TEAM_ID }}
+        run: |
+          cd ios
+          xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
+            -configuration Release -archivePath "$RUNNER_TEMP/Sunnati.xcarchive" \
+            DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+            archive
+
+          sed "s/\$(DEVELOPMENT_TEAM)/$DEVELOPMENT_TEAM/" exportOptions.plist > "$RUNNER_TEMP/export.plist"
+
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Sunnati.xcarchive" \
+            -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
+            -exportPath "$RUNNER_TEMP/out"
+
+      - name: احفظ الحزمة
+        if: steps.signing.outputs.ready == 'yes'
+        uses: actions/upload-artifact@v4
+        with:
+          name: sunnati-ios
+          path: ${{ runner.temp }}/out/*.ipa
+          retention-days: 14
+
+      # the keychain dies with the machine anyway, but saying so explicitly
+      # means no one has to trust that it does
+      - name: امسح المفاتيح
+        if: always()
+        run: security delete-keychain "$RUNNER_TEMP/build.keychain" || true

@@ -1,0 +1,115 @@
+import UIKit
+import WebKit
+import AVFoundation
+
+/* The site in a web view, plus the bridge the page already talks to. Android
+   exposes SunnatiApp with seventeen methods; the page checks for each before
+   calling it, so iOS answers the ones a phone can honour and stays quiet about
+   the rest rather than pretending. */
+final class ReaderController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
+  private let site = URL(string: "https://sunnati.3li.info/")!
+  private var web: WKWebView!
+  private var player: AVAudioPlayer?
+
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    let setup = WKWebViewConfiguration()
+    setup.allowsInlineMediaPlayback = true
+    setup.mediaTypesRequiringUserActionForPlayback = []
+
+    /* The page calls SunnatiApp.someMethod(...); each call is posted here as a
+       message naming the method and its arguments. Declaring it before the
+       page loads means the page finds the bridge on its first look. */
+    let bridge = """
+    window.SunnatiApp = new Proxy({}, {
+      get: function (_, name) {
+        return function () {
+          var args = Array.prototype.slice.call(arguments);
+          window.webkit.messageHandlers.sunnati.postMessage({ fn: String(name), args: args });
+          return undefined;
+        };
+      },
+      has: function () { return true; }
+    });
+    """
+    setup.userContentController.add(self, name: "sunnati")
+    setup.userContentController.addUserScript(
+      WKUserScript(source: bridge, injectionTime: .atDocumentStart, forMainFrameOnly: true))
+
+    web = WKWebView(frame: view.bounds, configuration: setup)
+    web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+    web.navigationDelegate = self
+    web.scrollView.contentInsetAdjustmentBehavior = .never
+    view.addSubview(web)
+    web.load(URLRequest(url: site))
+
+    /* the adhan and the recitations must keep sounding with the screen off */
+    try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
+    try? AVAudioSession.sharedInstance().setActive(true)
+
+    Notifier.shared.ask { _ in }
+  }
+
+  func userContentController(_ c: WKUserContentController, didReceive message: WKScriptMessage) {
+    guard let call = message.body as? [String: Any],
+          let fn = call["fn"] as? String else { return }
+    let args = call["args"] as? [Any] ?? []
+
+    switch fn {
+    case "setReminders":
+      guard let json = args.first as? String else { return }
+      Notifier.shared.replace(parse(json), prefix: "remind-")
+
+    case "setQiyamTimes":
+      guard let json = args.first as? String else { return }
+      Notifier.shared.replace(parse(json), prefix: "qiyam-")
+
+    case "setPrayerTimes":
+      guard let json = args.first as? String else { return }
+      Notifier.shared.replace(parse(json), prefix: "adhan-")
+
+    case "shareText":
+      guard let text = args.first as? String else { return }
+      let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
+      sheet.popoverPresentationController?.sourceView = view
+      present(sheet, animated: true)
+
+    case "canNotify":
+      break
+
+    default:
+      /* setAdhanSilent, setSalawatEvery and the rest are carried in the list
+         the page already sends, so there is nothing separate to do for them */
+      break
+    }
+  }
+
+  /* The page sends a list of {at, t, b, s}: when in milliseconds, a title, a
+     line of text, and which of the three sounds. */
+  private func parse(_ json: String) -> [Reminder] {
+    guard let data = json.data(using: .utf8),
+          let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
+    else { return [] }
+    return rows.compactMap { row in
+      guard let ms = row["at"] as? Double else { return nil }
+      return Reminder(
+        at: Date(timeIntervalSince1970: ms / 1000),
+        title: row["t"] as? String ?? "سُنّتي",
+        text: row["b"] as? String ?? "",
+        chime: Chime(rawValue: row["s"] as? String ?? "device") ?? .device)
+    }
+  }
+
+  /* links to other sites open in the phone's browser, not inside the app */
+  func webView(_ w: WKWebView, decidePolicyFor action: WKNavigationAction,
+               decisionHandler done: @escaping (WKNavigationActionPolicy) -> Void) {
+    if let url = action.request.url, url.host != site.host, action.navigationType == .linkActivated {
+      UIApplication.shared.open(url)
+      done(.cancel)
+      return
+    }
+    done(.allow)
+  }
+
+  override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
+}
