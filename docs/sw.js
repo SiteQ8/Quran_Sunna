@@ -1,7 +1,7 @@
 /* سُنّتي service worker
    يخزّن هيكل التطبيق ونص المصحف عند أول زيارة، فيعمل بعدها بلا إنترنت.
 
-   The shell is fetched from the network first and only falls back to the cache
+   Updated: إصلاح الإشعارات وإضافة notifications للأذكار والأدعية والأذان   The shell is fetched from the network first and only falls back to the cache
    when the network is not there. An earlier version served the shell from the
    cache first, so a device that had visited once kept running old code for as
    long as the worker file itself stayed unchanged, and no fix ever reached it.
