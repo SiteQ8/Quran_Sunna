@@ -1074,7 +1074,14 @@
       markVoiceButton(true);
       if (title) {
         showInMediaSession(title);
-        notify('استمع', title, 'audio');
+        /* اطلب الـ permission قبل الإشعار */
+        if (window.Notification && window.Notification.permission === 'default') {
+          window.Notification.requestPermission().then(function (perm) {
+            if (perm === 'granted') notify('استمع', title, 'audio');
+          }).catch(function () { /* user denied */ });
+        } else if (window.Notification && window.Notification.permission === 'granted') {
+          notify('استمع', title, 'audio');
+        }
       }
       return true;
     } catch (e) { return chime(); }
