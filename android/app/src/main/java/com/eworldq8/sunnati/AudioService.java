@@ -34,20 +34,25 @@ public final class AudioService extends Service {
         String sub = intent == null ? null : intent.getStringExtra(EXTRA_SUB);
         boolean playing = intent != null && intent.getBooleanExtra(EXTRA_PLAYING, true);
 
-        /* The system kills the app if a service started with
-         * startForegroundService does not call startForeground within a few
-         * seconds, even when the very next thing it does is stop. A stop that
-         * overtakes its own start used to crash the app, so the notice is
-         * always raised first and only then taken down. */
+        /* A stop arrives by stopService now, which does not reach here at all.
+         * What still reaches here is a start, and a start made with
+         * startForegroundService owes the system a startForeground within a
+         * few seconds or it kills the app. The obligation is discharged by a
+         * successful call and by nothing else: catching the failure does not
+         * cancel it, so the only real defence is upstream, where the promise
+         * is made from the foreground alone. Here we keep the raise first and
+         * take it down after, for the stale intents already in flight. */
+        if (ACTION_STOP.equals(action) || action == null) {
+            try { startForeground(ID, shade(title, sub, playing)); } catch (Exception ignored) { }
+            try { stopForeground(STOP_FOREGROUND_REMOVE); } catch (Exception ignored) { }
+            stopSelf();
+            return START_NOT_STICKY;
+        }
         try {
             startForeground(ID, shade(title, sub, playing));
         } catch (Exception e) {
             stopSelf();
             return START_NOT_STICKY;
-        }
-        if (ACTION_STOP.equals(action) || action == null) {
-            stopForeground(STOP_FOREGROUND_REMOVE);
-            stopSelf();
         }
         return START_NOT_STICKY;
     }

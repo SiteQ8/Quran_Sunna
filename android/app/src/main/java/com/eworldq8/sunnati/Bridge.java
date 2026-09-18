@@ -121,9 +121,14 @@ public final class Bridge {
     public void setSounding(boolean on) {
         if (host instanceof MainActivity) ((MainActivity) host).sounding = on;
         if (!on) {
+            /* Stopping is a stop, not a start. startForegroundService here
+               promised the system a startForeground within seconds, and the
+               moment audio stops is exactly the moment the app is usually in
+               the background, where that promise cannot be kept: the service
+               went down without ever reaching the foreground and the system
+               killed the app for it. stopService asks for no promise. */
             try {
-                Intent stop = new Intent(host, AudioService.class).setAction(AudioService.ACTION_STOP);
-                host.startForegroundService(stop);
+                host.stopService(new Intent(host, AudioService.class));
             } catch (Exception ignored) { /* nothing was holding it */ }
         }
     }
@@ -131,6 +136,10 @@ public final class Bridge {
     /** What is sounding, so the shade can show it and be pressed. */
     @JavascriptInterface
     public void showSounding(String title, String sub, boolean playing) {
+        /* Only from the foreground: a promise made from the background is one
+           the system refuses, and it kills the app rather than let it pass.
+           The recitation still sounds either way; only the shade waits. */
+        if (host instanceof MainActivity && !((MainActivity) host).inFront) return;
         try {
             Intent hold = new Intent(host, AudioService.class)
                 .setAction(AudioService.ACTION_START)
