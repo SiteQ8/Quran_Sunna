@@ -46,6 +46,11 @@ public class MainActivity extends Activity {
     private SplashView splash;
     private boolean splashGone;
     volatile boolean sounding;
+    /* Whether the activity is between onResume and onPause. A foreground
+       service may only be promised from the foreground: promised from the
+       background, startForeground throws and the system kills the app for a
+       promise it could not keep. */
+    volatile boolean inFront;
     private OnBackInvokedCallback back;
     private GeolocationPermissions.Callback pendingLocation;
     private String pendingLocationOrigin;
@@ -323,6 +328,22 @@ public class MainActivity extends Activity {
                 splash = null;
             }
         }).start();
+    }
+
+    /* onStart to onStop, not onResume to onPause: the window the system itself
+       measures a foreground service start against is the one where an activity
+       is visible, and it opens before onNewIntent, so a press in the shade
+       finds the flag already raised. */
+    @Override
+    protected void onStart() {
+        super.onStart();
+        inFront = true;
+    }
+
+    @Override
+    protected void onStop() {
+        inFront = false;
+        super.onStop();
     }
 
     @Override

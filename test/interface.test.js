@@ -7843,11 +7843,12 @@ test('the notice in the shade is raised once for a sitting, not for every verse'
     'starting the next verse must not tell the app that listening stopped');
 });
 
-test('the service raises its notice before it takes it down', () => {
+test('a stop is a stop, and a foreground service is promised only from the foreground', () => {
   const service = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AudioService.java'), 'utf8');
-  /* android kills the app if a service started with startForegroundService
-     does not call startForeground within a few seconds, even if it is
-     stopping: a stop overtaking its own start crashed the app */
+  /* startForegroundService owes the system a startForeground within a few
+     seconds. The obligation is discharged by a call that succeeds and by
+     nothing else: a try/catch around it does not cancel it, so a failure kills
+     the app with ForegroundServiceDidNotStartInTimeException. */
   const body = /public int onStartCommand\(Intent intent, int flags, int startId\) \{([\s\S]*?)\n    \}/.exec(service)[1];
   const raise = body.indexOf('startForeground(ID,');
   /* stopForeground(boolean) was left behind in android 13 and -Werror refuses it */
@@ -7855,10 +7856,31 @@ test('the service raises its notice before it takes it down', () => {
   assert.ok(raise !== -1 && drop !== -1);
   assert.ok(body.indexOf('stopForeground(true)') === -1, 'the old form is gone');
   assert.ok(raise < drop, 'the notice must be raised before it is taken down');
-  /* and a stop is sent the same way it was started */
+
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
-  assert.ok(/ACTION_STOP\);[\s\S]{0,160}startForegroundService\(stop\)/.test(bridge),
-    'a stop raised as a plain service start is refused while the app is away');
+  /* the comments name the call they warn against, so they are read out
+     first: this gate is about what the code does, not what it says */
+  const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+  const stopping = code(/public void setSounding\(boolean on\) \{([\s\S]*?)\n    \}/.exec(bridge)[1]);
+  /* A stop used to be sent as startForegroundService, which made the promise
+     all over again at the very moment the app is usually in the background and
+     cannot keep it. stopService asks for no promise, and unlike startService
+     it is not refused while the app is away. */
+  assert.ok(stopping.indexOf('stopService(') !== -1, 'a stop is sent as a stop');
+  assert.ok(stopping.indexOf('startForegroundService') === -1,
+    'stopping must not promise a foreground the app cannot reach');
+  assert.ok(stopping.indexOf('startService(') === -1,
+    'a plain service start is refused while the app is away');
+
+  const showing = code(/public void showSounding\(String title, String sub, boolean playing\) \{([\s\S]*?)\n    \}/.exec(bridge)[1]);
+  assert.ok(showing.indexOf('startForegroundService') !== -1, 'a start still raises the shade');
+  assert.ok(/inFront[\s\S]{0,40}return;[\s\S]*startForegroundService/.test(showing),
+    'the promise is made only while the app is visible');
+
+  /* and the flag follows the window the system itself measures against */
+  const main = code(fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8'));
+  assert.ok(/protected void onStart\(\) \{[\s\S]{0,120}inFront = true/.test(main), 'raised at onStart');
+  assert.ok(/protected void onStop\(\) \{[\s\S]{0,120}inFront = false/.test(main), 'lowered at onStop');
 });
 
 test('ليلة الجمعة is reminded after the maghrib of thursday, once a week', () => {
