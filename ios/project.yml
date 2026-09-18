@@ -12,7 +12,7 @@ options:
   # holding the generator back.
   xcodeVersion: "16.4"
 settings:
-  MARKETING_VERSION: "8.87.4"
+  MARKETING_VERSION: "8.87.14"
   CURRENT_PROJECT_VERSION: "300"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"

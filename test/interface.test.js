@@ -7799,7 +7799,7 @@ test('the reader chooses how to listen to a surah, and the choice can be kept', 
   /* each says plainly what it costs */
   const sheet = doc.getElementById('sheet').textContent;
   assert.ok(sheet.indexOf('بلا وقفة') !== -1 && sheet.indexOf('من غير تعليم الآيات') !== -1);
-  assert.ok(sheet.indexOf('تُعلَّم كل آية') !== -1 && sheet.indexOf('وقفة يسيرة') !== -1);
+  assert.ok(sheet.indexOf('يتم تحديد كل آية') !== -1 && sheet.indexOf('وقفة يسيرة') !== -1);
 
   /* without being kept, it asks again */
   click(win, doc.querySelector('[data-act="listen-as"][data-ref^="follow"]'));
