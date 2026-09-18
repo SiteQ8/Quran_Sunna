@@ -915,8 +915,23 @@
   function notify(title, body, tag) {
     var app = bridge();
     if (app && app.notify) {
-      try { app.notify(title, body, tag || 'page'); return Promise.resolve(true); } catch (e) { /* fall through */ }
+      try { app.notify(title, body, tag || 'page'); } catch (e) { /* fall through */ }
     }
+    
+    /* محاولة عرض عبر Service Worker أولاً */
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      try {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'show-notification',
+          title: title,
+          body: body,
+          tag: tag || 'audio'
+        });
+        return Promise.resolve(true);
+      } catch (e) { /* fallback */ }
+    }
+    
+    /* محاولة عبر Notification API مباشرة */
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
       body: body, tag: tag || 'default', lang: 'ar', dir: 'rtl',
