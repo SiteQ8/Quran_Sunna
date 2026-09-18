@@ -7531,6 +7531,15 @@
       /* Never taken by itself, wherever the reader is. A reload in the middle
          of a page of the mushaf loses their place for a version they did not
          ask for, so it waits for their word however idle the app looks. */
+      /* عند اكتشاف تحديث، حدّث رقم الإصدار في الواجهة */
+      try {
+        fetch('sw.js').then(function (res) { return res.text(); }).then(function (txt) {
+          var match = txt.match(/var VERSION = 'sunnati-v([^']+)'/);
+          if (match && match[1] && $('version-line')) {
+            $('version-line').textContent = 'النسخة ' + ar(match[1]) + packageLine();
+          }
+        }).catch(function () {});
+      } catch (e) { }
       showBanner('وصل تحديث جديد للتطبيق', 'حدّث الآن', function () { window.location.reload(); });
     });
 
