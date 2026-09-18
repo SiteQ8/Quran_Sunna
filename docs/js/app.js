@@ -7509,8 +7509,8 @@
     }
     registration.addEventListener('updatefound', function () { offer(registration.installing); });
     /* Ask the server whether anything newer exists, rather than waiting for the
-       browser to get around to it. */
-    window.setInterval(function () { registration.update(); }, 30 * 60 * 1000);
+       browser to get around to it. Check every minute so updates are detected quickly. */
+    window.setInterval(function () { registration.update(); }, 60 * 1000);
     /* Coming back to the app is the moment a person is most willing to wait a
        second for it to catch up. */
     document.addEventListener('visibilitychange', function () {
