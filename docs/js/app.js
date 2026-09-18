@@ -1110,7 +1110,13 @@
       try { window.speechSynthesis.cancel(); } catch (e2) { /* nothing speaking */ }
     }
     state.speaking = false;
+    state.voiceButton = null;
+    state.voiceEl = null;
     markVoiceButton(false);
+    /* إعادة تحديث الأزرار لضمان إظهار أيقونة التشغيل بدلاً من الإيقاف */
+    document.querySelectorAll('.try-sound, [data-hear], [data-act="hear-hisn"], #settings-voice-try, #settings-adhan-try').forEach(function (btn) {
+      try { btn.innerHTML = icon('play'); } catch (e) { /* button gone */ }
+    });
   }
 
   function isSpeaking() {
