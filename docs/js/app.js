@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.15';
+  var VERSION = '8.87.16';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1054,10 +1054,28 @@
       /* the element when we have one, an id when the caller only knows that */
       if (button && button.nodeType === 1) { state.voiceEl = button; state.voiceButton = null; }
       else { state.voiceButton = button || 'settings-voice-try'; state.voiceEl = null; }
-      clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); clearMediaSession(); } };
+      clip.onended = function () {
+        if (state.voiceClip !== clip) return;
+        state.voiceClip = null;
+        markVoiceButton(false);
+        clearMediaSession();
+        /* a dhikr that finished on its own leaves nothing to press */
+        if (!state.audio) { state.shaded = null; tellAppSounding(false); }
+      };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
-      if (title) showInMediaSession(title);
+      if (title) {
+        showInMediaSession(title);
+        /* The wrapper pauses the page when the reader leaves it unless it is
+           told something is sounding, so a dhikr used to cut off at the door.
+           And what the wrapper is not told about gets no notice in the shade,
+           which is why nothing appeared there for the adhkar. */
+        tellAppSounding(true);
+        if (state.shaded !== title) {
+          state.shaded = title;
+          showInShade(title, '', true);
+        }
+      }
       return true;
     } catch (e) { return chime(); }
   }
@@ -1131,6 +1149,12 @@
     state.speaking = false;
     state.voiceButton = null;
     state.voiceEl = null;
+    /* Only when nothing at all is left sounding: a recitation running beside
+       this one holds the shade, and taking it down would cut the recitation. */
+    if (!state.audio) {
+      state.shaded = null;
+      tellAppSounding(false);
+    }
     markVoiceButton(false);
     /* إعادة تحديث الأزرار لضمان إظهار أيقونة التشغيل بدلاً من الإيقاف */
     document.querySelectorAll('.try-sound, [data-hear], [data-act="hear-hisn"], #settings-voice-try, #settings-adhan-try').forEach(function (btn) {
@@ -2369,6 +2393,17 @@
   }
 
   function togglePlay() {
+    /* the pause in the shade, which may be sitting over a dhikr and not over a
+       recitation at all */
+    if (!state.audio && state.voiceClip) {
+      var clip = state.voiceClip;
+      try {
+        if (clip.paused) { clip.play(); } else { clip.pause(); }
+      } catch (e) { return; }
+      updateMediaSessionState();
+      if (state.shaded) showInShade(state.shaded, '', !clip.paused);
+      return;
+    }
     if (!state.audio) return;
     if (state.audio.paused) { state.audio.play(); } else { state.audio.pause(); }
     markPlayerToggle();
@@ -2381,10 +2416,15 @@
     try { app.setSounding(!!on); } catch (e) { /* older package */ }
   }
 
+  /* The pause between one verse and the next is not the end of listening, so
+     the app is only told when the reader really stops. And «إيقاف» in the shade
+     arrives here, so what it stops must be whatever is sounding: a dhikr sounds
+     through the same shade and used to be left playing with no way to reach it.
+     stopSpeaking runs while state.audio still stands, so it does not lower the
+     flag first and leave this one lowering it twice. */
   function stopAudio(quiet) {
-    /* the pause between one verse and the next is not the end of listening,
-       so the app is only told when the reader really stops */
     if (!quiet) {
+      if (state.voiceClip || state.speaking) stopSpeaking();
       tellAppSounding(false);
       state.shaded = null;
     }
