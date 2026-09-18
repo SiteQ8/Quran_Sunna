@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.87.9';
+var VERSION = 'sunnati-v8.87.10';
 
 var SHELL = [
   './',
@@ -103,6 +103,17 @@ self.addEventListener('message', function (event) {
   if (!event.data) return;
   if (event.data.type === 'take-over') self.skipWaiting();
   if (event.data.type === 'schedule') event.waitUntil(keepSchedule(event.data));
+  if (event.data.type === 'show-notification') {
+    event.waitUntil(self.registration.showNotification(event.data.title, {
+      body: event.data.body,
+      tag: event.data.tag || 'audio',
+      lang: 'ar',
+      dir: 'rtl',
+      icon: 'icons/icon-192.png',
+      badge: 'icons/icon-96.png',
+      data: { url: './' }
+    }));
+  }
 });
 
 /* Tapping a notification brings the app forward rather than opening a second
