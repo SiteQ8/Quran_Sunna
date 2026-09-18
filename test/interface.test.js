@@ -7094,6 +7094,34 @@ test('a recitation carries on when the reader leaves the app', () => {
     'and says so the moment the reader really stops');
 });
 
+test('a dhikr is held and shaded like a recitation, not left to be cut off', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const body = /function playRecording\(url, button, title\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the wrapper pauses the page on leaving unless it is told something sounds,
+     so a dhikr that said nothing was cut off at the door and never shaded */
+  assert.ok(body.indexOf('tellAppSounding(true)') !== -1, 'a dhikr says it is sounding');
+  assert.ok(body.indexOf('showInShade(') !== -1, 'and puts itself in the shade');
+  /* named once, not rebuilt on every clip: a notice remade in a loop is what
+     crashed the app before */
+  assert.ok(body.indexOf('state.shaded !== title') !== -1, 'the shade is not remade for the same thing');
+
+  /* and it comes down when the clip ends on its own */
+  assert.ok(/onended[\s\S]{0,320}tellAppSounding\(false\)/.test(app), 'a finished dhikr lowers the flag');
+
+  /* «إيقاف» in the shade reaches a dhikr, not only a recitation */
+  const stop = /function stopAudio\(quiet\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(/state\.voiceClip[\s\S]{0,60}stopSpeaking\(\)/.test(stop), 'a real stop stops a dhikr too');
+
+  /* and so does the pause beside it */
+  const toggle = /function togglePlay\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(toggle.indexOf('state.voiceClip') !== -1, 'the pause reaches a dhikr');
+
+  /* a dhikr sounding beside a recitation must not take the shade down with it */
+  const speak = /function stopSpeaking\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(/if \(!state\.audio\)[\s\S]{0,120}tellAppSounding\(false\)/.test(speak),
+    'only when nothing at all is left sounding');
+});
+
 test('a surah asked for by name is offered before the verses its name falls in', () => {
   const { win, doc } = boot();
   /* someone typing طه wants the surah, not only the verses the word appears in */

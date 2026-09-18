@@ -136,9 +136,23 @@ public final class Bridge {
     /** What is sounding, so the shade can show it and be pressed. */
     @JavascriptInterface
     public void showSounding(String title, String sub, boolean playing) {
-        /* Only from the foreground: a promise made from the background is one
-           the system refuses, and it kills the app rather than let it pass.
-           The recitation still sounds either way; only the shade waits. */
+        /* A service already in the foreground owes the system nothing more, so
+           its notice is simply reworded where it stands: this is how the shade
+           follows one surah to the next with the app away. */
+        if (AudioService.running) {
+            try {
+                android.app.NotificationManager shade =
+                    host.getSystemService(android.app.NotificationManager.class);
+                if (shade != null) {
+                    shade.notify(AudioService.ID, AudioService.shade(host, title, sub, playing));
+                    return;
+                }
+            } catch (Exception ignored) { /* fall through and try to raise it */ }
+        }
+        /* Raising it afresh is a promise of a foreground within seconds, and a
+           promise made from the background is one the system refuses: it kills
+           the app rather than let it pass. The recitation still sounds either
+           way; only the shade waits until the reader comes back. */
         if (host instanceof MainActivity && !((MainActivity) host).inFront) return;
         try {
             Intent hold = new Intent(host, AudioService.class)
