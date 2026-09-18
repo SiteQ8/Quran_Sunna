@@ -1084,9 +1084,20 @@
         });
       }
       ms.playbackState = 'playing';
-      ms.setActionHandler('pause', function () { stopSpeaking(); });
-      ms.setActionHandler('stop', function () { stopSpeaking(); });
-      ms.setActionHandler('play', function () { if (state.voiceClip) state.voiceClip.play(); });
+      ms.setActionHandler('pause', function () { 
+        stopSpeaking();
+        updateMediaSessionState();
+      });
+      ms.setActionHandler('stop', function () { 
+        stopSpeaking();
+        updateMediaSessionState();
+      });
+      ms.setActionHandler('play', function () { 
+        if (state.voiceClip) {
+          state.voiceClip.play();
+          updateMediaSessionState();
+        }
+      });
     } catch (e) { /* an older phone without a media session */ }
   }
 
@@ -1097,6 +1108,14 @@
         navigator.mediaSession.metadata = null;
       }
     } catch (e) { /* nothing to clear */ }
+  }
+
+  function updateMediaSessionState() {
+    try {
+      if (navigator.mediaSession) {
+        navigator.mediaSession.playbackState = isSpeaking() ? 'playing' : 'paused';
+      }
+    } catch (e) { /* older phone */ }
   }
 
   /* Whatever the sample is, a clip or the phone's own speech, one call ends it. */
