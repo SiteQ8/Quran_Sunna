@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.13';
+  var VERSION = '8.87.14';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -915,23 +915,8 @@
   function notify(title, body, tag) {
     var app = bridge();
     if (app && app.notify) {
-      try { app.notify(title, body, tag || 'page'); } catch (e) { /* fall through */ }
+      try { app.notify(title, body, tag || 'page'); return Promise.resolve(true); } catch (e) { /* fall through */ }
     }
-    
-    /* محاولة عرض عبر Service Worker أولاً */
-    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-      try {
-        navigator.serviceWorker.controller.postMessage({
-          type: 'show-notification',
-          title: title,
-          body: body,
-          tag: tag || 'audio'
-        });
-        return Promise.resolve(true);
-      } catch (e) { /* fallback */ }
-    }
-    
-    /* محاولة عبر Notification API مباشرة */
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
       body: body, tag: tag || 'default', lang: 'ar', dir: 'rtl',
@@ -1072,17 +1057,7 @@
       clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); clearMediaSession(); } };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
-      if (title) {
-        showInMediaSession(title);
-        /* اطلب الـ permission قبل الإشعار */
-        if (window.Notification && window.Notification.permission === 'default') {
-          window.Notification.requestPermission().then(function (perm) {
-            if (perm === 'granted') notify('استمع', title, 'audio');
-          }).catch(function () { /* user denied */ });
-        } else if (window.Notification && window.Notification.permission === 'granted') {
-          notify('استمع', title, 'audio');
-        }
-      }
+      if (title) showInMediaSession(title);
       return true;
     } catch (e) { return chime(); }
   }
@@ -6520,6 +6495,7 @@
     'hear-salawat': function () { 
       var name = salawatName();
       playRecording(salawatUrl(), 'settings-voice-try', name);
+      notify('استمع الصلاة على النبي', name, 'audio');
     },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the
@@ -6568,6 +6544,7 @@
       /* the button itself, so it can show a pause while it plays */
       var hisn = HISN.filter(function (c) { return c.id === +ref; })[0];
       playRecording('audio/dua/' + heard.f, el, hisn.t);
+      notify('استمع ' + hisn.t, 'بصوت ' + heard.n, 'audio');
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -6802,6 +6779,7 @@
       /* the name shown in the phone's own player comes from the button's label */
       var label = (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي';
       playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear, label);
+      notify('استمع ' + label, label, 'audio');
       return;
     }
     var pick = target.closest('[data-pick]');
@@ -6999,6 +6977,8 @@
       var pick = Store.get('adhanVoice') || 'none';
       if (pick === 'silent') { toast('يصل التنبيه بلا صوت'); return; }
       if (pick === 'none') { toast('يصل بنغمة التنبيه في هاتفك'); return; }
+      var adhanName_ = adhanName(pick);
+      notify('استمع الأذان', 'بصوت ' + adhanName_, 'audio');
       playAdhanSample();
     });
 
