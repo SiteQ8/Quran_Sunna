@@ -1057,7 +1057,10 @@
       clip.onended = function () { if (state.voiceClip === clip) { state.voiceClip = null; markVoiceButton(false); clearMediaSession(); } };
       clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
       markVoiceButton(true);
-      if (title) showInMediaSession(title);
+      if (title) {
+        showInMediaSession(title);
+        notify('استمع', title, 'audio');
+      }
       return true;
     } catch (e) { return chime(); }
   }
@@ -6495,7 +6498,6 @@
     'hear-salawat': function () { 
       var name = salawatName();
       playRecording(salawatUrl(), 'settings-voice-try', name);
-      notify('استمع الصلاة على النبي', name, 'audio');
     },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the
@@ -6544,7 +6546,6 @@
       /* the button itself, so it can show a pause while it plays */
       var hisn = HISN.filter(function (c) { return c.id === +ref; })[0];
       playRecording('audio/dua/' + heard.f, el, hisn.t);
-      notify('استمع ' + hisn.t, 'بصوت ' + heard.n, 'audio');
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -6779,7 +6780,6 @@
       /* the name shown in the phone's own player comes from the button's label */
       var label = (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي';
       playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear, label);
-      notify('استمع ' + label, label, 'audio');
       return;
     }
     var pick = target.closest('[data-pick]');
@@ -6977,8 +6977,6 @@
       var pick = Store.get('adhanVoice') || 'none';
       if (pick === 'silent') { toast('يصل التنبيه بلا صوت'); return; }
       if (pick === 'none') { toast('يصل بنغمة التنبيه في هاتفك'); return; }
-      var adhanName_ = adhanName(pick);
-      notify('استمع الأذان', 'بصوت ' + adhanName_, 'audio');
       playAdhanSample();
     });
 
