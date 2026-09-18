@@ -2521,12 +2521,12 @@
 
   function askHowToListen(n) {
     openSheet('كيف تستمع؟',
-      '<button class="btn btn-primary btn-block" data-act="listen-as" data-ref="whole:' + n + '">' +
+      '<p class="setting-note">تلاوة السورة كاملة بلا وقفة، من غير تعليم الآيات.</p>' +
+      '<button class="btn btn-primary btn-block" data-act="listen-as" data-ref="whole:' + n + '" style="margin-top:14px">' +
         'استماع متّصل</button>' +
-      '<p class="setting-note">تلاوة السورة كاملة بلا وقفة، من غير تعليم الآيات</p>' +
+      '<p class="setting-note" style="margin-top: 12px;">يتم تحديد كل آية وهي تُتلى وتنتقل الصفحة معها، وبينها وقفة يسيرة.</p>' +
       '<button class="btn btn-ghost btn-block" data-act="listen-as" data-ref="follow:' + n + '" style="margin-top:14px">' +
         'تتبّع الآيات</button>' +
-      '<p class="setting-note" style="margin-top: 12px;">يتم تحديد كل آية وهي تُتلى وتنتقل الصفحة معها، وبينها وقفة يسيرة</p>' +
       '<label class="setting" style="margin-top:16px"><span class="setting-label">لا تسألني ثانية</span>' +
       '<button class="switch" id="listen-remember" role="switch" aria-checked="false" aria-label="لا تسألني ثانية"></button></label>');
     bind('listen-remember', 'click', function () {
