@@ -919,10 +919,11 @@
     }
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
-      body: body, tag: tag, lang: 'ar', dir: 'rtl',
+      body: body, tag: tag || 'default', lang: 'ar', dir: 'rtl',
       icon: 'icons/icon-192.png', badge: 'icons/icon-96.png',
       vibrate: Store.get('vibrate') ? [200, 100, 200] : undefined,
-      data: { url: './' }
+      data: { url: './' },
+      requireInteraction: false
     };
     function direct() {
       try { new window.Notification(title, options); return true; } catch (e) { return false; }
@@ -933,7 +934,7 @@
           return reg.showNotification(title, options).then(function () { return true; }, direct);
         }
         return direct();
-      }).catch(direct);
+      }).catch(function (e) { return direct(); });
     }
     return Promise.resolve(direct());
   }
@@ -6466,7 +6467,11 @@
       var text = topic.i[+parts[1]];
       if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', ''), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
     },
-    'hear-salawat': function () { playRecording(salawatUrl(), 'settings-voice-try', salawatName()); },
+    'hear-salawat': function () { 
+      var name = salawatName();
+      playRecording(salawatUrl(), 'settings-voice-try', name);
+      notify('استمع الصلاة على النبي', name, 'audio');
+    },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the
        button at wire time would be thrown away with the first redraw */
@@ -6512,7 +6517,9 @@
       if (!heard) return;
       if (state.voiceClip) { stopSpeaking(); return; }
       /* the button itself, so it can show a pause while it plays */
-      playRecording('audio/dua/' + heard.f, el, HISN.filter(function (c) { return c.id === +ref; })[0].t);
+      var hisn = HISN.filter(function (c) { return c.id === +ref; })[0];
+      playRecording('audio/dua/' + heard.f, el, hisn.t);
+      notify('استمع ' + hisn.t, 'بصوت ' + heard.n, 'audio');
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -6745,8 +6752,9 @@
     if (hear) {
       if (state.voiceClip) { stopSpeaking(); return; }
       /* the name shown in the phone's own player comes from the button's label */
-      playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear,
-        (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي');
+      var label = (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي';
+      playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear, label);
+      notify('استمع ' + label, label, 'audio');
       return;
     }
     var pick = target.closest('[data-pick]');
@@ -6944,6 +6952,8 @@
       var pick = Store.get('adhanVoice') || 'none';
       if (pick === 'silent') { toast('يصل التنبيه بلا صوت'); return; }
       if (pick === 'none') { toast('يصل بنغمة التنبيه في هاتفك'); return; }
+      var adhanName_ = adhanName(pick);
+      notify('استمع الأذان', 'بصوت ' + adhanName_, 'audio');
       playAdhanSample();
     });
 
