@@ -33,7 +33,18 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
        Passing -shooting removes the geolocation api before the page loads, so
        the page falls back to the city it already knows and asks nobody. */
     if ProcessInfo.processInfo.arguments.contains("-shooting") {
-      let hide = "try { Object.defineProperty(navigator, 'geolocation', { get: function () { return undefined; } }); } catch (e) {}"
+      /* and the page must not offer to set the place either: GitHub's mac is
+         not in Kuwait, so the page saw a foreign zone and laid its banner
+         across the bottom of every picture. It is marked as already asked. */
+      let hide = """
+      try { Object.defineProperty(navigator, 'geolocation', { get: function () { return undefined; } }); } catch (e) {}
+      try {
+        var k = 'sunnati.settings';
+        var s = JSON.parse(localStorage.getItem(k) || '{}');
+        s.placeAsked = true;
+        localStorage.setItem(k, JSON.stringify(s));
+      } catch (e) {}
+      """
       setup.userContentController.addUserScript(
         WKUserScript(source: hide, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
@@ -65,7 +76,13 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
     try? AVAudioSession.sharedInstance().setActive(true)
 
-    Notifier.shared.ask { _ in }
+    /* Not while the store screenshots are taken: simctl can grant location
+       but has no way to grant notifications, so the question stood in the
+       middle of all six pictures, and a permission dialog in a screenshot is
+       a rejection. */
+    if !ProcessInfo.processInfo.arguments.contains("-shooting") {
+      Notifier.shared.ask { _ in }
+    }
 
     /* The page schedules a week ahead and then goes quiet. Without this the
        reminders run out for anyone who does not open the app, which is exactly

@@ -6,5 +6,13 @@
   <key>teamID</key><string>$(DEVELOPMENT_TEAM)</string>
   <key>uploadSymbols</key><true/>
   <key>signingStyle</key><string>manual</string>
+  <key>signingCertificate</key><string>Apple Distribution</string>
+  <!-- one profile per bundle id: the app and the widget are signed apart,
+       and an export that names only one of them is refused for the other -->
+  <key>provisioningProfiles</key>
+  <dict>
+    <key>com.eworldq8.sunnati</key><string>$(PROFILE_APP)</string>
+    <key>com.eworldq8.sunnati.widget</key><string>$(PROFILE_WIDGET)</string>
+  </dict>
 </dict>
 </plist>

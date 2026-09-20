@@ -1,3 +1,14 @@
 .DS_Store
 *.log
 node_modules/
+
+# Apple signing material never enters the repo: the private key, the
+# certificate request, the certificate and profiles, the App Store Connect key
+*.key
+*.csr
+*.cer
+*.p12
+*.p8
+*.mobileprovision
+sunnati-play/
+keystore.properties

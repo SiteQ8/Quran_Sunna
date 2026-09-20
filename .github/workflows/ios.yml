@@ -6,11 +6,18 @@
 #     worth having on its own, since it catches a broken build before anyone
 #     goes near a certificate
 #
-# The four secrets it wants, when you are ready to sign:
-#   IOS_CERT_P12        the distribution certificate, base64 of the .p12
-#   IOS_CERT_PASSWORD   the password you gave that .p12
-#   IOS_PROFILE         the provisioning profile, base64 of the .mobileprovision
-#   IOS_TEAM_ID         the ten characters Apple calls your Team ID
+# The secrets it wants, when you are ready to sign:
+#   IOS_CERT_P12          the distribution certificate, base64 of the .p12
+#   IOS_CERT_PASSWORD     the password you gave that .p12
+#   IOS_PROFILE           the app's provisioning profile, base64 of the .mobileprovision
+#   IOS_PROFILE_WIDGET    the widget's, the same way: two bundle ids, two profiles
+#   IOS_TEAM_ID           the ten characters Apple calls your Team ID
+#
+# And three more to send the build to App Store Connect from here, so no mac
+# is needed for that step either:
+#   ASC_KEY_ID            the App Store Connect API key id, ten characters
+#   ASC_ISSUER_ID         the issuer id beside it, a uuid
+#   ASC_KEY_P8            the .p8 the key came as, base64
 #
 # Making them is written out in ios/README.md.
 
@@ -88,6 +95,7 @@ jobs:
           CERT: ${{ secrets.IOS_CERT_P12 }}
           CERT_PASSWORD: ${{ secrets.IOS_CERT_PASSWORD }}
           PROFILE: ${{ secrets.IOS_PROFILE }}
+          PROFILE_WIDGET: ${{ secrets.IOS_PROFILE_WIDGET }}
         run: |
           KEYCHAIN="$RUNNER_TEMP/build.keychain"
           PASS=$(openssl rand -base64 24)
@@ -101,9 +109,18 @@ jobs:
           security set-key-partition-list -S apple-tool:,apple: -s -k "$PASS" "$KEYCHAIN"
           security list-keychain -d user -s "$KEYCHAIN"
 
-          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
-          echo "$PROFILE" | base64 --decode > \
-            ~/Library/MobileDevice/Provisioning\ Profiles/sunnati.mobileprovision
+          # Both profiles, and each is asked for its own name, which is what
+          # the build settings and the export refer to it by. Reading the name
+          # off the file means the workflow never has to be told it.
+          DIR=~/Library/MobileDevice/Provisioning\ Profiles
+          mkdir -p "$DIR"
+          name_of () {
+            security cms -D -i "$1" | plutil -extract Name raw -o - -
+          }
+          echo "$PROFILE" | base64 --decode > "$DIR/sunnati.mobileprovision"
+          echo "$PROFILE_WIDGET" | base64 --decode > "$DIR/sunnati-widget.mobileprovision"
+          echo "PROFILE_APP=$(name_of "$DIR/sunnati.mobileprovision")" >> "$GITHUB_ENV"
+          echo "PROFILE_WIDGET=$(name_of "$DIR/sunnati-widget.mobileprovision")" >> "$GITHUB_ENV"
 
           rm -f "$RUNNER_TEMP/cert.p12"
 
@@ -116,14 +133,49 @@ jobs:
           xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
             -configuration Release -archivePath "$RUNNER_TEMP/Sunnati.xcarchive" \
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
+            SIGN_IDENTITY="Apple Distribution" \
+            PROFILE_APP="$PROFILE_APP" \
+            PROFILE_WIDGET="$PROFILE_WIDGET" \
             archive
 
-          sed "s/\$(DEVELOPMENT_TEAM)/$DEVELOPMENT_TEAM/" exportOptions.plist > "$RUNNER_TEMP/export.plist"
+          sed -e "s/\$(DEVELOPMENT_TEAM)/$DEVELOPMENT_TEAM/" \
+              -e "s/\$(PROFILE_APP)/$PROFILE_APP/" \
+              -e "s/\$(PROFILE_WIDGET)/$PROFILE_WIDGET/" \
+              exportOptions.plist > "$RUNNER_TEMP/export.plist"
 
           xcodebuild -exportArchive \
             -archivePath "$RUNNER_TEMP/Sunnati.xcarchive" \
             -exportOptionsPlist "$RUNNER_TEMP/export.plist" \
             -exportPath "$RUNNER_TEMP/out"
+
+      # From here straight to App Store Connect, when the api key is there.
+      # The key lives only in this run's home directory and dies with it. The
+      # build shows up under TestFlight within a few minutes and is then
+      # attached to a version in App Store Connect by hand.
+      - name: هل هناك مفتاح App Store Connect
+        id: asc
+        if: steps.signing.outputs.ready == 'yes'
+        run: |
+          if [ -n "${{ secrets.ASC_KEY_P8 }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::لا مفتاح App Store Connect، الحزمة تُحفظ ولا تُرفع"
+          fi
+
+      - name: ارفع إلى App Store Connect
+        if: steps.asc.outputs.ready == 'yes'
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          echo "$ASC_KEY_P8" | base64 --decode > ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          IPA=$(ls "$RUNNER_TEMP"/out/*.ipa | head -1)
+          xcrun altool --upload-app -f "$IPA" -t ios \
+            --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
+          rm -f ~/private_keys/AuthKey_$ASC_KEY_ID.p8
 
       # A signed build cannot be installed anywhere without a developer
       # account, so until there is one the app is run in the simulator and
@@ -212,4 +264,6 @@ jobs:
       # means no one has to trust that it does
       - name: امسح المفاتيح
         if: always()
-        run: security delete-keychain "$RUNNER_TEMP/build.keychain" || true
+        run: |
+          security delete-keychain "$RUNNER_TEMP/build.keychain" || true
+          rm -rf ~/private_keys || true

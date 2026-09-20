@@ -12,8 +12,8 @@ options:
   # holding the generator back.
   xcodeVersion: "16.4"
 settings:
-  MARKETING_VERSION: "8.87.16"
-  CURRENT_PROJECT_VERSION: "302"
+  MARKETING_VERSION: "8.87.17"
+  CURRENT_PROJECT_VERSION: "303"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
@@ -27,6 +27,11 @@ targets:
       INFOPLIST_FILE: Sunnati/Info.plist
       TARGETED_DEVICE_FAMILY: "1"
       CODE_SIGN_STYLE: Manual
+      # Two targets, two profiles: the app and the widget each carry their own
+      # bundle id and Apple issues a profile per id. The names come in from the
+      # workflow, read off the profiles themselves, so nothing here goes stale.
+      PROVISIONING_PROFILE_SPECIFIER: $(PROFILE_APP)
+      CODE_SIGN_IDENTITY: $(SIGN_IDENTITY)
       ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
     dependencies:
       - target: Widget
@@ -50,6 +55,8 @@ targets:
       INFOPLIST_FILE: Widget/Info.plist
       TARGETED_DEVICE_FAMILY: "1"
       CODE_SIGN_STYLE: Manual
+      PROVISIONING_PROFILE_SPECIFIER: $(PROFILE_WIDGET)
+      CODE_SIGN_IDENTITY: $(SIGN_IDENTITY)
       SKIP_INSTALL: YES
       # a widget is built as a swiftui extension, and xcode needs telling
       LD_RUNPATH_SEARCH_PATHS: "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"
