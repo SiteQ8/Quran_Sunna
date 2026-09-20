@@ -11,58 +11,93 @@
 **حساب Apple Developer، ٩٩ دولاراً سنوياً.** لا سبيل إلى النشر بدونه، ولا إلى
 تثبيت التطبيق على جهازك أكثر من أسبوع.
 
-## الأسرار الأربعة
+## الأسرار الثمانية
 
-تُوضع في المستودع: Settings ← Secrets and variables ← Actions.
+تُوضع في المستودع: Settings ← Secrets and variables ← Actions. خمسة للتوقيع
+وثلاثة للرفع إلى App Store Connect من الورك فلو نفسه.
 
 | السرّ | ما هو |
 | --- | --- |
 | `IOS_TEAM_ID` | عشرة أحرف، تجدها في developer.apple.com ← Membership |
 | `IOS_CERT_P12` | شهادة التوزيع، بصيغة base64 |
 | `IOS_CERT_PASSWORD` | كلمة السرّ التي أعطيتها للشهادة |
-| `IOS_PROFILE` | ملفّ التخويل، بصيغة base64 |
+| `IOS_PROFILE` | ملفّ تخويل التطبيق، بصيغة base64 |
+| `IOS_PROFILE_WIDGET` | ملفّ تخويل الودجت، بصيغة base64 |
+| `ASC_KEY_ID` | معرّف مفتاح App Store Connect API، عشرة أحرف |
+| `ASC_ISSUER_ID` | معرّف المُصدِر بجانبه، uuid |
+| `ASC_KEY_P8` | ملفّ `.p8` الذي نزل مع المفتاح، بصيغة base64 |
+
+بلا الثلاثة الأخيرة يوقّع ويحفظ `ipa` في Artifacts ولا يرفعه. ومعها يصل
+البناء إلى TestFlight في دقائق.
 
 ### الشهادة، بلا ماك
 
-أبل تطلب طلب توقيع (CSR)، وتصنعه على أيّ نظام:
+أبل تطلب طلب توقيع (CSR)، وقد صُنع لك مع مفتاحه الخاصّ: `sunnati.csr`
+و`sunnati.key`. المفتاح لا يدخل المستودع أبداً، و`.gitignore` يسدّ عليه.
 
-```
-openssl req -new -newkey rsa:2048 -nodes \
-  -keyout sunnati.key -out sunnati.csr \
-  -subj "/emailAddress=YOUR_EMAIL/CN=Ali AlAnezi/C=KW"
-```
+في developer.apple.com ← Certificates ← `+` ← **Apple Distribution**،
+ارفع `sunnati.csr`، ونزّل `distribution.cer`، وأعطه لمن يبني.
 
-ثم في developer.apple.com ← Certificates ← `+` ← **Apple Distribution**،
-ارفع `sunnati.csr`، ونزّل `distribution.cer`.
-
-واجمع المفتاح والشهادة في ملفّ `.p12`:
+يُجمع المفتاح والشهادة في ملفّ `.p12`:
 
 ```
 openssl x509 -in distribution.cer -inform DER -out cert.pem -outform PEM
 openssl pkcs12 -export -inkey sunnati.key -in cert.pem -out sunnati.p12
 ```
 
-سيسألك عن كلمة سرّ، وهي `IOS_CERT_PASSWORD`. ثم:
+سيسأل عن كلمة سرّ، وهي `IOS_CERT_PASSWORD`. ثم:
 
 ```
 base64 -w0 sunnati.p12          # هذا IOS_CERT_P12
 ```
 
-### ملفّ التخويل
+### المعرّفات ومجموعة التطبيقات
 
-في developer.apple.com:
+في developer.apple.com ← **Identifiers**:
 
-1. **Identifiers** ← `+` ← App IDs ← معرّف التطبيق `com.eworldq8.sunnati`،
-   وفعّل **Push Notifications** إن أردتها لاحقاً
-2. **Profiles** ← `+` ← **App Store Connect** ← اختر المعرّف والشهادة
-3. نزّل الملفّ، ثم `base64 -w0 Sunnati.mobileprovision` وهو `IOS_PROFILE`
+1. **App Groups** ← `+` ← `group.com.eworldq8.sunnati`، وبدونها لا يقرأ الودجت
+   شيئاً
+2. **App IDs** ← `+` ← `com.eworldq8.sunnati`، وفعّل فيه **App Groups**
+   واختر المجموعة
+3. **App IDs** ← `+` ← `com.eworldq8.sunnati.widget`، وفعّل فيه **App Groups**
+   واختر المجموعة نفسها
+
+### ملفّا التخويل
+
+هدفان في المشروع، التطبيق والودجت، ولكلّ معرّفه، وأبل تُصدر ملفّاً لكلّ
+معرّف. في **Profiles** ← `+` ← **App Store Connect**:
+
+1. للمعرّف `com.eworldq8.sunnati` مع الشهادة، نزّله، ثم
+   `base64 -w0 Sunnati.mobileprovision` وهو `IOS_PROFILE`
+2. للمعرّف `com.eworldq8.sunnati.widget` مع الشهادة نفسها، نزّله، ثم
+   `base64 -w0 SunnatiWidget.mobileprovision` وهو `IOS_PROFILE_WIDGET`
+
+الورك فلو يقرأ اسم كلّ ملفّ من داخله، فسمّهما ما شئت.
+
+### مفتاح App Store Connect
+
+في appstoreconnect.apple.com ← **Users and Access** ← **Integrations** ←
+**App Store Connect API** ← `+`:
+
+- الاسم: `github`، والدور: **App Manager**
+- نزّل `.p8` فوراً، فأبل لا تعطيه مرّتين
+- **Key ID** هو `ASC_KEY_ID`، و**Issuer ID** فوق الجدول هو `ASC_ISSUER_ID`
+- `base64 -w0 AuthKey_XXXXXXXXXX.p8` هو `ASC_KEY_P8`
+
+### سجّل التطبيق مرّة
+
+في appstoreconnect.apple.com ← **Apps** ← `+` ← **New App**: المنصّة iOS،
+الاسم `سُنّتي`، اللغة العربية، المعرّف `com.eworldq8.sunnati`، وSKU
+`sunnati`. بلا هذا السجلّ يُرفض الرفع الأوّل بأن التطبيق غير معروف.
 
 ## التشغيل
 
-بلا أسرار يبني ويختبر فقط، وهذا نافع بذاته: يمسك انكسار البناء قبل أن تقترب
-من شهادة. ومع الأسرار يوقّع ويُخرج `ipa` تجده في Artifacts.
+بلا أسرار يبني ويختبر ويصوّر فقط، وهذا نافع بذاته: يمسك انكسار البناء قبل أن
+تقترب من شهادة. ومع الأسرار يوقّع ويرفع.
 
-للبناء: ادفع وسماً `ios-v8.85.0`، أو اضغط **Run workflow** في تبويب Actions.
+للبناء: ادفع وسماً `ios-v8.87.17`، أو اضغط **Run workflow** في تبويب Actions.
+ورقم البناء `CURRENT_PROJECT_VERSION` يرتفع مع كلّ commit بخطّاف git، فلا
+يُرفض رفع لتكرار رقم.
 
 ## قبل أن ترفع إلى App Store
 
@@ -91,10 +126,10 @@ base64 -w0 sunnati.p12          # هذا IOS_CERT_P12
 عنه التذكيرات، وهو بالضبط من كُتبت له. صار العودة إلى التطبيق تُنادي الجسور
 الأربعة فتتجدّد.
 
-## ما لم يُنجز بعد
+## ما أُنجز وما بقي
 
-- **لم يُبنَ على ماك قطّ**: أوّل تشغيل سيُظهر أخطاء بناء على الأرجح. هذا متوقَّع،
-  والغرض أن يكون الهيكل جاهزاً ليُصلَح بأوّل تشغيلة
-- **لقطات الشاشة**: تُؤخذ من محاكي Xcode بعد أوّل بناء ناجح
-- **مجموعة التطبيقات**: `group.com.eworldq8.sunnati` يجب إنشاؤها في
-  developer.apple.com تحت Identifiers ← App Groups، وإلا لم يقرأ الودجت شيئاً
+- **يُبنى على ماك GitHub** ويمرّ: سبع عشرة تشغيلة، آخر سبع ناجحة بلا توقيع
+- **لقطات الشاشة** تخرج من كلّ تشغيلة نظيفة من الحوارات، وتفصيلها في
+  `SCREENSHOTS.md`
+- **لم يُوقَّع بعد**: التوقيع والرفع ينتظران الأسرار الثمانية أعلاه، وكلّها في
+  يدك لا في يد من يبني
