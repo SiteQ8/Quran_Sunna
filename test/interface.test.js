@@ -7121,6 +7121,18 @@ test('the iphone wrapper names only what it answers, and the page knows which ph
   assert.ok(/function packageLine[\s\S]{0,600}آيفون/.test(app), 'the about screen can say iphone');
 });
 
+test('the chrome cannot be selected, the reading can', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* a long press on the date raised the system's copy and look-up menu, a
+     website's tell; an app selects nothing but what is read */
+  assert.ok(/^body \{[^}]*user-select: none/m.test(css), 'nothing by default');
+  const reading = /^\.naskh,[^{]*\{[^}]*user-select: text/m.exec(css);
+  assert.ok(reading, 'the reading is opted back in');
+  for (const c of ['.naskh', '.dua-text', '.dhikr-text', '.ayah-block', '.reader-body', '.salawat-text', 'textarea']) {
+    assert.ok(reading[0].indexOf(c) !== -1, c + ' can be copied');
+  }
+});
+
 test('the to-top button clears the tab bar on a phone with a home indicator', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   const rule = /\.to-top \{[\s\S]*?\n\}/.exec(css)[0];
