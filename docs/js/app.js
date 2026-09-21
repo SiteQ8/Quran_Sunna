@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.27';
+  var VERSION = '8.87.28';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1373,7 +1373,19 @@
   function packageLine() {
     var app = bridge();
     if (!app || !app.version) return '';
-    try { return '، وحزمة أندرويد ' + ar(app.version()); } catch (e) { return ''; }
+    try {
+      var v = app.version();
+      if (!v) return '';
+      /* the wrapper says which phone it is; the iPhone one used to be called
+         an android package on its own about screen */
+      var ios = app.platform && app.platform() === 'ios';
+      return '، وحزمة ' + (ios ? 'آيفون ' : 'أندرويد ') + ar(v);
+    } catch (e) { return ''; }
+  }
+
+  function inIosApp() {
+    var app = bridge();
+    try { return !!(app && app.platform && app.platform() === 'ios'); } catch (e) { return false; }
   }
 
   function inAndroidApp() {
@@ -6375,7 +6387,7 @@
     if (app && app.saveFile) {
       var ok = false;
       try { ok = app.saveFile(name, text); } catch (e) { ok = false; }
-      if (ok) { toast('حُفظت نسختك في التنزيلات باسم ' + name); return; }
+      if (ok) { toast(inIosApp() ? 'اختر أين تحفظ نسختك' : 'حُفظت نسختك في التنزيلات باسم ' + name); return; }
       toast('تعذّر حفظ النسخة');
       return;
     }

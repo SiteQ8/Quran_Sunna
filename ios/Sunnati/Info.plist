@@ -10,6 +10,13 @@
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+  <!-- the one domain the web view is bound to: this is what lets WKWebView run
+       the page's service worker, and with it work offline and notice a new
+       version, neither of which it would do for an unbound site -->
+  <key>WKAppBoundDomains</key>
+  <array>
+    <string>sunnati.3li.info</string>
+  </array>
   <key>LSRequiresIPhoneOS</key><true/>
   <key>UILaunchStoryboardName</key><string>LaunchScreen</string>
   <key>UISupportedInterfaceOrientations</key>

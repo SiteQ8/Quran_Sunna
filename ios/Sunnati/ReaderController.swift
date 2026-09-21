@@ -1,5 +1,6 @@
 import UIKit
 import WebKit
+import UserNotifications
 import AVFoundation
 import WidgetKit
 
@@ -14,7 +15,7 @@ enum WidgetCentre {
    exposes SunnatiApp with seventeen methods; the page checks for each before
    calling it, so iOS answers the ones a phone can honour and stays quiet about
    the rest rather than pretending. */
-final class ReaderController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
+final class ReaderController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate, UIDocumentInteractionControllerDelegate {
   private let site = URL(string: "https://sunnati.3li.info/")!
   private var web: WKWebView!
   private var player: AVAudioPlayer?
@@ -49,26 +50,72 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         WKUserScript(source: hide, injectionTime: .atDocumentStart, forMainFrameOnly: true))
     }
 
+    /* The bridge names only what this wrapper answers. It used to be a Proxy
+       that said yes to every name and then did nothing for most of them: the
+       page saw openMap, addToCalendar, shareImage and saveFile and called them
+       instead of its own web fallbacks, and each call fell into silence, or
+       into a toast saying the app had failed. canNotify came back undefined
+       and the page read that as notifications being off. And version came
+       back undefined, so the about screen printed «حزمة أندرويد» with no
+       number on an iPhone. What is not here the page handles itself. */
+    let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
     let bridge = """
-    window.SunnatiApp = new Proxy({}, {
-      get: function (_, name) {
-        return function () {
-          var args = Array.prototype.slice.call(arguments);
-          window.webkit.messageHandlers.sunnati.postMessage({ fn: String(name), args: args });
-          return undefined;
-        };
-      },
-      has: function () { return true; }
-    });
+    (function () {
+      function send(name, args) {
+        try { window.webkit.messageHandlers.sunnati.postMessage({ fn: name, args: args }); } catch (e) {}
+        return true;
+      }
+      function call(name) { return function () { return send(name, Array.prototype.slice.call(arguments)); }; }
+      window.SunnatiApp = {
+        __canNotify: true,
+        platform: function () { return 'ios'; },
+        version: function () { return '\(version)'; },
+        canNotify: function () { return window.SunnatiApp.__canNotify !== false; },
+        setReminders: call('setReminders'),
+        setQiyamTimes: call('setQiyamTimes'),
+        setPrayerTimes: call('setPrayerTimes'),
+        setAdhanSilent: call('setAdhanSilent'),
+        shareText: call('shareText'),
+        shareImage: call('shareImage'),
+        shareImageWithText: call('shareImageWithText'),
+        saveFile: call('saveFile'),
+        saveAndOpen: call('saveFile'),
+        openMap: call('openMap'),
+        addToCalendar: call('addToCalendar')
+      };
+    }());
     """
     setup.userContentController.add(self, name: "sunnati")
     setup.userContentController.addUserScript(
       WKUserScript(source: bridge, injectionTime: .atDocumentStart, forMainFrameOnly: true))
 
+    /* The page is shared with the web, where Safari ignores user-scalable
+       anyway. WKWebView honours it, so it is added here alone: an app does
+       not pinch, and this one has its own text size in its settings. */
+    let noZoom = """
+    (function () {
+      var m = document.querySelector('meta[name=viewport]');
+      if (m) m.setAttribute('content', m.getAttribute('content') + ',maximum-scale=1,user-scalable=no');
+    }());
+    """
+    setup.userContentController.addUserScript(
+      WKUserScript(source: noZoom, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
+
+    /* App-bound domains: without this WKWebView refuses to run a service
+       worker, so the page could neither work offline nor notice a new
+       version, and it waited on the http cache for every fix. The domain is
+       listed in Info.plist under WKAppBoundDomains. */
+    setup.limitsNavigationsToAppBoundDomains = true
+
     web = WKWebView(frame: view.bounds, configuration: setup)
     web.autoresizingMask = [.flexibleWidth, .flexibleHeight]
     web.navigationDelegate = self
+    web.uiDelegate = self
     web.scrollView.contentInsetAdjustmentBehavior = .never
+    /* three habits of a browser that make an app feel like a web page */
+    web.scrollView.bounces = false
+    web.allowsLinkPreview = false
+    web.allowsBackForwardNavigationGestures = false
     view.addSubview(web)
     web.load(URLRequest(url: site))
 
@@ -103,6 +150,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
   }
 
   @objc private func refresh() {
+    tellCanNotify()
     /* the four bridges the page schedules through, called by name rather than
        through a render pass that may or may not reach them */
     let js = "(function(){var h=window.App&&window.App.helpers;if(!h)return;"
@@ -151,6 +199,58 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     case "canNotify":
       break
 
+    /* the image the page drew of an ayah or a dua, as a data url */
+    case "shareImage", "shareImageWithText":
+      guard let dataUrl = args.first as? String else { return }
+      var items: [Any] = []
+      if let comma = dataUrl.firstIndex(of: ","),
+         let data = Data(base64Encoded: String(dataUrl[dataUrl.index(after: comma)...])),
+         let image = UIImage(data: data) {
+        items.append(image)
+      }
+      if fn == "shareImageWithText", args.count > 2, let words = args[2] as? String, !words.isEmpty {
+        items.append(words)
+      }
+      guard !items.isEmpty else { return }
+      let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+      sheet.popoverPresentationController?.sourceView = view
+      present(sheet, animated: true)
+
+    /* the backup: written to a temporary file and handed to Files, so it can
+       be kept in iCloud Drive or sent on rather than lost with the phone */
+    case "saveFile":
+      guard args.count > 1, let name = args[0] as? String, let text = args[1] as? String else { return }
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+      do { try text.write(to: url, atomically: true, encoding: .utf8) } catch { return }
+      let picker = UIDocumentPickerViewController(forExporting: [url], asCopy: true)
+      present(picker, animated: true)
+
+    /* directions in Apple Maps, from the coordinates the page passes */
+    case "openMap":
+      let coords = args.count > 1 ? (args[1] as? String ?? "") : ""
+      var target: URL?
+      if !coords.isEmpty, let u = URL(string: "maps://?daddr=\(coords)&dirflg=d") { target = u }
+      else if let raw = args.first as? String, let u = URL(string: raw) { target = u }
+      if let u = target { UIApplication.shared.open(u) }
+
+    /* an .ics previewed by the system, whose sheet offers «Add to Calendar»
+       with no calendar permission asked of the app itself */
+    case "addToCalendar":
+      guard args.count > 3, let name = args[0] as? String,
+            let start = args[2] as? Double, let end = args[3] as? Double else { return }
+      let note = (args[1] as? String ?? "").replacingOccurrences(of: "\n", with: "\\n")
+      let f = DateFormatter(); f.dateFormat = "yyyyMMdd"; f.timeZone = TimeZone(identifier: "UTC")
+      let s = f.string(from: Date(timeIntervalSince1970: start / 1000))
+      let e = f.string(from: Date(timeIntervalSince1970: end / 1000))
+      let ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//sunnati//ar", "BEGIN:VEVENT",
+                 "UID:\(s)-sunnati@3li.info", "DTSTART;VALUE=DATE:\(s)", "DTEND;VALUE=DATE:\(e)",
+                 "SUMMARY:\(name)", "DESCRIPTION:\(note)", "END:VEVENT", "END:VCALENDAR"].joined(separator: "\r\n")
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent("sunnati-\(s).ics")
+      do { try ics.write(to: url, atomically: true, encoding: .utf8) } catch { return }
+      preview = UIDocumentInteractionController(url: url)
+      preview?.delegate = self
+      preview?.presentPreview(animated: true)
+
     default:
       /* setAdhanSilent, setSalawatEvery and the rest are carried in the list
          the page already sends, so there is nothing separate to do for them */
@@ -160,6 +260,30 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
 
   private var adhanSilent = false
   private var lastPrayers: [Reminder] = []
+  private var preview: UIDocumentInteractionController?
+
+  func documentInteractionControllerViewControllerForPreview(_ c: UIDocumentInteractionController) -> UIViewController { self }
+
+  /* window.open from the page, which is how it reaches a map or a site: a web
+     view with no ui delegate returns null and nothing happens. It opens in
+     the phone's own browser or app instead. */
+  func webView(_ w: WKWebView, createWebViewWith c: WKWebViewConfiguration,
+               for action: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+    if let url = action.request.url { UIApplication.shared.open(url) }
+    return nil
+  }
+
+  /* whether notifications are allowed, told to the page rather than guessed:
+     the page shows «الإشعارات مغلقة» when this says so, and undefined used
+     to read as closed on every phone */
+  private func tellCanNotify() {
+    UNUserNotificationCenter.current().getNotificationSettings { s in
+      let ok = s.authorizationStatus == .authorized || s.authorizationStatus == .provisional
+      DispatchQueue.main.async {
+        self.web.evaluateJavaScript("window.SunnatiApp && (window.SunnatiApp.__canNotify = \(ok))")
+      }
+    }
+  }
 
   /* The prayer list is its own shape: {at, name}. Each becomes a notification
      titled with the prayer, silent or not as the reader asked. */
@@ -214,6 +338,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
      iOS ask "Open in سُنّتي?" first, and that dialog then sat in the middle of
      every photograph. A launch argument asks nobody. */
   func webView(_ w: WKWebView, didFinish navigation: WKNavigation!) {
+    tellCanNotify()
     let args = ProcessInfo.processInfo.arguments
     guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return }
     let name = args[i + 1].filter { $0.isLetter }
@@ -223,7 +348,12 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
 
   func webView(_ w: WKWebView, decidePolicyFor action: WKNavigationAction,
                decisionHandler done: @escaping (WKNavigationActionPolicy) -> Void) {
-    if let url = action.request.url, url.host != site.host, action.navigationType == .linkActivated {
+    /* any move to another site leaves the app, however the page asked for
+       it: a link, a location change, a form. Only tapped links used to, and
+       the rest either loaded inside the wrapper or, now that navigation is
+       bound to the app's domain, were refused outright. */
+    if let url = action.request.url, let host = url.host, host != site.host,
+       ["http", "https", "mailto", "tel", "maps"].contains(url.scheme ?? "") {
       UIApplication.shared.open(url)
       done(.cancel)
       return

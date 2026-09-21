@@ -7094,6 +7094,33 @@ test('a recitation carries on when the reader leaves the app', () => {
     'and says so the moment the reader really stops');
 });
 
+test('the iphone wrapper names only what it answers, and the page knows which phone it is on', () => {
+  const swift = fs.readFileSync(path.join(__dirname, '..', 'ios/Sunnati/ReaderController.swift'), 'utf8');
+  const code = (t) => t.replace(/\/\*[\s\S]*?\*\//g, '');
+  /* a Proxy that said yes to every name made the page call methods that fell
+     into silence: openMap did nothing, shareImage toasted a failure, canNotify
+     read as closed, and the about screen named an android package on an iphone */
+  assert.ok(code(swift).indexOf('new Proxy(') === -1, 'the bridge is a plain object');
+  for (const fn of ['openMap', 'addToCalendar', 'shareImage', 'saveFile', 'version', 'platform', 'canNotify']) {
+    assert.ok(new RegExp(fn + ':\\s*(call\\(|function)').test(swift), fn + ' is on the bridge');
+    if (fn !== 'version' && fn !== 'platform' && fn !== 'canNotify') {
+      assert.ok(new RegExp('case "' + fn + '"').test(swift), fn + ' is answered natively');
+    }
+  }
+  /* a service worker runs in WKWebView only for an app-bound domain, and
+     without it the page could neither work offline nor notice a new version */
+  assert.ok(swift.indexOf('limitsNavigationsToAppBoundDomains = true') !== -1, 'navigation is bound to the domain');
+  const plist = fs.readFileSync(path.join(__dirname, '..', 'ios/Sunnati/Info.plist'), 'utf8');
+  assert.ok(/WKAppBoundDomains[\s\S]{0,120}sunnati\.3li\.info/.test(plist), 'and the domain is declared');
+  /* the three browser habits */
+  assert.ok(swift.indexOf('scrollView.bounces = false') !== -1, 'no rubber band');
+  assert.ok(swift.indexOf('allowsLinkPreview = false') !== -1, 'no link preview');
+  assert.ok(swift.indexOf('user-scalable=no') !== -1, 'no pinch zoom in the wrapper');
+  /* and the page names the phone it is packaged for */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(/function packageLine[\s\S]{0,600}آيفون/.test(app), 'the about screen can say iphone');
+});
+
 test('a double tap on the counter does not zoom the page', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* iPhone zooms on a double tap unless told otherwise, and the tasbih is
