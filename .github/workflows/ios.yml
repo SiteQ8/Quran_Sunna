@@ -66,11 +66,14 @@ jobs:
       - name: هل هناك توقيع
         id: signing
         run: |
-          if [ -n "${{ secrets.IOS_CERT_P12 }}" ]; then
+          # all five, or none: a certificate without its profiles fails
+          # halfway through with a message about base64, not about profiles
+          if [ -n "${{ secrets.IOS_CERT_P12 }}" ] && [ -n "${{ secrets.IOS_PROFILE }}" ] \
+             && [ -n "${{ secrets.IOS_PROFILE_WIDGET }}" ] && [ -n "${{ secrets.IOS_TEAM_ID }}" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::notice::لا أسرار توقيع، سيُبنى بلا توقيع للتحقق فقط"
+            echo "::notice::أسرار التوقيع ناقصة، سيُبنى بلا توقيع للتحقق فقط"
           fi
 
       - name: ابنِ بلا توقيع
@@ -156,11 +159,12 @@ jobs:
         id: asc
         if: steps.signing.outputs.ready == 'yes'
         run: |
-          if [ -n "${{ secrets.ASC_KEY_P8 }}" ]; then
+          if [ -n "${{ secrets.ASC_KEY_P8 }}" ] && [ -n "${{ secrets.ASC_KEY_ID }}" ] \
+             && [ -n "${{ secrets.ASC_ISSUER_ID }}" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
-            echo "::notice::لا مفتاح App Store Connect، الحزمة تُحفظ ولا تُرفع"
+            echo "::notice::مفتاح App Store Connect ناقص، الحزمة تُحفظ ولا تُرفع"
           fi
 
       - name: ارفع إلى App Store Connect
