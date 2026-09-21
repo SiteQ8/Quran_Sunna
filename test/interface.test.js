@@ -7121,6 +7121,24 @@ test('the iphone wrapper names only what it answers, and the page knows which ph
   assert.ok(/function packageLine[\s\S]{0,600}آيفون/.test(app), 'the about screen can say iphone');
 });
 
+test('the to-top button clears the tab bar on a phone with a home indicator', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const rule = /\.to-top \{[\s\S]*?\n\}/.exec(css)[0];
+  /* the tab bar is --tab-h plus the safe-area inset tall; a button placed at
+     --tab-h alone sat inside the bar on every iPhone with a home indicator */
+  assert.ok(/bottom: calc\(var\(--tab-h\) \+ env\(safe-area-inset-bottom\)/.test(rule),
+    'the button counts the inset the bar counts');
+});
+
+test('neither wrapper shows a scrollbar over the page', () => {
+  const ios = fs.readFileSync(path.join(__dirname, '..', 'ios/Sunnati/ReaderController.swift'), 'utf8');
+  const android = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java'), 'utf8');
+  /* an Arabic page gets the indicator on the left, a grey line the height of
+     the screen, and it read as a website's scrollbar */
+  assert.ok(ios.indexOf('showsVerticalScrollIndicator = false') !== -1, 'iOS');
+  assert.ok(android.indexOf('setVerticalScrollBarEnabled(false)') !== -1, 'android');
+});
+
 test('a double tap on the counter does not zoom the page', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* iPhone zooms on a double tap unless told otherwise, and the tasbih is
