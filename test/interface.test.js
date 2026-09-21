@@ -7094,6 +7094,17 @@ test('a recitation carries on when the reader leaves the app', () => {
     'and says so the moment the reader really stops');
 });
 
+test('a double tap on the counter does not zoom the page', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* iPhone zooms on a double tap unless told otherwise, and the tasbih is
+     pressed twice a second; android honours the viewport and never did.
+     manipulation keeps pinch for anyone who needs the text larger. */
+  assert.ok(/^html \{[^}]*touch-action: manipulation/m.test(css), 'the page declines the double-tap zoom');
+  assert.ok(!/^html \{[^}]*touch-action: none/m.test(css), 'but keeps pinch, for the reader who needs it');
+  /* and a fast press must not select the word on the button */
+  assert.ok(/\.counter-btn[^{]*\{[^}]*user-select: none/.test(css), 'the counter cannot be selected');
+});
+
 test('every hear button stops what it started instead of starting it again', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   /* a press while the sound plays is a request to stop it: the bedtime

@@ -112,7 +112,11 @@
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-html { font-size: 16px; }
+/* A double tap on iPhone zooms the page unless it is told not to, and the
+   counter is pressed twice a second: touch-action: manipulation keeps pan and
+   pinch and drops only the double-tap zoom. Android never zoomed, since it
+   honours the viewport; this makes the two behave alike. */
+html { font-size: 16px; touch-action: manipulation; }
 
 body {
   font-family: var(--ui);
@@ -1397,6 +1401,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   display: grid; place-items: center; box-shadow: var(--shadow-lift); transition: transform .07s;
 }
 .counter-btn:active { transform: scale(.93); }
+/* and a press that lands fast and repeatedly must not select the word on the
+   button or raise the copy bubble over it */
+.counter-btn, .btn, .chip { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
 
 .dhikr {
   background: var(--raised); border-radius: var(--r); padding: var(--s4);
