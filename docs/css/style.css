@@ -546,7 +546,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* the arrow back to the top of a long screen */
 .to-top {
-  position: fixed; inset-inline-end: 14px; bottom: calc(var(--tab-h) + 16px); z-index: 40;
+  /* above the tab bar and its safe-area inset alike: without the inset the
+     button sat inside the bar on any iPhone with a home indicator */
+  position: fixed; inset-inline-end: 14px; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px); z-index: 40;
   width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
   background: var(--raised); color: var(--accent-ink); border: 1px solid var(--line);
   box-shadow: 0 6px 20px rgba(0, 0, 0, .18);

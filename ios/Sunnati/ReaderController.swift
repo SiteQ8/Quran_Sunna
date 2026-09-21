@@ -114,6 +114,12 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     web.scrollView.contentInsetAdjustmentBehavior = .never
     /* three habits of a browser that make an app feel like a web page */
     web.scrollView.bounces = false
+    /* the scroll indicator: a page in Arabic gets it on the left edge, a grey
+       line the full height of a short screen, and it reads as a website's
+       scrollbar. A native list on iOS shows one too, but briefly and on the
+       right; here it is simply off, the page has no long lists that need it */
+    web.scrollView.showsVerticalScrollIndicator = false
+    web.scrollView.showsHorizontalScrollIndicator = false
     web.allowsLinkPreview = false
     web.allowsBackForwardNavigationGestures = false
     view.addSubview(web)
