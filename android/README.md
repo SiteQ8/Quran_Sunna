@@ -21,7 +21,23 @@ android/
 
 ## البناء
 
-يلزم Java 17 و Android SDK، وأقل إصدار مدعوم أندرويد 8، ثم من داخل هذا المجلد:
+**على GitHub، لا يلزمك شيء.** `.github/workflows/android.yml` يبني مع كلّ دفعة
+تمسّ هذا المجلد: الاختبارات، ثم التدقيق، ثم حزمة تجربة `apk` تجدها في
+Artifacts باسم `sunnati-android-debug` وتثبّتها على هاتفك مباشرة. وحين تُوضع
+أسرار المفتاح الأربعة يوقّع أيضاً حزمة المتجر `aab` عند دفع وسم
+`android-v8.87.19` أو الضغط على **Run workflow**.
+
+| السرّ | ما هو |
+| --- | --- |
+| `ANDROID_KEYSTORE` | مفتاح الرفع `sunnati-upload.keystore` بصيغة base64 |
+| `ANDROID_KEYSTORE_PASSWORD` | كلمة سرّ المخزن |
+| `ANDROID_KEY_ALIAS` | `sunnati` |
+| `ANDROID_KEY_PASSWORD` | كلمة سرّ المفتاح |
+
+تُوضع بأداة `tools/ios/set-secrets.py`، وهي للمنصّتين.
+
+**على جهازك**، يلزم Java 17 و Android SDK، وأقل إصدار مدعوم أندرويد 8، ثم من
+داخل هذا المجلد:
 
 ```bash
 ./gradlew bundleRelease

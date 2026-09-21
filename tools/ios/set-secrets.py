@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""يضع أسرار توقيع iOS ورفعه في مستودع GitHub، مشفّرةً كما تطلبها واجهته.
+"""يضع أسرار توقيع iOS وأندرويد في مستودع GitHub، مشفّرةً كما تطلبها واجهته.
 
 الاستعمال:
     GITHUB_TOKEN=... python3 tools/ios/set-secrets.py \
@@ -11,6 +11,10 @@
 
 أو من الشهادة والمفتاح مباشرة، فيصنع الـp12 بنفسه:
         --cer distribution.cer --key sunnati.key --p12-password '...'
+
+ولأندرويد، مفتاح الرفع الذي يعرفه Play:
+        --keystore sunnati-upload.keystore --keystore-password '...' \
+        --key-alias sunnati --key-password '...'
 
 كل ملفّ يُقرأ ويُشفَّر ويُرسل، ولا يُكتب في أيّ مكان. الأسرار التي لم تُعطَ
 تُترك كما هي في المستودع.
@@ -69,6 +73,10 @@ def main():
     ap.add_argument('--asc-key-id')
     ap.add_argument('--asc-issuer-id')
     ap.add_argument('--asc-p8')
+    ap.add_argument('--keystore')
+    ap.add_argument('--keystore-password')
+    ap.add_argument('--key-alias')
+    ap.add_argument('--key-password')
     a = ap.parse_args()
 
     token = os.environ.get('GITHUB_TOKEN')
@@ -90,6 +98,10 @@ def main():
     if a.asc_key_id: secrets['ASC_KEY_ID'] = a.asc_key_id
     if a.asc_issuer_id: secrets['ASC_ISSUER_ID'] = a.asc_issuer_id
     if a.asc_p8: secrets['ASC_KEY_P8'] = b64file(a.asc_p8)
+    if a.keystore: secrets['ANDROID_KEYSTORE'] = b64file(a.keystore)
+    if a.keystore_password: secrets['ANDROID_KEYSTORE_PASSWORD'] = a.keystore_password
+    if a.key_alias: secrets['ANDROID_KEY_ALIAS'] = a.key_alias
+    if a.key_password: secrets['ANDROID_KEY_PASSWORD'] = a.key_password
     if not secrets:
         sys.exit('لم يُعطَ أيّ سرّ')
 
@@ -100,10 +112,12 @@ def main():
         print('وُضع', name)
 
     have = {s['name'] for s in call('GET', f'/repos/{REPO}/actions/secrets', token).get('secrets', [])}
-    need = ['IOS_TEAM_ID', 'IOS_CERT_P12', 'IOS_CERT_PASSWORD', 'IOS_PROFILE', 'IOS_PROFILE_WIDGET',
-            'ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8']
-    missing = [n for n in need if n not in have]
-    print('الناقص:', ', '.join(missing) if missing else 'لا شيء، الورك فلو يوقّع ويرفع')
+    ios = ['IOS_TEAM_ID', 'IOS_CERT_P12', 'IOS_CERT_PASSWORD', 'IOS_PROFILE', 'IOS_PROFILE_WIDGET',
+           'ASC_KEY_ID', 'ASC_ISSUER_ID', 'ASC_KEY_P8']
+    android = ['ANDROID_KEYSTORE', 'ANDROID_KEYSTORE_PASSWORD', 'ANDROID_KEY_ALIAS', 'ANDROID_KEY_PASSWORD']
+    for label, need in (('iOS', ios), ('أندرويد', android)):
+        missing = [n for n in need if n not in have]
+        print(label, 'الناقص:', ', '.join(missing) if missing else 'لا شيء، الورك فلو يوقّع')
 
 
 if __name__ == '__main__':
