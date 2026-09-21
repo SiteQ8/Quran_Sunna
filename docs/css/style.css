@@ -395,8 +395,6 @@ button { background: none; border: none; cursor: pointer; }
    spilling out under its base. No padding, or the niche and the arc it frames
    start at different heights and the niche stretches to cover the difference. */
 
-
-
 /* A frieze under a heading, the eight fold knot repeated as on a tiled band. */
 .section-title.has-band { display: flex; align-items: center; gap: var(--s3); }
 .section-title.has-band::after {
@@ -536,55 +534,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* ---------- صفة العمرة ---------- */
 
-.umrah-card { padding-bottom: var(--s3); }
-.umrah-head { display: flex; align-items: center; gap: var(--s3); padding-bottom: var(--s3); margin-bottom: var(--s3); border-bottom: 1px solid var(--line); }
-.umrah-num { flex: none; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%;
-  background: var(--accent-solid); color: var(--on-accent); font-size: var(--step-1); font-weight: 700; }
-.umrah-titles { display: grid; gap: 2px; min-width: 0; }
 .umrah-t { font-size: var(--step-1); font-weight: 700; line-height: 1.2; }
 .umrah-n { font-size: var(--step--1); color: var(--ink-3); }
 
-.umrah-steps { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s3); }
-.umrah-steps > li { display: flex; gap: var(--s3); align-items: flex-start; }
-.umrah-step-n { flex: none; width: 26px; height: 26px; margin-top: 2px; display: grid; place-items: center; border-radius: 8px;
-  background: var(--accent-wash); color: var(--accent-ink); font-size: .78rem; font-weight: 700; }
-.umrah-step-body { display: grid; gap: 8px; min-width: 0; }
-.umrah-step-t { line-height: 1.85; }
-
-.umrah-dua, .umrah-ayah, .umrah-hadith {
-  display: block; padding: var(--s3); border-radius: var(--r-sm); background: var(--sunken);
-  border-inline-start: 3px solid var(--gold); line-height: 2.1; font-size: 1rem; color: var(--ink);
-}
-.umrah-ayah, .umrah-hadith { font-family: var(--quran); font-size: 1.1rem; text-align: center; }
-.umrah-src { display: block; margin-top: 6px; font-family: var(--ui); font-size: var(--step--1); color: var(--ink-3); }
-.umrah-note { font-size: var(--step--1); color: var(--ink-3); line-height: 1.8; }
-.umrah-warn { display: flex; gap: 8px; align-items: flex-start; font-size: var(--step--1); color: var(--danger); line-height: 1.8; }
-.umrah-warn .icon { width: 18px; height: 18px; flex: none; margin-top: 3px; }
-
-.umrah-places { display: grid; gap: var(--s2); }
-.umrah-place { padding: var(--s3); border-radius: var(--r-sm); background: var(--sunken); display: grid; gap: 4px; }
-.umrah-place-n { font-weight: 700; color: var(--accent-ink); }
-.umrah-place-t { font-size: var(--step--1); line-height: 1.8; color: var(--ink-2); }
-.umrah-place-d { font-size: var(--step--1); color: var(--ink-3); }
-.umrah-after { font-size: var(--step--1); line-height: 1.9; color: var(--ink-2); margin: var(--s3) 0 0; }
-
-.umrah-sub { font-size: var(--step-0); font-weight: 700; margin: var(--s4) 0 var(--s2); color: var(--accent-ink); }
-.umrah-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--s2); }
-.umrah-list > li { display: flex; gap: 10px; align-items: flex-start; line-height: 1.85; font-size: var(--step--1); }
-.umrah-list .icon { width: 20px; height: 20px; flex: none; margin-top: 4px; }
-.umrah-dont .icon { color: var(--danger); }
-.umrah-do .icon { color: var(--accent-ink); }
-.umrah-notes .icon { color: var(--gold); }
-
-.umrah-tag, .umrah-end {
-  margin: var(--s4) 0 0; padding: var(--s3); border-radius: var(--r-sm); text-align: center;
-  background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; line-height: 1.9;
-}
-.umrah-move { margin-top: var(--s3); }
-.umrah-move .btn[disabled] { opacity: .45; }
 #umrah-steps .chip { font-variant-numeric: tabular-nums; height: 44px; }
 #umrah-steps { padding: 3px; }
-
 
 /* the arrow back to the top of a long screen */
 .to-top {
@@ -610,7 +564,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* below the date row, so the two never sit on it */
 .card-tools { position: absolute; top: 62px; inset-inline: 10px; display: flex; justify-content: space-between; z-index: 2; pointer-events: none; }
 .card-tools .btn { pointer-events: auto; width: 44px; height: 44px; min-height: 44px; }
-.prayer-card { position: relative; }
 
 /* the night marks, quiet beneath the strip of prayers */
 .night-line { display: flex; justify-content: center; gap: var(--s4); margin: var(--s2) 0 0;
@@ -744,7 +697,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .verse-line .search-hit { flex: 1 1 auto; min-width: 0; margin: 0; background: transparent; border: 0; padding: 0 var(--s2) 0 0; }
 .verse-line .dua-share { flex: none; }
-
 
 @media (max-width: 430px) {
   /* five controls on the reader's bar: the icons take the least a thumb
@@ -1008,13 +960,13 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
    these controls are drawn. Rather than fatten every chip and switch and spoil
    the layout, each one reaches out an invisible touch area to meet the finger.
    Nothing moves on screen and everything becomes reachable. */
-.date-nudge, .switch, .card-more, .search-hit, .tile, .foot a, .about-links a, .setting-note a { position: relative; }
-.date-nudge::before, .switch::before, .card-more::before, .foot a::before, .about-links a::before, .setting-note a::before {
+.date-nudge, .switch, .card-more, .search-hit, .tile, .foot a, .setting-note a { position: relative; }
+.date-nudge::before, .switch::before, .card-more::before, .foot a::before, .setting-note a::before {
   content: ''; position: absolute; inset-block: -11px; inset-inline: -10px;
 }
 .date-nudge::before { inset: -11px; }
 /* a line of small print is eighteen pixels tall, so its links reach further */
-.foot a::before, .about-links a::before, .setting-note a::before { inset-block: -14px; inset-inline: -8px; }
+.foot a::before, .setting-note a::before { inset-block: -14px; inset-inline: -8px; }
 /* a link in small print stands a full thumb tall, whatever the probe lands on */
 .foot a { display: inline-block; min-height: 44px; line-height: 44px; }
 /* a link inside a paragraph reads as one: the accent, underlined, and tall enough */
@@ -1131,7 +1083,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .segment .chip { flex: 1 1 0; height: 44px; border: 0; background: transparent; color: var(--ink-2); font-weight: 600; }
 .segment .chip.is-on { background: var(--accent-solid); color: var(--on-accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
 .chip.is-on { background: var(--accent-solid); border-color: var(--accent-solid); color: var(--on-accent); }
-.chip-row { display: flex; gap: var(--s2); flex-wrap: wrap; }
 
 /* A fixed set of choices of which one is on. A wrapping row gave cells of
    different widths breaking wherever they happened to run out of room, which
@@ -1145,9 +1096,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* and an odd one left over at the end takes the rest of its row rather than
    sitting alone in a half of it */
 .chip-grid .chip:last-child:nth-child(odd) { grid-column: 1 / -1; }
-.chip-scroll { display: flex; gap: var(--s2); overflow-x: auto; padding-bottom: var(--s2); scrollbar-width: none; }
-.chip-scroll::-webkit-scrollbar { display: none; }
-.chip-scroll .chip { flex: none; }
 
 /* ---------- home grid ---------- */
 
@@ -1711,11 +1659,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 [data-hear] .icon { fill: currentColor; }
 
 /* a line of the note that can be tapped to hear the verse it describes */
-.linkish {
-  display: block; margin-top: 4px; padding: 0; border: 0; background: none;
-  color: var(--accent-ink); font: inherit; font-size: inherit;
-  text-decoration: underline; text-underline-offset: 3px; cursor: pointer;
-}
 
 /* ---------- سهولة الوصول ----------
    Two things a person reaches for when the default is hard to use: lines and
@@ -1799,7 +1742,6 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .foot a { color: var(--accent-ink); text-decoration: none; }
 
 .badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink); font-size: .62rem; font-weight: 600; }
-.badge-gold { background: color-mix(in srgb, var(--gold) 16%, transparent); color: var(--gold); }
 
 @media (min-width: 560px) {
   .grid { gap: var(--s3); }

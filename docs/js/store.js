@@ -35,7 +35,6 @@
     clock: '12',
     listenAs: '',
     pageLayout: 'flow',
-    eidShown: '',
     qiyam: false,
     duha: false,
     /* the reader's own reminders, off until turned on */

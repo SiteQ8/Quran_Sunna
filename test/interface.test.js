@@ -3987,7 +3987,7 @@ test('a shared picture names where its words come from, and the maker', () => {
   /* each caller says what its source is */
   assert.ok(app.indexOf("'حصن المسلم، الباب ' + ar(chapter.id)") !== -1, 'a dhikr from the book names its chapter');
   assert.ok(app.indexOf("(it.r ? it.r + '، ' : '') + 'حصن المسلم'") !== -1, 'a daily dhikr names its narrator and the book');
-  assert.ok(app.indexOf("'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat") !== -1, 'a supplication names its reference');
+  assert.ok(app.indexOf("'dua-' + picRef[1] + '-' + picRef[2] + '.png', d.r || g.cat") !== -1, 'a supplication names its reference');
   assert.ok(app.indexOf("'quran', 'القرآن الكريم'") !== -1, 'a verse names the mushaf');
 });
 
@@ -7945,7 +7945,7 @@ test('the night of jumuah is not put off a week because its moment passed', () =
   assert.ok(window.indexOf('now.getDay() === 4') !== -1 && window.indexOf('minutes >= t.maghrib') !== -1);
   assert.ok(window.indexOf('now.getDay() === 5') !== -1 && window.indexOf('minutes < f.fajr') !== -1);
   /* opened late in that night, the reminder is still owed tonight */
-  assert.ok(/if \(at <= Date\.now\(\) && d === 0 && inJumuahNight\(\)\) \{[\s\S]{0,220}Date\.now\(\) \+ 120000/.test(app),
+  assert.ok(/if \(atJumuah <= Date\.now\(\) && d === 0 && inJumuahNight\(\)\) \{[\s\S]{0,220}Date\.now\(\) \+ 120000/.test(app),
     'a reminder of this night must not arrive next week');
 
   const { win, doc } = boot();
@@ -8101,7 +8101,7 @@ test('the night reminder is armed once, not afresh on every opening', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   /* it used to be set two minutes out every time the app was opened, so it
      arrived over and over the whole night through */
-  assert.ok(app.indexOf("if (Store.get('jumuahNightArmed') === nightKey()) at = 0;") !== -1,
+  assert.ok(app.indexOf("if (Store.get('jumuahNightArmed') === nightKey()) atJumuah = 0;") !== -1,
     'a night already given its reminder gets no second one');
   assert.ok(app.indexOf("Store.set('jumuahNightArmed', nightKey());") !== -1);
 

@@ -7,7 +7,6 @@
   var MONTHS = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
     'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
   var WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-  var DIGITS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
   /* Kept under its old name so nothing that calls it breaks, but the app now
      writes every number with the same figures rather than two sets at once. */
