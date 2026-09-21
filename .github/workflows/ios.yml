@@ -30,9 +30,10 @@ on:
 
 jobs:
   build:
-    # macos-15 is the current image; macos-14 is on its way out, and its Xcode
-    # is too old to open what xcodegen writes.
-    runs-on: macos-15
+    # macos-26 carries Xcode 26, and since September 2026 App Store Connect
+    # refuses anything built with an older SDK: the first signed build went
+    # up from macos-15 with Xcode 16.4 and came back with a 409.
+    runs-on: macos-26
     timeout-minutes: 30
 
     steps:
@@ -49,11 +50,17 @@ jobs:
       - name: الاختبارات
         run: node --test test/interface.test.js
 
-      # Xcode 16.4 is the image's own default and reads project format 77,
-      # which 15.4 refused. Naming it rather than taking whatever "latest"
-      # means that week keeps the build reproducible.
+      # The newest Xcode 26 on the image, chosen by looking rather than by a
+      # path written here: the image rotates its point releases, and a fixed
+      # path breaks the day the one it names is gone. What is used is printed,
+      # so the log says which Xcode built this.
       - name: Xcode
-        run: sudo xcode-select -s /Applications/Xcode_16.4.app
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v -i "beta\|release_candidate" | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || { echo "::error::no Xcode 26 on this image"; ls /Applications | grep Xcode; exit 1; }
+          sudo xcode-select -s "$XCODE"
+          xcodebuild -version
 
       - name: XcodeGen
         run: brew install xcodegen
@@ -242,11 +249,19 @@ jobs:
           # the other: some screenshots are better than none.
           xcrun simctl list devices available | grep -E "iPhone" | head -20
 
-          # The image carries no older iPhones, so the second size comes from
-          # the 16 Plus at 6.7 inch, which App Store Connect accepts for the
-          # smaller class. iPhone 11 Pro Max simply is not there any more.
-          shoot "iPhone 16 Pro Max" "6.9-inch" || echo "::warning::6.9 inch failed"
-          shoot "iPhone 16 Plus" "6.7-inch" || echo "::warning::6.7 inch failed"
+          # The simulators an Xcode ships change with it, so each slot names
+          # what it would like in order and takes the first that exists. Both
+          # slots are in Apple's 6.9 inch class, which is the only one the
+          # store still asks for; the second is a spare, not a requirement.
+          pick () {
+            for want in "$@"; do
+              if xcrun simctl list devices available | grep -q "$want ("; then echo "$want"; return; fi
+            done
+          }
+          BIG=$(pick "iPhone 17 Pro Max" "iPhone 16 Pro Max" "iPhone 16 Plus")
+          SPARE=$(pick "iPhone Air" "iPhone 17" "iPhone 16 Plus" "iPhone 16")
+          [ -n "$BIG" ] && { shoot "$BIG" "6.9-inch" || echo "::warning::$BIG failed"; } || echo "::warning::no 6.9 inch device on this image"
+          [ -n "$SPARE" ] && [ "$SPARE" != "$BIG" ] && { shoot "$SPARE" "spare" || echo "::warning::$SPARE failed"; } || true
 
       - name: احفظ الصور
         if: always()

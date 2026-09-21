@@ -6,14 +6,13 @@ options:
   bundleIdPrefix: com.eworldq8
   deploymentTarget:
     iOS: "15.0"
-  # The build runs on Xcode 16.4, which reads what xcodegen writes. The earlier
-  # pin to 15.4 did not take: xcodegen kept writing format 77 and the build
-  # could not open its own project. Updating the toolchain was the fix, not
-  # holding the generator back.
-  xcodeVersion: "16.4"
+  # The build runs on Xcode 26, because the store now refuses anything built
+  # with an older SDK. This is only the format hint xcodegen writes into the
+  # project; the workflow chooses the real Xcode by looking at the machine.
+  xcodeVersion: "26.0"
 settings:
-  MARKETING_VERSION: "8.87.21"
-  CURRENT_PROJECT_VERSION: "307"
+  MARKETING_VERSION: "8.87.22"
+  CURRENT_PROJECT_VERSION: "308"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
