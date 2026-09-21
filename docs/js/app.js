@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.19';
+  var VERSION = '8.87.20';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -873,7 +873,6 @@
       for (var i = 29; i >= 0; i--) {
         var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
         var rec = Store.prayersOf(d);
-        var stamp = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
         rows += '<div class="pg-row' + (i === 0 ? ' is-today' : '') + '" role="row"><span class="pg-day" role="rowheader">' + ar(d.getDate()) + '</span>' +
           PRAYER_ORDER.map(function (k) {
             var st = rec[k] || '';
@@ -3441,10 +3440,10 @@
       var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
       if (wird) {
         var parts = String(wird).split(':');
-        var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), +parts[0], +parts[1], 0, 0);
+        var atWird = new Date(day.getFullYear(), day.getMonth(), day.getDate(), +parts[0], +parts[1], 0, 0);
         var portion = wirdFor(day);
-        if (at.getTime() > Date.now() && portion) {
-          out.push({ at: at.getTime(), t: 'وردك اليوم',
+        if (atWird.getTime() > Date.now() && portion) {
+          out.push({ at: atWird.getTime(), t: 'وردك اليوم',
             b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: channelFor('wird') });
         }
       }
@@ -3513,15 +3512,15 @@
           /* if the night has begun and its moment has passed, the reminder is
              still owed tonight: putting it off a whole week because the app
              was opened late is not a reminder of this night at all */
-          var at = atEve.getTime();
+          var atJumuah = atEve.getTime();
           /* the night has begun and its moment has passed: it is owed tonight,
              but only if it has not already been given tonight */
-          if (at <= Date.now() && d === 0 && inJumuahNight()) {
-            if (Store.get('jumuahNightArmed') === nightKey()) at = 0;
-            else { at = Date.now() + 120000; Store.set('jumuahNightArmed', nightKey()); Store.set('jumuahNightAt', at); }
+          if (atJumuah <= Date.now() && d === 0 && inJumuahNight()) {
+            if (Store.get('jumuahNightArmed') === nightKey()) atJumuah = 0;
+            else { atJumuah = Date.now() + 120000; Store.set('jumuahNightArmed', nightKey()); Store.set('jumuahNightAt', atJumuah); }
           }
-          if (at > Date.now()) {
-            out.push({ at: at, t: 'ليلة الجمعة',
+          if (atJumuah > Date.now()) {
+            out.push({ at: atJumuah, t: 'ليلة الجمعة',
               b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight') });
           }
         }
@@ -4537,10 +4536,6 @@
     return d;
   }
 
-  function scrollTop() {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
-  }
-
   /* ---------------- صفة العمرة ---------------- */
 
   /* Where the traveller stands: the first stage that is not finished. Not the
@@ -4606,7 +4601,6 @@
           '<span class="check-box">' + icon('check') + '</span>' +
           '<span class="check-label">' + esc(text) + '</span></button>';
       }).join('');
-      var stageDone = stage.i.every(function (_, ii) { return done[stage.id + ':' + ii]; });
       var here = stage.i.filter(function (_, ii) { return done[stage.id + ':' + ii]; }).length;
       /* Every fold starts closed, here as everywhere: a screen should show its
          headings and not its contents. Opening the current stage by itself was
@@ -4787,7 +4781,6 @@
     }
     var W = box.width, H = box.height;
     var eye = state.mapAt || where;
-    var centre = toTile(eye.lat, eye.lng, MAP.zoom);
     /* One tile for each square of the map and no more: the open map asks that
        it not be drawn on in bulk, and a finer grid would quadruple every draw
        for a sharpness the reader does not miss. */
@@ -5988,7 +5981,6 @@
   function enhanceTime(input) {
     if (!input || input.dataset.picked === '1') return;
     input.dataset.picked = '1';
-    var value = input.value || '22:30';
     var wrap = document.createElement('span');
     wrap.className = 'picker timepick';
     var btn = document.createElement('button');
@@ -6491,7 +6483,6 @@
     page: renderPage,
     hisn: renderHisnChapter,
     prayers: renderPrayers,
-    umrah: renderUmrah,
     settings: renderSettings,
     about: renderSettings
   };
@@ -6780,19 +6771,19 @@
 
     var picture = target.closest('[data-picture]');
     if (picture) {
-      var ref = picture.getAttribute('data-picture').split(':');
-      var index = +ref[1];
-      if (ref[0] === 'dua') {
-        var g = DUAS[+ref[1]], d = g && g.items[+ref[2]];
-        if (d) shareTextCard(g.cat, d.t, 'dua-' + ref[1] + '-' + ref[2] + '.png', d.r || g.cat);
-      } else if (ref[0] === 'hisn') {
+      var picRef = picture.getAttribute('data-picture').split(':');
+      var index = +picRef[1];
+      if (picRef[0] === 'dua') {
+        var g = DUAS[+picRef[1]], d = g && g.items[+picRef[2]];
+        if (d) shareTextCard(g.cat, d.t, 'dua-' + picRef[1] + '-' + picRef[2] + '.png', d.r || g.cat);
+      } else if (picRef[0] === 'hisn') {
         var chapter = null;
         HISN.forEach(function (c) { if (c.id === state.hisn) chapter = c; });
         if (chapter && chapter.i[index]) {
           shareTextCard(chapter.t, chapter.i[index].t, 'dhikr-' + chapter.id + '-' + index + '.png',
             'حصن المسلم، الباب ' + ar(chapter.id) + (chapter.i[index].r > 1 ? '، ' + count(chapter.i[index].r, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''));
         }
-      } else if (ref[0] === 'after') {
+      } else if (picRef[0] === 'after') {
         /* the sheet after a prayer keeps its own four; without this branch the
            share button would have pictured a dhikr from whichever list the
            azkar screen happened to be on */
@@ -6903,9 +6894,9 @@
 
     var umrahStep = target.closest('[data-umrah-step]');
     if (umrahStep) {
-      var key = umrahStep.getAttribute('data-umrah-step');
+      var umrahKey = umrahStep.getAttribute('data-umrah-step');
       var all = Store.get('umrah') || {};
-      if (all[key]) delete all[key]; else all[key] = 1;
+      if (all[umrahKey]) delete all[umrahKey]; else all[umrahKey] = 1;
       Store.set('umrah', all);
       buzz(6);
       renderUmrah();
@@ -6935,8 +6926,8 @@
       return;
     }
 
-    var chapter = target.closest('[data-hisn]');
-    if (chapter) { state.hisn = +chapter.getAttribute('data-hisn'); go('hisn'); return; }
+    var hisnChapter = target.closest('[data-hisn]');
+    if (hisnChapter) { state.hisn = +hisnChapter.getAttribute('data-hisn'); go('hisn'); return; }
 
     var day = target.closest('[data-day]');
     if (day) { pickCalendarDay(+day.getAttribute('data-day')); return; }
@@ -7653,9 +7644,9 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, nightMarks: nightMarks, duhaWindow: duhaWindow, renderNightLine: renderNightLine, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, reminderList: reminderList, handRemindersToApp: handRemindersToApp, wirdFor: wirdFor, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, notify: notify, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
-      downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, verseUrl: verseUrl, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
-      isFriday: isFriday, totalSunnahCount: totalSunnahCount,
+      maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
+ totalSunnahCount: totalSunnahCount,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },
