@@ -16,5 +16,13 @@ GITHUB_TOKEN=... python3 tools/ios/set-secrets.py \
     --asc-key-id XXXXXXXXXX --asc-issuer-id '....' --asc-p8 AuthKey_XXXXXXXXXX.p8
 ```
 
-يُعطى ما هو في اليد، ويقول في آخره ما بقي ناقصاً. وإن أُعطي `--cer` و`--key`
-صنع الـ`p12` بنفسه فلا يلزم `openssl` على حدة.
+ولأندرويد، مفتاح الرفع الذي يعرفه Play:
+
+```
+GITHUB_TOKEN=... python3 tools/ios/set-secrets.py \
+    --keystore sunnati-upload.keystore --keystore-password '...' \
+    --key-alias sunnati --key-password '...'
+```
+
+يُعطى ما هو في اليد، ويقول في آخره ما بقي ناقصاً لكلّ منصّة. وإن أُعطي
+`--cer` و`--key` صنع الـ`p12` بنفسه فلا يلزم `openssl` على حدة.

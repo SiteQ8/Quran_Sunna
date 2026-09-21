@@ -1,0 +1,143 @@
+# Builds سُنّتي for Android on GitHub's own machine, so the wrapper never falls
+# behind the page again: a fix to the Java went into the repository and sat
+# there, while the phone kept crashing on the build from before it.
+#
+# What it does, and when:
+#   • every push to main that touches the wrapper: tests, lint, and a debug apk
+#     you can install on your own phone straight from Artifacts, with no store
+#     and no key in the way
+#   • a tag like android-v8.87.19, or "Run workflow": the same, and a signed
+#     release bundle for Play when the four secrets below are set
+#
+# The four secrets it wants, when you are ready to sign:
+#   ANDROID_KEYSTORE            the upload keystore, base64 of the .keystore
+#   ANDROID_KEYSTORE_PASSWORD   its store password
+#   ANDROID_KEY_ALIAS           the alias inside it, sunnati
+#   ANDROID_KEY_PASSWORD        the key's own password
+#
+# The keystore is the one Play already knows: the SHA-256 in
+# docs/.well-known/assetlinks.json is its fingerprint, and a bundle signed with
+# any other key is refused as a different app. tools/ios/set-secrets.py puts
+# the four in place from the files.
+
+name: Android
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - '.github/workflows/android.yml'
+    tags: ['android-v*']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v7
+
+      # the same gates the site goes through, so a broken page never reaches a
+      # phone wrapped in a shell
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: ثبّت ما تحتاجه الاختبارات
+        run: npm install --no-audit --no-fund
+
+      - name: الاختبارات
+        run: node --test test/interface.test.js
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      # the sdk the app compiles against, matching compileSdk in build.gradle;
+      # the runner image carries an sdk of its own but not always this platform
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: 'platforms;android-36 build-tools;36.0.0'
+
+      - name: تخزين gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/**/*.gradle', 'android/gradle/wrapper/gradle-wrapper.properties') }}
+
+      # lint over the release variant is what catches a call into an api newer
+      # than minSdk: it compiles perfectly and throws on the phone
+      - name: التدقيق
+        run: cd android && chmod +x gradlew && ./gradlew --no-daemon :app:lintRelease
+
+      - name: ابنِ للتجربة
+        run: cd android && ./gradlew --no-daemon assembleDebug
+
+      - name: احفظ حزمة التجربة
+        uses: actions/upload-artifact@v7
+        with:
+          name: sunnati-android-debug
+          path: android/app/build/outputs/apk/debug/*.apk
+          retention-days: 14
+
+      # Without secrets the build stops here, having proved it compiles and
+      # having produced something to install. With them it signs for Play.
+      - name: هل هناك توقيع
+        id: signing
+        run: |
+          if [ -n "${{ secrets.ANDROID_KEYSTORE }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::لا مفتاح توقيع، حزمة التجربة وحدها"
+          fi
+
+      # The keystore is written into the run's own workspace and the properties
+      # file build.gradle reads it from, both of which die with the machine.
+      - name: ضع المفتاح
+        if: steps.signing.outputs.ready == 'yes'
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          echo "$KEYSTORE" | base64 --decode > android/sunnati-upload.keystore
+          cat > android/keystore.properties << EOF
+          storeFile=sunnati-upload.keystore
+          storePassword=$STORE_PASSWORD
+          keyAlias=$KEY_ALIAS
+          keyPassword=$KEY_PASSWORD
+          EOF
+
+      - name: ابنِ ووقّع
+        if: steps.signing.outputs.ready == 'yes'
+        run: cd android && ./gradlew --no-daemon bundleRelease assembleRelease
+
+      # the fingerprint is printed so a mismatch with assetlinks.json shows in
+      # the log rather than as a silent break in the domain link
+      - name: بصمة المفتاح
+        if: steps.signing.outputs.ready == 'yes'
+        run: |
+          keytool -list -v -keystore android/sunnati-upload.keystore \
+            -alias "${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -storepass "${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" | grep SHA256 || true
+
+      - name: احفظ حزمة المتجر
+        if: steps.signing.outputs.ready == 'yes'
+        uses: actions/upload-artifact@v7
+        with:
+          name: sunnati-android-release
+          path: |
+            android/app/build/outputs/bundle/release/*.aab
+            android/app/build/outputs/apk/release/*.apk
+          retention-days: 14
+
+      - name: امسح المفتاح
+        if: always()
+        run: rm -f android/sunnati-upload.keystore android/keystore.properties
