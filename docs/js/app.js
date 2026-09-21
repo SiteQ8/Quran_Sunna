@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.25';
+  var VERSION = '8.87.26';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -7239,6 +7239,10 @@
        nothing and leaving the reader wondering whether the button works. */
     document.querySelectorAll('.try-sound').forEach(function (btn) {
       btn.addEventListener('click', function () {
+        /* the one button starts the sound and, while it plays, stops it: the
+           neighbouring hear buttons do this, and this one used to start the
+           recitation over from the top on every press with no way to stop */
+        if (isSpeaking()) { stopSpeaking(); return; }
         var key = btn.getAttribute('data-try');
         var pick = soundFor(key);
         if (pick === 'silent') { toast('هذا التذكير يصل بلا صوت'); return; }
