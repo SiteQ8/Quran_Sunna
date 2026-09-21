@@ -7158,8 +7158,11 @@ test('a double tap on the counter does not zoom the page', () => {
      manipulation keeps pinch for anyone who needs the text larger. */
   assert.ok(/^html \{[^}]*touch-action: manipulation/m.test(css), 'the page declines the double-tap zoom');
   assert.ok(!/^html \{[^}]*touch-action: none/m.test(css), 'but keeps pinch, for the reader who needs it');
-  /* and a fast press must not select the word on the button */
-  assert.ok(/\.counter-btn[^{]*\{[^}]*user-select: none/.test(css), 'the counter cannot be selected');
+  /* and a fast press must not select the word on the button: nothing in the
+     chrome is selectable, and the counter is not among what is opted back in */
+  assert.ok(/^body \{[^}]*user-select: none/m.test(css), 'the counter cannot be selected');
+  const optedIn = /user-select: text/.test(css) ? /^([^{]*)\{[^}]*user-select: text/m.exec(css)[1] : '';
+  assert.ok(optedIn.indexOf('.counter-btn') === -1, 'and is not opted back in');
 });
 
 test('every hear button stops what it started instead of starting it again', () => {
