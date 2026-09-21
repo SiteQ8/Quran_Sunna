@@ -7094,6 +7094,23 @@ test('a recitation carries on when the reader leaves the app', () => {
     'and says so the moment the reader really stops');
 });
 
+test('every hear button stops what it started instead of starting it again', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* a press while the sound plays is a request to stop it: the bedtime
+     recitation button restarted آية الكرسي from the top on every press and
+     could not be silenced short of leaving the screen */
+  for (const opener of [
+    /bind\('settings-adhan-try', 'click', function \(\) \{\n([^\n]*\n){0,2}/,
+    /bind\('settings-voice-try', 'click', function \(\) \{\n([^\n]*\n){0,2}/,
+    /querySelectorAll\('\.try-sound'\)\.forEach\(function \(btn\) \{\n\s*btn\.addEventListener\('click', function \(\) \{\n([^\n]*\n){0,5}/,
+  ]) {
+    const m = opener.exec(app);
+    assert.ok(m, 'the button is where it was');
+    assert.ok(m[0].indexOf("if (isSpeaking()) { stopSpeaking(); return; }") !== -1,
+      'a press while sounding is a stop: ' + m[0].split('\n')[0].trim());
+  }
+});
+
 test('a dhikr is held and shaded like a recitation, not left to be cut off', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const body = /function playRecording\(url, button, title\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
