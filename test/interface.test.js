@@ -7121,6 +7121,36 @@ test('the iphone wrapper names only what it answers, and the page knows which ph
   assert.ok(/function packageLine[\s\S]{0,600}آيفون/.test(app), 'the about screen can say iphone');
 });
 
+test('the night of jumuah sheet is not silenced by its own notification', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* jumuahNightAt is the moment the notification is armed for; the sheet used
+     to read that same key as "stay quiet until", so the first opening of the
+     night armed the notice at now+2min and thereby silenced itself. A reader
+     who opened the app once after maghrib on thursday saw nothing at all. */
+  const sheet = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(sheet.indexOf("Store.get('jumuahNightQuiet')") !== -1,
+    'the sheet reads the reader\'s own postponement');
+  assert.ok(sheet.indexOf("Store.get('jumuahNightAt')") === -1,
+    'and not the moment the notification is armed for');
+
+  /* the arming still writes its own key, and only that one */
+  const arming = /if \(atJumuah <= Date\.now\(\)[\s\S]{0,360}?\n          \}/.exec(app)[0];
+  assert.ok(arming.indexOf("Store.set('jumuahNightAt'") !== -1, 'arming keeps its key');
+  assert.ok(arming.indexOf("jumuahNightQuiet") === -1, 'and does not touch the quiet one');
+
+  /* «ذكّرني بعد ساعة» is what sets the quiet, and it sets both */
+  const snooze = /function snoozeJumuahNight\(minutes\) \{[\s\S]*?\n  \}/.exec(app)[0];
+  assert.ok(snooze.indexOf("Store.set('jumuahNightQuiet'") !== -1, 'the snooze sets the quiet');
+  assert.ok(snooze.indexOf("Store.set('jumuahNightAt'") !== -1, 'and the armed hour with it');
+
+  /* and putting the sheet away clears the quiet */
+  const off = /'hide-jumuah-night'[\s\S]{0,400}?\n    \}/.exec(app)[0];
+  assert.ok(off.indexOf('jumuahNightQuiet') !== -1, 'putting it away clears the quiet too');
+
+  const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
+  assert.ok(/jumuahNightQuiet: 0/.test(store), 'the key has a default');
+});
+
 test('the chrome cannot be selected, the reading can', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* a long press on the date raised the system's copy and look-up menu, a
@@ -8064,12 +8094,23 @@ test('the night of jumuah can be shared, put off, or dismissed', () => {
   assert.ok(at > night + 59 * 60000 && at < night + 61 * 60000);
   assert.strictEqual(win.Store.get('jumuahNightAt'), at);
 
-  /* dismissed for good, and it can be brought back */
+  /* dismissed for good, and it can be brought back. The button is on the
+     sheet, so it puts the sheet away and leaves the notification alone: a
+     reader who wants no popup may still want to be called at night. */
   click(win, doc.querySelector('[data-act="hide-jumuah-night"]'));
-  assert.strictEqual(win.Store.get('jumuahNight'), false);
-  assert.strictEqual(win.App.helpers.reminderList().filter(function (r) { return r.t === 'ليلة الجمعة'; }).length, 0);
+  assert.strictEqual(win.Store.get('jumuahNightSheet'), false, 'the sheet is put away');
+  assert.strictEqual(win.Store.get('jumuahNight'), true, 'and the notification is untouched');
+  assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false, 'it does not come back');
+  /* the switch in the settings is the notification's, and it still reads on;
+     turning it off and on again is the way back for the sheet */
   win.App.go('settings');
-  assert.strictEqual(doc.getElementById('settings-jumuah-night').getAttribute('aria-checked'), 'false');
+  const sw = doc.getElementById('settings-jumuah-night');
+  assert.strictEqual(sw.getAttribute('aria-checked'), 'true');
+  click(win, sw);
+  assert.strictEqual(win.Store.get('jumuahNight'), false);
+  click(win, sw);
+  assert.strictEqual(win.Store.get('jumuahNight'), true);
+  assert.strictEqual(win.Store.get('jumuahNightSheet'), true, 'and the sheet comes back with it');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(/function shareJumuahNight\(\)/.test(app));
@@ -8204,11 +8245,12 @@ test('the night reminder is armed once, not afresh on every opening', () => {
     assert.strictEqual(when(), first, 'nor the third');
   }
 
-  /* hiding it clears what was armed as well as what was to come */
+  /* hiding the sheet puts the sheet away and nothing else: the notification
+     has its own switch in the settings */
   const hide = /'hide-jumuah-night': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
-  assert.ok(hide.indexOf("Store.set('jumuahNightAt', 0);") !== -1, 'the armed hour is cleared');
-  assert.ok(hide.indexOf("Store.set('jumuahNightArmed', '');") !== -1);
-  assert.ok(hide.indexOf('handRemindersToApp();') !== -1, 'and the app is told at once');
+  assert.ok(hide.indexOf("Store.set('jumuahNightSheet', false);") !== -1, 'the sheet is put away');
+  assert.ok(hide.indexOf("Store.set('jumuahNightQuiet', 0);") !== -1, 'and its postponement cleared');
+  assert.ok(hide.indexOf("Store.set('jumuahNight'") === -1, 'the notification is left alone');
   win.Store.set('jumuahNight', false);
   assert.strictEqual(win.App.helpers.reminderList().filter(function (x) { return x.t === 'ليلة الجمعة'; }).length, 0);
   void doc;
@@ -8229,16 +8271,22 @@ test('the sunnahs of the night are offered on every opening until put off or hid
     /* put off, it holds its peace until the hour asked for */
     win.App.helpers.snoozeJumuahNight(60);
     assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false, 'silent while put off'); close();
-    /* hidden, it does not come back at all */
-    win.Store.set('jumuahNightAt', 0);
+    /* the notification setting is a setting about notifications: turned off,
+       the night still announces itself when the reader opens the app */
+    win.Store.set('jumuahNightQuiet', 0);
     win.Store.set('jumuahNight', false);
+    assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), true,
+      'the sheet does not depend on the notification'); close();
+    /* hidden by its own button, it does not come back at all */
+    win.Store.set('jumuahNightSheet', false);
     assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false);
   }
   /* and it stops of itself at the fajr of friday, since it is bound to the night */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function maybeJumuahNightSheet\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf('!inJumuahNight()') !== -1, 'outside the night it never shows');
-  assert.ok(fn.indexOf("var quiet = +Store.get('jumuahNightAt') || 0;") !== -1);
+  assert.ok(fn.indexOf("var quiet = +Store.get('jumuahNightQuiet') || 0;") !== -1);
+  assert.ok(fn.indexOf("Store.get('jumuahNight')") === -1, 'and it does not ask about the notification');
   /* nothing anywhere still keys off a once-a-night flag */
   assert.ok(app.indexOf('jumuahNightShown') === -1);
   const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');

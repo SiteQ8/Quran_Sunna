@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.33';
+  var VERSION = '8.87.34';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3615,12 +3615,18 @@
   }
 
   function maybeJumuahNightSheet() {
-    if (!Store.get('jumuahNight') || !inJumuahNight()) return false;
+    /* The notification setting is about notifications. The sheet is the app
+       telling the reader, when he opens it himself, which night this is, and
+       that stands whether or not he wants to be interrupted at night. */
+    if (!Store.get('jumuahNightSheet') || !inJumuahNight()) return false;
     /* It greets the reader every time he opens the app through the night, not
        once and then no more: a reminder he meant to act on and did not is
        worth putting before him again. It is silenced only by his own hand,
        and stops of itself at the fajr of friday. */
-    var quiet = +Store.get('jumuahNightAt') || 0;
+    /* the reader's own postponement, not the moment the notification is armed
+       for: the two used to share a key, so arming the notice at the first
+       opening of the night silenced the sheet on that very opening */
+    var quiet = +Store.get('jumuahNightQuiet') || 0;
     if (quiet > Date.now()) return false;
     openSheet('ليلة الجمعة',
       '<p class="setting-note">من مغرب الخميس إلى فجر الجمعة، وتُعرض كلما فتحت التطبيق حتى تؤجّلها أو تُخفيها</p>' +
@@ -3768,6 +3774,7 @@
   function snoozeJumuahNight(minutes) {
     var at = Date.now() + minutes * 60000;
     Store.set('jumuahNightAt', at);
+    Store.set('jumuahNightQuiet', at);
     Store.set('jumuahNightArmed', nightKey());
     handRemindersToApp();
     return at;
@@ -6567,12 +6574,12 @@
       toast('سنذكّرك عند ' + clockText(new Date(at).getHours() * 60 + new Date(at).getMinutes()));
     },
     'hide-jumuah-night': function () {
-      Store.set('jumuahNight', false);
-      Store.set('jumuahNightAt', 0);
-      Store.set('jumuahNightArmed', '');
-      handRemindersToApp();
+      /* this button is on the sheet, so it puts the sheet away, and leaves the
+         notification to its own switch in the settings */
+      Store.set('jumuahNightSheet', false);
+      Store.set('jumuahNightQuiet', 0);
       closeSheet();
-      toast('لن تُذكّر بليلة الجمعة، وتعيدها من الإعدادات');
+      toast('لن تُعرض ليلة الجمعة عند الفتح، وتعيدها من الإعدادات');
       renderSettings();
     },
     /* chapter 25 is الأذكار بعد السلام من الصلاة; 27 is morning and evening.
@@ -7206,7 +7213,9 @@
     bind('settings-jumuah-night', 'click', function () {
       var on = !Store.get('jumuahNight');
       Store.set('jumuahNight', on);
-      if (!on) { Store.set('jumuahNightAt', 0); Store.set('jumuahNightArmed', ''); }
+      /* the way back for a reader who put the sheet away from the sheet itself */
+      if (on) Store.set('jumuahNightSheet', true);
+      if (!on) { Store.set('jumuahNightAt', 0); Store.set('jumuahNightQuiet', 0); Store.set('jumuahNightArmed', ''); }
       setSwitch($('settings-jumuah-night'), on);
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير ليلة الجمعة' : 'أُوقف تذكير ليلة الجمعة');
