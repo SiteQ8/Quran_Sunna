@@ -981,16 +981,22 @@ test('the midday prayer is called the jumuah on friday and the dhuhr otherwise',
 });
 
 test('the clock and the marks carry the friday name on a friday', () => {
-  const { win, doc } = boot();
-  const today = new Date();
-  const wanted = today.getDay() === 5 ? 'الجمعة' : 'الظهر';
-  const midday = win.App.clockState(today).marks.filter((m) => m.key === 'dhuhr')[0];
-  assert.strictEqual(midday.ar, wanted);
-
-  const names = [...doc.querySelectorAll('#windows .window-name')].map((e) => e.textContent);
-  assert.ok(names.indexOf(wanted) !== -1, 'the marks should read ' + wanted + ', got ' + names.join(' '));
-  assert.strictEqual(names.indexOf(today.getDay() === 5 ? 'الظهر' : 'الجمعة'), -1,
-    'the other name must not appear');
+  /* The clock is handed a morning rather than left to whenever the suite runs:
+     after the last prayer of the night the app moves on to the next day, so a
+     thursday evening legitimately shows friday's name and the assertion, read
+     against the real weekday, failed for reasons that were not the app's. */
+  const cases = [
+    [new Date(2026, 8, 24, 9, 0, 0), 'الظهر', 'الجمعة'],   // خميس
+    [new Date(2026, 8, 25, 9, 0, 0), 'الجمعة', 'الظهر'],   // جمعة
+  ];
+  for (const [when, wanted, other] of cases) {
+    const { win, doc } = boot({ now: when });
+    const midday = win.App.clockState(when).marks.filter((m) => m.key === 'dhuhr')[0];
+    assert.strictEqual(midday.ar, wanted, 'the mark on ' + when.toDateString());
+    const names = [...doc.querySelectorAll('#windows .window-name')].map((e) => e.textContent);
+    assert.ok(names.indexOf(wanted) !== -1, 'the marks should read ' + wanted + ', got ' + names.join(' '));
+    assert.strictEqual(names.indexOf(other), -1, 'the other name must not appear');
+  }
 });
 
 test('friday replaces the duha and dhuhr sunnah with the sunan of the day', () => {
@@ -1576,14 +1582,15 @@ test('nudging the hijri day never moves the day of the week', () => {
 });
 
 test('the header and the prayer strip agree about the day', () => {
-  const { win, doc } = boot();
-  click(win, doc.getElementById('hijri-down'));
-  const weekday = doc.getElementById('greg-date').textContent.split('،')[0].trim();
-  const noon = [...doc.querySelectorAll('#windows .window')][2].querySelector('.window-name').textContent;
-  if (weekday === 'الجمعة') {
-    assert.strictEqual(noon, 'الجمعة', 'the strip should say الجمعة when the header does');
-  } else {
-    assert.strictEqual(noon, 'الظهر', 'the strip should say الظهر on any other day');
+  /* a morning of each, so the two are compared on a day the app is still on
+     rather than on an evening when it has already moved to the next */
+  for (const when of [new Date(2026, 8, 24, 9, 0, 0), new Date(2026, 8, 25, 9, 0, 0)]) {
+    const { win, doc } = boot({ now: when });
+    click(win, doc.getElementById('hijri-down'));
+    const weekday = doc.getElementById('greg-date').textContent.split('،')[0].trim();
+    const noon = [...doc.querySelectorAll('#windows .window')][2].querySelector('.window-name').textContent;
+    assert.strictEqual(noon, weekday === 'الجمعة' ? 'الجمعة' : 'الظهر',
+      'the strip and the header must agree, header said ' + weekday);
   }
 });
 
