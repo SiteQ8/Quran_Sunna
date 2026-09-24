@@ -1,17 +1,25 @@
-MIT License
+حقوق النشر © 2026 علي العنزي (@SiteQ8). جميع الحقوق محفوظة.
 
-Copyright (c) 2026 Ali AlEnezi (@SiteQ8)
+هذا التطبيق ليس مفتوح المصدر. لا يُنسخ هذا المستودع ولا يُعدَّل ولا يُوزَّع
+ولا يُشتقّ منه عمل، كلاً أو بعضاً، بغير إذن كتابي من صاحب الحقوق.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+والتطبيق نفسه مجاني للاستعمال، بلا إعلانات ولا تتبّع.
 
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
+وما فيه من مواد لغيري فلأصحابها، ولكلٍّ شروطه: نص المصحف، والأذكار من حصن
+المسلم، والأحاديث من الأربعين النووية، والتلاوات من شبكة القرآن المفتوحة،
+وخريطة المساجد وبياناتها من OpenStreetMap تحت رخصة ODbL.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+---
+
+Copyright © 2026 Ali AlEnezi (@SiteQ8). All rights reserved.
+
+This application is not open source. No part of this repository may be
+copied, modified, distributed, or used to create derivative works without
+the prior written permission of the copyright holder.
+
+The application itself is free to use, with no advertising and no tracking.
+
+Third party material retains its own terms: the Quran text, the adhkar from
+Hisn al-Muslim, the hadith from the Forty Nawawi, the recitations from the
+Open Quran Network, and the mosque map and its data from OpenStreetMap
+under the ODbL licence.
