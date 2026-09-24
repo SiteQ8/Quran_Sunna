@@ -15,6 +15,12 @@
 #   ANDROID_KEY_ALIAS           the alias inside it, sunnati
 #   ANDROID_KEY_PASSWORD        the key's own password
 #
+# And one more to send the bundle straight to the closed test, so a fix reaches
+# the testers the day it is written rather than waiting for someone to build and
+# upload it by hand:
+#   PLAY_SERVICE_ACCOUNT        the service account json, whole, from
+#                               Play Console > Users and permissions
+#
 # The keystore is the one Play already knows: the SHA-256 in
 # docs/.well-known/assetlinks.json is its fingerprint, and a bundle signed with
 # any other key is refused as a different app. tools/ios/set-secrets.py puts
@@ -137,6 +143,32 @@ jobs:
             android/app/build/outputs/bundle/release/*.aab
             android/app/build/outputs/apk/release/*.apk
           retention-days: 14
+
+      # Straight to the closed test when the service account is there. Google
+      # asks that a closed test be worked on, not parked: fixes that sit in the
+      # repository unbuilt are fixes the testers never saw, and a test where
+      # nothing improves for a fortnight reads as a test nobody ran.
+      - name: هل هناك مفتاح Play
+        id: play
+        if: steps.signing.outputs.ready == 'yes'
+        run: |
+          if [ -n "${{ secrets.PLAY_SERVICE_ACCOUNT }}" ]; then
+            echo "ready=yes" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=no" >> "$GITHUB_OUTPUT"
+            echo "::notice::لا مفتاح Play، الحزمة تُحفظ ولا تُرفع"
+          fi
+
+      - name: ارفع إلى الاختبار المغلق
+        if: steps.play.outputs.ready == 'yes'
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          packageName: com.eworldq8.sunnati
+          releaseFiles: android/app/build/outputs/bundle/release/*.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: play/whatsnew
 
       - name: امسح المفتاح
         if: always()
