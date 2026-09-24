@@ -28,13 +28,18 @@
 
 name: Android
 
+# A tag push carries no paths, so naming branches, paths and tags in one push
+# block is refused when the workflow is read: the run dies in two seconds with
+# no step to show for it, which is how the first signed build was lost. The
+# branch filter is what remains, and Run workflow covers a build on demand.
 on:
   push:
     branches: [main]
     paths:
       - 'android/**'
+      - 'tools/android/**'
+      - 'play/whatsnew/**'
       - '.github/workflows/android.yml'
-    tags: ['android-v*']
   workflow_dispatch:
 
 jobs:
