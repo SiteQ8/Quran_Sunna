@@ -55,6 +55,14 @@
     jumuahNight: true,
     fastNote: true,
     jumuahNightAt: 0,
+    /* when the reader put tonight's sheet off, kept apart from the moment the
+       notification is armed for: one key meaning two things made the sheet
+       silence itself for the two minutes it was arming the notice */
+    jumuahNightQuiet: 0,
+    /* the sheet that greets the reader on the night itself, apart from the
+       notification: a reader who wants no notice at night may still want the
+       app to tell him which night it is when he opens it */
+    jumuahNightSheet: true,
     jumuahNightArmed: '',
     qadaDone: {},
     afterPrayerOff: false,
