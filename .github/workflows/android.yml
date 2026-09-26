@@ -100,8 +100,10 @@ jobs:
       # having produced something to install. With them it signs for Play.
       - name: هل هناك توقيع
         id: signing
+        env:
+          HAS_ANDROID_KEYSTORE: ${{ secrets.ANDROID_KEYSTORE }}
         run: |
-          if [ -n "${{ secrets.ANDROID_KEYSTORE }}" ]; then
+          if [ -n "$HAS_ANDROID_KEYSTORE" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
@@ -156,8 +158,10 @@ jobs:
       - name: هل هناك مفتاح Play
         id: play
         if: steps.signing.outputs.ready == 'yes'
+        env:
+          HAS_PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
         run: |
-          if [ -n "${{ secrets.PLAY_SERVICE_ACCOUNT }}" ]; then
+          if [ -n "$HAS_PLAY_SERVICE_ACCOUNT" ]; then
             echo "ready=yes" >> "$GITHUB_OUTPUT"
           else
             echo "ready=no" >> "$GITHUB_OUTPUT"
