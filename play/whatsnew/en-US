@@ -1,9 +1,11 @@
-Fixes from your feedback:
+Tapping a reminder now opens its own subject:
 
-• The app stopped when audio was stopped from the notification shade
-• A dhikr was cut off the moment you left the app
-• The listen button restarted the recitation instead of stopping it
-• The Friday night reminder did not appear on opening
-• A double tap on the tasbih zoomed the page
+• Morning and evening adhkar, istighfar and Ayat al-Kursi open the adhkar screen
+• Your daily portion and Surat al-Mulk open the mushaf
+• Duha and the Friday sunnahs open the daily sunnah tracker
+• Tomorrow's fast opens the calendar
+• The night of Jumuah opens its own sheet
+
+Every reminder used to open the home screen instead.
 
 Please try these and send what you find. Feedback through Google Play itself is best.
