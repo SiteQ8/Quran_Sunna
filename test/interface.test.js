@@ -7219,6 +7219,58 @@ test('every hear button stops what it started instead of starting it again', () 
   }
 });
 
+test('every reminder carries its kind, and every kind has somewhere to land', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+
+  /* A tapped reminder used to open the app wherever it was last left: the
+     rows carried no kind at all, so android posted every one of them under
+     the single tag "note" and the page could make nothing of it. */
+  const list = /function reminderList\(\)[\s\S]*?\n  \}\n/.exec(app)[0];
+  const rows = [...list.matchAll(/out\.push\(\{ at[\s\S]{0,400?}?\}\);/g)];
+  const sounded = [...list.matchAll(/s: channelFor\('([A-Za-z]+)'\)(, k: '([A-Za-z]+)')?/g)];
+  assert.ok(sounded.length >= 10, 'the reminders are still here');
+  for (const m of sounded) {
+    assert.ok(m[3], 'the ' + m[1] + ' reminder carries its kind');
+    assert.strictEqual(m[3], m[1], 'and the kind matches its channel');
+  }
+
+  /* and each kind names a screen that exists */
+  const landings = /var LANDINGS = \{[\s\S]*?\n  \};/.exec(app)[0];
+  const screens = new Set([...html.matchAll(/id="v-([a-z-]+)"/g)].map((m) => m[1]));
+  const pairs = [...landings.matchAll(/([A-Za-z]+): '([a-z-]+)'/g)];
+  assert.ok(pairs.length >= 10, 'the landings are still here');
+  for (const [, kind, where] of pairs) {
+    assert.ok(screens.has(where), kind + ' lands on ' + where + ', which is not a screen');
+  }
+
+  /* the two lists level: a reminder whose kind has no landing opens the home
+     screen and says nothing more about itself, which is the whole complaint */
+  const named = new Set(pairs.map((p) => p[1]));
+  for (const m of sounded) {
+    if (m[3] === 'jumuahNight') continue;   // its own sheet, better than a screen
+    assert.ok(named.has(m[3]), 'the ' + m[3] + ' reminder has nowhere to land');
+  }
+});
+
+test('a tapped notification reaches the page on all three surfaces', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  const click = /addEventListener\('notificationclick'[\s\S]*?\n\}\);/.exec(sw)[0];
+  assert.ok(click.indexOf('came-from') !== -1, 'the worker tells an open window');
+  assert.ok(/openWindow\(kind \?/.test(click), 'and opens a closed one on the subject');
+
+  const note = fs.readFileSync(path.join(__dirname, '..', 'ios/Sunnati/Notifier.swift'), 'utf8');
+  /* there was no tap handler on iOS at all, only willPresent */
+  assert.ok(note.indexOf('didReceive response') !== -1, 'iOS reads the tap');
+  assert.ok(note.indexOf('userInfo = ["kind"') !== -1, 'and the kind rides with the notification');
+
+  const sched = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/NoteScheduler.java'), 'utf8');
+  assert.ok(sched.indexOf('EXTRA_KIND') !== -1, 'android carries the kind');
+  const recv = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
+  assert.ok(/kind == null \|\| kind\.isEmpty\(\) \? "note" : kind/.test(recv),
+    'and posts under it rather than the one tag "note"');
+});
+
 test('a dhikr is held and shaded like a recitation, not left to be cut off', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const body = /function playRecording\(url, button, title\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];

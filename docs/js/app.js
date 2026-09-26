@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.40';
+  var VERSION = '8.87.41';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -739,7 +739,16 @@
       document.addEventListener('visibilitychange', function () {
         if (!document.hidden) window.setTimeout(showDueSheets, 300);
       });
-      /* the wrapper opens the site with ?from=<kind> when a notification was
+      /* and the worker speaks to a window that is already open rather than
+     reopening it */
+  if (window.navigator && window.navigator.serviceWorker) {
+    window.navigator.serviceWorker.addEventListener('message', function (event) {
+      var d = event.data || {};
+      if (d.type === 'came-from' && d.kind) cameFrom(String(d.kind).replace(/[^a-zA-Z]/g, ''));
+    });
+  }
+
+  /* the wrapper opens the site with ?from=<kind> when a notification was
          tapped and the app was not already running */
       var from = (window.location.search.match(/[?&]from=([a-zA-Z]+)/) || [])[1];
       if (from) window.setTimeout(function () { cameFrom(from); }, 1800);
@@ -1691,11 +1700,32 @@
   /* A tapped notification says which reminder it was, and the app opens on
      that subject. Otherwise the reader taps a friday night reminder and lands
      on the home screen, which says nothing about friday night. */
+  /* Where each reminder lands when its notification is tapped. Every kind the
+     app can send is named here: one that is not opens the home screen and
+     says nothing more about itself, which is the whole complaint. The test
+     beside this holds the two lists level. */
+  var LANDINGS = {
+    wird: 'quran',
+    morningAdhkar: 'azkar',
+    eveningAdhkar: 'azkar',
+    sleepIstighfar: 'azkar',
+    sleepMulk: 'quran',
+    sleepKursi: 'azkar',
+    duha: 'tracker',
+    /* the calendar, because the reminder is about tomorrow's fast and that is
+       where the fasts of the month are laid out */
+    fastNote: 'calendar',
+    jumuahBefore: 'tracker',
+    qiyam: 'home',
+    adhan: 'home'
+  };
+
   function cameFrom(kind) {
+    /* the night of jumuah has a sheet of its own, and that is better than a
+       screen: it carries al-Kahf, the salawat and the supplication together */
     if (kind === 'jumuahNight' || kind === 'salawat') { showDueSheets(); return; }
-    if (kind === 'wird') { go('quran'); return; }
-    if (kind === 'morningAdhkar' || kind === 'eveningAdhkar') { go('azkar'); return; }
-    if (kind === 'qiyam' || kind === 'adhan') { go('home'); return; }
+    var where = LANDINGS[kind];
+    if (where) { go(where); return; }
     showDueSheets();
   }
 
@@ -3456,7 +3486,7 @@
         var portion = wirdFor(day);
         if (atWird.getTime() > Date.now() && portion) {
           out.push({ at: atWird.getTime(), t: 'وردك اليوم',
-            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: channelFor('wird') });
+            b: 'من صفحة ' + ar(portion.from) + ' إلى صفحة ' + ar(portion.to), s: channelFor('wird'), k: 'wird' });
         }
       }
       if (Store.get('duha')) {
@@ -3465,7 +3495,7 @@
           var atDuha = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, duha.best, 0, 0);
           if (atDuha.getTime() > Date.now()) {
             out.push({ at: atDuha.getTime(), t: 'صلاة الضحى',
-              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال', s: channelFor('duha') });
+              b: 'ركعتان فأكثر، ووقتها إلى قُبيل الزوال', s: channelFor('duha'), k: 'duha' });
           }
         }
       }
@@ -3479,14 +3509,14 @@
         var atMorning = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.fajr + 30, 0, 0);
         if (atMorning.getTime() > Date.now()) {
           out.push({ at: atMorning.getTime(), t: 'أذكار الصباح',
-            b: 'أصبحنا وأصبح الملك لله', s: channelFor('morningAdhkar') });
+            b: 'أصبحنا وأصبح الملك لله', s: channelFor('morningAdhkar'), k: 'morningAdhkar' });
         }
       }
       if (Store.get('eveningAdhkar') && typeof dayTimes.asr === 'number') {
         var atEvening = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, dayTimes.asr + 30, 0, 0);
         if (atEvening.getTime() > Date.now()) {
           out.push({ at: atEvening.getTime(), t: 'أذكار المساء',
-            b: 'أمسينا وأمسى الملك لله', s: channelFor('eveningAdhkar') });
+            b: 'أمسينا وأمسى الملك لله', s: channelFor('eveningAdhkar'), k: 'eveningAdhkar' });
         }
       }
       var sleepParts = String(Store.get('sleepAt') || '22:30').split(':');
@@ -3494,15 +3524,15 @@
       if (atSleep.getTime() > Date.now()) {
         if (Store.get('sleepIstighfar')) {
           out.push({ at: atSleep.getTime(), t: 'الاستغفار قبل النوم',
-            b: 'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه', s: channelFor('sleepIstighfar') });
+            b: 'أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه', s: channelFor('sleepIstighfar'), k: 'sleepIstighfar' });
         }
         if (Store.get('sleepMulk')) {
           out.push({ at: atSleep.getTime() + 60000, t: 'سورة الملك قبل النوم',
-            b: 'كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك', s: channelFor('sleepMulk') });
+            b: 'كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك', s: channelFor('sleepMulk'), k: 'sleepMulk' });
         }
         if (Store.get('sleepKursi')) {
           out.push({ at: atSleep.getTime() + 120000, t: 'آية الكرسي قبل النوم',
-            b: 'إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ', s: channelFor('sleepKursi') });
+            b: 'إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ', s: channelFor('sleepKursi'), k: 'sleepKursi' });
         }
       }
       /* ليلة الجمعة تدخل بغروب الخميس، فالتذكير بسننها يقع بعد المغرب لا
@@ -3514,7 +3544,7 @@
         var putOff = +Store.get('jumuahNightAt') || 0;
         if (putOff > Date.now()) {
           out.push({ at: putOff, t: 'ليلة الجمعة',
-            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight') });
+            b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight'), k: 'jumuahNight' });
         }
       }
       if (Store.get('jumuahNight') && day.getDay() === 4 && !already(out, 'ليلة الجمعة')) {
@@ -3533,7 +3563,7 @@
           }
           if (atJumuah > Date.now()) {
             out.push({ at: atJumuah, t: 'ليلة الجمعة',
-              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight') });
+              b: 'أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه', s: channelFor('jumuahNight'), k: 'jumuahNight' });
           }
         }
       }
@@ -3550,7 +3580,7 @@
             var callFast = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, eveTimes.maghrib + 90, 0, 0);
             if (callFast.getTime() > Date.now()) {
               out.push({ at: callFast.getTime(), t: 'صيام الغد',
-                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور', s: channelFor('fastNote') });
+                b: reasons.map(function (r) { return r.name; }).join('، ') + '، فاعقد النية ولا تدع السحور', s: channelFor('fastNote'), k: 'fastNote' });
             }
           }
         }
@@ -3561,7 +3591,7 @@
           var call = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, times.dhuhr - before, 0, 0);
           if (call.getTime() > Date.now()) {
             out.push({ at: call.getTime(), t: 'الجمعة',
-              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة', s: channelFor('jumuahBefore') });
+              b: 'اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة', s: channelFor('jumuahBefore'), k: 'jumuahBefore' });
           }
         }
       }

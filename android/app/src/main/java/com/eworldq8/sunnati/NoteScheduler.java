@@ -21,11 +21,16 @@ public final class NoteScheduler {
     static final String EXTRA_TITLE = "title";
     static final String EXTRA_BODY = "body";
     static final String EXTRA_SOUND = "sound";
+    /* Which reminder this is, so a tapped notification opens the app on its
+       own subject: every scheduled reminder used to be posted under the one
+       tag "note", and the page could make nothing of it. */
+    static final String EXTRA_KIND = "kind";
     private static final int REQUEST = 4151;
 
     private NoteScheduler() { }
 
-    /** A list of { at, t, b }: when, the title, and the words. */
+    /** A list of { at, t, b, s, k }: when, the title, the words, the sound,
+        and which reminder it is. */
     public static void setAll(Context context, String json) {
         try {
             new JSONArray(json == null || json.isEmpty() ? "[]" : json);
@@ -41,9 +46,10 @@ public final class NoteScheduler {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
         JSONObject soonest = soonest(context, System.currentTimeMillis());
-        if (soonest == null) { alarms.cancel(pending(context, null, null, null)); return; }
+        if (soonest == null) { alarms.cancel(pending(context, null, null, null, null)); return; }
         long at = soonest.optLong("at");
-        PendingIntent pending = pending(context, soonest.optString("t"), soonest.optString("b"), soonest.optString("s", "device"));
+        PendingIntent pending = pending(context, soonest.optString("t"), soonest.optString("b"),
+            soonest.optString("s", "device"), soonest.optString("k", ""));
         boolean exact = Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
         else alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
@@ -67,12 +73,13 @@ public final class NoteScheduler {
         return best;
     }
 
-    private static PendingIntent pending(Context context, String title, String body, String sound) {
+    private static PendingIntent pending(Context context, String title, String body, String sound, String kind) {
         Intent intent = new Intent(context, AdhanReceiver.class);
         intent.setAction("com.eworldq8.sunnati.NOTE");
         intent.putExtra(EXTRA_TITLE, title == null ? "" : title);
         intent.putExtra(EXTRA_BODY, body == null ? "" : body);
         intent.putExtra(EXTRA_SOUND, sound == null ? "device" : sound);
+        intent.putExtra(EXTRA_KIND, kind == null ? "" : kind);
         return PendingIntent.getBroadcast(context, REQUEST, intent,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
