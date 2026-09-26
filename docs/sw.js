@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.87.40';
+var VERSION = 'sunnati-v8.87.41';
 
 var SHELL = [
   './',
@@ -109,11 +109,18 @@ self.addEventListener('message', function (event) {
    copy of it. */
 self.addEventListener('notificationclick', function (event) {
   event.notification.close();
+  /* The tag says which reminder this was, and the reader is put on its
+     subject: focusing a window and leaving it wherever it last was wastes the
+     tap, which is what a morning adhkar reminder used to do. */
+  var kind = (event.notification.tag || '').replace(/[^a-zA-Z]/g, '');
   event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (list) {
     for (var i = 0; i < list.length; i++) {
-      if ('focus' in list[i]) return list[i].focus();
+      if ('focus' in list[i]) {
+        if (kind) { try { list[i].postMessage({ type: 'came-from', kind: kind }); } catch (e) { } }
+        return list[i].focus();
+      }
     }
-    if (self.clients.openWindow) return self.clients.openWindow('./');
+    if (self.clients.openWindow) return self.clients.openWindow(kind ? './?from=' + kind : './');
   }));
 });
 

@@ -45,7 +45,12 @@ public final class AdhanReceiver extends BroadcastReceiver {
                 /* the reader chose a sound for this reminder; the channel carries it */
                 String channel = "chime".equals(sound) ? CHANNEL_CHIME
                     : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
-                if (title != null && !title.isEmpty()) post(context, title, body, "note", channel);
+                String kind = intent.getStringExtra(NoteScheduler.EXTRA_KIND);
+                /* the reminder's own kind, so the tap lands on its subject:
+                   every scheduled reminder used to be posted as "note", and
+                   the page fell back to opening wherever it last was */
+                if (title != null && !title.isEmpty())
+                    post(context, title, body, kind == null || kind.isEmpty() ? "note" : kind, channel);
             } catch (Exception e) {
                 Log.w("sunnati", "note not shown", e);
             }

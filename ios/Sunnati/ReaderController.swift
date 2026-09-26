@@ -137,6 +137,19 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       Notifier.shared.ask { _ in }
     }
 
+    /* A tapped reminder tells the page which one it was, and the page opens
+       the screen that belongs to it. Letters only: the kind comes back from
+       the notification store and is put inside a script, so nothing else is
+       let through. */
+    Notifier.shared.onTap = { [weak self] kind in
+      let safe = kind.filter { $0.isLetter }
+      guard !safe.isEmpty else { return }
+      DispatchQueue.main.async {
+        self?.web.evaluateJavaScript(
+          "window.App && App.helpers && App.helpers.cameFrom && App.helpers.cameFrom('\(safe)')")
+      }
+    }
+
     /* The page schedules a week ahead and then goes quiet. Without this the
        reminders run out for anyone who does not open the app, which is exactly
        the reader the notifications were for. Coming back to the app makes the
@@ -303,7 +316,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         at: Date(timeIntervalSince1970: ms / 1000),
         title: row["name"] as? String ?? "الصلاة",
         text: "حان وقت الصلاة",
-        chime: adhanSilent ? .silent : .device)
+        chime: adhanSilent ? .silent : .device,
+        kind: "adhan")
     }
     return lastPrayers
   }
@@ -320,7 +334,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         at: Date(timeIntervalSince1970: ms / 1000),
         title: row["t"] as? String ?? "سُنّتي",
         text: row["b"] as? String ?? "",
-        chime: Chime(rawValue: row["s"] as? String ?? "device") ?? .device)
+        chime: Chime(rawValue: row["s"] as? String ?? "device") ?? .device,
+        kind: row["k"] as? String ?? "")
     }
   }
 

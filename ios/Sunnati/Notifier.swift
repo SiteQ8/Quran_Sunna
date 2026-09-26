@@ -51,6 +51,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         body.title = item.title
         body.body = item.text
         body.sound = item.chime.sound
+        if !item.kind.isEmpty { body.userInfo = ["kind": item.kind] }
         let parts = Calendar.current.dateComponents(
           [.year, .month, .day, .hour, .minute], from: item.at)
         let when = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
@@ -66,6 +67,22 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                               withCompletionHandler done: @escaping (UNNotificationPresentationOptions) -> Void) {
     done([.banner, .sound])
   }
+
+  /* A tapped notification. There was no handler for this at all, so tapping a
+     morning adhkar reminder opened the app whereever the reader had left it
+     and said nothing more about the adhkar. The kind is handed to the page,
+     which knows which screen belongs to it. */
+  func userNotificationCenter(_ c: UNUserNotificationCenter,
+                              didReceive response: UNNotificationResponse,
+                              withCompletionHandler done: @escaping () -> Void) {
+    let kind = response.notification.request.content.userInfo["kind"] as? String ?? ""
+    if !kind.isEmpty { onTap?(kind) }
+    done()
+  }
+
+  /* Set by the reader once its web view exists. Held here rather than reached
+     for, so the notifier knows nothing about the view it is talking to. */
+  var onTap: ((String) -> Void)?
 }
 
 struct Reminder {
@@ -73,4 +90,7 @@ struct Reminder {
   let title: String
   let text: String
   let chime: Chime
+  /* which reminder this is, carried through to the notification so a tap can
+     open the app on its own subject rather than wherever it was last left */
+  var kind: String = ""
 }
