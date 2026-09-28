@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>سُنّتي · مصحف ومواقيت وأذكار</title>
+<meta name="description" content="مصحف ومواقيت وأذكار وسنن، كله في جهازك ويعمل بلا شبكة. بلا حساب وبلا إعلانات وبلا تتبّع.">
+<meta name="theme-color" content="#f6f4ee">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta property="og:title" content="سُنّتي · مصحف ومواقيت وأذكار">
+<meta property="og:description" content="مصحف ومواقيت وأذكار وسنن، كله في جهازك ويعمل بلا شبكة.">
+<meta property="og:image" content="https://sunnati.3li.info/icons/play-1024.png">
+<meta property="og:url" content="https://sunnati.3li.info/intro.html">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+  :root{
+    --paper:#f6f4ee; --raised:#fffdf8; --ink:#16241c; --ink-2:#55655c; --ink-3:#6b7a72;
+    --accent:#9c2b2b; --green:#1e6f47; --gold:#b08833; --line:#e0dbcf;
+    --thread:28px;                       /* عرض خيط السدو الرأسي */
+    --thread-h:20px;                     /* ١٢٠ × ٢٨ ÷ ١٦٨، فالبلاطة لا تتمدّد */
+    --measure:34rem;                     /* أقل من ثمانين حرفاً */
+    --runner:url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%27168%27%20height%3D%27120%27%20viewBox%3D%270%200%20168%20120%27%3E%0A%3Crect%20width%3D%27168%27%20height%3D%27120%27%20fill%3D%27%23f3e9d2%27%2F%3E%0A%3Crect%20x%3D%270%27%20width%3D%2710%27%20height%3D%27120%27%20fill%3D%27%231a1412%27%2F%3E%3Crect%20x%3D%27158%27%20width%3D%2710%27%20height%3D%27120%27%20fill%3D%27%231a1412%27%2F%3E%0A%3Crect%20x%3D%2714%27%20width%3D%276%27%20height%3D%27120%27%20fill%3D%27%23d8552a%27%2F%3E%3Crect%20x%3D%27148%27%20width%3D%276%27%20height%3D%27120%27%20fill%3D%27%23d8552a%27%2F%3E%0A%3Crect%20x%3D%2724%27%20width%3D%274%27%20height%3D%27120%27%20fill%3D%27%231f6f78%27%2F%3E%3Crect%20x%3D%27140%27%20width%3D%274%27%20height%3D%27120%27%20fill%3D%27%231f6f78%27%2F%3E%0A%3Cg%20fill%3D%27%231a1412%27%3E%3Crect%20x%3D%2732%27%20y%3D%274%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%2714%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%2732%27%20y%3D%2724%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%2734%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%2732%27%20y%3D%2744%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%2754%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%2732%27%20y%3D%2764%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%2774%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%2732%27%20y%3D%2784%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%2794%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%2732%27%20y%3D%27104%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3Crect%20x%3D%27128%27%20y%3D%27114%27%20width%3D%278%27%20height%3D%278%27%2F%3E%3C%2Fg%3E%0A%3Crect%20x%3D%2744%27%20width%3D%2780%27%20height%3D%27120%27%20fill%3D%27%239c2b2b%27%2F%3E%0A%3Cpath%20d%3D%27M84%206%20L118%2060%20L84%20114%20L50%2060z%27%20fill%3D%27%23f3e9d2%27%2F%3E%3Cpath%20d%3D%27M84%2022%20L106%2060%20L84%2098%20L62%2060z%27%20fill%3D%27%231a1412%27%2F%3E%3Cpath%20d%3D%27M84%2038%20L94%2060%20L84%2082%20L74%2060z%27%20fill%3D%27%23f3e9d2%27%2F%3E%3Cpath%20d%3D%27M84%2050%20L90%2060%20L84%2070%20L78%2060z%27%20fill%3D%27%239c2b2b%27%2F%3E%0A%3C%2Fsvg%3E');
+    --cushion:url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%27120%27%20viewBox%3D%270%200%2096%20120%27%3E%0A%3Crect%20width%3D%2796%27%20height%3D%27120%27%20fill%3D%27%231a1412%27%2F%3E%0A%3Crect%20y%3D%270%27%20width%3D%2796%27%20height%3D%274%27%20fill%3D%27%23d9a441%27%2F%3E%3Crect%20y%3D%27116%27%20width%3D%2796%27%20height%3D%274%27%20fill%3D%27%23d9a441%27%2F%3E%0A%3Cg%20fill%3D%27%239c2b2b%27%3E%3Cpath%20d%3D%27M0%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M0%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M24%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M24%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M48%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M48%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M72%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M72%20112%20l12%20-20%20l12%2020z%27%2F%3E%3C%2Fg%3E%0A%3Cg%20fill%3D%27%23f3e9d2%27%3E%3Cpath%20d%3D%27M12%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M12%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M36%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M36%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M60%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M60%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M84%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M84%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3C%2Fg%3E%0A%3Crect%20y%3D%2734%27%20width%3D%2796%27%20height%3D%272%27%20fill%3D%27%23f3e9d2%27%2F%3E%3Crect%20y%3D%2784%27%20width%3D%2796%27%20height%3D%272%27%20fill%3D%27%23f3e9d2%27%2F%3E%0A%3Cpath%20d%3D%27M0%2068%20L12%2044%20L24%2068%20L36%2044%20L48%2068%20L60%2044%20L72%2068%20L84%2044%20L96%2068%27%20fill%3D%27none%27%20stroke%3D%27%23f3e9d2%27%20stroke-width%3D%275%27%2F%3E%0A%3Cpath%20d%3D%27M0%2076%20L12%2052%20L24%2076%20L36%2052%20L48%2076%20L60%2052%20L72%2076%20L84%2052%20L96%2076%27%20fill%3D%27none%27%20stroke%3D%27%239c2b2b%27%20stroke-width%3D%273%27%2F%3E%0A%3C%2Fsvg%3E');
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto} *{animation:none!important;transition:none!important}}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans Arabic',system-ui,sans-serif; font-weight:400;
+    font-size:clamp(1rem,.96rem + .2vw,1.1rem); line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  a{color:inherit}
+  :focus-visible{outline:2.5px solid var(--accent); outline-offset:3px; border-radius:4px}
+
+  /* الشريط في أعلى الصفحة، من وحدة السدو نفسها لا من صورة */
+  .band{height:30px; background-image:var(--cushion); background-size:96px 120px}
+
+  .wrap{max-width:60rem; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.5rem)}
+
+  /* ── الرأس ───────────────────────────────────────── */
+  header{text-align:center; padding:clamp(3.5rem,11vw,6.5rem) 0 clamp(2.5rem,8vw,4.5rem)}
+  /* الاسم بـPlex لا بأميري: أميري يرفع الضمّة والشدّة فوق السين والنون حتى
+     تنفصلا عن الكلمة وتُقرآ سطراً آخر، وهذا سبب كتابة التطبيق اسمه به. */
+  .mark{
+    font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:700;
+    font-size:clamp(3.4rem,13vw,6rem); line-height:1.34; margin:0; color:var(--accent);
+    letter-spacing:-.015em;
+  }
+  .sub{
+    margin:.85rem 0 0; font-size:clamp(1.05rem,3.4vw,1.35rem); font-weight:300;
+    color:var(--ink-2); letter-spacing:.01em;
+  }
+  .ayah{
+    font-family:'Amiri Quran',serif; font-size:clamp(1.5rem,5.5vw,2.3rem);
+    line-height:2.1; color:var(--ink); margin:clamp(2.2rem,7vw,3.2rem) auto 0;
+    max-width:24rem;
+  }
+  .ayah-src{display:block; margin-top:.5rem; font-family:'IBM Plex Sans Arabic',sans-serif;
+    font-size:.82rem; font-weight:400; color:var(--ink-3); line-height:1.6}
+
+  .get{display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:clamp(2.2rem,7vw,3rem)}
+  .get a{
+    display:inline-flex; align-items:center; gap:.55rem; text-decoration:none;
+    padding:.85rem 1.5rem; border-radius:999px; font-weight:600; font-size:1rem;
+    background:var(--accent); color:#fffdf8; border:1.5px solid var(--accent);
+    transition:background .16s ease,color .16s ease;
+  }
+  .get a.ghost{background:transparent; color:var(--accent)}
+  .get a:hover{background:#7d2323; border-color:#7d2323; color:#fffdf8}
+  .get svg{width:1.15em; height:1.15em; fill:currentColor}
+  .get small{display:block; width:100%; text-align:center; color:var(--ink-3); font-size:.85rem; margin-top:.3rem}
+
+  /* ── اليوم: الخيط والعُقد ─────────────────────────── */
+  .day{position:relative; padding-bottom:clamp(3rem,9vw,5rem)}
+  .day::before{
+    /* خارج عمود النصّ كلَّه لا نصفه، وإلا داس على أول العناوين */
+    content:''; position:absolute; inset-inline-start:calc((var(--thread) + .9rem) * -1); top:0; bottom:0;
+    width:var(--thread); background-image:var(--runner);
+    background-size:var(--thread) var(--thread-h);
+    opacity:.42;
+  }
+  /* لا يظهر إلا حين يتّسع هامش الصفحة له، فلا يزاحم النصّ على الشاشة الضيّقة */
+  @media (max-width:64rem){ .day::before{display:none} }
+
+  .hour{
+    display:grid; grid-template-columns:1fr minmax(0,17rem); gap:clamp(1.5rem,5vw,3.5rem);
+    align-items:center; padding:clamp(2.5rem,8vw,4.5rem) 0;
+    border-block-start:1px solid var(--line);
+  }
+  .hour:first-child{border-block-start:0}
+  /* حين تتقدّم الصورة يتقدّم عمودها معها، وإلا وقعت في عمود النصّ الواسع
+     فاتّسعت في صفّ وضاقت في آخر */
+  .hour:nth-child(even){grid-template-columns:minmax(0,17rem) 1fr}
+  .hour:nth-child(even) .shot{order:-1}
+  @media (max-width:52rem){
+    .hour, .hour:nth-child(even){grid-template-columns:1fr; gap:1.6rem; text-align:start}
+    .hour:nth-child(even) .shot{order:0}
+    /* وإلا ملأت كل لقطة الشاشة طولاً، فصارت الصفحة ستّ شاشات من الصور */
+    .shot{max-width:15rem; margin-inline:auto}
+  }
+
+  .when{
+    display:flex; align-items:baseline; gap:.7rem; margin:0 0 .5rem;
+    font-family:'Amiri',serif; font-weight:700; font-size:clamp(1.6rem,5vw,2.1rem);
+    line-height:1.3; color:var(--ink);
+  }
+  .clock{
+    font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:400; font-size:.78em;
+    color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:.02em;
+  }
+  .hour p{margin:0; max-width:var(--measure); color:var(--ink-2)}
+  .hour p + p{margin-top:.8rem}
+
+  .shot{margin:0}
+  .shot img{
+    display:block; width:100%; height:auto; border-radius:22px;
+    border:1px solid var(--line); background:var(--raised);
+    box-shadow:0 18px 42px rgba(40,26,18,.11);
+  }
+
+  /* ── ما ليس له وقت ───────────────────────────────── */
+  .always{padding:clamp(3rem,9vw,5rem) 0; border-block-start:1px solid var(--line)}
+  .always h2{
+    font-family:'Amiri',serif; font-weight:700; font-size:clamp(1.7rem,5vw,2.2rem);
+    margin:0 0 .6rem; color:var(--ink);
+  }
+  .always > p{margin:0 0 2.2rem; max-width:var(--measure); color:var(--ink-2)}
+  .things span{max-width:var(--measure)}
+  .things{
+    list-style:none; margin:0; padding:0; display:grid; gap:1px;
+    grid-template-columns:repeat(auto-fit,minmax(15rem,1fr)); background:var(--line);
+    border:1px solid var(--line); border-radius:14px; overflow:hidden;
+  }
+  .things li{background:var(--raised); padding:1.3rem 1.4rem}
+  .things b{display:block; font-family:'Amiri',serif; font-weight:700; font-size:1.2rem; margin-bottom:.2rem}
+  .things span{color:var(--ink-3); font-size:.94rem; line-height:1.65}
+
+  /* ── ما لا يفعله ─────────────────────────────────── */
+  .plain{
+    padding:clamp(3rem,9vw,5rem) 0; border-block-start:1px solid var(--line);
+  }
+  .plain h2{
+    font-family:'Amiri',serif; font-weight:700; font-size:clamp(1.7rem,5vw,2.2rem);
+    margin:0 0 1rem; color:var(--green);
+  }
+  .plain p{margin:0 0 .9rem; max-width:var(--measure); color:var(--ink-2)}
+  .plain p:last-child{margin-bottom:0}
+
+  /* ── الذيل ───────────────────────────────────────── */
+  footer{border-block-start:1px solid var(--line); padding:2.6rem 0 3.4rem; text-align:center}
+  footer p{margin:0 0 .5rem; color:var(--ink-3); font-size:.92rem}
+  footer a{color:var(--accent); text-decoration-thickness:1px; text-underline-offset:3px}
+  .sadaqa{
+    font-family:'Amiri',serif; font-size:1.15rem; color:var(--ink-2);
+    max-width:26rem; margin:0 auto 1.4rem; line-height:1.9;
+  }
+</style>
+</head>
+<body>
+
+<div class="band" role="presentation"></div>
+
+<div class="wrap">
+
+  <header>
+    <h1 class="mark">سُنّتي</h1>
+    <p class="sub">مصحف ومواقيت وأذكار وسنن، في جهازك</p>
+    <p class="ayah">﴿وَأَقِمِ ٱلصَّلَوٰةَ لِذِكْرِىٓ﴾
+      <span class="ayah-src">طه ١٤</span>
+    </p>
+    <div class="get">
+      <a href="https://apps.apple.com/app/id6814355836">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 12.54c-.02-2.4 1.96-3.55 2.05-3.6-1.12-1.63-2.86-1.86-3.48-1.89-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.91-.43 7.22 1.2 9.58.8 1.16 1.75 2.46 3 2.41 1.21-.05 1.66-.78 3.12-.78 1.46 0 1.87.78 3.14.76 1.3-.02 2.12-1.18 2.91-2.34.92-1.34 1.3-2.64 1.32-2.71-.03-.01-2.53-.97-2.55-3.85zM14.8 5.1c.66-.81 1.11-1.93.99-3.05-.95.04-2.11.64-2.8 1.44-.61.71-1.15 1.85-1.01 2.94 1.07.08 2.16-.54 2.82-1.33z"/></svg>
+        متجر آبل
+      </a>
+      <a class="ghost" href="https://sunnati.3li.info/">
+        افتحه في المتصفّح
+      </a>
+      <small>وعلى أندرويد قريباً، والنسخة في المتصفّح تعمل الآن وتُثبَّت على الشاشة الرئيسية</small>
+    </div>
+  </header>
+
+  <main class="day">
+
+    <section class="hour">
+      <div>
+        <h2 class="when">الفجر <span class="clock">٤:١٦ ص</span></h2>
+        <p>يوقظك الأذان بالصوت الذي تختاره، ويبقى العدّ التنازلي أمامك حتى الصلاة التالية. والمواقيت في الكويت على تقويم العجيري، وفي غيرها تُحسب في جهازك على الطريقة التي تختارها.</p>
+        <p>وبعده تقرأ وردك من المصحف، ويُحسب لك ما قرأت.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/1-home.webp" width="620" height="1347" alt="الشاشة الرئيسية: عدّ تنازلي لأذان الفجر ومواقيت اليوم" loading="lazy" decoding="async"></figure>
+    </section>
+
+    <section class="hour">
+      <div>
+        <h2 class="when">الضحى</h2>
+        <p>أذكار الصباح كاملةً من حصن المسلم، لكل ذكر عدده الذي ورد، وعدّاد يحفظ أين وصلت فإن قطعك شيء رجعت إليه.</p>
+        <p>وستّة عشر باباً من الأذكار غيرها: الوضوء، والطعام، والسفر، والنوم، وما بينها.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/2-azkar.webp" width="620" height="1347" alt="شاشة الأذكار: أذكار الصباح والمساء وأذكار اليوم" loading="lazy" decoding="async"></figure>
+    </section>
+
+    <section class="hour">
+      <div>
+        <h2 class="when">الظهر <span class="clock">١١:٤١ ص</span></h2>
+        <p>المصحف كاملاً برواية حفص عن عاصم بالرسم العثماني، تقرؤه بالسور أو صفحةً صفحة كالمطبوع، ومعه التفسير الميسّر.</p>
+        <p>وكل هذا في جهازك، فيفتح في مسجد لا شبكة فيه كما يفتح في بيتك.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/3-quran.webp" width="620" height="1347" alt="المصحف: قائمة السور والبحث في كلمات القرآن" loading="lazy" decoding="async"></figure>
+    </section>
+
+    <section class="hour">
+      <div>
+        <h2 class="when">العصر <span class="clock">٣:٠٨ م</span></h2>
+        <p>مسبحة تعدّ لك وتحفظ مجموع يومك، وأذكار ما بعد الصلاة بأعدادها.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/4-tasbih.webp" width="620" height="1347" alt="المسبحة: دائرة التسبيح ومجموع اليوم" loading="lazy" decoding="async"></figure>
+    </section>
+
+    <section class="hour">
+      <div>
+        <h2 class="when">المغرب <span class="clock">٥:٤٧ م</span></h2>
+        <p>حصن المسلم بأبوابه كلها، تقرؤه أو تسمعه، ومعه الأربعون النووية والرقية والأدعية المأثورة.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/5-hisn.webp" width="620" height="1347" alt="حصن المسلم: نص الأذكار بخط النسخ" loading="lazy" decoding="async"></figure>
+    </section>
+
+    <section class="hour">
+      <div>
+        <h2 class="when">قبل النوم</h2>
+        <p>يذكّرك بالاستغفار وسورة الملك وآية الكرسي في الوقت الذي تختاره، ولك أن تسمعها بدل أن تقرأها.</p>
+        <p>وفي ليلة الجمعة يفتح لك سورة الكهف ويذكّرك بالصلاة على النبي صلى الله عليه وسلم.</p>
+      </div>
+      <figure class="shot"><img src="screens/intro/6-more.webp" width="620" height="1347" alt="المزيد: صفة العمرة والقبلة والمساجد القريبة والسنن" loading="lazy" decoding="async"></figure>
+    </section>
+
+  </main>
+
+  <section class="always">
+    <h2>وما ليس له وقت</h2>
+    <p>تفتحه حين تحتاجه.</p>
+    <ul class="things">
+      <li><b>القبلة</b><span>اتجاه الكعبة من موقعك، وخريطة المساجد القريبة</span></li>
+      <li><b>صفة العمرة</b><span>من الميقات إلى التحلّل، مرحلةً مرحلة، ومعك أين وصلت</span></li>
+      <li><b>خطة الختمة</b><span>تختار مدّتها فيقسّم لك وردك ويتابعه</span></li>
+      <li><b>صلاتي</b><span>تتابع صلواتك الخمس، وترى شهرك كاملاً</span></li>
+      <li><b>السنن اليومية</b><span>على كتاب المنح العليّة، ويبدأ العدّ كل فجر</span></li>
+      <li><b>التقويم الهجري</b><span>الأيام البيض وعاشوراء وعرفة ورمضان، وتذكيرها قبلها</span></li>
+    </ul>
+  </section>
+
+  <section class="plain">
+    <h2>وما لا يفعله</h2>
+    <p>لا يطلب حساباً ولا رقم هاتف ولا بريداً. وليس فيه إعلان واحد، ولا شراء داخله، ولا شيء مدفوع.</p>
+    <p>ولا يتتبّعك: لا تحليلات ولا مقاييس ولا معرّف يُرسل إلى أحد. وموقعك يُستعمل داخل جهازك وحده لحساب المواقيت والقبلة، ولا يغادره.</p>
+    <p>وما تقرؤه وما تسبّحه وما تتابعه يبقى في جهازك، فإن حذفت التطبيق ذهب معه.</p>
+  </section>
+
+</div>
+
+<footer>
+  <p class="sadaqa">التطبيق صدقة جارية، فمن انتفع به فليدعُ لوالديّ ولمن ساهم فيه.</p>
+  <p><a href="https://sunnati.3li.info/">افتح التطبيق</a> · <a href="privacy.html">سياسة الخصوصية</a> · <a href="mailto:Site@hotmail.com">Site@hotmail.com</a></p>
+  <p>علي العنزي · <a href="https://3li.info">3li.info</a></p>
+</footer>
+
+</body>
+</html>
