@@ -5,6 +5,7 @@ const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
+const { execFileSync } = require('node:child_process');
 
 /* jsdom is found wherever it happens to live: it sits in /tmp in the container
    these tests were written in, and in node_modules anywhere else. An absolute
@@ -7217,6 +7218,22 @@ test('every hear button stops what it started instead of starting it again', () 
     assert.ok(m[0].indexOf("if (isSpeaking()) { stopSpeaking(); return; }") !== -1,
       'a press while sounding is a stop: ' + m[0].split('\n')[0].trim());
   }
+});
+
+test('every verse quoted in the adhkar matches the mushaf that ships with it', () => {
+  /* The app carries the Quran already, so a verse quoted inside an adhkar or a
+     supplication has something to be held against. The two are written in
+     different hands, the mushaf in the Uthmani rasm and the adhkar in ordinary
+     spelling, so the comparison is made after levelling only what the two
+     hands differ in: the dagger alif, the seat of the hamza, the alif that the
+     rasm adds or drops, and the definite lam written once or twice. What
+     survives that is a copying error, not a difference of hand. */
+  const out = execFileSync('node', ['tools/arabic/quran-check.mjs'],
+    { cwd: path.join(__dirname, '..'), encoding: 'utf8' });
+  assert.ok(/ولا خطأ نقل واحد/.test(out), out);
+  assert.ok(/فُحص \d+ مقطعاً/.test(out), 'it actually read something');
+  const n = Number(/فُحص (\d+)/.exec(out)[1]);
+  assert.ok(n >= 70, 'and read all of them, not a handful: ' + n);
 });
 
 test('every reminder carries its kind, and every kind has somewhere to land', () => {
