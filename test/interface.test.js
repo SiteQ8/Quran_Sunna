@@ -2064,9 +2064,10 @@ test('the worker keeps the typefaces so they survive going offline', () => {
 test('nothing in the page reaches out to another site for something it needs', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* a link the reader may follow is not a thing the page needs; a src is.
-     the openstreetmap credit is required by the licence of its map. */
+     the openstreetmap credit is required by the licence of its map, and the
+     App Store link in About takes a reader in a browser to the iPhone app. */
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|apps\.apple\.com\/app\/id6814355836/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });

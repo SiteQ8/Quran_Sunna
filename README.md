@@ -8,7 +8,7 @@
 [![الرخصة](https://img.shields.io/badge/الحقوق-محفوظة-b08833?style=flat-square)](LICENSE)
 [![بلا اعتماديات](https://img.shields.io/badge/بلا_اعتماديات-0-1e6f47?style=flat-square)]()
 
-[افتح التطبيق](https://sunnati.3li.info/)
+[افتح التطبيق](https://sunnati.3li.info/) · [حمّله من متجر آبل](https://apps.apple.com/app/id6814355836)
 
 </div>
 

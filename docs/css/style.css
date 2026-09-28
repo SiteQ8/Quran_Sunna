@@ -1765,3 +1765,9 @@ input, textarea, [contenteditable] {
   .grid { gap: var(--s3); }
   .view { padding: var(--s5) var(--s5) var(--s6); }
 }
+
+/* the App Store card in About, shown in a browser only */
+.store-card { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; text-decoration: none; color: inherit; }
+.store-card[hidden] { display: none; }
+.store-card img { display: block; height: 50px; width: auto; }
+.store-card .store-note { font-size: .9rem; line-height: 1.8; opacity: .85; }
