@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.45';
+  var VERSION = '8.87.46';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6374,6 +6374,8 @@
     setSwitch($('settings-vibrate'), !!s.vibrate);
     applyFont();
 
+    /* the App Store card is for readers in a browser; inside the app it would point at itself */
+    if ($('about-store')) $('about-store').hidden = !!bridge();
     var installRow = $('settings-install');
     if (installRow) {
       installRow.hidden = !state.installOffer || standalone();
