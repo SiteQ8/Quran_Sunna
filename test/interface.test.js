@@ -7220,6 +7220,42 @@ test('every hear button stops what it started instead of starting it again', () 
   }
 });
 
+test('the page that explains the app stands on its own and stays reachable', () => {
+  const intro = fs.readFileSync(path.join(DOCS, 'intro.html'), 'utf8');
+
+  /* the app lives at the root and the wrapper starts there, so the page that
+     explains it has to sit beside the app rather than in front of it */
+  const manifest = fs.readFileSync(path.join(DOCS, 'manifest.webmanifest'), 'utf8');
+  assert.ok(/"start_url":\s*"\.\/"/.test(manifest), 'the app is still what the root opens');
+
+  /* it reads as the app: same paper, same ink, same red, and the sadu drawn
+     from the repository's own module rather than a photograph */
+  for (const token of ['#f6f4ee', '#16241c', '#9c2b2b']) {
+    assert.ok(intro.indexOf(token) !== -1, 'it keeps the app colour ' + token);
+  }
+  assert.ok(intro.indexOf('svg+xml') !== -1, 'the sadu is drawn, not photographed');
+
+  /* the fonts come from the app's own files, so the page does not reach out
+     to a font service and does not render in something else while it waits */
+  assert.ok(intro.indexOf('css/fonts.css') !== -1, 'it uses the app\'s faces');
+  assert.ok(!/fonts\.googleapis|fonts\.gstatic|cdn\./.test(intro), 'and asks nothing of anyone else');
+
+  /* every screenshot it shows is a file that is actually here, with its size
+     declared so the page does not jump while they load */
+  const imgs = [...intro.matchAll(/<img\s[^>]*>/g)].map((m) => m[0]);
+  assert.ok(imgs.length >= 6, 'it shows the app, not just describes it');
+  for (const tag of imgs) {
+    const src = /src="([^"]+)"/.exec(tag)[1];
+    assert.ok(fs.existsSync(path.join(DOCS, src)), 'missing: ' + src);
+    assert.ok(/alt="[^"]{6,}"/.test(tag), 'every screenshot is described: ' + src);
+    assert.ok(/width="\d+"/.test(tag) && /height="\d+"/.test(tag), 'and reserves its space: ' + src);
+  }
+
+  /* and the app points at it, or nobody finds it */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('intro.html') !== -1, 'the app links to it');
+});
+
 test('every verse quoted in the adhkar matches the mushaf that ships with it', () => {
   /* The app carries the Quran already, so a verse quoted inside an adhkar or a
      supplication has something to be held against. The two are written in
