@@ -6282,6 +6282,7 @@
     fillVoiceListSoon();
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
     setSwitch($('settings-jumuah-night'), !!Store.get('jumuahNight'));
+    setSwitch($('settings-jumuah-sheet'), !!Store.get('jumuahNightSheet'));
     setSwitch($('settings-fast-note'), !!Store.get('fastNote'));
     if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
@@ -6610,8 +6611,9 @@
          notification to its own switch in the settings */
       Store.set('jumuahNightSheet', false);
       Store.set('jumuahNightQuiet', 0);
+      setSwitch($('settings-jumuah-sheet'), false);
       closeSheet();
-      toast('لن تُعرض ليلة الجمعة عند الفتح، وتعيدها من الإعدادات');
+      toast('لن تُعرض ليلة الجمعة عند الفتح، وتعيدها من الإعدادات ← السنن والمواسم');
       renderSettings();
     },
     /* chapter 25 is الأذكار بعد السلام من الصلاة; 27 is morning and evening.
@@ -7242,11 +7244,23 @@
       handRemindersToApp();
       toast(e.target.value ? 'سيصلك ورد اليوم في وقته' : 'أُوقف تذكير الورد');
     });
+    /* The sheet has a switch of its own, visible and separate from the
+       notification's. Its button used to hide it for good with no sign left
+       anywhere that it was hidden, and the toast that said how to bring it
+       back was gone in seconds. */
+    bind('settings-jumuah-sheet', 'click', function () {
+      var on = !Store.get('jumuahNightSheet');
+      Store.set('jumuahNightSheet', on);
+      if (on) Store.set('jumuahNightQuiet', 0);
+      setSwitch($('settings-jumuah-sheet'), on);
+      /* and if tonight is the night, it opens at once rather than leaving the
+         reader to guess whether the switch did anything */
+      if (on && inJumuahNight()) maybeJumuahNightSheet();
+    });
+
     bind('settings-jumuah-night', 'click', function () {
       var on = !Store.get('jumuahNight');
       Store.set('jumuahNight', on);
-      /* the way back for a reader who put the sheet away from the sheet itself */
-      if (on) Store.set('jumuahNightSheet', true);
       if (!on) { Store.set('jumuahNightAt', 0); Store.set('jumuahNightQuiet', 0); Store.set('jumuahNightArmed', ''); }
       setSwitch($('settings-jumuah-night'), on);
       handRemindersToApp();
