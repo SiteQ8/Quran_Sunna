@@ -7152,9 +7152,10 @@ test('the night of jumuah sheet is not silenced by its own notification', () => 
   assert.ok(snooze.indexOf("Store.set('jumuahNightQuiet'") !== -1, 'the snooze sets the quiet');
   assert.ok(snooze.indexOf("Store.set('jumuahNightAt'") !== -1, 'and the armed hour with it');
 
-  /* and putting the sheet away clears the quiet */
-  const off = /'hide-jumuah-night'[\s\S]{0,400}?\n    \}/.exec(app)[0];
+  /* and putting the sheet away clears the quiet, and touches nothing else */
+  const off = /'hide-jumuah-night': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
   assert.ok(off.indexOf('jumuahNightQuiet') !== -1, 'putting it away clears the quiet too');
+  assert.ok(off.indexOf("Store.set('jumuahNight'") === -1, 'and leaves the notification alone');
 
   const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
   assert.ok(/jumuahNightQuiet: 0/.test(store), 'the key has a default');
@@ -7219,6 +7220,35 @@ test('every hear button stops what it started instead of starting it again', () 
     assert.ok(m[0].indexOf("if (isSpeaking()) { stopSpeaking(); return; }") !== -1,
       'a press while sounding is a stop: ' + m[0].split('\n')[0].trim());
   }
+});
+
+test('the night of jumuah sheet has a switch the reader can see and undo', () => {
+  const { win, doc } = boot({ now: new Date(2026, 9, 1, 21, 0, 0) });   // ليلة الجمعة
+  const sw = doc.getElementById('settings-jumuah-sheet');
+  assert.ok(sw, 'the sheet has a switch of its own');
+  assert.ok(sw.id !== 'settings-jumuah-night', 'separate from the notification');
+
+  /* a reader who pressed «لا تُذكّرني» once had it hidden for good, with
+     nothing anywhere to say it was hidden and a toast that was gone in
+     seconds. The switch shows the state and gives it back. */
+  win.Store.set('jumuahNightSheet', false);
+  win.App.go('reminders');
+  assert.strictEqual(doc.getElementById('settings-jumuah-sheet').getAttribute('aria-checked'), 'false',
+    'and it reads off when it is off');
+
+  click(win, doc.getElementById('settings-jumuah-sheet'));
+  assert.strictEqual(win.Store.get('jumuahNightSheet'), true, 'pressing it gives the sheet back');
+  assert.strictEqual(win.Store.get('jumuahNight'), true, 'and leaves the notification alone');
+
+  click(win, doc.getElementById('settings-jumuah-sheet'));
+  assert.strictEqual(win.Store.get('jumuahNightSheet'), false, 'and takes it away again');
+
+  /* the button on the sheet says where to find it rather than only that it exists */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const hide = /'hide-jumuah-night': function \(\) \{([\s\S]*?)\n    \},/.exec(app)[1];
+  assert.ok(/الإعدادات/.test(hide), 'the toast says where to bring it back');
+  assert.ok(hide.indexOf("setSwitch($('settings-jumuah-sheet')") !== -1,
+    'and the switch follows the button, so the two never disagree');
 });
 
 test('the page that explains the app stands on its own and stays reachable', () => {
@@ -8214,16 +8244,15 @@ test('the night of jumuah can be shared, put off, or dismissed', () => {
   assert.strictEqual(win.Store.get('jumuahNightSheet'), false, 'the sheet is put away');
   assert.strictEqual(win.Store.get('jumuahNight'), true, 'and the notification is untouched');
   assert.strictEqual(win.App.helpers.maybeJumuahNightSheet(), false, 'it does not come back');
-  /* the switch in the settings is the notification's, and it still reads on;
-     turning it off and on again is the way back for the sheet */
-  win.App.go('settings');
-  const sw = doc.getElementById('settings-jumuah-night');
-  assert.strictEqual(sw.getAttribute('aria-checked'), 'true');
-  click(win, sw);
-  assert.strictEqual(win.Store.get('jumuahNight'), false);
-  click(win, sw);
-  assert.strictEqual(win.Store.get('jumuahNight'), true);
-  assert.strictEqual(win.Store.get('jumuahNightSheet'), true, 'and the sheet comes back with it');
+  /* the notification's switch still reads on, because the sheet's button
+     never touched it. And the sheet has a switch of its own now, which is
+     where it is brought back from. */
+  win.App.go('reminders');
+  assert.strictEqual(doc.getElementById('settings-jumuah-night').getAttribute('aria-checked'), 'true');
+  const sheetSwitch = doc.getElementById('settings-jumuah-sheet');
+  assert.strictEqual(sheetSwitch.getAttribute('aria-checked'), 'false', 'and reads off after the button');
+  click(win, sheetSwitch);
+  assert.strictEqual(win.Store.get('jumuahNightSheet'), true, 'the sheet comes back from its own switch');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(/function shareJumuahNight\(\)/.test(app));
