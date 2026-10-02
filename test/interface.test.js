@@ -4407,28 +4407,53 @@ test('a fresh device opens in the sadu red with the sadu weave, before and after
   assert.strictEqual(manifest.theme_color, '#9c2b2b');
 });
 
-test('the mark is the eye of the sadu holding the crescent', () => {
+test('the mark is the heartbeat drawing the Prophet\'s mosque, over the name as the app writes it', () => {
   const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
-  assert.ok(svg.indexOf('#8f2323') !== -1 && svg.indexOf('#5a1414') !== -1, 'the red field, deepening downward');
-  assert.ok(svg.indexOf('#f3e9d2') !== -1, 'cream for the bands and the eye');
-  assert.ok(svg.indexOf('#1a1412') !== -1, 'black in the heart of the eye');
-  assert.ok(svg.indexOf('#d9a441') !== -1, 'the gold thread of the cushions');
-  assert.ok(svg.indexOf('#1e6f47') === -1 && svg.indexOf('#268556') === -1, 'no green left in the mark');
-  /* the eye: four nested diamonds, and the crescent cut from two circles */
-  const diamonds = (svg.match(/<path d='M256 \d+ L\d+ 256 L256 \d+ L\d+ 256z'/g) || []).length;
-  assert.ok(diamonds >= 4, 'nested diamonds, found ' + diamonds);
-  assert.strictEqual((svg.match(/<circle /g) || []).length, 2, 'a moon cut from a moon');
-  const teeth = (svg.match(/l[\d.]+ -?\d+ l[\d.]+ -?\d+z/g) || []).length;
-  assert.ok(teeth >= 16, 'the sawtooth bands above and below, found ' + teeth);
-  ['icon-192', 'icon-512', 'maskable-512', 'play-1024', 'icon-180'].forEach(function (n) {
-    const png = fs.readFileSync(path.join(DOCS, 'icons', n + '.png'));
-    assert.ok(png.length > 2000, n + ' is cut');
-  });
+  /* the red of the app, lighter where the heartbeat glows, and its gold */
+  for (const c of ['#b5372f', '#6e1c1c', '#3a0d0d', '#e0b04a', '#fff0c4']) {
+    assert.ok(svg.indexOf(c) !== -1, 'the mark keeps ' + c);
+  }
+  /* the name is outlines from the font, shaped with its damma and shadda, so it
+     looks the same everywhere and needs no font where it is shown */
+  assert.ok(svg.indexOf('<text') === -1, 'no live text: the name would fall back to another face');
+  assert.ok(/<path d='M[^']{400,}' fill='url\(#ng\)'/.test(svg), 'the name, drawn as outlines in graded gold');
+  assert.ok(/stroke='#fff0c4' stroke-width='11'/.test(svg), 'the heartbeat line');
+
+  /* every size where it lands, at the size it should be, and the ones Apple
+     masks itself carry no transparency: App Store Connect refuses an icon
+     with alpha, and a touch icon with alpha turns black at the corners */
+  function png(file) {
+    const b = fs.readFileSync(file);
+    return { w: b.readUInt32BE(16), h: b.readUInt32BE(20), alpha: b[25] === 6 || b[25] === 4 };
+  }
+  const icons = path.join(DOCS, 'icons');
+  for (const [name, size, opaque] of [['icon-192', 192, false], ['icon-512', 512, false],
+      ['maskable-512', 512, true], ['icon-180', 180, true], ['play-1024', 1024, true]]) {
+    const p = png(path.join(icons, name + '.png'));
+    assert.strictEqual(p.w, size, name); assert.strictEqual(p.h, size, name);
+    if (opaque) assert.ok(!p.alpha, name + ' has no transparency');
+  }
+  const ios = png(path.join(__dirname, '..', 'ios/Sunnati/Assets.xcassets/AppIcon.appiconset/icon-1024.png'));
+  assert.strictEqual(ios.w, 1024);
+  assert.ok(!ios.alpha, 'the App Store icon carries no alpha channel');
+
+  /* android: the red behind, the figure in front inside the safe circle, and
+     the same drawing in one colour for themed icons */
   const android = path.join(__dirname, '..', 'android/app/src/main/res');
   assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
-  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#8f2323') !== -1);
-  assert.ok(/M12,1 L23,12/.test(fs.readFileSync(path.join(android, 'drawable/ic_notification.xml'), 'utf8')), 'the status bar carries the eye');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/logo.py')), 'the mark is drawn by a script, so it can be drawn again');
+  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#b5372f') !== -1);
+  const mono = fs.readFileSync(path.join(android, 'drawable/ic_launcher_monochrome.xml'), 'utf8');
+  assert.ok(/<vector[\s\S]*android:pathData="M[^"]{400,}"/.test(mono), 'the themed icon carries the name too');
+  for (const d of ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
+    const f = png(path.join(android, 'mipmap-' + d, 'ic_launcher_foreground.png'));
+    assert.ok(f.alpha, d + ' foreground is transparent around the figure');
+  }
+
+  /* and it is drawn by a script with its font in the repository, so it can be
+     drawn again on any machine */
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-build.py')));
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/fonts/Lalezar-Regular.ttf')));
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/fonts/Lalezar-OFL.txt')), 'with its licence');
 });
 
 test('the app and its worker carry the same version, and it is the version in the android package', () => {
@@ -5136,7 +5161,7 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
   assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
   assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 2, 'one colour only, as the status bar draws it');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the artwork every size is drawn from');
+  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the square artwork, written by icon-build.py with every size');
 });
 
 /* ---------------- every arrow points the way the language runs ---------------- */
