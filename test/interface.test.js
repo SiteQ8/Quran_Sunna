@@ -4408,6 +4408,19 @@ test('a fresh device opens in the sadu red with the sadu weave, before and after
   assert.strictEqual(manifest.theme_color, '#9c2b2b');
 });
 
+test('a reader who asked for less motion is not slid across the page by the script', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* the stylesheet stills every animation and transition under .less-motion,
+     but a scroll the script calls smooth ignores scroll-behavior; the App
+     Store label for Reduced Motion is declared on the strength of this */
+  assert.ok(app.indexOf("behavior: 'smooth'") === -1, 'no scroll asks for smoothness on its own');
+  assert.ok(/function glide\(\) \{\s*return document\.documentElement\.classList\.contains\('less-motion'\) \? 'auto' : 'smooth';/.test(app),
+    'it asks the reader\'s setting first');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(/\.less-motion \*[\s\S]{0,160}animation-duration: 1ms !important;[\s\S]{0,120}transition-duration: 1ms !important;/.test(css),
+    'and the stylesheet stills the rest');
+});
+
 test('the mark is the heartbeat drawing the Prophet\'s mosque, over the name as the app writes it', () => {
   const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
   /* the red of the app, lighter where the heartbeat glows, and its gold */

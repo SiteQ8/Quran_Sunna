@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.48';
+  var VERSION = '8.87.49';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -232,6 +232,14 @@
      motion should not have to ask a second time here. */
   function prefers(query) {
     return !!(window.matchMedia && window.matchMedia(query).matches);
+  }
+
+  /* A scroll the script asks to be smooth is smooth whatever the stylesheet
+     says: scroll-behavior in .less-motion governs the page, not a call that
+     names its own behaviour. So the call asks first, and a reader who turned
+     on Reduce Motion, here or on the phone, is moved without the slide. */
+  function glide() {
+    return document.documentElement.classList.contains('less-motion') ? 'auto' : 'smooth';
   }
 
   function applyAccess() {
@@ -2342,7 +2350,7 @@
   }
 
   function scrollToTop() {
-    try { window.scrollTo({ top: 0, behavior: 'smooth' }); } catch (e) { window.scrollTo(0, 0); }
+    try { window.scrollTo({ top: 0, behavior: glide() }); } catch (e) { window.scrollTo(0, 0); }
   }
 
   function watchScrollPosition() {
@@ -4898,7 +4906,7 @@
     var target = from === 'map'
       ? document.querySelector('#mosque-list .row.is-now')
       : $('mosque-map');
-    if (target && target.scrollIntoView) target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    if (target && target.scrollIntoView) target.scrollIntoView({ block: 'center', behavior: glide() });
   }
 
   /* the tile the map sits on, turned back into a place */
