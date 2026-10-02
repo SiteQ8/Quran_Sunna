@@ -181,6 +181,6 @@ keytool -list -v -keystore android.keystore -alias sunnati | grep SHA256
 
 - [x] بصمة مفتاح الرفع في `assetlinks.json`
 - [ ] بصمة مفتاح توقيع Play بعد أول رفع
-- [x] صورة العرض في المتجر، ألف وأربع وعشرون في خمس مئة، في `play/feature-graphic-1024x500.png`، وتُرسم من جديد بـ `tools/store/feature-graphic.mjs`
+- [x] صورة العرض في المتجر، ألف وأربع وعشرون في خمس مئة، في `play/feature-graphic-1024x500.png`، وتُرسم من جديد بـ `tools/store/icon-build.py`
 - [ ] حساب مطوّر في Play Console
 - [x] الحزمة مبنية وموقّعة بمفتاح الرفع: `sunnati-8.2.0.aab`، ومعها نسخة apk للتجربة

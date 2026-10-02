@@ -4195,7 +4195,8 @@ test('the store listing describes the app as it is, within the store limits', ()
   });
   assert.ok(full.indexOf('رفيق') === -1, 'no companion');
   assert.ok(full.indexOf('ستة عشر قسماً') === -1, 'the sixteen sections are the whole book now');
-  assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs')), 'the graphic can be drawn again');
+  assert.ok(fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'icon-build.py'), 'utf8').indexOf('feature-graphic-1024x500.png') !== -1,
+    'the graphic can be drawn again, by the tool that draws the icon');
 });
 
 /* ---------------- the five prayers, marked ---------------- */
@@ -4484,8 +4485,10 @@ test('the social set and the feature graphic are drawn from sadu bands, not phot
   assert.ok(draw.indexOf("from './sadu.mjs'") !== -1);
   assert.ok(draw.indexOf('.jpg') === -1, 'no photograph in the set');
   assert.ok(draw.indexOf("docs/icons/icon.svg") !== -1, 'the mark is read from the app, never redrawn by hand');
-  const fg = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'feature-graphic.mjs'), 'utf8');
-  assert.ok(fg.indexOf("from '../social/sadu.mjs'") !== -1, 'the store graphic shares the bands');
+  /* the store graphic is drawn by the tool that draws the icon, from the same
+     mark, so the two cannot drift apart as the bands and the eye once did */
+  const fg = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'icon-build.py'), 'utf8');
+  assert.ok(/def feature_graphic\(\)/.test(fg), 'the store graphic is drawn with the icon');
   fs.readdirSync(path.join(DOCS, 'screens', 'social')).forEach((f) => assert.ok(!/\.jpe?g$/.test(f), 'a photograph is left in screens/social: ' + f));
 });
 
@@ -5158,9 +5161,12 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
     const p = path.join(res, 'mipmap-' + d, 'ic_launcher_foreground.png');
     assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/ic_launcher_foreground.png');
   });
+  /* the status bar draws a silhouette in its own colour: the heartbeat and
+     the mosque as one white line, and nothing in any other colour */
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
-  assert.ok(status.indexOf('fillType="evenOdd"') !== -1, 'the status bar takes a silhouette, so the eye must be cut not painted');
-  assert.strictEqual((status.match(/#FFFFFFFF/g) || []).length, 2, 'one colour only, as the status bar draws it');
+  assert.ok(/android:strokeColor="#FFFFFFFF"[\s\S]*android:pathData="M1\.5,16\.5/.test(status), 'the heartbeat line');
+  const colours = status.match(/#[0-9A-Fa-f]{8}/g) || [];
+  assert.ok(colours.length && colours.every((c) => c === '#FFFFFFFF' || c === '#00000000'), 'one colour only, as the status bar draws it');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the square artwork, written by icon-build.py with every size');
 });
 
@@ -6944,9 +6950,11 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
     assert.ok(fs.existsSync(path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi', f)), f);
   });
-  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
-  assert.ok(tool.indexOf('plex-arabic-600-arabic.woff2') !== -1, 'the app\'s own face');
-  assert.ok(tool.indexOf('docs/icons/icon.svg') !== -1, 'and its own mark, not a drawing of one');
+  /* the picture is the icon itself on the paper, drawn by the tool that draws
+     the icon, with nothing under it written a second time: the name is in it */
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/icon-build.py'), 'utf8');
+  assert.ok(/def splash_page\(/.test(tool) && tool.indexOf("'splash_art_night'") !== -1, 'both pictures come from the icon tool');
+  assert.ok(/data_uri\(svg\(background\(\) \+ figure\(\)/.test(tool), 'and they carry the icon itself, not a drawing of one');
 });
 
 test('pressing a mosque brings the map onto it and names it', () => {
@@ -8474,9 +8482,13 @@ test('the splash writes the app\'s name in the app\'s own face', () => {
     'and it is fetched at once');
   /* the weight the splash asks for is the weight declared */
   const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html)[1];
-  assert.ok(splash.indexOf("font:600 30px/1 'Sunnati Splash'") !== -1,
-    'the splash asks for that very face and weight');
-  assert.ok(splash.indexOf('سُنّتي') !== -1);
+  /* the name is inside the icon now, drawn from the font, so the splash does
+     not write it a second time; the greeting under it asks for the face */
+  assert.ok(splash.indexOf("font:600 15px/1.5 'Sunnati Splash'") !== -1 &&
+    splash.indexOf("font:600 26px/1.2 'Sunnati Splash'") !== -1,
+    'the greeting asks for that very face and weight');
+  assert.ok(/alt="سُنّتي"/.test(splash), 'the name is still there, as the picture\'s words');
+  assert.ok(splash.indexOf('>سُنّتي</span>') === -1, 'but not written twice under the icon that carries it');
   /* the declaration comes before the splash it serves */
   assert.ok(html.indexOf("plex-arabic-600-arabic.woff2") < html.indexOf('<div id="boot-splash"'));
 });
@@ -8557,7 +8569,7 @@ test('the splash face cannot be overridden by the stylesheet that loads after it
   /* declaring it under the app's own family name let fonts.css redeclare that
      same family and weight afterwards, taking font-display with it */
   assert.ok(html.indexOf("font-family: 'Sunnati Splash';") !== -1, 'a name of its own');
-  assert.ok(html.indexOf("font:600 30px/1 'Sunnati Splash'") !== -1, 'and the splash asks for it first');
+  assert.ok(html.indexOf("font:600 26px/1.2 'Sunnati Splash'") !== -1, 'and the splash asks for it first');
   const fonts = fs.readFileSync(path.join(DOCS, 'css', 'fonts.css'), 'utf8');
   assert.ok(fonts.indexOf('Sunnati Splash') === -1, 'nothing else declares that name');
   assert.ok(html.indexOf("font-display: block") !== -1, 'and it holds the word until the face is ready');
@@ -8621,32 +8633,27 @@ test('the month of fasting is named in full', () => {
   void win;
 });
 
-test('the splash artwork is drawn with the real face, and the build refuses otherwise', () => {
-  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/splash.mjs'), 'utf8');
-  /* a page made with setContent has no origin, so the browser refused the
-     font fetched over http://localhost and drew the name in the system face */
-  assert.ok(tool.indexOf("'http://localhost") === -1, 'the face is not fetched over a socket');
-  assert.ok(tool.indexOf("'font/woff2'") !== -1 && tool.indexOf('base64') !== -1,
-    'it is carried in the page itself');
+test('the splash artwork carries the real mark, and the build refuses otherwise', () => {
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/icon-build.py'), 'utf8');
+  /* a page made with setContent has no origin, so a mark or a face fetched
+     from http://localhost was refused and the picture was drawn without it */
+  assert.ok(tool.indexOf("'http://localhost") === -1, 'nothing is fetched over a socket');
+  assert.ok(tool.indexOf("'data:image/svg+xml;base64,'") !== -1, 'the mark is carried in the page itself');
+  assert.ok(tool.indexOf('font/woff2;base64') !== -1, 'and so is the face');
   /* The lesson was learnt for the font and not applied to the mark beside it,
-     which kept pointing at a socket and kept failing, so every opening screen
-     shipped for months with a broken-image box where the mark should be. */
-  assert.ok(tool.indexOf("'image/svg+xml'") !== -1, 'the mark is carried in the page too');
-  assert.ok(tool.indexOf('naturalWidth > 0') !== -1, 'and the same question is asked of it');
+     which kept failing, so every opening screen shipped for months with a
+     broken-image box where the mark should be. */
+  assert.ok(tool.indexOf('naturalWidth > 0') !== -1, 'the same question is asked of the mark');
   assert.ok(tool.indexOf('the splash would ship a broken image box') !== -1,
-    'a build that lost the mark must fail loudly as well');
-  assert.ok(tool.indexOf('document.fonts.check("600 108px Plex")') !== -1,
-    'and the render is checked before anything is written');
-  assert.ok(tool.indexOf('the splash would be drawn in the wrong font') !== -1,
-    'a build that lost the face must fail loudly, not ship quietly');
+    'a build that lost the mark must fail loudly');
+  assert.ok(tool.indexOf('document.fonts.check(') !== -1 && tool.indexOf('would be drawn in the wrong font') !== -1,
+    'and a build that lost the face must fail loudly, not ship quietly');
   /* and the artwork is really there, once */
   ['splash_art.png', 'splash_art_night.png'].forEach(function (f) {
     const at = path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi', f);
     assert.ok(fs.existsSync(at), 'missing ' + f);
     assert.ok(fs.statSync(at).size > 2000, f + ' looks empty');
   });
-  /* the loop that pretended to make one for each density ended in `void size`
-     and screenshotted the same page five times */
   assert.ok(tool.indexOf('void size') === -1, 'no discarded size left in the tool');
   assert.ok(tool.indexOf('drawable-nodpi') !== -1, 'it writes where it says it writes');
 });
