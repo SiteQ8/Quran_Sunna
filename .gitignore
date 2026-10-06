@@ -12,3 +12,4 @@ node_modules/
 *.mobileprovision
 sunnati-play/
 keystore.properties
+__pycache__/
