@@ -4445,7 +4445,9 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   /* Safari cannot say where the fold is, so the page keeps the middle clear
      on any screen this wide rather than asking */
-  assert.ok(app.indexOf("matchMedia('(min-width: 860px) and (min-aspect-ratio: 6/5)')") !== -1, 'the book is a width and a shape');
+  /* and a height: a large phone on its side is as wide and four hundred
+     points tall, and the book cut its hour and its pages off there */
+  assert.ok(app.indexOf("matchMedia('(min-width: 860px) and (min-height: 520px) and (min-aspect-ratio: 6/5)')") !== -1, 'the book is a width, a height and a shape');
   assert.ok(app.indexOf("document.documentElement.setAttribute('data-view', name)") !== -1, 'the stylesheet knows what is open');
   assert.ok(/BOOK\.addEventListener\('change', applyBook\)/.test(app), 'opening and closing the phone is heard');
 
@@ -4456,10 +4458,37 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
     assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: calc\\(var\\(--inner\\)|html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: var\\(--inner\\)').test(css),
       sel + ' floats on the right half');
   }
-  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: var\(--edge\); width: var\(--pane\);/.test(css), 'the hour keeps the left half');
+  /* set in from the screen's edge as the right half's cards are: with the
+     pane as wide as the half, it stood against the edge itself */
+  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: calc\(var\(--edge\) \+ var\(--s4\)\); width: calc\(var\(--pane\) - 2 \* var\(--s4\)\);/.test(css), 'the hour keeps the left half, off its edge');
   /* a transform on an opening view would carry the fixed clock with it */
   assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
   assert.ok(/html\.book #page-body \.spread \{ grid-template-columns: 1fr var\(--gap\) 1fr;/.test(css), 'the mushaf opens across the fold');
+});
+
+test('in the book a spread stands whole between its bars, and nothing of it lies on the fold', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* each page is wrapped so it can be scaled whole, and fitted once laid */
+  assert.ok(app.indexOf('<div class="leaf"><div class="leaf-page">') !== -1, 'a page inside each leaf');
+  assert.ok(/fitPrintedLines\(body\);\s*if \(book\) fitSpread\(body\);/.test(app), 'the spread is fitted after it is laid');
+  /* one size for both pages, found by halving, never below a size worth reading */
+  assert.ok(/var FIT_FLOOR_PX = 13;/.test(app), 'a floor for the letters');
+  assert.ok(/for \(var i = 0; i < 8; i\+\+\) \{\s*var mid = \(lo \+ hi\) \/ 2;/.test(app), 'the size is found by halving');
+  /* flowing text is given its width back, so it wraps rather than shrinking into a column */
+  assert.ok(app.indexOf("p.style.width = Math.floor(printed ? Math.min(pageWidth, width / z) : width / z) + 'px';") !== -1, 'the text keeps the width of the leaf');
+  /* the reader's own size is a scale on the fitted page, and a resize or a late font refits */
+  assert.ok(/var asked = \(\+Store\.get\('fontScale'\) \|\| 100\) \/ 100;\s*size\(z \* asked\);/.test(app), 'larger is still larger');
+  assert.ok(/window\.addEventListener\('resize', function \(\) \{\s*window\.clearTimeout\(refit\);/.test(app), 'a resize refits');
+  assert.ok(/document\.fonts\.ready\.then\(refitSpread\)/.test(app), 'and so does the face arriving');
+
+  /* the bar has no ground across the fold, and turning the page is a bar of
+     its own under the left page, level with the tabs under the right */
+  assert.ok(/html\.book #v-page \.reader-bar \{[\s\S]*?position: static; background: none; box-shadow: none;/.test(css), 'no bar across the fold');
+  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60; bottom: 0; left: var\(--edge\); right: var\(--inner\);/.test(css), 'the page turns from under the left page');
+  assert.ok(css.indexOf('html.book #v-page .page-nav > :nth-child') === -1, 'and no button is placed on the far side of the fold');
+  /* a page that cannot fit scrolls in its own leaf, not the two together */
+  assert.ok(/html\.book #page-body \.leaf \{[\s\S]*?overflow-x: hidden; overflow-y: auto;/.test(css), 'a leaf scrolls on its own');
 });
 
 test('the mushaf opens as a printed one does, the odd page on the right', () => {

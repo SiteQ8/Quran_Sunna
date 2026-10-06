@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.51';
+  var VERSION = '8.87.52';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -260,9 +260,14 @@
      is (the viewport segments api is Chromium's alone), so the page does not
      ask: on any screen this wide nothing is laid across the middle. The right
      half is the app as on a phone, the left half keeps the hour, and the
-     mushaf opens on both halves with the fold for its spine. */
+     mushaf opens on both halves with the fold for its spine.
+
+     It wants height as well as width. A large phone turned on its side in a
+     browser is as wide as the book and only some four hundred points tall,
+     and there the hour and the two pages were cut off at top and bottom. A
+     phone on its side stays a phone. */
   var BOOK = window.matchMedia
-    ? window.matchMedia('(min-width: 860px) and (min-aspect-ratio: 6/5)') : null;
+    ? window.matchMedia('(min-width: 860px) and (min-height: 520px) and (min-aspect-ratio: 6/5)') : null;
 
   function isBook() { return !!(BOOK && BOOK.matches); }
 
@@ -277,6 +282,8 @@
     var scale = Store.get('fontScale') / 100;
     document.documentElement.style.setProperty('--quran-scale', String(scale));
     if ($('font-value')) $('font-value').textContent = ar(Store.get('fontScale')) + '%';
+    /* the spread takes the reader's size as a scale on the fitted page */
+    refitSpread();
   }
 
   var ACCENT_TOKEN = {
@@ -2775,11 +2782,12 @@
     /* in the book the two pages face each other across the fold, the odd one
        on the right as a printed mushaf has it, each with its own figure */
     body.innerHTML = book
-      ? '<div class="spread"><div class="leaf">' + pageMarkup(leaves.right, marked) + '</div>' +
-        '<div class="leaf">' + pageMarkup(leaves.left, marked) + '</div></div>'
+      ? '<div class="spread"><div class="leaf"><div class="leaf-page">' + pageMarkup(leaves.right, marked) + '</div></div>' +
+        '<div class="leaf"><div class="leaf-page">' + pageMarkup(leaves.left, marked) + '</div></div></div>'
       : pageMarkup(n, marked);
     body.classList.toggle('is-spread', book);
     fitPrintedLines(body);
+    if (book) fitSpread(body);
 
     if ($('page-prev')) $('page-prev').disabled = leaves.right <= 1;
     if ($('page-next')) $('page-next').disabled = leaves.left >= PAGES_IN_MUSHAF;
@@ -2871,6 +2879,107 @@
         line.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
       }
     });
+  }
+
+  /* In the book a spread is a mushaf laid open: both pages whole between the
+     bars. The first spread was laid out as two phone pages side by side, each
+     taller than the screen, so the right page was read down to its foot and
+     the left one then had to be scrolled back up to, and the buttons to turn
+     the page sat under the tabs.
+
+     Both pages are now set at the one size that lets the fuller of them fit,
+     found by halving, as a printed spread has one size of letter on both
+     sides. The text is scaled whole, with its cartouche and its figure, and
+     given the width back so it wraps across the page rather than shrinking
+     into a narrow column; the printed lines keep their shape and stand in the
+     middle of the leaf. Then the reader's own size for the mushaf is applied
+     to the fitted page: at a hundred percent the spread fits, and larger is
+     larger. Below a floor the letters would be too small to read with their
+     marks, so a page that will not fit above it keeps the floor and scrolls
+     inside its own leaf, the bars and the other page staying where they are. */
+  var FIT_FLOOR_PX = 13;
+
+  function fitSpread(body) {
+    var folio = body && body.querySelector('.spread');
+    if (!folio) return;
+    var faces = [].slice.call(folio.querySelectorAll('.leaf-page'));
+    var leaves = [].slice.call(folio.querySelectorAll('.leaf'));
+    if (!faces.length) return;
+    var printed = !!folio.querySelector('.mad-page');
+    var width = 0, pageWidth = 0;
+    var size = function (z) {
+      faces.forEach(function (p) {
+        p.style.zoom = String(z);
+        /* flowing text is given its width back and wraps across the leaf; a
+           printed page keeps the width of its own lines, and is narrowed only
+           where it would stand wider than the leaf */
+        p.style.width = Math.floor(printed ? Math.min(pageWidth, width / z) : width / z) + 'px';
+      });
+      if (printed) fitPrintedLines(folio);
+    };
+    var fits = function (z) {
+      size(z);
+      return leaves.every(function (leaf) { return leaf.scrollHeight <= leaf.clientHeight + 1; });
+    };
+
+    faces.forEach(function (p) { p.style.zoom = ''; p.style.width = ''; });
+    folio.style.height = '';
+    /* the reader's size is applied to the fitted page below, not inside it,
+       or a larger size would only be shrunk back to the same fit */
+    folio.style.setProperty('--quran-scale', '1');
+    width = faces[0].getBoundingClientRect().width;
+    var top = folio.getBoundingClientRect().top + (window.pageYOffset || 0);
+    var bars = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0;
+    var room = Math.floor(window.innerHeight - top - bars - 10);
+    if (!width || room < 240) { folio.style.removeProperty('--quran-scale'); return; }
+    folio.style.height = room + 'px';
+
+    /* the floor as a scale: the size of the words at a hundred percent */
+    var text = folio.querySelector('.ayah-block, .mad-line');
+    var natural = text ? parseFloat(window.getComputedStyle(text).fontSize) || 18 : 18;
+    var floor = Math.min(1, FIT_FLOOR_PX / natural);
+
+    /* A printed line holds its own words and is never stretched, so in a
+       leaf wider than the lines they stood short and ragged. The page is made
+       as wide as its lines run, most of them, and may then grow until it
+       fills the leaf, as a printed page is scaled to fit its sheet. */
+    var most = 1;
+    if (printed) {
+      pageWidth = Math.min(width, printedLineWidth(folio) || width);
+      most = Math.max(1, width / pageWidth);
+    }
+
+    var z = most;
+    if (!fits(most)) {
+      var lo = floor, hi = most;
+      if (fits(lo)) {
+        for (var i = 0; i < 8; i++) {
+          var mid = (lo + hi) / 2;
+          if (fits(mid)) lo = mid; else hi = mid;
+        }
+      }
+      z = lo;
+    }
+    var asked = (+Store.get('fontScale') || 100) / 100;
+    size(z * asked);
+  }
+
+  /* how far the printed lines of a spread run, most of them: the odd short
+     line that closes a surah is not the measure of the page */
+  function printedLineWidth(folio) {
+    var widths = [].map.call(folio.querySelectorAll('.mad-line'), function (line) {
+      line.style.transform = '';
+      var r = document.createRange();
+      r.selectNodeContents(line);
+      return r.getBoundingClientRect().width;
+    }).filter(function (w) { return w > 0; }).sort(function (a, b) { return a - b; });
+    return widths.length ? Math.ceil(widths[Math.floor((widths.length - 1) * 0.8)]) : 0;
+  }
+
+  /* a window resized, a phone opened further, or the face of the mushaf
+     arriving after the page was first laid: each changes what fits */
+  function refitSpread() {
+    if (state.view === 'page' && isBook()) fitSpread($('page-body'));
   }
 
   /* The hizb and its quarter of a verse, from the two hundred and forty
@@ -7743,6 +7852,12 @@
     if (BOOK) {
       if (BOOK.addEventListener) BOOK.addEventListener('change', applyBook);
       else if (BOOK.addListener) BOOK.addListener(applyBook);
+      var refit = 0;
+      window.addEventListener('resize', function () {
+        window.clearTimeout(refit);
+        refit = window.setTimeout(refitSpread, 120);
+      });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitSpread);
     }
     computeQibla();
     refreshTimes();
