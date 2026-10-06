@@ -4408,6 +4408,77 @@ test('a fresh device opens in the sadu red with the sadu weave, before and after
   assert.strictEqual(manifest.theme_color, '#9c2b2b');
 });
 
+test('the iPhone wrapper lives in a scene, so it can be built for iPhone Duo', () => {
+  const ios = path.join(__dirname, '..', 'ios/Sunnati');
+  /* Built with the iOS 27 SDK, an app that makes its own window at launch
+     traps before it draws; iPhone Duo is built for with Xcode 27.1 */
+  const plist = fs.readFileSync(path.join(ios, 'Info.plist'), 'utf8');
+  assert.ok(/<key>UIApplicationSceneManifest<\/key>[\s\S]*<key>UISceneDelegateClassName<\/key><string>\$\(PRODUCT_MODULE_NAME\)\.SceneDelegate<\/string>/.test(plist),
+    'the plist names the scene delegate');
+  assert.ok(/<key>UIApplicationSupportsMultipleScenes<\/key><false\/>/.test(plist), 'one window, as before');
+
+  const scene = fs.readFileSync(path.join(ios, 'SceneDelegate.swift'), 'utf8');
+  assert.ok(scene.indexOf('UIWindow(windowScene: windowScene)') !== -1, 'the window is made from the scene');
+  assert.ok(scene.indexOf('UIScreen') === -1, 'never from the size of the screen, which iPhone Duo changes as it opens');
+  assert.ok(scene.indexOf('openURLContexts') !== -1 && scene.indexOf('connection.urlContexts') !== -1,
+    'links reach the scene, warm or cold');
+
+  const app = fs.readFileSync(path.join(ios, 'AppDelegate.swift'), 'utf8');
+  assert.ok(app.indexOf('UIWindow(') === -1 && app.indexOf('UIScreen') === -1, 'the app delegate makes no window');
+  assert.ok(app.indexOf('UNUserNotificationCenter.current().delegate = Notifier.shared') !== -1, 'and still owns the notifications');
+
+  /* with a scene the window comes after launch, so a tap that started the app
+     can arrive before the reader exists, and before its page has loaded */
+  const note = fs.readFileSync(path.join(ios, 'Notifier.swift'), 'utf8');
+  assert.ok(/if let tell = onTap \{ tell\(kind\) \} else \{ waiting = kind \}/.test(note), 'a tap with no reader is held');
+  assert.ok(/didSet \{\s*if let tell = onTap, let kind = waiting/.test(note), 'and handed over when the reader comes');
+  const reader = fs.readFileSync(path.join(ios, 'ReaderController.swift'), 'utf8');
+  assert.ok(/guard loaded else \{ waitingKind = kind; return \}/.test(reader), 'a tap before the page loads waits for it');
+  assert.ok(/loaded = true\s*if let kind = waitingKind/.test(reader), 'and is told once it has');
+
+  /* and a hand-run build can ask for the Xcode that builds for iPhone Duo */
+  const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  assert.ok(/WANT: \$\{\{ github\.event\.inputs\.xcode \|\| '26' \}\}/.test(wf), 'a tag builds with the default');
+});
+
+test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* Safari cannot say where the fold is, so the page keeps the middle clear
+     on any screen this wide rather than asking */
+  assert.ok(app.indexOf("matchMedia('(min-width: 860px) and (min-aspect-ratio: 6/5)')") !== -1, 'the book is a width and a shape');
+  assert.ok(app.indexOf("document.documentElement.setAttribute('data-view', name)") !== -1, 'the stylesheet knows what is open');
+  assert.ok(/BOOK\.addEventListener\('change', applyBook\)/.test(app), 'opening and closing the phone is heard');
+
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(/html\.book \{[\s\S]*?--gap: 56px;[\s\S]*?--inner: calc\(50vw \+ var\(--gap\) \/ 2\);/.test(css), 'a clear middle, a phone wide either side');
+  assert.ok(/html\.book \.tabs \{ left: var\(--inner\);/.test(css), 'the tabs keep to the right half, no tab on the fold');
+  for (const sel of ['.player', '.toast', '.banner', '.to-top']) {
+    assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: calc\\(var\\(--inner\\)|html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: var\\(--inner\\)').test(css),
+      sel + ' floats on the right half');
+  }
+  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: var\(--edge\); width: var\(--pane\);/.test(css), 'the hour keeps the left half');
+  /* a transform on an opening view would carry the fixed clock with it */
+  assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
+  assert.ok(/html\.book #page-body \.spread \{ grid-template-columns: 1fr var\(--gap\) 1fr;/.test(css), 'the mushaf opens across the fold');
+});
+
+test('the mushaf opens as a printed one does, the odd page on the right', () => {
+  const { win } = boot();
+  /* the object comes from the page's own window, so its numbers are read */
+  const s = (n) => { const x = win.App.helpers.spreadOf(n); return [x.right, x.left]; };
+  /* al-Fatiha on the right and the start of al-Baqara facing it */
+  assert.deepStrictEqual(s(1), [1, 2]);
+  assert.deepStrictEqual(s(2), [1, 2], 'an even page opens the spread it belongs to');
+  assert.deepStrictEqual(s(50), [49, 50]);
+  assert.deepStrictEqual(s(603), [603, 604]);
+  assert.deepStrictEqual(s(604), [603, 604], 'the last faces the one before it');
+  /* and a turn in the book moves a whole spread */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('var n = isBook() ? spreadOf(state.page || 1).right + by * 2 : (state.page || 1) + by;') !== -1);
+  /* a phone has no book, so nothing changes there */
+  assert.strictEqual(win.App.helpers.isBook(), false, 'no matchMedia, no book');
+});
+
 test('a reader who asked for less motion is not slid across the page by the script', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   /* the stylesheet stills every animation and transition under .less-motion,
@@ -8377,7 +8448,8 @@ test('the page can be shown as the madinah mushaf prints it', () => {
   assert.ok(html.indexOf('>نص متّصل<') !== -1 && html.indexOf('>كما طُبعت<') !== -1);
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function renderPrintedPage\(body, n, verses, marked\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* the printed page is built as markup, so the book can set two side by side */
+  const fn = /function printedPageMarkup\(n, verses, marked\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   /* the text is the one the app already holds; only the shape is new */
   assert.ok(fn.indexOf('Mushaf.ayah(s, a)') !== -1, 'the words come from our own mushaf');
   assert.ok(fn.indexOf('words.slice(from - 1, to)') !== -1, 'cut where the printed line cuts');

@@ -38,5 +38,21 @@
     </dict>
   </array>
   <key>ITSAppUsesNonExemptEncryption</key><false/>
+  <!-- one window, made by SceneDelegate: the iOS 27 SDK refuses to launch an
+       app without a scene, and iPhone Duo is built for with that SDK -->
+  <key>UIApplicationSceneManifest</key>
+  <dict>
+    <key>UIApplicationSupportsMultipleScenes</key><false/>
+    <key>UISceneConfigurations</key>
+    <dict>
+      <key>UIWindowSceneSessionRoleApplication</key>
+      <array>
+        <dict>
+          <key>UISceneConfigurationName</key><string>Default Configuration</string>
+          <key>UISceneDelegateClassName</key><string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+        </dict>
+      </array>
+    </dict>
+  </dict>
 </dict>
 </plist>

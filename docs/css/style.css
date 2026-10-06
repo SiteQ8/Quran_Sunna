@@ -1771,3 +1771,78 @@ input, textarea, [contenteditable] {
 .store-card[hidden] { display: none; }
 .store-card img { display: block; height: 50px; width: auto; }
 .store-card .store-note { font-size: .9rem; line-height: 1.8; opacity: .85; }
+
+/* ---------- the book: iPhone Duo opened, and any screen as wide ----------
+
+   Opened like a book, iPhone Duo folds down the middle of its inner display,
+   and Safari cannot say where the fold is. So on any screen this wide nothing
+   is laid across the middle. The right half is the app as on a phone, with
+   its tabs; the left half keeps the hour; the mushaf opens on both halves with
+   the fold for its spine. On iPhone Duo each half is a phone wide; elsewhere
+   neither grows wider than a large phone, and the pair stays centred, so the
+   clear middle is always where a fold would be. */
+html.book {
+  --gap: 56px;
+  --pane: min(calc(50vw - var(--gap) / 2), 560px);
+  --edge: calc(50vw - var(--gap) / 2 - var(--pane));   /* outside each half */
+  --inner: calc(50vw + var(--gap) / 2);                 /* the right half's left side */
+}
+html.book .shell { max-width: none; }
+html.book #views > .view { width: var(--pane); margin-left: auto; margin-right: var(--edge); }
+/* a view used to rise a few pixels as it opened, and a transform makes a
+   fixed child follow its parent: the clock on the left would have jumped */
+html.book .view.is-open { animation-name: view-fade; }
+@keyframes view-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* whatever floats stays on the right half, off the fold */
+html.book .tabs { left: var(--inner); right: var(--edge); }
+html.book .player { left: var(--inner); right: var(--edge); max-width: none; margin: 0; }
+html.book .toast { left: calc(var(--inner) + var(--s4)); right: calc(var(--edge) + var(--s4)); }
+html.book .banner { left: calc(var(--inner) + var(--s3)); right: calc(var(--edge) + var(--s3)); }
+html.book .to-top { left: calc(var(--inner) + 14px); right: auto; }
+html.book .sheet { justify-content: flex-start; padding-right: var(--edge); }
+html.book .sheet-panel { max-width: var(--pane); }
+
+/* the left half keeps the hour: the clock of the home screen stays there
+   whichever screen the right half shows, and on the home screen itself the
+   right half carries the rest of it */
+html.book #v-home { display: block; }
+html.book:not([data-view="home"]) #v-home { height: 0; padding: 0; }
+html.book:not([data-view="home"]) #v-home > :not(.clock) { display: none; }
+html.book #v-home > .clock {
+  position: fixed; z-index: 2; top: 50%; transform: translateY(-50%);
+  left: var(--edge); width: var(--pane); margin: 0;
+}
+
+/* the mushaf takes both halves, two pages facing across the fold */
+html.book[data-view="page"] #v-home { display: none; }
+html.book[data-view="page"] #views > #v-page { width: auto; margin: 0; padding-inline: 0; }
+html.book #v-page .reader-bar,
+html.book #v-page .page-nav,
+html.book #page-body.is-spread .spread {
+  /* a margin at the outer edges, where the display's corners round, and the
+     columns either side of the middle kept equal so it stays on the fold */
+  display: grid; margin-inline: auto;
+  width: min(calc(100% - 2 * var(--s3)), calc(2 * var(--pane) + var(--gap)));
+}
+/* rtl: the first column stands on the right. The bar keeps its title over
+   the right page and its search over the left; the four buttons go two
+   under each page, the earlier page's under the right and the next under
+   the left, as the leaves turn. */
+html.book #v-page .reader-bar { grid-template-columns: auto 1fr var(--gap) 1fr auto; }
+html.book #v-page .reader-bar .page-head { grid-column: 2; }
+html.book #v-page .reader-bar #page-jump { grid-column: 5; }
+html.book #v-page .page-nav { grid-template-columns: 1fr 1fr var(--gap) 1fr 1fr; }
+html.book #v-page .page-nav > :nth-child(3) { grid-column: 4; }
+html.book #v-page .page-nav > :nth-child(4) { grid-column: 5; }
+html.book #page-body.is-spread {
+  background: none; box-shadow: none; border: 0; padding: 0; min-height: 0;
+}
+html.book #page-body .spread { grid-template-columns: 1fr var(--gap) 1fr; align-items: stretch; }
+html.book #page-body .leaf {
+  background: var(--raised); border-radius: var(--r-md); box-shadow: var(--shadow);
+  padding: var(--s4) var(--s4) var(--s5);
+  border: 1px solid color-mix(in srgb, var(--gold) 28%, transparent);
+}
+html.book #page-body .leaf:first-child { grid-column: 1; }
+html.book #page-body .leaf:last-child { grid-column: 3; }

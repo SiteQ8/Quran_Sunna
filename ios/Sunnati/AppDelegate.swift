@@ -9,24 +9,12 @@ import UserNotifications
    scheduling, not the frame. */
 @main
 final class AppDelegate: UIResponder, UIApplicationDelegate {
-  var window: UIWindow?
-
+  /* The window and the links moved to SceneDelegate: an app built with the
+     iOS 27 SDK that makes its own window here traps at launch. What stays is
+     what belongs to the app and not to a window, the notification centre. */
   func application(_ app: UIApplication,
                    didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
     UNUserNotificationCenter.current().delegate = Notifier.shared
-    let w = UIWindow(frame: UIScreen.main.bounds)
-    w.rootViewController = ReaderController()
-    w.makeKeyAndVisible()
-    window = w
-    return true
-  }
-
-  /* sunnati://screen/<name> is how the screenshot job asks for a screen */
-  func application(_ app: UIApplication, open url: URL,
-                   options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
-    guard url.scheme == "sunnati", url.host == "screen" else { return false }
-    let name = url.lastPathComponent
-    (window?.rootViewController as? ReaderController)?.show(name)
     return true
   }
 }
