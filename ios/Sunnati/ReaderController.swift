@@ -379,6 +379,12 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     if args.contains("-probe") {
       DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self.probe() }
     }
+    /* -page 300 opens the mushaf on that page, for the pictures of a spread */
+    if let p = args.firstIndex(of: "-page"), p + 1 < args.count, let n = Int(args[p + 1]) {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 3) {
+        self.web.evaluateJavaScript("window.App && App.helpers && App.helpers.openPage(\(n))")
+      }
+    }
     guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return }
     let name = args[i + 1].filter { $0.isLetter }
     /* the page settles after loading, so the screen is asked for a moment later */
@@ -413,7 +419,9 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       "document.body.appendChild(d);var c=getComputedStyle(d),r=getComputedStyle(document.documentElement);" +
       "var o={envTop:c.paddingTop,envRight:c.paddingRight,envBottom:c.paddingBottom,envLeft:c.paddingLeft," +
       "sal:r.getPropertyValue('--sal'),sar:r.getPropertyValue('--sar'),w:innerWidth,h:innerHeight," +
-      "book:document.documentElement.classList.contains('book'),view:document.documentElement.getAttribute('data-view')};" +
+      "book:document.documentElement.classList.contains('book'),view:document.documentElement.getAttribute('data-view')," +
+      "fit:[].map.call(document.querySelectorAll('.leaf-page'),function(e){return e.style.zoom+'@'+e.style.width})," +
+      "spill:[].map.call(document.querySelectorAll('.leaf'),function(e){return e.scrollHeight-e.clientHeight})};" +
       "d.remove();return JSON.stringify(o)})()"
     web.evaluateJavaScript(js) { result, _ in
       let page = result as? String ?? "{}"
