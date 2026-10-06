@@ -4466,6 +4466,28 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   assert.ok(/html\.book #page-body \.spread \{ grid-template-columns: 1fr var\(--gap\) 1fr;/.test(css), 'the mushaf opens across the fold');
 });
 
+test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
+  const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  /* GitHub keys its mac images to a major Xcode now, and 27 is not on macos-26 */
+  assert.ok(wf.indexOf("runs-on: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 'xcode-27' || 'macos-26' }}") !== -1,
+    'Xcode 27 is asked of its own image');
+  /* a name like Xcode_27.1.app is a link to a beta, so each Xcode is asked what it is */
+  assert.ok(/real=\$\(realpath "\$x"\)/.test(wf), 'each Xcode is read for what it is');
+  assert.ok(/PlistBuddy -c 'Print :CFBundleShortVersionString'/.test(wf), 'and for its own version');
+  assert.ok(/if: steps\.asc\.outputs\.ready == 'yes' && steps\.xcode\.outputs\.beta != 'yes'/.test(wf), 'a beta build is kept, not sent');
+  /* the Duo is photographed closed and open, on both its displays */
+  assert.ok(/if: steps\.xcode\.outputs\.duo == 'yes'\s*continue-on-error: true/.test(wf), 'the Duo step never fails the build');
+  assert.ok(wf.indexOf('--display=primary-1') !== -1, 'the inner display is photographed too');
+  const hinge = fs.readFileSync(path.join(__dirname, '..', 'tools/ios/hinge.c'), 'utf8');
+  assert.ok(/kUsagePage = 0xFF61, kUsage = 0x5B/.test(hinge), 'the event the Device Hub slider posts');
+  assert.ok(/Copyright \(c\) 2026 Artem Novichkov/.test(hinge), 'with the notice of whose finding it is');
+  /* and the app itself never carries a private call */
+  const dir = path.join(__dirname, '..', 'ios', 'Sunnati');
+  const swift = fs.readdirSync(dir).filter((f) => f.endsWith('.swift'))
+    .map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+  assert.ok(swift.indexOf('IOHIDEvent') === -1, 'nothing private in the app');
+});
+
 test('in the book a spread stands whole between its bars, and nothing of it lies on the fold', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
