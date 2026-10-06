@@ -234,6 +234,48 @@ test('import ignores keys outside the app namespace', () => {
   assert.strictEqual(S.get('method'), 'Egypt');
 });
 
+test('a day is measured against the ticks its list offers, and never past full', () => {
+  fresh();
+  const d = new Date(2026, 9, 6);
+  ['wird:duha', 'sunnah:2:3', 'now:fajr:3', 'bogus:1'].forEach((id) => S.toggleSunnah(id, d));
+  const c = S.completion(d, ['wird:duha', 'sunnah:2:3', 'sunnah:9:1', 'wird:witr']);
+  assert.strictEqual(c.done, 2, 'a tick no row carries is not counted');
+  assert.strictEqual(c.total, 4);
+  assert.strictEqual(c.percent, 50);
+  /* the older way of asking, with a bare number, cannot read past full either */
+  assert.strictEqual(S.completion(d, 3).done, 3);
+  assert.strictEqual(S.completion(d, 3).percent, 100);
+});
+
+test('the heatmap scores each day against that day\'s own list', () => {
+  fresh();
+  const today = new Date(2026, 9, 9);
+  S.toggleSunnah('a', new Date(2026, 9, 8));
+  S.toggleSunnah('a', today);
+  S.toggleSunnah('f', today);
+  const map = S.heatmap(3, today, (d) => (d.getDay() === 5 ? ['a', 'f'] : ['a', 'b']));
+  assert.deepStrictEqual(map.map((m) => m.percent), [0, 50, 100]);
+});
+
+test('every kept day can be read and rewritten in place', () => {
+  const st = fresh();
+  S.toggleSunnah('old', new Date(2026, 9, 5));
+  S.toggleSunnah('keep', new Date(2026, 9, 6));
+  S.set('method', 'Qatar');
+  const seen = [];
+  const written = S.eachDay((rec, key) => {
+    seen.push(key);
+    if (!rec.sunnah.old) return false;
+    delete rec.sunnah.old;
+    rec.sunnah.new = true;
+    return true;
+  });
+  assert.deepStrictEqual(seen.sort(), ['2026-10-05', '2026-10-06'], 'days only, not the settings');
+  assert.strictEqual(written, 1, 'only the day it changed is written');
+  assert.deepStrictEqual(JSON.parse(st._map['sunnati.day.2026-10-05']).sunnah, { new: true });
+  assert.deepStrictEqual(JSON.parse(st._map['sunnati.day.2026-10-06']).sunnah, { keep: true });
+});
+
 test('pruning drops records older than the retention window', () => {
   const st = fresh();
   S.toggleSunnah('siwak', new Date(2024, 0, 1));

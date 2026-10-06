@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.59';
+  var VERSION = '8.87.60';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -797,6 +797,18 @@
     }
 
     renderWindows(c);
+    /* The hour card follows the hour and the list its day. A screen left
+       open across the fajr, or across the start of a window, used to go on
+       showing what had passed, and a touch on it landed on a day it no
+       longer showed, so both are drawn again the moment either moves on. */
+    var shownDay = Store.dayKey(sunnahDay());
+    var was = state.shownSunnah;
+    if (was && (was.day !== shownDay || was.hour !== c.windowKey)) renderNowSunnah();
+    if (was && was.day !== shownDay) {
+      renderTodayMeter();
+      if (state.view === 'tracker') renderTracker();
+    }
+    state.shownSunnah = { day: shownDay, hour: c.windowKey };
     maybeNotify(c);
     maybeSalawat(false);
     if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); }
@@ -1587,12 +1599,15 @@
      those windows. الفجر keeps its own emphasised rakahs, and after المغرب the
      night already belongs to the next day. */
   function windowSunnah(key, date) {
+    /* the sunrise opens the window of the duha; it used to fall through to
+       the dhuhr, and the sunrise notice quoted the rawatib of the dhuhr */
+    if (key === 'sunrise') key = 'duha';
     var daytime = key === 'duha' || key === 'dhuhr' || key === 'asr';
     if (isFriday(date) && daytime && typeof FRIDAY_SUNNAH !== 'undefined') {
       return { key: 'friday', block: FRIDAY_SUNNAH };
     }
-    if (typeof CURRENT_SUNNAH === 'undefined') return null;
-    return { key: key, block: CURRENT_SUNNAH[key] || CURRENT_SUNNAH.dhuhr };
+    if (typeof CURRENT_SUNNAH === 'undefined' || !CURRENT_SUNNAH[key]) return null;
+    return { key: key, block: CURRENT_SUNNAH[key] };
   }
 
   function renderNowSunnah() {
@@ -1600,16 +1615,19 @@
     if (!host) return;
     var pick = windowSunnah(currentWindowKey());
     if (!pick || !pick.block) { host.innerHTML = ''; return; }
-    var key = pick.key;
     var block = pick.block;
     if ($('now-title')) $('now-title').textContent = block.l;
-    var record = Store.day();
-    var ids = block.items.map(function (_, i) { return 'now:' + key + ':' + i; });
-    var done = ids.filter(function (id) { return !!record.sunnah[id]; }).length;
+    var day = sunnahDay();
+    var record = Store.day(day);
+    host.setAttribute('data-sunnah-day', Store.dayKey(day));
+    var rows = block.items.map(function (item, i) {
+      return { ticks: rowTicks(pick.key, block, i), label: item };
+    });
+    var done = rows.filter(function (row) { return rowDone(row, record); }).length;
 
     if ($('now-tally')) {
-      $('now-tally').textContent = ar(done) + ' من ' + ar(ids.length);
-      if (done === ids.length) $('now-tally').classList.add('is-full');
+      $('now-tally').textContent = ar(done) + ' من ' + ar(rows.length);
+      if (done === rows.length) $('now-tally').classList.add('is-full');
       else $('now-tally').classList.remove('is-full');
     }
 
@@ -1622,13 +1640,24 @@
     }
 
     host.innerHTML = '<p class="setting-note" style="margin-bottom:12px">' + esc(block.sub) + '</p>' +
-      block.items.map(function (item, i) {
-        var id = ids[i];
-        return '<button class="check' + (record.sunnah[id] ? ' is-done' : '') +
-          '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (record.sunnah[id] ? 'true' : 'false') + '">' +
-          '<span class="check-box">' + icon('check') + '</span>' +
-          '<span class="check-label">' + esc(item) + '</span></button>';
-      }).join('');
+      rows.map(function (row) { return checkRow(row, record); }).join('');
+  }
+
+  /* One tick button, for the hour card and for the list alike. A row may
+     stand for more than one tick, when it says in one line what the list
+     gives in two: it reads done when all of them are, and toggleCheck says
+     what a touch on it marks and clears. */
+  function rowDone(row, record) {
+    return row.ticks.length > 0 && row.ticks.every(function (id) { return !!record.sunnah[id]; });
+  }
+
+  function checkRow(row, record) {
+    var done = rowDone(row, record);
+    return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(row.ticks.join(' ')) +
+      '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
+      '<span class="check-box">' + icon('check') + '</span>' +
+      '<span class="check-label">' + esc(row.label) +
+      (row.note ? '<span class="check-note">' + esc(row.note) + '</span>' : '') + '</span></button>';
   }
 
   /* The days the sunnah marks out for fasting, which hijri.js already works
@@ -1645,31 +1674,157 @@
     return list.filter(function (o) { return o.kind === 'fast'; });
   }
 
-  /* Everything a person can tick today, so the meter can never read more done
-     than there is to do. The windows the jumuah replaces drop out on Friday. */
-  function totalSunnahCount(date) {
-    var total = 0;
-    if (typeof WIRD_ITEMS !== 'undefined') total += WIRD_ITEMS.length;
+  /* ---------------- one sunnah, one tick ---------------- */
+
+  /* The day a tick belongs to. The card on the home screen says the count
+     starts afresh every fajr, and so it does: the hours after midnight still
+     belong to the night before, its witr and its sleep, and a tick made then
+     used to land on a day whose fajr had not come, while the hour card went
+     on showing the night. Where no time for the fajr can be worked out the
+     calendar day stands. */
+  function sunnahDay(now) {
+    var d = now || new Date();
+    var t = computeTimes(d);
+    var back = t && typeof t.fajr === 'number' && isFinite(t.fajr) && nowMinutes(d) < t.fajr;
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate() - (back ? 1 : 0), 12);
+  }
+
+  /* The name a row of the list is ticked under. A row of the book that is a
+     deed the daily wird already holds, or one the book gives twice, shares
+     the tick of its other place, so the deed done once is marked wherever it
+     is listed and counted once. */
+  function tickOf(row) {
+    return (typeof SUNNAH_SAME !== 'undefined' && SUNNAH_SAME[row]) || row;
+  }
+
+  /* What a row of the hour card ticks: the rows of the list it says again,
+     never a tick of its own. It used to keep one, so the same sunnah was
+     counted twice, once here and once in the list, and the list, which did
+     not show these, could never be finished: 116 of 148 with everything in
+     it ticked. The sunan of friday are rows of the list on a friday, under
+     the names the card gives them. */
+  function rowTicks(key, block, i) {
+    if (key === 'friday') return ['now:friday:' + i];
+    var t = block && block.t ? block.t[i] : null;
+    var rows = Array.isArray(t) ? t : (t ? [t] : []);
+    var out = [];
+    rows.forEach(function (row) {
+      var id = tickOf(row);
+      if (out.indexOf(id) === -1) out.push(id);
+    });
+    return out;
+  }
+
+  /* Everything «كل السنن» lists on a day, in its order: the sunan of
+     friday on a friday, the fast on a day the sunnah marks for one, the
+     daily wird, then the book. The meter counts from this same list, so it
+     cannot ask for a tick the list does not offer, and it does not change
+     in the middle of a day. */
+  function sunnahSections(day) {
+    var out = [];
+    var date = day || sunnahDay();
+    if (date.getDay() === 5 && typeof FRIDAY_SUNNAH !== 'undefined') {
+      out.push({ key: 'friday', title: FRIDAY_SUNNAH.l, icon: 'star', note: FRIDAY_SUNNAH.sub,
+        rows: FRIDAY_SUNNAH.items.map(function (item, i) { return { ticks: ['now:friday:' + i], label: item }; }) });
+    }
+    /* One tick for the day, with its reasons under it: a day can be a monday
+       and one of the white days at once, and it is still one fast. */
+    var fasts = fastToday(date);
+    if (fasts.length) {
+      out.push({ key: 'fast', title: 'صيام التطوع', icon: 'fast',
+        note: fasts.length > 1 ? 'يجتمع في هذا اليوم أكثر من سبب للصيام' : fasts[0].note,
+        rows: [{ ticks: ['fast'], label: fasts.map(function (f) { return f.name; }).join('، '),
+          note: fasts.length > 1 ? fasts[0].note : '' }] });
+    }
+    if (typeof WIRD_ITEMS !== 'undefined') {
+      out.push({ key: 'wird', title: 'الورد اليومي', icon: 'fire',
+        rows: WIRD_ITEMS.map(function (item) { return { ticks: ['wird:' + item.id], label: item.t, note: item.n }; }) });
+    }
     if (typeof SUNNAH_TRACKER !== 'undefined') {
-      SUNNAH_TRACKER.forEach(function (group) { total += group.i.length; });
-    }
-    if (typeof CURRENT_SUNNAH !== 'undefined') {
-      var friday = isFriday(date);
-      WINDOWS.forEach(function (key) {
-        if (friday && (key === 'duha' || key === 'dhuhr')) return;
-        if (CURRENT_SUNNAH[key]) total += CURRENT_SUNNAH[key].items.length;
+      SUNNAH_TRACKER.forEach(function (group, gi) {
+        out.push({ key: 'sunnah:' + gi, title: group.s, icon: group.icon || null, page: group.p,
+          rows: group.i.map(function (item, ii) { return { ticks: [tickOf('sunnah:' + gi + ':' + ii)], label: item }; }) });
       });
-      if (friday && typeof FRIDAY_SUNNAH !== 'undefined') total += FRIDAY_SUNNAH.items.length;
     }
-    /* one tick for the day, however many reasons it carries to be fasted */
-    if (fastToday(date).length) total += 1;
-    return total;
+    return out;
+  }
+
+  /* The ticks a day offers, each once however many rows share it. */
+  function sunnahTicks(day) {
+    var seen = {}, out = [];
+    sunnahSections(day).forEach(function (section) {
+      section.rows.forEach(function (row) {
+        row.ticks.forEach(function (id) {
+          if (!seen[id]) { seen[id] = true; out.push(id); }
+        });
+      });
+    });
+    return out;
+  }
+
+  function totalSunnahCount(day) {
+    return sunnahTicks(day).length;
+  }
+
+  /* Ticks kept under names that no longer stand for a row of their own: the
+     hour card's (now:fajr:0 and the rest), and the rows of the book that
+     share the tick of the wird. Each is carried to the tick its sunnah is
+     kept under now and the old name dropped, so a day ticked before reads
+     the same after. A name with nowhere to go is left as it was: the meter
+     does not count it, and nothing is lost by keeping it. */
+  function movedTicks(id) {
+    var m = /^now:(fajr|duha|dhuhr|asr|maghrib|isha):(\d+)$/.exec(id);
+    if (m) {
+      var block = typeof CURRENT_SUNNAH !== 'undefined' ? CURRENT_SUNNAH[m[1]] : null;
+      var to = block ? rowTicks(m[1], block, +m[2]) : [];
+      return to.length ? to : null;
+    }
+    if (typeof SUNNAH_SAME !== 'undefined' && SUNNAH_SAME[id]) return [SUNNAH_SAME[id]];
+    return null;
+  }
+
+  /* The list used to take on the sunan of friday at the maghrib of thursday
+     and keep their ticks in thursday's record, where friday never found
+     them. They belong to the friday after it, and are carried there. */
+  function settleTicks() {
+    var toFriday = [];
+    var written = Store.eachDay(function (rec, key) {
+      var s = rec.sunnah;
+      if (!s || typeof s !== 'object') return false;
+      var changed = false;
+      Object.keys(s).forEach(function (id) {
+        var to = movedTicks(id);
+        if (!to) return;
+        if (s[id]) to.forEach(function (t) { if (t !== id) s[t] = true; });
+        delete s[id];
+        changed = true;
+      });
+      var date = dayOfKey(key);
+      if (date && date.getDay() === 4) {
+        var early = Object.keys(s).filter(function (id) { return id.indexOf('now:friday:') === 0; });
+        if (early.length) {
+          toFriday.push({ day: new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1, 12),
+            ids: early.filter(function (id) { return !!s[id]; }) });
+          early.forEach(function (id) { delete s[id]; });
+          changed = true;
+        }
+      }
+      return changed;
+    });
+    toFriday.forEach(function (move) {
+      if (!move.ids.length) return;
+      Store.updateDay(function (rec) {
+        move.ids.forEach(function (id) { rec.sunnah[id] = true; });
+      }, move.day);
+    });
+    return written;
   }
 
   function renderHeat(host, days) {
     if (!host) return;
-    var cells = Store.heatmap(days, new Date(), totalSunnahCount());
-    var todayKey = Store.dayKey();
+    var day = sunnahDay();
+    var cells = Store.heatmap(days, day, sunnahTicks);
+    var todayKey = Store.dayKey(day);
     host.innerHTML = cells.map(function (cell) {
       var level = 0;
       if (cell.percent >= 80) level = 4;
@@ -1682,13 +1837,13 @@
   }
 
   function renderTodayMeter() {
-    var total = totalSunnahCount();
-    var c = Store.completion(new Date(), total);
+    var day = sunnahDay();
+    var c = Store.completion(day, sunnahTicks(day));
     if ($('today-done')) $('today-done').textContent = ar(c.done);
-    if ($('today-total')) $('today-total').textContent = ar(total);
+    if ($('today-total')) $('today-total').textContent = ar(c.total);
     if ($('today-meter')) $('today-meter').style.width = c.percent + '%';
     if ($('streak-line')) {
-      var s = Store.streak(new Date());
+      var s = Store.streak(day);
       $('streak-line').textContent = s.current > 0
         ? daysOf(s.current) + ' متتابعة'
         : 'لم تبدأ اليوم بعد';
@@ -4628,6 +4783,8 @@
   function renderTrackerPrayersNote() {
     var note = $('tracker-prayers-note');
     if (!note) return;
+    /* the prayers keep the calendar's day, as صلاتي does, since this line
+       leads there and the two must read the same */
     var marks = Store.prayersOf(new Date());
     var done = Store.PRAYER_KEYS.filter(function (k) { return marks[k] && marks[k] !== 'missed'; }).length;
     var st = Store.prayerStats(30);
@@ -4638,15 +4795,16 @@
     renderTrackerPrayersNote();
     var host = $('tracker-list');
     if (!host) return;
-    var record = Store.day();
-    var total = totalSunnahCount();
-    var c = Store.completion(new Date(), total);
+    var day = sunnahDay();
+    var record = Store.day(day);
+    var c = Store.completion(day, sunnahTicks(day));
+    host.setAttribute('data-sunnah-day', Store.dayKey(day));
 
     if ($('tracker-done')) $('tracker-done').textContent = ar(c.done);
-    if ($('tracker-total')) $('tracker-total').textContent = ar(total);
+    if ($('tracker-total')) $('tracker-total').textContent = ar(c.total);
     if ($('tracker-meter')) $('tracker-meter').style.width = c.percent + '%';
     if ($('tracker-streak')) {
-      var s = Store.streak(new Date());
+      var s = Store.streak(day);
       $('tracker-streak').textContent = s.longest > 0
         ? 'أطول تتابع ' + daysOf(s.longest)
         : 'لا تتابع بعد';
@@ -4655,86 +4813,56 @@
 
     /* Forty odd deeds in one column is a wall to scroll past. Each group folds
        shut with its own tally on the head, so a person opens the one they are
-       working on and the rest stay out of the way. */
-    function fold(key, title, iconName, ids, rows) {
-      var done = ids.filter(function (id) { return !!record.sunnah[id]; }).length;
-      var open = openGroups[key] === true;
-      return '<section class="fold' + (open ? ' is-open' : '') + '" data-fold="' + esc(key) + '">' +
+       working on and the rest stay out of the way. The sunan of friday come
+       first on a friday, ticked under the names the home card gives them, so
+       a deed marked in one place stands marked in the other. */
+    host.innerHTML = sunnahSections(day).map(function (section) {
+      var done = section.rows.filter(function (row) { return rowDone(row, record); }).length;
+      var all = section.rows.length;
+      var open = openGroups[section.key] === true;
+      var head = '';
+      if (section.note) head = '<p class="setting-note" style="margin-bottom:12px">' + esc(section.note) + '</p>';
+      else if (section.page) head = '<p class="fold-source">' + esc(SUNNAH_SOURCE.t) + '، ص ' + ar(section.page) + '</p>';
+      return '<section class="fold' + (open ? ' is-open' : '') + '" data-fold="' + esc(section.key) + '">' +
         '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' +
-        (iconName ? icon(iconName) : '') +
-        '<span class="fold-title">' + esc(title) + '</span>' +
-        '<span class="fold-tally' + (done === ids.length ? ' is-full' : '') + '">' +
-        ar(done) + ' من ' + ar(ids.length) + '</span>' +
+        (section.icon ? icon(section.icon) : '') +
+        '<span class="fold-title">' + esc(section.title) + '</span>' +
+        '<span class="fold-tally' + (done === all ? ' is-full' : '') + '">' +
+        ar(done) + ' من ' + ar(all) + '</span>' +
         icon('chevron', 'fold-arrow') + '</button>' +
-        '<div class="fold-body">' + rows + '</div></section>';
-    }
-
-    var html = '';
-
-    /* The sunan of the day itself, on friday alone and at the head of the
-       list, ticked under the same names the home screen uses so a deed
-       marked in one place stands marked in the other. */
-    if (isFriday() && typeof FRIDAY_SUNNAH !== 'undefined') {
-      var fridayIds = FRIDAY_SUNNAH.items.map(function (_, i) { return 'now:friday:' + i; });
-      html += fold('friday', FRIDAY_SUNNAH.l, 'star', fridayIds,
-        '<p class="setting-note" style="margin-bottom:12px">' + esc(FRIDAY_SUNNAH.sub) + '</p>' +
-        FRIDAY_SUNNAH.items.map(function (item, i) {
-          var id = 'now:friday:' + i;
-          var done = !!record.sunnah[id];
-          return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
-            '<span class="check-box">' + icon('check') + '</span>' +
-            '<span class="check-label">' + esc(item) + '</span></button>';
-        }).join(''));
-    }
-
-    /* One tick for the day, with its reasons under it: a day can be a monday
-       and one of the white days at once, and it is still one fast. */
-    var fasts = fastToday();
-    if (fasts.length) {
-      html += fold('fast', 'صيام التطوع', 'fast', ['fast'],
-        '<p class="setting-note" style="margin-bottom:12px">' +
-        esc(fasts.length > 1 ? 'يجتمع في هذا اليوم أكثر من سبب للصيام' : fasts[0].note) + '</p>' +
-        '<button class="check' + (record.sunnah.fast ? ' is-done' : '') +
-          '" data-check="fast" role="checkbox" aria-checked="' + (record.sunnah.fast ? 'true' : 'false') + '">' +
-          '<span class="check-box">' + icon('check') + '</span>' +
-          '<span class="check-label">' + esc(fasts.map(function (f) { return f.name; }).join('، ')) +
-          (fasts.length > 1 ? '<span class="check-note">' + esc(fasts[0].note) + '</span>' : '') +
-          '</span></button>');
-    }
-
-    if (typeof WIRD_ITEMS !== 'undefined') {
-      var wirdIds = WIRD_ITEMS.map(function (item) { return 'wird:' + item.id; });
-      html += fold('wird', 'الورد اليومي', 'fire', wirdIds,
-        WIRD_ITEMS.map(function (item) {
-          var id = 'wird:' + item.id;
-          var done = !!record.sunnah[id];
-          return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
-            '<span class="check-box">' + icon('check') + '</span>' +
-            '<span class="check-label">' + esc(item.t) +
-            '<span class="check-note">' + esc(item.n) + '</span></span></button>';
-        }).join(''));
-    }
-
-    if (typeof SUNNAH_TRACKER !== 'undefined') {
-      html += SUNNAH_TRACKER.map(function (group, gi) {
-        var ids = group.i.map(function (_, ii) { return 'sunnah:' + gi + ':' + ii; });
-        return fold('sunnah:' + gi, group.s, group.icon || null, ids,
-          (group.p ? '<p class="fold-source">' + esc(SUNNAH_SOURCE.t) + '، ص ' + ar(group.p) + '</p>' : '') +
-          group.i.map(function (item, ii) {
-            var id = 'sunnah:' + gi + ':' + ii;
-            var done = !!record.sunnah[id];
-            return '<button class="check' + (done ? ' is-done' : '') + '" data-check="' + esc(id) + '" role="checkbox" aria-checked="' + (done ? 'true' : 'false') + '">' +
-              '<span class="check-box">' + icon('check') + '</span>' +
-              '<span class="check-label">' + esc(item) + '</span></button>';
-          }).join(''));
-      }).join('');
-    }
-
-    host.innerHTML = html;
+        '<div class="fold-body">' + head +
+        section.rows.map(function (row) { return checkRow(row, record); }).join('') +
+        '</div></section>';
+    }).join('');
   }
 
-  function toggleCheck(id) {
-    Store.toggleSunnah(id);
+  /* A touch marks the row, or clears it when it is already done, on the day
+     the list on screen shows. A row that stands for several ticks marks the
+     ones still missing, and a second touch clears only those: a slip of the
+     finger on «ركعتان بعد العشاء، ثم الوتر» must not take back the witr
+     already ticked in the wird. What it marked is kept with the day, so the
+     second touch can come after the app was closed and opened again. */
+  function dayOfKey(key) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(key || ''));
+    return m ? new Date(+m[1], +m[2] - 1, +m[3], 12) : null;
+  }
+
+  function toggleCheck(value, dayKey) {
+    var ids = String(value || '').split(/\s+/).filter(Boolean);
+    if (!ids.length) return;
+    var day = dayOfKey(dayKey) || sunnahDay();
+    var row = ids.join(' ');
+    Store.updateDay(function (rec) {
+      var missing = ids.filter(function (id) { return !rec.sunnah[id]; });
+      if (missing.length) {
+        missing.forEach(function (id) { rec.sunnah[id] = true; });
+        if (ids.length > 1) rec.marked[row] = missing;
+      } else {
+        var mine = ids.length > 1 && Array.isArray(rec.marked[row]) ? rec.marked[row] : ids;
+        mine.forEach(function (id) { delete rec.sunnah[id]; });
+        delete rec.marked[row];
+      }
+    }, day);
     buzz(10);
     if (state.view === 'tracker') renderTracker();
     if (state.view === 'home') { renderNowSunnah(); renderTodayMeter(); }
@@ -6659,6 +6787,8 @@
     reader.onload = function () {
       var result = Store.importAll(String(reader.result));
       if (!result.ok) { toast('الملف غير صالح'); return; }
+      /* a backup made before one sunnah had one tick brings its old names back */
+      settleTicks();
       state.place = null;
       applyTheme();
       applyFont();
@@ -7027,7 +7157,11 @@
     }
 
     var check = target.closest('[data-check]');
-    if (check) { toggleCheck(check.getAttribute('data-check')); return; }
+    if (check) {
+      var shownDay = check.closest('[data-sunnah-day]');
+      toggleCheck(check.getAttribute('data-check'), shownDay ? shownDay.getAttribute('data-sunnah-day') : null);
+      return;
+    }
 
     var azkar = target.closest('[data-azkar]');
     if (azkar) { openAzkar(azkar.getAttribute('data-azkar')); return; }
@@ -7882,6 +8016,7 @@
     if (bridge()) dismissBootSplash(true);
     Store.attach();
     Store.migrate();
+    settleTicks();
     Store.prune();
     applyTheme();
     applyFont();
@@ -7938,7 +8073,7 @@
       verseCard: verseCard, textCard: textCard, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
- totalSunnahCount: totalSunnahCount,
+ totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },

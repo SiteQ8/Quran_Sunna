@@ -3,7 +3,7 @@
   "private": true,
   "description": "سُنّتي: أوقات الصلاة والأذكار والسنن. The site is plain files under docs/; this manifest exists so the tests can be run anywhere, not only in the container they were written in.",
   "scripts": {
-    "test": "node --test test/interface.test.js"
+    "test": "node --test test/*.test.js"
   },
   "devDependencies": {
     "jsdom": "^24.1.0"
