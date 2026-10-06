@@ -380,24 +380,27 @@ jobs:
           for posture in 0:closed 180:open; do
             fold "${posture%%:*}"
             P="${posture##*:}"
-            for pair in "home:1-home" "quran:3-quran" "azkar:2-azkar" "tasbih:4-tasbih" "hisn:5-hisn" "more:6-more"; do
+            # the six screens of the store, and the mushaf opened at its first
+            # spread and at a full one, which on the inner display is a book
+            for pair in "home:1-home" "quran:3-quran" "azkar:2-azkar" "tasbih:4-tasbih" "hisn:5-hisn" "more:6-more" \
+                        "page1:7-mushaf-1" "page300:8-mushaf-300"; do
               VIEW="${pair%%:*}"; NAME="${pair##*:}"
               xcrun simctl terminate "$UDID" com.eworldq8.sunnati || true
               sleep 2
               xcrun simctl privacy "$UDID" grant location com.eworldq8.sunnati || true
               # -probe has the app write down what the window and the page
               # were each told about the sides of the screen
-              if [ "$VIEW" = home ]; then
-                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe
-              else
-                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe -screen "$VIEW"
-              fi
+              case "$VIEW" in
+                home)  xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe ;;
+                page*) xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe -page "${VIEW#page}" ;;
+                *)     xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe -screen "$VIEW" ;;
+              esac
               sleep $pause; pause=18
               snap "$P-$NAME"
             done
           done
 
-          # six launches closed, then six open, a line each
+          # eight launches closed, then eight open, a line each
           LOG="$(xcrun simctl get_app_container "$UDID" com.eworldq8.sunnati data)/Documents/probe.log"
           if [ -f "$LOG" ]; then cat "$LOG"; cp "$LOG" "$OUT/probe.log"; else echo "::warning::the app wrote no probe"; fi
 
