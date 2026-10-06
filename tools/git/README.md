@@ -35,8 +35,8 @@ git commit -m "تعديل النص والإشعارات"
 ### لأول مرة (بعد الـ clone)
 
 ```bash
-cp tools/git/update-version-hook.sh .git/hooks/prepare-commit-msg
-chmod +x .git/hooks/prepare-commit-msg
+cp tools/git/update-version-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
 ```
 
 ### للمجموعة
@@ -45,8 +45,8 @@ chmod +x .git/hooks/prepare-commit-msg
 
 ```bash
 # في setup script
-ln -sf ../../tools/git/update-version-hook.sh .git/hooks/prepare-commit-msg
-chmod +x .git/hooks/prepare-commit-msg
+ln -sf ../../tools/git/update-version-hook.sh .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
 ```
 
 ## مثال
@@ -66,7 +66,7 @@ git commit -m "إضافة ميزة جديدة"
 ## الملفات
 
 - `update-version-hook.sh` — الـ hook script
-- `.git/hooks/prepare-commit-msg` — الـ hook المثبّت (يتم نسخه هنا)
+- `.git/hooks/pre-commit` — الـ hook المثبّت (يتم نسخه هنا)
 - `docs/sw.js` — يحتوي على `VERSION` (يُحدّث تلقائياً)
 
 ## ملاحظات

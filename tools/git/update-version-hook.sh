@@ -2,8 +2,12 @@
 # خطّاف git: يرفع رقم النسخة تلقائياً مع كل commit
 #
 # التثبيت:
-#   cp tools/git/update-version-hook.sh .git/hooks/prepare-commit-msg
-#   chmod +x .git/hooks/prepare-commit-msg
+#   cp tools/git/update-version-hook.sh .git/hooks/pre-commit
+#   chmod +x .git/hooks/pre-commit
+#
+# pre-commit لا prepare-commit-msg: الثاني يعمل بعد أن يأخذ git لقطة الملفّات،
+# فكان الرقم المرفوع يبقى مرحَّلاً ويدخل الإيداع الذي بعده، وأول إيداع في نسخة
+# جديدة يخرج بالرقم الذي قبله فلا تتجدّد النسخ المثبّتة. والأول يعمل قبل اللقطة.
 #
 # الهدف:
 #   - رفع رقم النسخة في المواضع الأربعة معاً، فالمستودع يشترط تطابقها
