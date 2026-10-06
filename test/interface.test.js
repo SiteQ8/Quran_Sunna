@@ -4461,10 +4461,16 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   }
   /* set in from the screen's edge as the right half's cards are: with the
      pane as wide as the half, it stood against the edge itself */
-  /* and stands on the lines of the right column mirrored: level with its
-     first card and as far in from its side; it stood against the edge and
-     in the middle of the height */
-  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?top: calc\(env\(safe-area-inset-top\) \+ var\(--s5\)\);\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); width: calc\(var\(--pane\) - 2 \* var\(--pad\)\);/.test(css), 'the hour keeps the left column, level with the right');
+  /* the left half is the day, the hour and the day's count, standing from
+     the line the right column begins on to the line the tabs end on, as far
+     in from its side as the right column is from the other. The hour alone
+     stood against the edge and then in the upper part of an empty half. */
+  assert.ok(/html\.book \.book-side \{[\s\S]*?position: fixed;[\s\S]*?top: calc\(env\(safe-area-inset-top\) \+ var\(--s5\)\); bottom: var\(--float\);\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); width: calc\(var\(--pane\) - 2 \* var\(--pad\)\);/.test(css), 'the day keeps the left column, top and foot level with the right');
+  assert.ok(/html\.book \.book-side > \.card \{ margin: 0; flex: 1 0 auto; \}/.test(css), 'the count fills what the hour leaves');
+  assert.ok(/html\.book\[data-view="page"\] \.book-side \{ display: none; \}/.test(css), 'and the mushaf has both halves to itself');
+  assert.ok(/SIDE = \{ box: document\.createElement\('aside'\), items: \[home\.querySelector\('\.clock'\), \$\('home-progress'\)\]/.test(app), 'the two are moved from the home screen, not drawn twice');
+  assert.ok(/m\[0\]\.parentNode\.insertBefore\(m\[1\], m\[0\]\);/.test(app), 'and put back where they were when the screen narrows');
+  assert.ok(/placeSide\(isBook\(\)\);/.test(app), 'whenever the book opens or closes');
   assert.ok(/html\.book #views > \.view \{\s*width: var\(--pane\); margin-left: auto; margin-right: var\(--edge\);\s*padding-inline: var\(--pad\);/.test(css), 'the right column is set in as the left one is');
   /* a transform on an opening view would carry the fixed clock with it */
   assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
