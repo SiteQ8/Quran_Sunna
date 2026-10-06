@@ -5,9 +5,16 @@
 # What it does, and when:
 #   • every push to main that touches the wrapper: tests, lint, and a debug apk
 #     you can install on your own phone straight from Artifacts, with no store
-#     and no key in the way
-#   • a tag like android-v8.87.19, or "Run workflow": the same, and a signed
-#     release bundle for Play when the four secrets below are set
+#     and no key in the way. A push builds and checks; it sends nothing to Play
+#   • "Run workflow": the same, a signed release bundle, and that bundle sent
+#     to the closed test. A release to the testers is decided, never a side
+#     effect of a commit
+#
+# The version line in build.gradle moves with every commit, so the page, the
+# worker and the wrappers carry one number. A push whose only change under
+# android/ was that line used to build and send a new release to the testers:
+# seven in one day of work on the page, none of them changing the app, which
+# loads the page and takes its fixes without an update.
 #
 # The four secrets it wants, when you are ready to sign:
 #   ANDROID_KEYSTORE            the upload keystore, base64 of the .keystore
@@ -37,6 +44,8 @@ on:
     branches: [main]
     paths:
       - 'android/**'
+      # the version line alone is not a change to the app
+      - '!android/app/build.gradle'
       - 'tools/android/**'
       - 'play/whatsnew/**'
       - '.github/workflows/android.yml'
@@ -171,8 +180,10 @@ jobs:
       # الرفع بشفرتنا لا بإجراء من طرف ثالث: الخطوة تأخذ مفتاح حساب الخدمة
       # والحزمة الموقّعة معاً، وذلك أوسع ثقة مما يستحقه إجراء لا نقرأ شفرته
       # ولا نثبّت نسخته.
+      # only when asked for by hand: a push checks the build, a person decides
+      # when the testers get it
       - name: ارفع إلى الاختبار المغلق
-        if: steps.play.outputs.ready == 'yes'
+        if: steps.play.outputs.ready == 'yes' && github.event_name == 'workflow_dispatch'
         env:
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
         run: |
