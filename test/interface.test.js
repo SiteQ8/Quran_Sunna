@@ -4480,6 +4480,16 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   assert.ok(/html\.book\[data-view="page"\] body::after \{ display: none; \}/.test(css), 'and none over the mushaf');
 });
 
+test('a commit never sends a release to the testers on its own', () => {
+  /* the version line in build.gradle moves with every commit, and a push
+     that changed nothing else under android/ built and sent a new release to
+     the closed test: seven in one day of work on the page alone */
+  const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/android.yml'), 'utf8');
+  assert.ok(/- 'android\/\*\*'\s*(#[^\n]*\s*)?- '!android\/app\/build\.gradle'/.test(flow), 'the version line alone does not start a build');
+  assert.ok(/name: ارفع إلى الاختبار المغلق\s*if: steps\.play\.outputs\.ready == 'yes' && github\.event_name == 'workflow_dispatch'/.test(flow),
+    'only a run asked for by hand reaches Play');
+});
+
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
   const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
   /* GitHub keys its mac images to a major Xcode now, and 27 is not on macos-26 */
