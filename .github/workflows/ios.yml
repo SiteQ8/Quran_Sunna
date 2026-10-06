@@ -385,15 +385,21 @@ jobs:
               xcrun simctl terminate "$UDID" com.eworldq8.sunnati || true
               sleep 2
               xcrun simctl privacy "$UDID" grant location com.eworldq8.sunnati || true
+              # -probe has the app write down what the window and the page
+              # were each told about the sides of the screen
               if [ "$VIEW" = home ]; then
-                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting
+                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe
               else
-                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -screen "$VIEW"
+                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -probe -screen "$VIEW"
               fi
               sleep $pause; pause=18
               snap "$P-$NAME"
             done
           done
+
+          # six launches closed, then six open, a line each
+          LOG="$(xcrun simctl get_app_container "$UDID" com.eworldq8.sunnati data)/Documents/probe.log"
+          if [ -f "$LOG" ]; then cat "$LOG"; cp "$LOG" "$OUT/probe.log"; else echo "::warning::the app wrote no probe"; fi
 
           for f in "$OUT"/*.png; do
             echo "$(basename "$f"): $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/ {printf "%s ", $2}')"

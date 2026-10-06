@@ -372,13 +372,64 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
      every photograph. A launch argument asks nobody. */
   func webView(_ w: WKWebView, didFinish navigation: WKNavigation!) {
     tellCanNotify()
+    tellSides()
     loaded = true
     if let kind = waitingKind { waitingKind = nil; cameFrom(kind) }
     let args = ProcessInfo.processInfo.arguments
+    if args.contains("-probe") {
+      DispatchQueue.main.asyncAfter(deadline: .now() + 5) { self.probe() }
+    }
     guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return }
     let name = args[i + 1].filter { $0.isLetter }
     /* the page settles after loading, so the screen is asked for a moment later */
     DispatchQueue.main.asyncAfter(deadline: .now() + 3) { self.show(name) }
+  }
+
+  /* The sides the screen keeps for itself, handed to the page as --sal and
+     --sar. A phone held upright keeps none. iPhone Duo keeps a column for its
+     status down one side of each display, and the page laid its titles and
+     its clock under it; the web view is not trusted to report that column
+     through env(), so the window's own measure is passed on whenever it
+     changes, as the phone is opened, closed or turned. */
+  override func viewSafeAreaInsetsDidChange() {
+    super.viewSafeAreaInsetsDidChange()
+    tellSides()
+  }
+
+  private func tellSides() {
+    guard let web = web else { return }
+    let i = view.safeAreaInsets
+    web.evaluateJavaScript(
+      "document.documentElement.style.setProperty('--sal','\(Int(i.left.rounded()))px');" +
+      "document.documentElement.style.setProperty('--sar','\(Int(i.right.rounded()))px')")
+  }
+
+  /* -probe: what the window and the page are each told about the screen,
+     written where the build machine reads it after every launch. */
+  private func probe() {
+    let js = "(function(){var d=document.createElement('div');" +
+      "d.style.cssText='position:fixed;left:0;top:0;width:0;height:0;visibility:hidden;" +
+      "padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left)';" +
+      "document.body.appendChild(d);var c=getComputedStyle(d),r=getComputedStyle(document.documentElement);" +
+      "var o={envTop:c.paddingTop,envRight:c.paddingRight,envBottom:c.paddingBottom,envLeft:c.paddingLeft," +
+      "sal:r.getPropertyValue('--sal'),sar:r.getPropertyValue('--sar'),w:innerWidth,h:innerHeight," +
+      "book:document.documentElement.classList.contains('book'),view:document.documentElement.getAttribute('data-view')};" +
+      "d.remove();return JSON.stringify(o)})()"
+    web.evaluateJavaScript(js) { result, _ in
+      let page = result as? String ?? "{}"
+      let i = self.view.safeAreaInsets
+      let size = self.view.bounds.size
+      let line = "{\"page\":\(page),\"window\":{\"top\":\(i.top),\"right\":\(i.right)," +
+        "\"bottom\":\(i.bottom),\"left\":\(i.left),\"w\":\(size.width),\"h\":\(size.height)}}\n"
+      let file = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("probe.log")
+      guard let data = line.data(using: .utf8) else { return }
+      if let out = try? FileHandle(forWritingTo: file) {
+        out.seekToEndOfFile(); out.write(data); out.closeFile()
+      } else {
+        try? data.write(to: file)
+      }
+    }
   }
 
   func webView(_ w: WKWebView, decidePolicyFor action: WKNavigationAction,

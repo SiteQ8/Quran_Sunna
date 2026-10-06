@@ -76,6 +76,12 @@
   --tab-h: 60px;
   --shell: 520px;
   --quran-scale: 1;
+  /* The sides a screen keeps for itself. Zero on every phone held upright,
+     which is how the app is held; iPhone Duo keeps a column for its status
+     down one side of both its displays, and on the outer one it ran over
+     the titles and the clock. */
+  --sal: env(safe-area-inset-left, 0px);
+  --sar: env(safe-area-inset-right, 0px);
 }
 
 [data-theme='dark'] {
@@ -132,6 +138,7 @@ body {
      buttons behind the black pill. The inset is zero everywhere it is not
      needed, so this costs nothing elsewhere. */
   padding-top: env(safe-area-inset-top);
+  padding-left: var(--sal); padding-right: var(--sar);
   -webkit-font-smoothing: antialiased;
 }
 
@@ -206,6 +213,8 @@ button { background: none; border: none; cursor: pointer; }
   position: fixed; inset: auto 0 0 0; z-index: 60;
   height: calc(var(--tab-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
+  /* the bar runs to both edges and its tabs keep clear of the sides */
+  padding-left: var(--sal); padding-right: var(--sar);
   display: flex;
   background: var(--raised);
   border-top: 1px solid var(--line-soft);
@@ -548,7 +557,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .to-top {
   /* above the tab bar and its safe-area inset alike: without the inset the
      button sat inside the bar on any iPhone with a home indicator */
-  position: fixed; inset-inline-end: 14px; bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px); z-index: 40;
+  position: fixed; inset-inline-end: calc(14px + var(--sal)); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px); z-index: 40;
   width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
   background: var(--raised); color: var(--accent-ink); border: 1px solid var(--line);
   box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
@@ -1370,7 +1379,8 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* ---------- banner ---------- */
 
 .banner {
-  position: fixed; inset-inline: var(--s3); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s3));
+  position: fixed; left: calc(var(--s3) + var(--sal)); right: calc(var(--s3) + var(--sar));
+  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s3));
   z-index: 60; display: flex; align-items: center; gap: var(--s2);
   padding: var(--s2) var(--s3); border-radius: var(--r-sm);
   background: var(--ink); color: var(--raised); box-shadow: var(--shadow-lift);
@@ -1469,7 +1479,7 @@ input, textarea, [contenteditable] {
 .note { background: var(--accent-wash); border-radius: var(--r-sm); padding: var(--s3); font-size: var(--step--1); color: var(--ink-2); line-height: 1.7; }
 
 .toast {
-  position: fixed; inset: auto var(--s4) calc(var(--tab-h) + 20px) var(--s4); z-index: 200;
+  position: fixed; inset: auto calc(var(--s4) + var(--sar)) calc(var(--tab-h) + 20px) calc(var(--s4) + var(--sal)); z-index: 200;
   background: var(--ink); color: var(--paper); padding: var(--s3) var(--s4);
   border-radius: var(--r-sm); font-size: var(--step-0); text-align: center;
   box-shadow: var(--shadow-lift); opacity: 0; transform: translateY(10px);
@@ -1481,6 +1491,7 @@ input, textarea, [contenteditable] {
 .sheet {
   position: fixed; inset: 0; z-index: 150; display: none;
   background: rgba(10, 16, 13, .5); align-items: flex-end; justify-content: center;
+  padding-left: var(--sal); padding-right: var(--sar);
 }
 .sheet.is-open { display: flex; }
 .sheet-panel {
@@ -1493,7 +1504,7 @@ input, textarea, [contenteditable] {
 .sheet-grip { width: 38px; height: 4px; border-radius: 3px; background: var(--line); margin: 0 auto var(--s3); }
 
 .player {
-  position: fixed; inset: auto 0 calc(var(--tab-h) + env(safe-area-inset-bottom)) 0; z-index: 55;
+  position: fixed; inset: auto var(--sar) calc(var(--tab-h) + env(safe-area-inset-bottom)) var(--sal); z-index: 55;
   max-width: var(--shell); margin: 0 auto; display: none;
   align-items: center; gap: var(--s3); padding: var(--s2) var(--s4);
   background: var(--ink); color: var(--paper);
@@ -1783,10 +1794,18 @@ input, textarea, [contenteditable] {
    clear middle is always where a fold would be. */
 html.book {
   --gap: 56px;
-  --pane: min(calc(50vw - var(--gap) / 2), 560px);
-  --edge: calc(50vw - var(--gap) / 2 - var(--pane));   /* outside each half */
+  --half: calc(50vw - var(--gap) / 2);
+  /* each half is as wide as a large phone at most, and keeps clear of the
+     side of the screen it stands against: on iPhone Duo opened the status
+     column runs down the right, so the right half is the narrower */
+  --pane: min(calc(var(--half) - var(--sar)), 560px);   /* the right half */
+  --pane-l: min(calc(var(--half) - var(--sal)), 560px); /* the left half */
+  --edge: calc(var(--half) - var(--pane));              /* outside the right half */
+  --edge-l: calc(var(--half) - var(--pane-l));          /* outside the left half */
   --inner: calc(50vw + var(--gap) / 2);                 /* the right half's left side */
 }
+/* the halves are placed against the screen, so the body keeps no sides */
+html.book body { padding-left: 0; padding-right: 0; }
 html.book .shell { max-width: none; }
 html.book #views > .view { width: var(--pane); margin-left: auto; margin-right: var(--edge); }
 /* a view used to rise a few pixels as it opened, and a transform makes a
@@ -1795,12 +1814,12 @@ html.book .view.is-open { animation-name: view-fade; }
 @keyframes view-fade { from { opacity: 0; } to { opacity: 1; } }
 
 /* whatever floats stays on the right half, off the fold */
-html.book .tabs { left: var(--inner); right: var(--edge); }
+html.book .tabs { left: var(--inner); right: calc(var(--edge) - var(--sar)); padding-left: 0; padding-right: var(--sar); }
 html.book .player { left: var(--inner); right: var(--edge); max-width: none; margin: 0; }
 html.book .toast { left: calc(var(--inner) + var(--s4)); right: calc(var(--edge) + var(--s4)); }
 html.book .banner { left: calc(var(--inner) + var(--s3)); right: calc(var(--edge) + var(--s3)); }
 html.book .to-top { left: calc(var(--inner) + 14px); right: auto; }
-html.book .sheet { justify-content: flex-start; padding-right: var(--edge); }
+html.book .sheet { justify-content: flex-start; padding-left: 0; padding-right: var(--edge); }
 html.book .sheet-panel { max-width: var(--pane); }
 
 /* the left half keeps the hour: the clock of the home screen stays there
@@ -1813,7 +1832,7 @@ html.book #v-home > .clock {
   position: fixed; z-index: 2; top: 50%; transform: translateY(-50%);
   /* set in from the screen's edge as the cards of the right half are: with
      the pane as wide as the half it stood against the edge itself */
-  left: calc(var(--edge) + var(--s4)); width: calc(var(--pane) - 2 * var(--s4)); margin: 0;
+  left: calc(var(--edge-l) + var(--s4)); width: calc(var(--pane-l) - 2 * var(--s4)); margin: 0;
 }
 
 /* the mushaf takes both halves, two pages facing across the fold */
@@ -1823,8 +1842,11 @@ html.book #v-page .reader-bar,
 html.book #page-body.is-spread .spread {
   /* a margin at the outer edges, where the display's corners round, and the
      columns either side of the middle kept equal so it stays on the fold */
+  /* the two pages are alike, so both take the narrower half, and the pair
+     stays centred on the fold whichever side the screen keeps */
   display: grid; margin-inline: auto;
-  width: min(calc(100% - 2 * var(--s3)), calc(2 * var(--pane) + var(--gap)));
+  width: min(calc(100% - 2 * (var(--s3) + max(var(--sal), var(--sar)))),
+             calc(2 * min(var(--pane), var(--pane-l)) + var(--gap)));
 }
 /* rtl: the first column stands on the right. The bar has no ground of its
    own, which ran across the fold: the title stands on a card over the right
@@ -1845,7 +1867,8 @@ html.book #v-page .reader-bar #page-jump { grid-column: 5; }
    tabs under the right one. It stood below the pages, under the tabs on the
    right and off the foot of the screen on the left. */
 html.book #v-page .page-nav {
-  position: fixed; z-index: 60; bottom: 0; left: var(--edge); right: var(--inner);
+  position: fixed; z-index: 60; bottom: 0; left: calc(var(--edge-l) - var(--sal)); right: var(--inner);
+  padding-left: var(--sal);
   display: flex; gap: 0; margin: 0;
   height: calc(var(--tab-h) + env(safe-area-inset-bottom));
   padding-bottom: env(safe-area-inset-bottom);
