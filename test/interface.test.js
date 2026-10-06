@@ -4460,7 +4460,7 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   }
   /* set in from the screen's edge as the right half's cards are: with the
      pane as wide as the half, it stood against the edge itself */
-  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: calc\(var\(--edge\) \+ var\(--s4\)\); width: calc\(var\(--pane\) - 2 \* var\(--s4\)\);/.test(css), 'the hour keeps the left half, off its edge');
+  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: calc\(var\(--edge-l\) \+ var\(--s4\)\); width: calc\(var\(--pane-l\) - 2 \* var\(--s4\)\);/.test(css), 'the hour keeps the left half, off its edge');
   /* a transform on an opening view would carry the fixed clock with it */
   assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
   assert.ok(/html\.book #page-body \.spread \{ grid-template-columns: 1fr var\(--gap\) 1fr;/.test(css), 'the mushaf opens across the fold');
@@ -4507,10 +4507,32 @@ test('in the book a spread stands whole between its bars, and nothing of it lies
   /* the bar has no ground across the fold, and turning the page is a bar of
      its own under the left page, level with the tabs under the right */
   assert.ok(/html\.book #v-page \.reader-bar \{[\s\S]*?position: static; background: none; box-shadow: none;/.test(css), 'no bar across the fold');
-  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60; bottom: 0; left: var\(--edge\); right: var\(--inner\);/.test(css), 'the page turns from under the left page');
+  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60; bottom: 0; left: calc\(var\(--edge-l\) - var\(--sal\)\); right: var\(--inner\);/.test(css), 'the page turns from under the left page');
   assert.ok(css.indexOf('html.book #v-page .page-nav > :nth-child') === -1, 'and no button is placed on the far side of the fold');
   /* a page that cannot fit scrolls in its own leaf, not the two together */
   assert.ok(/html\.book #page-body \.leaf \{[\s\S]*?overflow-x: hidden; overflow-y: auto;/.test(css), 'a leaf scrolls on its own');
+});
+
+test('the sides a screen keeps are kept clear, on the phone and in the book', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* iPhone Duo keeps a column for its status down one side of each display,
+     and the titles and the clock were laid under it */
+  assert.ok(/--sal: env\(safe-area-inset-left, 0px\);\s*--sar: env\(safe-area-inset-right, 0px\);/.test(css), 'the sides are read once, at the root');
+  assert.ok(/padding-left: var\(--sal\); padding-right: var\(--sar\);\s*-webkit-font-smoothing/.test(css), 'the page keeps clear of them');
+  assert.ok(/\.tabs \{[\s\S]*?padding-left: var\(--sal\); padding-right: var\(--sar\);/.test(css), 'and so do the tabs, their bar running to the edge');
+  /* in the book each half keeps clear of the side it stands against, and
+     the two pages stay alike and centred on the fold */
+  assert.ok(/--pane: min\(calc\(var\(--half\) - var\(--sar\)\), 560px\);/.test(css), 'the right half');
+  assert.ok(/--pane-l: min\(calc\(var\(--half\) - var\(--sal\)\), 560px\);/.test(css), 'the left half');
+  assert.ok(/html\.book body \{ padding-left: 0; padding-right: 0; \}/.test(css), 'the halves are placed against the screen itself');
+  assert.ok(/calc\(2 \* min\(var\(--pane\), var\(--pane-l\)\) \+ var\(--gap\)\)/.test(css), 'both pages take the narrower half');
+
+  /* the web view is not trusted to report the column, so the window's own
+     measure is handed to the page whenever it changes */
+  const reader = fs.readFileSync(path.join(__dirname, '..', 'ios', 'Sunnati', 'ReaderController.swift'), 'utf8');
+  assert.ok(/override func viewSafeAreaInsetsDidChange\(\) \{\s*super\.viewSafeAreaInsetsDidChange\(\)\s*tellSides\(\)/.test(reader), 'a change of sides is heard');
+  assert.ok(reader.indexOf("setProperty('--sar','") !== -1 && reader.indexOf("setProperty('--sal','") !== -1, 'and handed to the page');
+  assert.ok(/tellCanNotify\(\)\s*tellSides\(\)/.test(reader), 'as each page finishes loading');
 });
 
 test('the mushaf opens as a printed one does, the odd page on the right', () => {
