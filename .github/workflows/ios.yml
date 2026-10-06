@@ -32,7 +32,7 @@ on:
       # the Xcode that builds for iPhone Duo, is tried before a release tag
       # depends on it. A tag always builds with the default.
       xcode:
-        description: 'Xcode major version to build with (27 builds for iPhone Duo once GitHub has it)'
+        description: 'Xcode version to build with: 26, or 27.1 for iPhone Duo (a beta Xcode builds and photographs but is not sent to App Store Connect)'
         required: false
         default: '26'
 
@@ -41,8 +41,13 @@ jobs:
     # macos-26 carries Xcode 26, and since September 2026 App Store Connect
     # refuses anything built with an older SDK: the first signed build went
     # up from macos-15 with Xcode 16.4 and came back with a 409.
-    runs-on: macos-26
-    timeout-minutes: 30
+    #
+    # Xcode 27 is not on macos-26 and never will be. GitHub now keys its mac
+    # images to a major Xcode rather than to the system under it, so 27 lives
+    # on an image of its own, named xcode-27. A run asking for 27 goes there.
+    runs-on: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 'xcode-27' || 'macos-26' }}
+    # the iPhone Duo step fetches an iOS runtime of several gigabytes first
+    timeout-minutes: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 75 || 30 }}
 
     steps:
       - uses: actions/checkout@v7
@@ -58,19 +63,60 @@ jobs:
       - name: الاختبارات
         run: node --test test/interface.test.js
 
-      # The newest Xcode 26 on the image, chosen by looking rather than by a
-      # path written here: the image rotates its point releases, and a fixed
-      # path breaks the day the one it names is gone. What is used is printed,
-      # so the log says which Xcode built this.
+      # The Xcode asked for, chosen by looking rather than by a path written
+      # here: the image rotates its point releases, and a fixed path breaks
+      # the day the one it names is gone.
+      #
+      # Each Xcode is asked its own version, because a name cannot be trusted:
+      # on xcode-27, Xcode_27.1.app is a link to Xcode_27.1_beta.app. A release
+      # is preferred to a release candidate, and either to a beta, and within
+      # that the newest. Everything found is printed, so the log says which
+      # Xcode built this and what else was there.
       - name: Xcode
+        id: xcode
         env:
           WANT: ${{ github.event.inputs.xcode || '26' }}
         run: |
-          XCODE=$(ls -d /Applications/Xcode_${WANT}*.app 2>/dev/null | grep -v -i "beta\|release_candidate" | sort -V | tail -1)
-          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_${WANT}*.app 2>/dev/null | sort -V | tail -1)
-          [ -n "$XCODE" ] || { echo "::error::no Xcode ${WANT} on this image"; ls /Applications | grep Xcode; exit 1; }
+          : > "$RUNNER_TEMP/xcodes"
+          seen=" "
+          for x in /Applications/Xcode*.app; do
+            real=$(realpath "$x") || continue
+            case "$seen" in *" $real "*) continue ;; esac
+            seen="$seen$real "
+            v=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$real/Contents/Info.plist" 2>/dev/null) || continue
+            b=$(/usr/libexec/PlistBuddy -c 'Print :ProductBuildVersion' "$real/Contents/version.plist" 2>/dev/null || echo '?')
+            case "$real" in
+              *[Bb]eta*) rank=0 ;;
+              *[Rr]elease_[Cc]andidate*|*_RC*) rank=1 ;;
+              *) rank=2 ;;
+            esac
+            echo "  $v ($b) $real"
+            # padded, so a plain sort orders 27.10 after 27.9
+            key=$(echo "$v" | awk -F. '{ printf "%03d.%03d.%03d", $1, $2, $3 }')
+            case "$v" in "$WANT"|"$WANT".*) echo "$rank $key $real" >> "$RUNNER_TEMP/xcodes" ;; esac
+          done
+          XCODE=$(sort "$RUNNER_TEMP/xcodes" | tail -1 | cut -d' ' -f3-)
+          [ -n "$XCODE" ] || { echo "::error::no Xcode ${WANT} on this image"; exit 1; }
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
+
+          # App Store Connect refuses a build made with a beta Xcode, so one
+          # is built, signed and photographed, and kept here rather than sent
+          case "$XCODE" in *[Bb]eta*)
+            echo "beta=yes" >> "$GITHUB_OUTPUT"
+            echo "::notice::$(basename "$XCODE") is a beta, so this build is kept as an artifact and not sent to App Store Connect" ;;
+          esac
+
+          # 27.1 is the first Xcode that knows iPhone Duo
+          V=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$XCODE/Contents/Info.plist")
+          if echo "$V" | awk -F. '{ exit !($1 > 27 || ($1 == 27 && $2 >= 1)) }'; then
+            echo "duo=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+          # the upload goes through altool; a new Xcode is checked for it
+          # before the day a release depends on it
+          xcrun --find altool >/dev/null 2>&1 \
+            || echo "::warning::this Xcode has no altool, so the upload step needs another way"
 
       - name: XcodeGen
         run: brew install xcodegen
@@ -185,7 +231,7 @@ jobs:
           fi
 
       - name: ارفع إلى App Store Connect
-        if: steps.asc.outputs.ready == 'yes'
+        if: steps.asc.outputs.ready == 'yes' && steps.xcode.outputs.beta != 'yes'
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
@@ -268,10 +314,91 @@ jobs:
               if xcrun simctl list devices available | grep -q "$want ("; then echo "$want"; return; fi
             done
           }
-          BIG=$(pick "iPhone 17 Pro Max" "iPhone 16 Pro Max" "iPhone 16 Plus")
-          SPARE=$(pick "iPhone Air" "iPhone 17" "iPhone 16 Plus" "iPhone 16")
+          BIG=$(pick "iPhone 18 Pro Max" "iPhone 17 Pro Max" "iPhone 16 Pro Max" "iPhone 16 Plus")
+          SPARE=$(pick "iPhone Air" "iPhone 18 Pro" "iPhone 17" "iPhone 16 Plus" "iPhone 16")
           [ -n "$BIG" ] && { shoot "$BIG" "6.9-inch" || echo "::warning::$BIG failed"; } || echo "::warning::no 6.9 inch device on this image"
           [ -n "$SPARE" ] && [ "$SPARE" != "$BIG" ] && { shoot "$SPARE" "spare" || echo "::warning::$SPARE failed"; } || true
+
+      # iPhone Duo, when the Xcode is one that knows it. Its device type comes
+      # with Xcode 27.1 but its iOS runtime is not on the image, so that is
+      # fetched first. The phone is then made, closed and opened by a helper
+      # run inside it (tools/ios/hinge.c), and each screen is photographed on
+      # both displays: the outer one when it is closed, the inner one when it
+      # is open. Apple asks for these from April 2027, and until then they are
+      # the one way to see the app on that phone without holding one. This
+      # never fails the build: the phone is new, and so is all of this.
+      - name: iPhone Duo
+        if: steps.xcode.outputs.duo == 'yes'
+        continue-on-error: true
+        run: |
+          cd ios
+          OUT="$RUNNER_TEMP/shots/iphone-duo"
+          mkdir -p "$OUT"
+
+          TYPE=$(xcrun simctl list devicetypes | grep -i "iPhone Duo" | head -1 | sed -E 's/.*\((com\.apple\.[^)]*)\).*/\1/')
+          [ -n "$TYPE" ] || { echo "::warning::this Xcode has no iPhone Duo"; xcrun simctl list devicetypes | grep -i iphone; exit 0; }
+          echo "device type: $TYPE"
+
+          # the newest iOS runtime from 27.1 on, the first that runs the Duo
+          runtime () { xcrun simctl list runtimes available | grep -E '^iOS (27\.[1-9]|2[89]\.)' | tail -1 | awk '{print $NF}'; }
+          RUNTIME=$(runtime)
+          if [ -z "$RUNTIME" ]; then
+            echo "fetching the iOS runtime for $(xcodebuild -version | head -1)"
+            xcodebuild -downloadPlatform iOS -architectureVariant arm64 || xcodebuild -downloadPlatform iOS
+            RUNTIME=$(runtime)
+          fi
+          [ -n "$RUNTIME" ] || { echo "::warning::no iOS runtime here runs iPhone Duo"; xcrun simctl list runtimes; exit 0; }
+          echo "runtime: $RUNTIME"
+
+          UDID=$(xcrun simctl create "Sunnati Duo" "$TYPE" "$RUNTIME")
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          # the displays it has, by the names screenshot takes
+          xcrun simctl io "$UDID" enumerate || true
+
+          xcodebuild -project Sunnati.xcodeproj -scheme Sunnati \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath "$RUNNER_TEMP/dd" -configuration Debug \
+            CODE_SIGNING_ALLOWED=NO build
+          xcrun simctl install "$UDID" "$RUNNER_TEMP/dd/Build/Products/Debug-iphonesimulator/Sunnati.app"
+
+          # the hinge: built for the simulator and run inside it
+          HINGE="$RUNNER_TEMP/hinge"
+          xcrun -sdk iphonesimulator clang -arch arm64 -mios-simulator-version-min=17.0 -O2 \
+            -o "$HINGE" ../tools/ios/hinge.c -framework IOKit -framework CoreFoundation
+          codesign -f -s - "$HINGE"
+          fold () { xcrun simctl spawn "$UDID" "$HINGE" "$1"; sleep 5; }
+
+          # both displays every time: the dark one comes out black, which says
+          # as plainly as anything which display the app was on
+          snap () {
+            xcrun simctl io "$UDID" screenshot --display=primary "$OUT/$1-outer.png" || true
+            xcrun simctl io "$UDID" screenshot --display=primary-1 "$OUT/$1-inner.png" || true
+          }
+
+          pause=30
+          for posture in 0:closed 180:open; do
+            fold "${posture%%:*}"
+            P="${posture##*:}"
+            for pair in "home:1-home" "quran:3-quran" "azkar:2-azkar" "tasbih:4-tasbih" "hisn:5-hisn" "more:6-more"; do
+              VIEW="${pair%%:*}"; NAME="${pair##*:}"
+              xcrun simctl terminate "$UDID" com.eworldq8.sunnati || true
+              sleep 2
+              xcrun simctl privacy "$UDID" grant location com.eworldq8.sunnati || true
+              if [ "$VIEW" = home ]; then
+                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting
+              else
+                xcrun simctl launch "$UDID" com.eworldq8.sunnati -shooting -screen "$VIEW"
+              fi
+              sleep $pause; pause=18
+              snap "$P-$NAME"
+            done
+          done
+
+          for f in "$OUT"/*.png; do
+            echo "$(basename "$f"): $(sips -g pixelWidth -g pixelHeight "$f" | awk '/pixel/ {printf "%s ", $2}')"
+          done
+          xcrun simctl shutdown "$UDID" || true
 
       - name: احفظ الصور
         if: always()
