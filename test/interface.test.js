@@ -4438,7 +4438,7 @@ test('the iPhone wrapper lives in a scene, so it can be built for iPhone Duo', (
 
   /* and a hand-run build can ask for the Xcode that builds for iPhone Duo */
   const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
-  assert.ok(/WANT: \$\{\{ github\.event\.inputs\.xcode \|\| '26' \}\}/.test(wf), 'a tag builds with the default');
+  assert.ok(/WANT: \$\{\{ github\.event\.inputs\.xcode \|\| 'auto' \}\}/.test(wf), 'a tag builds with the Xcode picked for it');
 });
 
 test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold', () => {
@@ -4480,6 +4480,45 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
   assert.ok(/html\.book\[data-view="page"\] body::after \{ display: none; \}/.test(css), 'and none over the mushaf');
 });
 
+test('the Xcode for iPhone Duo is picked the day GitHub has a release of it, and never a beta', () => {
+  const { execFileSync } = require('child_process');
+  /* the table GitHub publishes with its xcode-27 image, as it stood on 6 Oct
+     2026, then with 27.1 as a release candidate, then as a release */
+  const today = [
+    '| 27.2 (beta)    | 27B5019j | /Applications/Xcode_27.2_beta.app | /Applications/Xcode_27.2.0.app<br>/Applications/Xcode_27.2.app |',
+    '| 27.1           | 27A9269  | /Applications/Xcode_27.1_beta.app | /Applications/Xcode_27.1.0.app<br>/Applications/Xcode_27.1.app |',
+    '| 27.0 (default) | 27A266a  | /Applications/Xcode_27.app        | /Applications/Xcode_27.0.0.app<br>/Applications/Xcode_27.app |'].join('\n');
+  const rc = today.replace('Xcode_27.1_beta.app', 'Xcode_27.1_Release_Candidate.app');
+  const ga = today.replace('Xcode_27.1_beta.app', 'Xcode_27.1.app');
+  const pick = (table) => execFileSync('python3', ['-c',
+    'import importlib.util,sys\n' +
+    's=importlib.util.spec_from_file_location("p", sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m)\n' +
+    'print(m.newest_duo_xcode(sys.stdin.read()))',
+    path.join(__dirname, '..', 'tools', 'ios', 'pick-xcode.py')], { input: table }).toString().trim();
+  assert.strictEqual(pick(today), '', 'a 27.1 whose name says 27.1 but which is a beta is not picked');
+  assert.strictEqual(pick(rc), '27.1', 'a release candidate is, since the store takes its builds');
+  assert.strictEqual(pick(ga), '27.1', 'and a release');
+
+  /* the watch looks daily, starts one build, and never touches the store */
+  const watch = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/xcode-27-watch.yml'), 'utf8');
+  assert.ok(/schedule:\s*- cron: '23 5 \* \* \*'/.test(watch), 'once a day');
+  assert.ok(watch.indexOf('python3 tools/ios/pick-xcode.py --release-only') !== -1, 'by the same reading of what GitHub has');
+  assert.ok(watch.indexOf('git/ref/tags/xcode-27.1-watch') !== -1, 'and only until it has started a build');
+  assert.ok(watch.indexOf('gh workflow run ios.yml --ref main -f xcode="$X" -f watch=true') !== -1, 'which goes to TestFlight');
+  assert.ok(!/-f store=/.test(watch), 'and never to the store, which stays a decision made by hand');
+
+  /* the iOS workflow gives the mark back when only a beta was there, and
+     takes a build to the store only when a run by hand asks */
+  const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  assert.ok(/if: inputs\.watch && steps\.upload\.outputs\.uploaded != 'yes'[\s\S]{0,200}git\/refs\/tags\/xcode-27\.1-watch/.test(wf), 'a beta gives the day back');
+  assert.ok(/store:\s*needs: build\s*if: inputs\.store == 'prepare' \|\| inputs\.store == 'send'/.test(wf), 'the store only when asked');
+  assert.ok(/default: none/.test(wf), 'and never by default');
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  assert.ok(/DUO = 'APP_IPHONE_DUO'/.test(release), 'the iPhone Duo screenshots go in their own set');
+  assert.ok(/DUO_SIZES = \{\(1398, 2034\), \(2034, 1398\), \(2007, 2853\), \(2853, 2007\)\}/.test(release), 'at the sizes Apple takes');
+  assert.ok(/if a\.no_submit or DRY:/.test(release), 'and prepare stops before review');
+});
+
 test('a commit never sends a release to the testers on its own', () => {
   /* the version line in build.gradle moves with every commit, and a push
      that changed nothing else under android/ built and sent a new release to
@@ -4493,8 +4532,9 @@ test('a commit never sends a release to the testers on its own', () => {
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
   const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
   /* GitHub keys its mac images to a major Xcode now, and 27 is not on macos-26 */
-  assert.ok(wf.indexOf("runs-on: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 'xcode-27' || 'macos-26' }}") !== -1,
-    'Xcode 27 is asked of its own image');
+  assert.ok(wf.indexOf('runs-on: ${{ needs.pick.outputs.runner }}') !== -1, 'the build runs where the Xcode it was given lives');
+  assert.ok(/out=\$\(python3 tools\/ios\/pick-xcode\.py "\$WANT"\)/.test(wf), 'and that is picked by reading what GitHub has');
+  assert.ok(/WANT: \$\{\{ needs\.pick\.outputs\.xcode \}\}/.test(wf), 'Xcode is chosen on the mac from what was picked');
   /* a name like Xcode_27.1.app is a link to a beta, so each Xcode is asked what it is */
   assert.ok(/real=\$\(realpath "\$x"\)/.test(wf), 'each Xcode is read for what it is');
   assert.ok(/PlistBuddy -c 'Print :CFBundleShortVersionString'/.test(wf), 'and for its own version');

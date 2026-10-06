@@ -1,0 +1,55 @@
+# Watches for Xcode 27.1 on GitHub's macs, and builds the day it arrives.
+#
+# The build that lets سُنّتي fill iPhone Duo's screen needs Xcode 27.1, and App
+# Store Connect takes no build made with a beta. GitHub has 27.1 only as a beta
+# so far (actions/runner-images #14850). Once a day this looks, on a linux
+# machine that costs next to nothing, at the page GitHub publishes with its
+# xcode-27 image, and the first day a release or a release candidate of 27.1 is
+# there it starts the iOS workflow, which builds with it and sends the build to
+# TestFlight. Nothing goes to the store from here: that stays a decision made
+# by hand, with store set to prepare or send on the iOS workflow.
+#
+# The day is marked with the tag xcode-27.1-watch, and once it is there this
+# does nothing more. If the build landed on a mac that still had only the beta,
+# nothing went up, and the iOS workflow takes the tag back so this tries again
+# the next day. A build that fails keeps the tag: it would fail again, daily.
+name: Xcode 27.1 watch
+
+on:
+  schedule:
+    - cron: '23 5 * * *'   # every day, 08:23 in Kuwait
+  workflow_dispatch:
+
+permissions:
+  contents: write   # the tag that marks the day
+  actions: write    # starting the iOS workflow
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: هل وصل Xcode 27.1
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/${{ github.repository }}/git/ref/tags/xcode-27.1-watch" >/dev/null 2>&1; then
+            echo "a build with it was already started"
+            exit 0
+          fi
+          X=$(python3 tools/ios/pick-xcode.py --release-only)
+          if [ -z "$X" ]; then
+            echo "GitHub has no release of Xcode 27.1 yet"
+            exit 0
+          fi
+          for status in queued in_progress; do
+            if [ "$(gh run list --workflow ios.yml --status "$status" --json databaseId --jq length)" != "0" ]; then
+              echo "an iOS build is already running, so tomorrow"
+              exit 0
+            fi
+          done
+          gh api "repos/${{ github.repository }}/git/refs" -f ref=refs/tags/xcode-27.1-watch -f sha="$GITHUB_SHA" >/dev/null
+          gh workflow run ios.yml --ref main -f xcode="$X" -f watch=true
+          echo "::notice::Xcode $X is on GitHub, and the iOS build with it has started"

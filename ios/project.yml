@@ -11,8 +11,8 @@ options:
   # project; the workflow chooses the real Xcode by looking at the machine.
   xcodeVersion: "26.0"
 settings:
-  MARKETING_VERSION: "8.87.58"
-  CURRENT_PROJECT_VERSION: "344"
+  MARKETING_VERSION: "8.87.59"
+  CURRENT_PROJECT_VERSION: "345"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:

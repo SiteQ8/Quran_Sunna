@@ -45,3 +45,26 @@ xcrun simctl spawn <UDID> ./hinge 0      # مطويّ
 الذي يرسله وجده Artem Novichkov في أداته
 [hinge](https://github.com/artemnovichkov/hinge) بترخيص MIT، والملف منقول
 عنها مختصراً ومعه نصّ الترخيص.
+
+## `pick-xcode.py`
+
+يقرّر أيّ Xcode يبني به سير عمل iOS وعلى أيّ جهاز من أجهزة GitHub. الخيار
+auto هو أحدث Xcode من 27.1 فما بعده يحمله GitHub إصداراً أو نسخة مرشّحة، لأنه
+أول ما يبني لـiPhone Duo، و26 حتى يصل. ويقرأ ما على جهاز xcode-27 من الصفحة
+التي ينشرها GitHub معه، ولا يثق بالاسم، فـXcode_27.1.app كان رابطاً إلى نسخة
+تجريبية. وإن لم يقرأ شيئاً بقي على 26.
+
+```
+python3 tools/ios/pick-xcode.py auto          # سطران: الإصدار ثم الجهاز
+python3 tools/ios/pick-xcode.py --release-only # 27.1 أو لا شيء
+```
+
+## `asc-release.py`
+
+يأخذ بناءً وصل إلى App Store Connect إلى المتجر: يصنع الإصدار أو يجد المفتوح
+منه، ويربط البناء، ويكتب ما الجديد من `ios/whatsnew/ar-SA.txt`، وينقل لقطات
+٦٫٩ بوصة من الإصدار المعروض إن جاء الجديد بلاها، ويضع لقطات iPhone Duo في
+مجموعتها APP_IPHONE_DUO، ثم يرسله للمراجعة. ولا يعمل إلا حين يُطلب بيد،
+بتشغيل iOS و store على prepare أو send. وبـ`--dry-run` يقرأ كل شيء ولا يغيّر
+شيئاً.
+

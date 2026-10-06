@@ -22,35 +22,84 @@
 # Making them is written out in ios/README.md.
 
 name: iOS
+run-name: iOS ${{ inputs.xcode || github.ref_name }} ${{ inputs.store != 'none' && inputs.store || '' }}
 
 on:
   push:
     tags: ['ios-v*']
   workflow_dispatch:
     inputs:
-      # A run by hand can ask for another Xcode, so the first build with 27.1,
-      # the Xcode that builds for iPhone Duo, is tried before a release tag
-      # depends on it. A tag always builds with the default.
+      # Auto is the newest Xcode GitHub carries as a release, from 27.1 on,
+      # the first that builds for iPhone Duo, and 26 until there is one; so
+      # the day 27.1 arrives every build moves to it with nothing changed
+      # here. A run by hand can still name one.
       xcode:
-        description: 'Xcode version to build with: 26, or 27.1 for iPhone Duo (a beta Xcode builds and photographs but is not sent to App Store Connect)'
+        description: 'Xcode to build with: auto, or a version such as 26 or 27.1 (a beta Xcode builds and photographs but is not sent to App Store Connect)'
         required: false
-        default: '26'
+        default: 'auto'
+      # After TestFlight. Prepare makes the App Store version ready, with the
+      # build, what is new and the iPhone Duo screenshots, and leaves it for a
+      # person to look at; send also sends it for review. Only ever asked for
+      # by hand.
+      store:
+        description: 'after TestFlight: none, prepare (the App Store version made ready, not sent) or send (and sent for review)'
+        type: choice
+        options: [none, prepare, send]
+        default: none
+      watch:
+        description: 'set by the Xcode 27.1 watch, not by hand'
+        type: boolean
+        default: false
 
 jobs:
+  # Which Xcode, and so which of GitHub's macs. macos-26 carries Xcode 26,
+  # which App Store Connect takes today: it refused the first signed build,
+  # made on macos-15 with Xcode 16.4, with a 409. Xcode 27 is not on macos-26
+  # and never will be: GitHub keys its mac images to a major Xcode now, and 27
+  # lives on the image named xcode-27. tools/ios/pick-xcode.py reads what that
+  # image carries from the page GitHub publishes with it.
+  pick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      xcode: ${{ steps.pick.outputs.xcode }}
+      runner: ${{ steps.pick.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v7
+      - name: أيّ Xcode
+        id: pick
+        env:
+          WANT: ${{ github.event.inputs.xcode || 'auto' }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out=$(python3 tools/ios/pick-xcode.py "$WANT")
+          X=$(echo "$out" | sed -n 1p); R=$(echo "$out" | sed -n 2p)
+          echo "xcode=$X" >> "$GITHUB_OUTPUT"
+          echo "runner=$R" >> "$GITHUB_OUTPUT"
+          echo "::notice::Xcode $X on $R"
+
   build:
-    # macos-26 carries Xcode 26, and since September 2026 App Store Connect
-    # refuses anything built with an older SDK: the first signed build went
-    # up from macos-15 with Xcode 16.4 and came back with a 409.
-    #
-    # Xcode 27 is not on macos-26 and never will be. GitHub now keys its mac
-    # images to a major Xcode rather than to the system under it, so 27 lives
-    # on an image of its own, named xcode-27. A run asking for 27 goes there.
-    runs-on: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 'xcode-27' || 'macos-26' }}
+    needs: pick
+    runs-on: ${{ needs.pick.outputs.runner }}
     # the iPhone Duo step fetches an iOS runtime of several gigabytes first
-    timeout-minutes: ${{ startsWith(github.event.inputs.xcode || '26', '27') && 75 || 30 }}
+    timeout-minutes: ${{ needs.pick.outputs.runner == 'xcode-27' && 75 || 30 }}
+    permissions:
+      contents: write   # the watch's mark is taken back when only a beta was there
+    outputs:
+      uploaded: ${{ steps.upload.outputs.uploaded }}
+      version: ${{ steps.numbers.outputs.version }}
+      number: ${{ steps.numbers.outputs.number }}
 
     steps:
       - uses: actions/checkout@v7
+
+      # the version and the build number this run makes, as project.yml has
+      # them, for the store job to find the build by
+      - name: الرقمان
+        id: numbers
+        run: |
+          echo "version=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)" >> "$GITHUB_OUTPUT"
+          echo "number=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)" >> "$GITHUB_OUTPUT"
 
       # the same six gates the site goes through, so a broken page never
       # reaches a phone wrapped in a shell
@@ -75,7 +124,7 @@ jobs:
       - name: Xcode
         id: xcode
         env:
-          WANT: ${{ github.event.inputs.xcode || '26' }}
+          WANT: ${{ needs.pick.outputs.xcode }}
         run: |
           : > "$RUNNER_TEMP/xcodes"
           seen=" "
@@ -231,6 +280,7 @@ jobs:
           fi
 
       - name: ارفع إلى App Store Connect
+        id: upload
         if: steps.asc.outputs.ready == 'yes' && steps.xcode.outputs.beta != 'yes'
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
@@ -243,6 +293,7 @@ jobs:
           xcrun altool --upload-app -f "$IPA" -t ios \
             --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
           rm -f ~/private_keys/AuthKey_$ASC_KEY_ID.p8
+          echo "uploaded=yes" >> "$GITHUB_OUTPUT"
 
       # A signed build cannot be installed anywhere without a developer
       # account, so until there is one the app is run in the simulator and
@@ -425,6 +476,16 @@ jobs:
           path: ${{ runner.temp }}/out/*.ipa
           retention-days: 14
 
+      # The watch marks the day it sent a build. If the machine this landed on
+      # had only the beta, nothing went up, and the mark is taken back so the
+      # watch tries again the next day. A run that fails keeps the mark: it
+      # would fail again, every day, at the price of a mac.
+      - name: إن لم يُرفع شيء فالرصد يعود غداً
+        if: inputs.watch && steps.upload.outputs.uploaded != 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X DELETE "repos/${{ github.repository }}/git/refs/tags/xcode-27.1-watch" || true
+
       # the keychain dies with the machine anyway, but saying so explicitly
       # means no one has to trust that it does
       - name: امسح المفاتيح
@@ -432,3 +493,39 @@ jobs:
         run: |
           security delete-keychain "$RUNNER_TEMP/build.keychain" || true
           rm -rf ~/private_keys || true
+
+  # The store, only when a run by hand asks for it: the version made or found,
+  # the build attached, what is new from ios/whatsnew, the 6.9 inch
+  # screenshots carried over when the new version comes without them, and the
+  # iPhone Duo screenshots this run took. Prepare stops there for a person to
+  # look; send also sends it for review. On ubuntu, since most of it is
+  # waiting for Apple to process the build.
+  store:
+    needs: build
+    if: inputs.store == 'prepare' || inputs.store == 'send'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - name: هل وصل بناء
+        if: needs.build.outputs.uploaded != 'yes'
+        run: |
+          echo "::error::nothing went up to App Store Connect in this run, a beta Xcode or no key, so there is nothing to take to the store"
+          exit 1
+      - uses: actions/download-artifact@v7
+        with:
+          name: sunnati-ios-shots
+          path: shots
+      - name: المكتبة
+        run: python3 -m pip install --quiet --break-system-packages pyjwt cryptography
+      - name: إلى المتجر
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          SEND: ${{ inputs.store }}
+        run: |
+          python3 tools/ios/asc-release.py \
+            --version "${{ needs.build.outputs.version }}" --build "${{ needs.build.outputs.number }}" \
+            --duo shots/iphone-duo --notes ios/whatsnew/ar-SA.txt \
+            $([ "$SEND" = send ] || echo --no-submit)
