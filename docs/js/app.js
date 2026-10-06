@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.56';
+  var VERSION = '8.87.57';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -275,7 +275,45 @@
     var root = document.documentElement;
     var was = root.classList.contains('book');
     root.classList.toggle('book', isBook());
+    placeSide(isBook());
     if (was !== isBook() && state.view === 'page') renderPage();
+  }
+
+  /* The left half of the book is the day: the hour with the day's prayers,
+     and under it the count of the day's sunnahs, the two standing together
+     from the top of the half to the line the tabs end on, beside whichever
+     screen the right half shows. The hour alone stood in the upper part of
+     the half with nothing beneath it, and the half looked unfinished.
+
+     They are moved, not drawn twice, so every number in them stays the one
+     the home screen keeps up to date, and each is put back where it came
+     from when the screen narrows again. */
+  var SIDE = null;
+
+  function placeSide(book) {
+    var home = $('v-home');
+    if (!SIDE) {
+      if (!book || !home) return;
+      SIDE = { box: document.createElement('aside'), items: [home.querySelector('.clock'), $('home-progress')], marks: [] };
+      SIDE.box.className = 'book-side';
+      SIDE.box.setAttribute('aria-label', 'اليوم');
+      document.body.appendChild(SIDE.box);
+    }
+    if (book) {
+      SIDE.items.forEach(function (el) {
+        if (!el || el.parentNode === SIDE.box) return;
+        var mark = document.createComment('book-side');
+        el.parentNode.insertBefore(mark, el);
+        SIDE.marks.push([mark, el]);
+        SIDE.box.appendChild(el);
+      });
+    } else {
+      SIDE.marks.forEach(function (m) {
+        m[0].parentNode.insertBefore(m[1], m[0]);
+        m[0].parentNode.removeChild(m[0]);
+      });
+      SIDE.marks = [];
+    }
   }
 
   function applyFont() {

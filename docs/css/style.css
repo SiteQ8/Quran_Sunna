@@ -1854,8 +1854,10 @@ html.book .to-top {
    rather than showing through between the bars and the foot of the screen */
 html.book body::after {
   content: ''; position: fixed; left: 0; right: 0; bottom: 0; z-index: 39; pointer-events: none;
-  height: calc(var(--tab-h) + var(--float));
-  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 0%, transparent), var(--paper) 55%);
+  /* the words fade over the forty points above the tabs, so nothing is seen
+     cut in half by their edge */
+  height: calc(var(--tab-h) + var(--float) + 40px);
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 0%, transparent), var(--paper) 40px);
 }
 /* the mushaf does not scroll, and the bar under its left page lives inside
    the page's own layer, which the fade would lie over */
@@ -1863,22 +1865,27 @@ html.book[data-view="page"] body::after { display: none; }
 html.book .sheet { justify-content: flex-start; padding-left: 0; padding-right: var(--edge); }
 html.book .sheet-panel { max-width: var(--pane); }
 
-/* the left half keeps the hour: the clock of the home screen stays there
-   whichever screen the right half shows, and on the home screen itself the
-   right half carries the rest of it */
-html.book #v-home { display: block; }
-html.book:not([data-view="home"]) #v-home { height: 0; padding: 0; }
-html.book:not([data-view="home"]) #v-home > :not(.clock) { display: none; }
-html.book #v-home > .clock {
-  position: fixed; z-index: 2; margin: 0; transform: none;
-  /* level with the first card of the right column, and as far in from its
-     side as that card is from the other */
-  top: calc(env(safe-area-inset-top) + var(--s5));
+/* the left half is the day, the hour and the count of the day's sunnahs,
+   from the line the right column begins on to the line the tabs end on; the
+   home screen moves the two there while the screen is a book */
+.book-side { display: none; }
+html.book .book-side {
+  display: flex; flex-direction: column; gap: var(--s3);
+  position: fixed; z-index: 45;
+  top: calc(env(safe-area-inset-top) + var(--s5)); bottom: var(--float);
   left: calc(var(--edge) + var(--pad)); width: calc(var(--pane) - 2 * var(--pad));
+  overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
 }
+html.book .book-side::-webkit-scrollbar { display: none; }
+html.book[data-view="page"] .book-side { display: none; }
+html.book .book-side > .clock { margin: 0; flex: none; }
+/* the count fills what the hour leaves, so the half ends on the tabs' line;
+   its line of explanation is the phone's, and on iPhone Duo it was the line
+   that pushed the count past the foot of the half */
+html.book .book-side > .card { margin: 0; flex: 1 0 auto; }
+html.book .book-side > .card > .setting-note { display: none; }
 
 /* the mushaf takes both halves, two pages facing across the fold */
-html.book[data-view="page"] #v-home { display: none; }
 html.book[data-view="page"] #views > #v-page { width: auto; margin: 0; padding: 0; }
 html.book #v-page .reader-bar,
 html.book #page-body.is-spread .spread {
