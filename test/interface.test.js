@@ -4453,17 +4453,25 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
 
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.ok(/html\.book \{[\s\S]*?--gap: 56px;[\s\S]*?--inner: calc\(50vw \+ var\(--gap\) \/ 2\);/.test(css), 'a clear middle, a phone wide either side');
-  assert.ok(/html\.book \.tabs \{ left: var\(--inner\);/.test(css), 'the tabs keep to the right half, no tab on the fold');
+  /* the tabs float as a bar as wide as the right column, and the rest above them */
+  assert.ok(/html\.book \.tabs \{\s*left: calc\(var\(--inner\) \+ var\(--pad\)\); right: calc\(var\(--edge\) \+ var\(--pad\)\);/.test(css), 'the tabs keep to the right column, no tab on the fold');
   for (const sel of ['.player', '.toast', '.banner', '.to-top']) {
-    assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: calc\\(var\\(--inner\\)|html\\.book ' + sel.replace('.', '\\.') + ' \\{ left: var\\(--inner\\)').test(css),
-      sel + ' floats on the right half');
+    assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{\\s*left: calc\\(var\\(--inner\\) \\+ var\\(--pad\\)\\)').test(css),
+      sel + ' floats in the right column');
   }
   /* set in from the screen's edge as the right half's cards are: with the
      pane as wide as the half, it stood against the edge itself */
-  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?left: calc\(var\(--edge-l\) \+ var\(--s4\)\); width: calc\(var\(--pane-l\) - 2 \* var\(--s4\)\);/.test(css), 'the hour keeps the left half, off its edge');
+  /* and stands on the lines of the right column mirrored: level with its
+     first card and as far in from its side; it stood against the edge and
+     in the middle of the height */
+  assert.ok(/html\.book #v-home > \.clock \{\s*position: fixed;[\s\S]*?top: calc\(env\(safe-area-inset-top\) \+ var\(--s5\)\);\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); width: calc\(var\(--pane\) - 2 \* var\(--pad\)\);/.test(css), 'the hour keeps the left column, level with the right');
+  assert.ok(/html\.book #views > \.view \{\s*width: var\(--pane\); margin-left: auto; margin-right: var\(--edge\);\s*padding-inline: var\(--pad\);/.test(css), 'the right column is set in as the left one is');
   /* a transform on an opening view would carry the fixed clock with it */
   assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
-  assert.ok(/html\.book #page-body \.spread \{ grid-template-columns: 1fr var\(--gap\) 1fr;/.test(css), 'the mushaf opens across the fold');
+  assert.ok(/html\.book #page-body \.spread \{\s*grid-template-columns: 1fr calc\(var\(--gap\) \+ 2 \* var\(--pad\)\) 1fr;/.test(css), 'the mushaf opens across the fold, each page on its column');
+  /* what scrolls under the floating bars fades, and never over the mushaf's own bar */
+  assert.ok(/html\.book body::after \{[\s\S]*?position: fixed;[\s\S]*?linear-gradient/.test(css), 'a fade under the bars');
+  assert.ok(/html\.book\[data-view="page"\] body::after \{ display: none; \}/.test(css), 'and none over the mushaf');
 });
 
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
@@ -4507,7 +4515,7 @@ test('in the book a spread stands whole between its bars, and nothing of it lies
   /* the bar has no ground across the fold, and turning the page is a bar of
      its own under the left page, level with the tabs under the right */
   assert.ok(/html\.book #v-page \.reader-bar \{[\s\S]*?position: static; background: none; box-shadow: none;/.test(css), 'no bar across the fold');
-  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60; bottom: 0; left: calc\(var\(--edge-l\) - var\(--sal\)\); right: var\(--inner\);/.test(css), 'the page turns from under the left page');
+  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60;\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); right: calc\(var\(--inner\) \+ var\(--pad\)\);\s*bottom: var\(--float\); height: var\(--tab-h\);/.test(css), 'the page turns from a bar under the left page, the twin of the tabs');
   assert.ok(css.indexOf('html.book #v-page .page-nav > :nth-child') === -1, 'and no button is placed on the far side of the fold');
   /* a page that cannot fit scrolls in its own leaf, not the two together */
   assert.ok(/html\.book #page-body \.leaf \{[\s\S]*?overflow-x: hidden; overflow-y: auto;/.test(css), 'a leaf scrolls on its own');
@@ -4522,10 +4530,9 @@ test('the sides a screen keeps are kept clear, on the phone and in the book', ()
   assert.ok(/\.tabs \{[\s\S]*?padding-left: var\(--sal\); padding-right: var\(--sar\);/.test(css), 'and so do the tabs, their bar running to the edge');
   /* in the book each half keeps clear of the side it stands against, and
      the two pages stay alike and centred on the fold */
-  assert.ok(/--pane: min\(calc\(var\(--half\) - var\(--sar\)\), 560px\);/.test(css), 'the right half');
-  assert.ok(/--pane-l: min\(calc\(var\(--half\) - var\(--sal\)\), 560px\);/.test(css), 'the left half');
-  assert.ok(/html\.book body \{ padding-left: 0; padding-right: 0; \}/.test(css), 'the halves are placed against the screen itself');
-  assert.ok(/calc\(2 \* min\(var\(--pane\), var\(--pane-l\)\) \+ var\(--gap\)\)/.test(css), 'both pages take the narrower half');
+  assert.ok(/--pane: min\(calc\(var\(--half\) - max\(var\(--sal\), var\(--sar\)\)\), 560px\);/.test(css), 'both halves alike, each clear of the side the screen keeps');
+  assert.ok(/html\.book body \{\s*padding-left: 0; padding-right: 0;\s*padding-bottom: calc\(var\(--tab-h\) \+ var\(--float\)/.test(css), 'the halves are placed against the screen itself, the foot kept for the bars');
+  assert.ok(/width: calc\(2 \* \(var\(--pane\) - var\(--pad\)\) \+ var\(--gap\)\);/.test(css), 'the pages stand on the columns of their halves');
 
   /* the web view is not trusted to report the column, so the window's own
      measure is handed to the page whenever it changes */
