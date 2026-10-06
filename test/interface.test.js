@@ -60,11 +60,15 @@ function boot(options) {
   });
   const win = dom.window;
 
-  Object.defineProperty(win, 'localStorage', { value: memoryStorage(), configurable: true });
+  /* a storage handed in outlives the window, so one day can be opened at
+     several hours and read back the way a person would find it */
+  Object.defineProperty(win, 'localStorage', { value: opts.storage || memoryStorage(), configurable: true });
   if (opts.now) {
     /* the app asks the window for the date, so a fixed day can be handed to it */
-    const fixed = opts.now.getTime();
+    let fixed = opts.now.getTime();
     const Real = win.Date;
+    /* and moved on by a test that wants to watch the app cross an hour */
+    win.__setNow = function (d) { fixed = d.getTime(); };
     function Fixed(...args) { return args.length ? new Real(...args) : new Real(fixed); }
     Fixed.prototype = Real.prototype;
     Fixed.now = () => fixed;
@@ -518,8 +522,9 @@ test('the sunnah tracker records ticks and updates the meter', () => {
 test('the daily wird sits at the head of the tracker', () => {
   const { win, doc } = boot();
   win.App.go('tracker');
-  const wird = doc.querySelectorAll('#tracker-list [data-check^="wird:"]');
+  const wird = doc.querySelectorAll('#tracker-list [data-fold="wird"] [data-check]');
   assert.strictEqual(wird.length, 12);
+  [...wird].forEach(function (b) { assert.match(b.getAttribute('data-check'), /^wird:[a-z-]+$/); });
   assert.ok(wird[0].querySelector('.check-note'), 'each wird entry carries its note');
 });
 
@@ -527,10 +532,18 @@ test('a tick on the home view feeds the same meter as the tracker', () => {
   const { win, doc } = boot();
   const box = doc.querySelector('#now-list [data-check]');
   assert.ok(box, 'the home view lists the sunnah of this window');
+  /* a row of the card may say in one line what the list gives in two, and
+     then it marks both, so the meter moves by what it marked */
+  const ticks = box.getAttribute('data-check').split(' ');
   click(win, box);
-  assert.strictEqual(doc.getElementById('today-done').textContent, '1');
+  assert.strictEqual(doc.getElementById('today-done').textContent, String(ticks.length));
   win.App.go('tracker');
-  assert.strictEqual(doc.getElementById('tracker-done').textContent, '1');
+  assert.strictEqual(doc.getElementById('tracker-done').textContent, String(ticks.length));
+  ticks.forEach(function (id) {
+    const row = doc.querySelector('#tracker-list [data-check="' + id + '"]');
+    assert.ok(row, id + ' is a row of the list');
+    assert.ok(row.classList.contains('is-done'), 'and the list shows it done');
+  });
 });
 
 test('the activity grid draws thirty days with today marked', () => {
@@ -1019,37 +1032,415 @@ test('friday replaces the duha and dhuhr sunnah with the sunan of the day', () =
 });
 
 test('the friday card ticks are kept apart from the weekday ones', () => {
-  const { win, doc } = boot();
-  const box = doc.querySelector('#now-list [data-check]');
-  assert.ok(box, 'the home view lists the sunnah of this window');
-  const id = box.getAttribute('data-check');
-  assert.match(id, /^now:[a-z]+:\d+$/);
-  /* الجمعة runs from dawn to sunset, so the card carries its sunan through the
-     daytime windows and hands back to the ordinary ones after المغرب. */
-  const daytime = ['duha', 'dhuhr', 'asr'].indexOf(win.App.clockState().windowKey) !== -1;
-  if (new Date().getDay() === 5 && daytime) {
-    assert.ok(id.indexOf('now:friday:') === 0, 'friday ticks carry their own key, got ' + id);
-    assert.ok(doc.getElementById('now-title').textContent.indexOf('الجمعة') !== -1);
-  }
+  /* الجمعة runs from dawn to sunset, so the card carries its sunan through
+     the daytime windows, under names of their own that are rows of the list
+     on a friday. Every other row of the card ticks a row of the list it says
+     again, and keeps no tick of its own. */
+  const fri = boot({ now: new Date(2026, 9, 9, 12, 0, 0) });
+  assert.strictEqual(fri.win.App.clockState().windowKey, 'dhuhr');
+  assert.ok(fri.doc.getElementById('now-title').textContent.indexOf('الجمعة') !== -1);
+  const ids = [...fri.doc.querySelectorAll('#now-list [data-check]')].map((b) => b.getAttribute('data-check'));
+  assert.strictEqual(ids.length, 7);
+  ids.forEach(function (id, i) { assert.strictEqual(id, 'now:friday:' + i); });
+
+  const tue = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
+  const week = [...tue.doc.querySelectorAll('#now-list [data-check]')].map((b) => b.getAttribute('data-check'));
+  assert.ok(week.length >= 4);
+  week.forEach(function (value) {
+    value.split(' ').forEach(function (id) {
+      assert.match(id, /^(sunnah:\d+:\d+|wird:[a-z-]+)$/, 'a row of the list, got ' + id);
+    });
+  });
 });
 
 test('a full day of ticks never reads more done than there is to do', () => {
   const { win, doc } = boot();
   const total = win.App.helpers.totalSunnahCount();
-  assert.ok(total > 40, 'the total counts the window sunnah too, got ' + total);
-
-  win.App.go('tracker');
-  doc.querySelectorAll('#tracker-list [data-check]').forEach(function (b) {
-    b.dispatchEvent(new win.Event('click', { bubbles: true }));
-  });
+  assert.ok(total > 40, 'the total counts the list, got ' + total);
+  const ids = tickWholeList(win, doc);
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), ids.length, 'the whole list, at whatever hour this runs');
+  /* the card touched afterwards, twice over, and a tick no row carries */
   win.App.go('home');
-  doc.querySelectorAll('#now-list [data-check]').forEach(function (b) {
-    b.dispatchEvent(new win.Event('click', { bubbles: true }));
+  for (let round = 0; round < 2; round++) {
+    [...doc.querySelectorAll('#now-list [data-check]')].map((b) => b.getAttribute('data-check')).forEach(function (value) {
+      click(win, doc.querySelector('#now-list [data-check="' + value + '"]'));
+      const done = digits(doc.getElementById('today-done').textContent);
+      assert.ok(done <= digits(doc.getElementById('today-total').textContent), done + ' done');
+    });
+  }
+  win.Store.updateDay(function (rec) { rec.sunnah['bogus:1'] = true; }, win.App.helpers.sunnahDay());
+  win.App.go('tracker');
+  const c = win.Store.completion(win.App.helpers.sunnahDay(), win.App.helpers.sunnahTicks());
+  assert.ok(c.done <= c.total, c.done + ' done out of ' + c.total);
+  assert.ok(c.percent <= 100, 'the meter must not run past full, got ' + c.percent);
+});
+
+/* ---------------- one sunnah, one tick ---------------- */
+
+function digits(text) {
+  return Number(String(text).replace(/[٠-٩]/g, function (d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); }));
+}
+
+/* Ticks every row of «كل السنن» that is not already done. Rows that share a
+   tick light up together, so touching the second would clear the first. */
+function tickWholeList(win, doc) {
+  win.App.go('tracker');
+  const ids = [...new Set([...doc.querySelectorAll('#tracker-list [data-check]')].map((b) => b.getAttribute('data-check')))];
+  ids.forEach(function (id) {
+    const row = doc.querySelector('#tracker-list [data-check="' + id + '"]');
+    if (!row.classList.contains('is-done')) click(win, row);
+  });
+  return ids;
+}
+
+test('everything in the list ticked fills the meter, on any kind of day', () => {
+  /* The meter counted the rows of the hour card besides the list, rows the
+     list never showed, so a day with every sunnah in it ticked read 116 of
+     148 and could not be finished from «كل السنن». */
+  [['an ordinary tuesday', new Date(2026, 9, 6, 12, 0, 0)],
+   ['a friday', new Date(2026, 9, 9, 12, 0, 0)],
+   ['a monday, which is a day of fasting', new Date(2026, 9, 5, 12, 0, 0)],
+   ['a thursday that is also a white day', new Date(2026, 8, 24, 12, 0, 0)]].forEach(function (pair) {
+    const name = pair[0];
+    const { win, doc } = boot({ now: pair[1] });
+    const ids = tickWholeList(win, doc);
+    const total = digits(doc.getElementById('tracker-total').textContent);
+    assert.strictEqual(total, ids.length, name + ': the meter counts what the list offers, each tick once');
+    assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), total, name + ': all of it done');
+    assert.strictEqual(doc.getElementById('tracker-meter').style.width, '100%', name);
+    doc.querySelectorAll('#tracker-list .fold-tally').forEach(function (t) {
+      assert.ok(t.classList.contains('is-full'), name + ': every fold full');
+    });
+    win.App.go('home');
+    assert.strictEqual(digits(doc.getElementById('today-done').textContent), total, name + ': the home meter agrees');
+    assert.strictEqual(digits(doc.getElementById('today-total').textContent), total);
+    const card = doc.querySelectorAll('#now-list [data-check]');
+    assert.ok(card.length >= 4);
+    card.forEach(function (b) { assert.ok(b.classList.contains('is-done'), name + ': the hour card is done with the list'); });
   });
 
-  const done = win.Store.completion(new Date(), total);
-  assert.ok(done.done <= done.total, done.done + ' done out of ' + done.total);
-  assert.ok(done.percent <= 100, 'the meter must not run past full, got ' + done.percent);
+  /* an ordinary day counts the wird and the book, less the rows of the book
+     that share the tick of the wird or of their other place */
+  const { win } = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
+  const book = win.SUNNAH_TRACKER.reduce(function (n, g) { return n + g.i.length; }, 0);
+  assert.strictEqual(win.App.helpers.totalSunnahCount(),
+    win.WIRD_ITEMS.length + book - Object.keys(win.SUNNAH_SAME).length);
+});
+
+test('every row of the hour card ticks the rows of the list it says again', () => {
+  const { win } = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
+  /* each target is pinned to words of the row it must be, so a row put into
+     the book later, which moves the ones after it, cannot leave the card
+     pointing at a neighbour */
+  const SAYS = {
+    fajr: [{ 'sunnah:0:0': 'السواك عند الاستيقاظ', 'sunnah:0:1': 'أحيانا بعد ما أماتنا' },
+      { 'sunnah:2:0': 'متابعة المؤذن', 'sunnah:2:1': 'دعاء الوسيلة' },
+      { 'sunnah:2:2': 'بين الأذان والإقامة' }, { 'sunnah:2:3': 'ركعتا الفجر' }, { 'sunnah:2:4': 'الاضطجاع' },
+      { 'sunnah:2:8': 'حتى تطلع الشمس' }, { 'wird:morning': 'أذكار الصباح' }],
+    duha: [{ 'sunnah:5:0': 'صلاة الضحى' }, { 'sunnah:5:0': 'صلاة الضحى', 'sunnah:5:1': 'ترمض الفصال' }, { 'sunnah:5:2': 'أذكار الصباح' },
+      { 'sunnah:1:7': 'ركعتان بعد كل وضوء' }],
+    dhuhr: [{ 'sunnah:6:0': 'أربع ركعات قبل الظهر وأربع بعدها', 'sunnah:6:1': 'الراتبة' }, { 'sunnah:6:1': 'الراتبة' },
+      { 'sunnah:4:0': 'اللهم أنت السلام', 'sunnah:4:1': 'لا إله إلا الله وحده لا شريك له', 'sunnah:4:2': 'التسبيح', 'sunnah:4:3': 'آية الكرسي', 'sunnah:4:4': 'المعوذات' },
+      { 'sunnah:6:2': 'القيلولة' }],
+    asr: [{ 'sunnah:7:2': 'أذكار المساء' }, { 'sunnah:7:1': 'المحافظة على العصر' }, { 'sunnah:7:0': 'لا راتبة قبل العصر' },
+      { 'sunnah:13:7': 'سبحان الله وبحمده مئة مرة' }],
+    maghrib: [{ 'sunnah:8:0': 'ركعتان قبل المغرب' }, { 'sunnah:8:1': 'كفّ الصبيان' }, { 'sunnah:8:2': 'إغلاق الأبواب' },
+      { 'sunnah:8:3': 'ركعتان بعد المغرب' }, { 'wird:evening': 'أذكار المساء' }, { 'sunnah:8:4': 'ترك النوم قبل العشاء' }],
+    isha: [{ 'sunnah:9:1': 'ركعتان بعد العشاء', 'wird:witr': 'الوتر' }, { 'sunnah:9:2': 'ترك الحديث بعد العشاء' },
+      { 'sunnah:9:3': 'إغلاق الأبواب', 'sunnah:9:4': 'تغطية الإناء' }, { 'sunnah:9:5': 'الوضوء قبل النوم', 'sunnah:9:6': 'نفض الفراش' },
+      { 'sunnah:9:7': 'النوم على الشق الأيمن' }, { 'sunnah:9:8': 'آية الكرسي وخواتيم البقرة', 'sunnah:9:9': 'المعوذات مع النفث', 'wird:sleep': 'آية الكرسي وخواتيم البقرة والمعوذات' },
+      { 'sunnah:9:10': 'باسمك اللهم أموت وأحيا', 'sunnah:9:11': 'سبحان الله ثلاثاً وثلاثين' }]
+  };
+  function rowText(id) {
+    let m = /^sunnah:(\d+):(\d+)$/.exec(id);
+    if (m) return (win.SUNNAH_TRACKER[+m[1]] || { i: [] }).i[+m[2]];
+    m = /^wird:(.+)$/.exec(id);
+    const w = m && win.WIRD_ITEMS.filter(function (x) { return x.id === m[1]; })[0];
+    return w ? w.t + ' ' + w.n : undefined;
+  }
+  const offered = win.App.helpers.sunnahTicks(new Date(2026, 9, 6, 12));
+  Object.keys(SAYS).forEach(function (key) {
+    const block = win.CURRENT_SUNNAH[key];
+    assert.strictEqual(block.t.length, block.items.length, key + ': a target for every row');
+    assert.strictEqual(block.items.length, SAYS[key].length, key + ': every row is pinned here');
+    block.t.forEach(function (t, i) {
+      /* copied out of the page's own realm, whose arrays are not node's */
+      const rows = Array.isArray(t) ? Array.from(t) : [t];
+      assert.deepStrictEqual(rows, Object.keys(SAYS[key][i]), key + ':' + i);
+      rows.forEach(function (id) {
+        const said = rowText(id);
+        assert.ok(said, key + ':' + i + ' points at ' + id + ', which is not a row');
+        assert.ok(said.indexOf(SAYS[key][i][id]) !== -1, key + ':' + i + ' should be ' + SAYS[key][i][id] + ', ' + id + ' says ' + said);
+      });
+      win.App.helpers.rowTicks(key, block, i).forEach(function (id) {
+        assert.ok(offered.indexOf(id) !== -1, key + ':' + i + ' ticks ' + id + ', which the list offers');
+      });
+    });
+  });
+
+  /* and the rows of the book that are the deed of a wird row, or of another
+     row of the book, are the same thing said twice */
+  const SAME = { 'sunnah:5:0': 'صلاة الضحى', 'sunnah:5:2': 'أذكار الصباح', 'sunnah:7:2': 'أذكار المساء',
+    'sunnah:13:6': 'الاستغفار مئة مرة', 'sunnah:10:11': 'تغطية الإناء' };
+  assert.deepStrictEqual(Object.keys(win.SUNNAH_SAME).sort(), Object.keys(SAME).sort());
+  Object.keys(SAME).forEach(function (row) {
+    assert.ok(rowText(row).indexOf(SAME[row]) !== -1, row + ' says ' + rowText(row));
+    assert.ok(rowText(win.SUNNAH_SAME[row]).indexOf(SAME[row]) !== -1, win.SUNNAH_SAME[row] + ' says ' + rowText(win.SUNNAH_SAME[row]));
+  });
+});
+
+test('the hour card and the list mark the same sunnah once, in either place', () => {
+  const storage = memoryStorage();
+  const first = boot({ storage: storage, now: new Date(2026, 9, 6, 12, 0, 0) });
+  /* find an hour inside each window of that day, as the app reckons them */
+  const at = {};
+  for (let m = 0; m < 24 * 60; m += 10) {
+    const when = new Date(2026, 9, 6, Math.floor(m / 60), m % 60, 0);
+    const key = first.win.App.clockState(when).windowKey;
+    if (!at[key] && first.win.App.helpers.sunnahDay(when).getDate() === 6) at[key] = when;
+  }
+  assert.deepStrictEqual(Object.keys(at).sort(), ['asr', 'dhuhr', 'duha', 'fajr', 'isha', 'maghrib']);
+
+  const marked = new Set();
+  ['fajr', 'duha', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (key) {
+    const { win, doc } = boot({ storage: storage, now: at[key] });
+    assert.strictEqual(win.App.clockState().windowKey, key);
+    [...doc.querySelectorAll('#now-list [data-check]')].map((b) => b.getAttribute('data-check')).forEach(function (value) {
+      const row = doc.querySelector('#now-list [data-check="' + value + '"]');
+      if (!row.classList.contains('is-done')) click(win, row);
+      value.split(' ').forEach(function (id) { marked.add(id); });
+    });
+    doc.querySelectorAll('#now-list [data-check]').forEach(function (b) {
+      assert.ok(b.classList.contains('is-done'), key + ': the card is done');
+    });
+    /* each sunnah the card marked is counted once, and stands marked in the list */
+    assert.strictEqual(digits(doc.getElementById('today-done').textContent), marked.size, key);
+    win.App.go('tracker');
+    marked.forEach(function (id) {
+      const rows = doc.querySelectorAll('#tracker-list [data-check="' + id + '"]');
+      assert.ok(rows.length >= 1, id + ' is in the list');
+      rows.forEach(function (r) { assert.ok(r.classList.contains('is-done'), id + ' shows done in the list'); });
+    });
+  });
+
+  /* the card's whole day is less than the list, and the rest of the list
+     finishes it without counting anything twice */
+  const last = boot({ storage: storage, now: at.isha });
+  const total = last.win.App.helpers.totalSunnahCount();
+  assert.ok(marked.size < total);
+  tickWholeList(last.win, last.doc);
+  assert.strictEqual(digits(last.doc.getElementById('tracker-done').textContent), total);
+  assert.strictEqual(digits(last.doc.getElementById('tracker-total').textContent), total);
+});
+
+test('a sunnah the list gives twice is ticked once and counted once', () => {
+  const { win, doc } = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
+  win.App.go('tracker');
+  const wird = doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:istighfar"]');
+  click(win, wird);
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 1, 'one sunnah, one in the count');
+  const book = doc.querySelectorAll('#tracker-list [data-check="wird:istighfar"]');
+  assert.strictEqual(book.length, 2, 'the wird and the book both list it');
+  book.forEach(function (b) { assert.ok(b.classList.contains('is-done'), 'and both show it done'); });
+  const other = doc.querySelector('#tracker-list [data-fold="sunnah:13"] [data-check="wird:istighfar"]');
+  assert.ok(other && other.textContent.indexOf('الاستغفار مئة مرة') !== -1);
+  click(win, other);
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 0, 'cleared in either place');
+});
+
+test('the ticks of a day run from fajr to fajr, as the home card says', () => {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('ويبدأ العدّ من جديد كل فجر') !== -1);
+  const storage = memoryStorage();
+  /* the witr at eleven on tuesday night */
+  const night = boot({ storage: storage, now: new Date(2026, 9, 6, 23, 0, 0) });
+  night.win.App.go('tracker');
+  click(night.win, night.doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]'));
+  assert.strictEqual(night.win.Store.dayKey(night.win.App.helpers.sunnahDay()), '2026-10-06');
+
+  /* at one after midnight it is still tuesday's night, and its witr is there */
+  const late = boot({ storage: storage, now: new Date(2026, 9, 7, 1, 0, 0) });
+  assert.strictEqual(late.win.Store.dayKey(late.win.App.helpers.sunnahDay()), '2026-10-06');
+  late.win.App.go('tracker');
+  assert.ok(late.doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]').classList.contains('is-done'));
+  assert.strictEqual(digits(late.doc.getElementById('tracker-done').textContent), 1);
+  assert.strictEqual(late.doc.querySelector('#tracker-heat i[data-today="1"]').getAttribute('title'), '2026-10-06');
+
+  /* and once the fajr of wednesday is in, the count starts afresh */
+  const morning = boot({ storage: storage, now: new Date(2026, 9, 7, 9, 0, 0) });
+  assert.strictEqual(morning.win.Store.dayKey(morning.win.App.helpers.sunnahDay()), '2026-10-07');
+  morning.win.App.go('tracker');
+  assert.strictEqual(digits(morning.doc.getElementById('tracker-done').textContent), 0);
+  assert.ok(!morning.doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]').classList.contains('is-done'));
+});
+
+test('thursday evening keeps thursday\'s list, and friday\'s comes with its fajr', () => {
+  /* The list used to take on the sunan of friday at the maghrib of thursday,
+     while the ticks still went to thursday's record: the duha and dhuhr of
+     thursday left the count and friday's came in, so the meter could read
+     156 of 148, and what was ticked that night was gone by friday morning. */
+  const storage = memoryStorage();
+  const noon = boot({ storage: storage, now: new Date(2026, 9, 8, 12, 0, 0) });
+  const before = noon.win.App.helpers.totalSunnahCount();
+  tickWholeList(noon.win, noon.doc);
+  assert.strictEqual(digits(noon.doc.getElementById('tracker-done').textContent), before);
+
+  const evening = boot({ storage: storage, now: new Date(2026, 9, 8, 21, 0, 0) });
+  /* the card of thursday night is the night's own, and what it marks is thursday's */
+  assert.strictEqual(evening.doc.getElementById('now-title').textContent, 'سنن العشاء والنوم');
+  assert.strictEqual(evening.doc.getElementById('now-list').getAttribute('data-sunnah-day'), '2026-10-08');
+  evening.win.App.go('tracker');
+  assert.strictEqual(evening.doc.querySelector('#tracker-list [data-fold="friday"]'), null, 'not yet');
+  assert.strictEqual(digits(evening.doc.getElementById('tracker-total').textContent), before, 'the count does not move at maghrib');
+  assert.strictEqual(digits(evening.doc.getElementById('tracker-done').textContent), before);
+
+  const small = boot({ storage: storage, now: new Date(2026, 9, 9, 1, 0, 0) });
+  small.win.App.go('tracker');
+  assert.strictEqual(small.doc.querySelector('#tracker-list [data-fold="friday"]'), null, 'still thursday\'s night');
+
+  const friday = boot({ storage: storage, now: new Date(2026, 9, 9, 9, 0, 0) });
+  friday.win.App.go('tracker');
+  assert.ok(friday.doc.querySelector('#tracker-list [data-fold="friday"]'), 'friday\'s own list from its fajr');
+  assert.strictEqual(digits(friday.doc.getElementById('tracker-done').textContent), 0, 'a fresh day');
+  click(friday.win, friday.doc.querySelector('#tracker-list [data-check="now:friday:2"]'));
+  /* still there in the evening of friday, for its night is saturday's */
+  const after = boot({ storage: storage, now: new Date(2026, 9, 9, 21, 0, 0) });
+  after.win.App.go('tracker');
+  assert.ok(after.doc.querySelector('#tracker-list [data-check="now:friday:2"]').classList.contains('is-done'));
+});
+
+test('ticks kept under the old names are carried to the rows they stand for', async () => {
+  const storage = memoryStorage();
+  storage.setItem('sunnati.day.2026-10-06', JSON.stringify({ sunnah: {
+    'now:fajr:3': true, 'now:isha:0': true, 'now:dhuhr:2': false, 'now:asr:9': true,
+    'sunnah:13:6': true, 'sunnah:5:0': true, 'sunnah:2:5': true, 'now:friday:2': true, 'bogus:1': true
+  } }));
+  /* thursday night, when the old list had taken on friday's rows */
+  storage.setItem('sunnati.day.2026-10-01', JSON.stringify({ sunnah: { 'now:friday:2': true, 'now:friday:4': false, 'wird:quran': true } }));
+  storage.setItem('sunnati.day.2026-10-02', JSON.stringify({ sunnah: { 'now:friday:0': true } }));
+  const { win, doc } = boot({ storage: storage, now: new Date(2026, 9, 6, 12, 0, 0) });
+  const s = JSON.parse(storage.getItem('sunnati.day.2026-10-06')).sunnah;
+  assert.strictEqual(s['sunnah:2:3'], true, 'the fajr rakahs of the card are the rakahs of the list');
+  assert.strictEqual(s['sunnah:9:1'], true, 'the card\'s one line of the isha is two rows of the list');
+  assert.strictEqual(s['wird:witr'], true);
+  assert.strictEqual(s['wird:istighfar'], true, 'a row of the book that is a row of the wird');
+  assert.strictEqual(s['wird:duha'], true);
+  assert.strictEqual(s['sunnah:2:5'], true, 'a row of its own stays as it is');
+  ['now:fajr:3', 'now:isha:0', 'now:dhuhr:2', 'sunnah:13:6', 'sunnah:5:0'].forEach(function (old) {
+    assert.ok(!(old in s), old + ' is dropped once carried');
+  });
+  assert.strictEqual(s['now:asr:9'], true, 'a name with nowhere to go is kept, and not counted');
+  assert.strictEqual(s['now:friday:2'], true, 'the friday\'s own rows keep their names');
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-01')).sunnah, { 'wird:quran': true },
+    'thursday keeps its own');
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-02')).sunnah, { 'now:friday:0': true, 'now:friday:2': true },
+    'and the friday after it gets what was ticked for it that night');
+  win.App.go('tracker');
+  /* 2:3, 9:1, witr, istighfar, duha and 2:5: the friday tick is not tuesday's, and neither old name is a row */
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 6);
+
+  /* a second start finds nothing left to carry */
+  const again = JSON.stringify(JSON.parse(storage.getItem('sunnati.day.2026-10-06')));
+  boot({ storage: storage, now: new Date(2026, 9, 6, 12, 0, 0) });
+  assert.strictEqual(JSON.stringify(JSON.parse(storage.getItem('sunnati.day.2026-10-06'))), again);
+
+  /* a backup from before, restored from the settings, brings the old names
+     back, and they are carried again */
+  const backup = JSON.stringify({ app: 'sunnati', data: { 'sunnati.day.2026-10-05': JSON.stringify({ sunnah: { 'now:maghrib:4': true } }) } });
+  const input = doc.getElementById('data-file');
+  Object.defineProperty(input, 'files', { value: [new win.File([backup], 'backup.json', { type: 'application/json' })] });
+  fire(win, input, 'change');
+  await until(function () {
+    const day = JSON.parse(storage.getItem('sunnati.day.2026-10-05') || 'null');
+    return day && day.sunnah && day.sunnah['wird:evening'] === true;
+  });
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-05')).sunnah, { 'wird:evening': true });
+});
+
+test('a row of the card clears only what it marked, not what the list had', () => {
+  const storage = memoryStorage();
+  const evening = new Date(2026, 9, 6, 20, 0, 0);
+  let { win, doc } = boot({ storage: storage, now: evening });
+  assert.strictEqual(doc.getElementById('now-title').textContent, 'سنن العشاء والنوم');
+  win.App.go('tracker');
+  click(win, doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]'));
+  win.App.go('home');
+  const row = () => doc.querySelector('#now-list [data-check="sunnah:9:1 wird:witr"]');
+  assert.ok(row(), 'the card says the rakahs after isha and the witr in one line');
+  assert.ok(!row().classList.contains('is-done'), 'half of it is not a done row');
+  click(win, row());
+  assert.ok(row().classList.contains('is-done'));
+  /* the app closed and opened again before the second touch, as a phone does */
+  ({ win, doc } = boot({ storage: storage, now: evening }));
+  click(win, row());
+  const s = win.Store.day(win.App.helpers.sunnahDay()).sunnah;
+  assert.ok(!s['sunnah:9:1'], 'the slip is taken back');
+  assert.strictEqual(s['wird:witr'], true, 'and the witr ticked in the wird stays');
+  assert.deepStrictEqual(Object.keys(win.Store.day(win.App.helpers.sunnahDay()).marked), [], 'nothing left behind');
+  /* a row it marked whole clears whole: the witr taken back in the list,
+     then the line marked and cleared from the card */
+  win.App.go('tracker');
+  click(win, doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]'));
+  win.App.go('home');
+  click(win, row());
+  const both = win.Store.day(win.App.helpers.sunnahDay()).sunnah;
+  assert.ok(both['sunnah:9:1'] && both['wird:witr'], 'one touch marks the two');
+  click(win, row());
+  const t = win.Store.day(win.App.helpers.sunnahDay()).sunnah;
+  assert.ok(!t['sunnah:9:1'] && !t['wird:witr'], 'and the next clears the two');
+  /* a touch beside the rows is not taken for a day of the calendar */
+  const occasions = doc.getElementById('calendar-occasions');
+  const before = occasions ? occasions.innerHTML : null;
+  click(win, doc.querySelector('#now-list .setting-note'));
+  win.App.go('tracker');
+  click(win, doc.querySelector('#tracker-list .fold-source'));
+  assert.strictEqual(occasions ? occasions.innerHTML : null, before);
+});
+
+test('a touch lands on the day the list shows, and the list follows the fajr', async () => {
+  const { win, doc } = boot({ now: new Date(2026, 9, 7, 3, 0, 0) });
+  win.App.go('tracker');
+  const list = doc.getElementById('tracker-list');
+  assert.strictEqual(list.getAttribute('data-sunnah-day'), '2026-10-06', 'before the fajr it is still the night before');
+  /* the clock moves past the fajr while the list is open: the next second
+     of the clock draws the new day */
+  win.__setNow(new Date(2026, 9, 7, 9, 0, 0));
+  const card = doc.getElementById('now-list');
+  assert.strictEqual(card.getAttribute('data-sunnah-day'), '2026-10-06');
+  await until(function () {
+    return list.getAttribute('data-sunnah-day') === '2026-10-07' && card.getAttribute('data-sunnah-day') === '2026-10-07';
+  });
+  assert.strictEqual(doc.getElementById('now-title').textContent, 'سنن الضحى', 'and the card the new hour');
+  /* and a touch on a list still showing an earlier day goes to that day */
+  list.setAttribute('data-sunnah-day', '2026-10-06');
+  click(win, doc.querySelector('#tracker-list [data-fold="wird"] [data-check="wird:witr"]'));
+  assert.strictEqual(win.Store.day(new Date(2026, 9, 6, 12)).sunnah['wird:witr'], true);
+  assert.ok(!win.Store.day(new Date(2026, 9, 7, 12)).sunnah['wird:witr']);
+});
+
+test('a day kept with a field of the wrong kind does not stop the app', () => {
+  const storage = memoryStorage();
+  storage.setItem('sunnati.day.2026-10-05', JSON.stringify({ sunnah: null, prayers: [], tasbih: 'x', pages: 3 }));
+  storage.setItem('sunnati.day.2026-10-06', 'null');
+  const { win, doc } = boot({ storage: storage, now: new Date(2026, 9, 6, 12, 0, 0) });
+  assert.strictEqual(doc.querySelectorAll('#home-heat i').length, 30, 'the home screen drew');
+  const old = win.Store.day(new Date(2026, 9, 5, 12));
+  assert.deepStrictEqual(Object.keys(old.sunnah), []);
+  assert.strictEqual(old.tasbih, 0);
+  assert.strictEqual(old.pages, 3, 'what is sound is kept');
+  win.App.go('tracker');
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 0);
+  click(win, doc.querySelector('#tracker-list [data-check="wird:quran"]'));
+  assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 1);
+});
+
+test('the sunrise notice quotes a sunnah of the duha, not of the dhuhr', () => {
+  const { win } = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
+  const pick = win.App.helpers.windowSunnah;
+  assert.strictEqual(pick('sunrise', new Date(2026, 9, 6)).key, 'duha');
+  assert.strictEqual(pick('sunrise', new Date(2026, 9, 6)).block.items[0].indexOf('صلاة الضحى'), 0);
+  assert.strictEqual(pick('sunrise', new Date(2026, 9, 9)).key, 'friday', 'on a friday the day\'s own');
+  assert.strictEqual(pick('nothing', new Date(2026, 9, 6)), null, 'and no window it does not know');
 });
 
 test('the compass keeps north at north whichever way the phone is held', () => {
@@ -2096,7 +2487,11 @@ test('the tally on the home card follows what is ticked', () => {
   const before = doc.getElementById('now-tally').textContent;
   click(win, doc.querySelector('#now-list .check'));
   assert.notStrictEqual(doc.getElementById('now-tally').textContent, before);
-  assert.strictEqual(doc.getElementById('now-tally').textContent.indexOf('1'), 0);
+  /* one touch can finish more than one row: four before the dhuhr and four
+     after it hold the rawatib of the dhuhr, so that row is done with it */
+  const done = doc.querySelectorAll('#now-list .check.is-done').length;
+  assert.ok(done >= 1);
+  assert.strictEqual(doc.getElementById('now-tally').textContent.indexOf(String(done) + ' من '), 0);
 });
 
 /* ---------------- where the times come from ---------------- */
@@ -8929,9 +9324,11 @@ test('the sunan of friday stand in the sunan screen, and the card that repeated 
   const section = doc.querySelector('#tracker-list [data-fold="friday"]');
   assert.ok(section && !section.classList.contains('is-open'));
 
-  /* the meter already counted these seven, so the list and the tally agree */
-  const total = /if \(friday && typeof FRIDAY_SUNNAH !== 'undefined'\) total \+= FRIDAY_SUNNAH\.items\.length;/.test(app);
-  assert.ok(total, 'the seven are counted once, on friday');
+  /* the meter counts these seven on a friday and on no other day, so the
+     list and the tally agree */
+  const helpers = win.App.helpers;
+  assert.strictEqual(helpers.totalSunnahCount(new Date(2026, 8, 11, 12)) - helpers.totalSunnahCount(new Date(2026, 8, 12, 12)), 7,
+    'the seven are counted once, on friday');
 
   /* and on any other day it is not there at all */
   const sat = boot({ now: new Date(2026, 8, 12, 9, 0, 0) });
@@ -9017,9 +9414,11 @@ test('the days the sunnah marks for fasting are offered, and only where a fast i
   assert.ok(named.indexOf('صيام الخميس') !== -1 && named.indexOf('الأيام البيض') !== -1,
     'both reasons are named, got ' + named);
 
-  /* and the meter counts the one tick, not the reasons */
-  const total = /if \(fastToday\(date\)\.length\) total \+= 1;/.test(app);
-  assert.ok(total, 'one added to the day, not one per reason');
+  /* and the meter counts the one tick, not the reasons: that thursday
+     against the tuesday before it, an ordinary day */
+  const count = both.win.App.helpers.totalSunnahCount;
+  assert.strictEqual(count(new Date(2026, 8, 24, 12)) - count(new Date(2026, 8, 22, 12)), 1,
+    'one added to the day, not one per reason');
 });
 
 test('the eve of a fast is reminded, before the suhur and not after it', () => {

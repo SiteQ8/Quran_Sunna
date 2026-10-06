@@ -192,15 +192,27 @@
     return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
   }
 
+  /* marked: what a row of the hour card marked by itself, by the row, so a
+     second touch can take back only that, even after the app was closed */
   function emptyDay() {
-    return { azkar: {}, hisn: {}, sunnah: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0 };
+    return { azkar: {}, hisn: {}, sunnah: {}, marked: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0 };
   }
 
+  /* A field of the wrong kind, which a hand-edited backup or an old build can
+     leave behind ("sunnah": null), keeps its empty default: one bad day used
+     to stop the whole home screen from drawing. */
   function day(date) {
     var rec = readJSON(DAY_PREFIX + dayKey(date), null);
-    if (!rec) return emptyDay();
+    if (!rec || typeof rec !== 'object') return emptyDay();
     var base = emptyDay();
-    for (var k in base) if (Object.prototype.hasOwnProperty.call(rec, k)) base[k] = rec[k];
+    for (var k in base) {
+      if (!Object.prototype.hasOwnProperty.call(rec, k)) continue;
+      var v = rec[k];
+      var fits = typeof base[k] === 'object'
+        ? (v !== null && typeof v === 'object' && !Array.isArray(v))
+        : (typeof v === 'number' && isFinite(v));
+      if (fits) base[k] = v;
+    }
     return base;
   }
 
@@ -350,11 +362,22 @@
     return updateDay(function (rec) { rec.pages = Math.max(0, (rec.pages || 0) + count); }, date);
   }
 
-  function completion(date, totalSunnah) {
+  /* How much of a day's list is done. The app hands in the ticks the list
+     offers that day, and only those are counted: a tick kept from an older
+     list, or brought back by a backup, stands for no row and is not counted,
+     so the meter cannot read more done than there is to do. A bare number is
+     still read as the size of the list, the way the first callers asked. */
+  function completion(date, countable) {
     var rec = day(date);
-    var done = 0;
-    for (var k in rec.sunnah) if (rec.sunnah[k]) done++;
-    var total = totalSunnah || 0;
+    var done = 0, total = 0;
+    if (Array.isArray(countable)) {
+      total = countable.length;
+      countable.forEach(function (id) { if (rec.sunnah[id]) done++; });
+    } else {
+      total = countable || 0;
+      for (var k in rec.sunnah) if (rec.sunnah[k]) done++;
+      done = Math.min(done, total);
+    }
     return { done: done, total: total, percent: total ? Math.round((done / total) * 100) : 0 };
   }
 
@@ -391,14 +414,17 @@
     return { current: current, longest: Math.max(longest, current) };
   }
 
-  function heatmap(days, today, totalSunnah) {
+  /* Each day is measured against its own list when a function hands one for
+     it: a friday offers its own sunan, a monday its fast, and a day scored
+     against another day's list reads too full or too empty. */
+  function heatmap(days, today, countable) {
     var out = [];
     var base = today || new Date();
     var start = new Date(base.getFullYear(), base.getMonth(), base.getDate());
     start.setDate(start.getDate() - (days - 1));
     for (var i = 0; i < days; i++) {
       var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
-      var c = completion(d, totalSunnah);
+      var c = completion(d, typeof countable === 'function' ? countable(d) : countable);
       out.push({ key: dayKey(d), date: d, percent: c.percent, active: wasActive(d) });
     }
     return out;
@@ -535,6 +561,20 @@
     return removed;
   }
 
+  /* Every day kept, handed in turn to a function that may change it in
+     place. The days it says it changed are written back, the rest are left
+     as they were, and the number written is returned. */
+  function eachDay(change) {
+    var written = 0;
+    keys().forEach(function (k) {
+      if (k.indexOf(DAY_PREFIX) !== 0) return;
+      var rec = readJSON(k, null);
+      if (!rec || typeof rec !== 'object') return;
+      if (change(rec, k.slice(DAY_PREFIX.length)) && writeJSON(k, rec)) written++;
+    });
+    return written;
+  }
+
   /* Backup */
 
   function exportAll() {
@@ -598,6 +638,7 @@
     hisnProgress: hisnProgress,
     addPages: addPages,
     completion: completion,
+    eachDay: eachDay,
     wasActive: wasActive,
     streak: streak,
     heatmap: heatmap,

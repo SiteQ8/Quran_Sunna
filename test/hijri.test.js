@@ -105,7 +105,7 @@ test('upcoming events are sorted and never negative', () => {
     assert.ok(list[i].days >= 0, list[i].name + ' should not be in the past');
     if (i > 0) assert.ok(list[i].days >= list[i - 1].days, 'events out of order');
   }
-  const ramadan = list.filter(function (x) { return x.name === 'رمضان'; })[0];
+  const ramadan = list.filter(function (x) { return x.name === 'شهر رمضان المبارك'; })[0];
   assert.ok(ramadan && ramadan.days > 0 && ramadan.days < 400);
 });
 
