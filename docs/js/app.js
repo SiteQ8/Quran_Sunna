@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.55';
+  var VERSION = '8.87.56';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2930,7 +2930,7 @@
     width = faces[0].getBoundingClientRect().width;
     var top = folio.getBoundingClientRect().top + (window.pageYOffset || 0);
     var bars = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0;
-    var room = Math.floor(window.innerHeight - top - bars - 10);
+    var room = Math.floor(window.innerHeight - top - bars - 12);
     if (!width || room < 240) { folio.style.removeProperty('--quran-scale'); return; }
     folio.style.height = room + 'px';
 

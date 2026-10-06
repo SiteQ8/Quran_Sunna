@@ -1789,36 +1789,77 @@ input, textarea, [contenteditable] {
    and Safari cannot say where the fold is. So on any screen this wide nothing
    is laid across the middle. The right half is the app as on a phone, with
    its tabs; the left half keeps the hour; the mushaf opens on both halves with
-   the fold for its spine. On iPhone Duo each half is a phone wide; elsewhere
-   neither grows wider than a large phone, and the pair stays centred, so the
-   clear middle is always where a fold would be. */
+   the fold for its spine.
+
+   The two halves are alike and mirror each other across the fold. Each is a
+   large phone wide at most, and both keep clear of whichever side the screen
+   keeps for itself: iPhone Duo opened keeps a column for its status down the
+   right. Each half holds one column, and the cards, the clock, a page of the
+   mushaf and the bar under each all stand on the same two lines either side
+   of the fold. They did not: the clock stood against the left edge and in
+   the middle of the height, the cards on the right were set in further and
+   began at the top, and the tabs were a white slab out to the screen's edge
+   beside an empty foot on the left. */
 html.book {
   --gap: 56px;
   --half: calc(50vw - var(--gap) / 2);
-  /* each half is as wide as a large phone at most, and keeps clear of the
-     side of the screen it stands against: on iPhone Duo opened the status
-     column runs down the right, so the right half is the narrower */
-  --pane: min(calc(var(--half) - var(--sar)), 560px);   /* the right half */
-  --pane-l: min(calc(var(--half) - var(--sal)), 560px); /* the left half */
-  --edge: calc(var(--half) - var(--pane));              /* outside the right half */
-  --edge-l: calc(var(--half) - var(--pane-l));          /* outside the left half */
-  --inner: calc(50vw + var(--gap) / 2);                 /* the right half's left side */
+  --pane: min(calc(var(--half) - max(var(--sal), var(--sar))), 560px);
+  --edge: calc(var(--half) - var(--pane));   /* outside either half */
+  --inner: calc(50vw + var(--gap) / 2);      /* the right half's side on the fold */
+  --pad: var(--s4);                          /* from either side of a half to its column */
+  --float: calc(env(safe-area-inset-bottom) + var(--s3));   /* the bars' height off the foot */
 }
-/* the halves are placed against the screen, so the body keeps no sides */
-html.book body { padding-left: 0; padding-right: 0; }
+/* the halves are placed against the screen, so the body keeps no sides; its
+   foot keeps room for the floating bars */
+html.book body {
+  padding-left: 0; padding-right: 0;
+  padding-bottom: calc(var(--tab-h) + var(--float) + var(--banner-room, 0px));
+}
 html.book .shell { max-width: none; }
-html.book #views > .view { width: var(--pane); margin-left: auto; margin-right: var(--edge); }
+html.book #views > .view {
+  width: var(--pane); margin-left: auto; margin-right: var(--edge);
+  padding-inline: var(--pad);
+}
 /* a view used to rise a few pixels as it opened, and a transform makes a
    fixed child follow its parent: the clock on the left would have jumped */
 html.book .view.is-open { animation-name: view-fade; }
 @keyframes view-fade { from { opacity: 0; } to { opacity: 1; } }
 
-/* whatever floats stays on the right half, off the fold */
-html.book .tabs { left: var(--inner); right: calc(var(--edge) - var(--sar)); padding-left: 0; padding-right: var(--sar); }
-html.book .player { left: var(--inner); right: var(--edge); max-width: none; margin: 0; }
-html.book .toast { left: calc(var(--inner) + var(--s4)); right: calc(var(--edge) + var(--s4)); }
-html.book .banner { left: calc(var(--inner) + var(--s3)); right: calc(var(--edge) + var(--s3)); }
-html.book .to-top { left: calc(var(--inner) + 14px); right: auto; }
+/* whatever floats stands in the right column, off the fold: the tabs as a
+   bar of their own as wide as the column, and the rest above them */
+html.book .tabs {
+  left: calc(var(--inner) + var(--pad)); right: calc(var(--edge) + var(--pad));
+  bottom: var(--float); height: var(--tab-h); padding: 0;
+  border: 1px solid var(--line-soft); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lift); overflow: hidden;
+}
+html.book .player {
+  left: calc(var(--inner) + var(--pad)); right: calc(var(--edge) + var(--pad));
+  bottom: calc(var(--tab-h) + var(--float) + var(--s2));
+  max-width: none; margin: 0; border-radius: var(--r-md);
+}
+html.book .toast {
+  left: calc(var(--inner) + var(--pad)); right: calc(var(--edge) + var(--pad));
+  bottom: calc(var(--tab-h) + var(--float) + var(--s3));
+}
+html.book .banner {
+  left: calc(var(--inner) + var(--pad)); right: calc(var(--edge) + var(--pad));
+  bottom: calc(var(--tab-h) + var(--float) + var(--s3));
+}
+html.book .to-top {
+  left: calc(var(--inner) + var(--pad)); right: auto;
+  bottom: calc(var(--tab-h) + var(--float) + var(--s3));
+}
+/* what scrolls under the floating bars fades into the paper below them,
+   rather than showing through between the bars and the foot of the screen */
+html.book body::after {
+  content: ''; position: fixed; left: 0; right: 0; bottom: 0; z-index: 39; pointer-events: none;
+  height: calc(var(--tab-h) + var(--float));
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 0%, transparent), var(--paper) 55%);
+}
+/* the mushaf does not scroll, and the bar under its left page lives inside
+   the page's own layer, which the fade would lie over */
+html.book[data-view="page"] body::after { display: none; }
 html.book .sheet { justify-content: flex-start; padding-left: 0; padding-right: var(--edge); }
 html.book .sheet-panel { max-width: var(--pane); }
 
@@ -1829,10 +1870,11 @@ html.book #v-home { display: block; }
 html.book:not([data-view="home"]) #v-home { height: 0; padding: 0; }
 html.book:not([data-view="home"]) #v-home > :not(.clock) { display: none; }
 html.book #v-home > .clock {
-  position: fixed; z-index: 2; top: 50%; transform: translateY(-50%);
-  /* set in from the screen's edge as the cards of the right half are: with
-     the pane as wide as the half it stood against the edge itself */
-  left: calc(var(--edge-l) + var(--s4)); width: calc(var(--pane-l) - 2 * var(--s4)); margin: 0;
+  position: fixed; z-index: 2; margin: 0; transform: none;
+  /* level with the first card of the right column, and as far in from its
+     side as that card is from the other */
+  top: calc(env(safe-area-inset-top) + var(--s5));
+  left: calc(var(--edge) + var(--pad)); width: calc(var(--pane) - 2 * var(--pad));
 }
 
 /* the mushaf takes both halves, two pages facing across the fold */
@@ -1840,19 +1882,16 @@ html.book[data-view="page"] #v-home { display: none; }
 html.book[data-view="page"] #views > #v-page { width: auto; margin: 0; padding: 0; }
 html.book #v-page .reader-bar,
 html.book #page-body.is-spread .spread {
-  /* a margin at the outer edges, where the display's corners round, and the
-     columns either side of the middle kept equal so it stays on the fold */
-  /* the two pages are alike, so both take the narrower half, and the pair
-     stays centred on the fold whichever side the screen keeps */
+  /* the two columns and the space between them, so each page stands on the
+     lines of the cards of its half, and the bar over it */
   display: grid; margin-inline: auto;
-  width: min(calc(100% - 2 * (var(--s3) + max(var(--sal), var(--sar)))),
-             calc(2 * min(var(--pane), var(--pane-l)) + var(--gap)));
+  width: calc(2 * (var(--pane) - var(--pad)) + var(--gap));
 }
 /* rtl: the first column stands on the right. The bar has no ground of its
    own, which ran across the fold: the title stands on a card over the right
    page and the search over the left, each on its own. */
 html.book #v-page .reader-bar {
-  grid-template-columns: auto 1fr var(--gap) 1fr auto;
+  grid-template-columns: auto 1fr calc(var(--gap) + 2 * var(--pad)) 1fr auto;
   position: static; background: none; box-shadow: none;
   padding: var(--s2) 0; margin-bottom: 0;
 }
@@ -1863,16 +1902,15 @@ html.book #v-page .reader-bar .page-head {
   background: color-mix(in srgb, var(--raised) 88%, transparent); box-shadow: var(--shadow);
 }
 html.book #v-page .reader-bar #page-jump { grid-column: 5; }
-/* turning the page is a bar of its own under the left page, level with the
-   tabs under the right one. It stood below the pages, under the tabs on the
-   right and off the foot of the screen on the left. */
+/* turning the page is a bar under the left page, the twin of the tabs under
+   the right one: as wide as its column, as high, as far off the foot */
 html.book #v-page .page-nav {
-  position: fixed; z-index: 60; bottom: 0; left: calc(var(--edge-l) - var(--sal)); right: var(--inner);
-  padding-left: var(--sal);
+  position: fixed; z-index: 60;
+  left: calc(var(--edge) + var(--pad)); right: calc(var(--inner) + var(--pad));
+  bottom: var(--float); height: var(--tab-h); padding: 0;
   display: flex; gap: 0; margin: 0;
-  height: calc(var(--tab-h) + env(safe-area-inset-bottom));
-  padding-bottom: env(safe-area-inset-bottom);
-  background: var(--raised); border-top: 1px solid var(--line-soft);
+  background: var(--raised); border: 1px solid var(--line-soft); border-radius: var(--r-lg);
+  box-shadow: var(--shadow-lift); overflow: hidden;
 }
 html.book #v-page .page-nav .btn {
   flex: 1; height: 100%; min-height: 0;
@@ -1883,7 +1921,9 @@ html.book #page-autoscroll { display: none; }
 html.book #page-body.is-spread {
   background: none; box-shadow: none; border: 0; padding: 0; min-height: 0;
 }
-html.book #page-body .spread { grid-template-columns: 1fr var(--gap) 1fr; align-items: stretch; }
+html.book #page-body .spread {
+  grid-template-columns: 1fr calc(var(--gap) + 2 * var(--pad)) 1fr; align-items: stretch;
+}
 html.book #page-body .leaf {
   background: var(--raised); border-radius: var(--r-md); box-shadow: var(--shadow);
   padding: var(--s3);
