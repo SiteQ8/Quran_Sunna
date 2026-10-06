@@ -144,10 +144,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     Notifier.shared.onTap = { [weak self] kind in
       let safe = kind.filter { $0.isLetter }
       guard !safe.isEmpty else { return }
-      DispatchQueue.main.async {
-        self?.web.evaluateJavaScript(
-          "window.App && App.helpers && App.helpers.cameFrom && App.helpers.cameFrom('\(safe)')")
-      }
+      DispatchQueue.main.async { self?.cameFrom(safe) }
     }
 
     /* The page schedules a week ahead and then goes quiet. Without this the
@@ -157,6 +154,21 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     NotificationCenter.default.addObserver(
       self, selector: #selector(refresh),
       name: UIApplication.willEnterForegroundNotification, object: nil)
+  }
+
+  /* A tapped reminder names its subject and the page opens it. A tap that
+     started the app arrives while the page is still loading, when there is no
+     App to tell; it waits for the page, and once there it asks again for a few
+     seconds, since the page builds itself after it has loaded. */
+  private var loaded = false
+  private var waitingKind: String?
+
+  private func cameFrom(_ kind: String) {
+    guard loaded else { waitingKind = kind; return }
+    web.evaluateJavaScript(
+      "(function f(n){var h=window.App&&App.helpers;" +
+      "if(h&&h.cameFrom){h.cameFrom('\(kind)');return}" +
+      "if(n>0)setTimeout(function(){f(n-1)},250)}(24))")
   }
 
   /* Opening sunnati://screen/quran moves the page to that screen. It exists so
@@ -360,6 +372,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
      every photograph. A launch argument asks nobody. */
   func webView(_ w: WKWebView, didFinish navigation: WKNavigation!) {
     tellCanNotify()
+    loaded = true
+    if let kind = waitingKind { waitingKind = nil; cameFrom(kind) }
     let args = ProcessInfo.processInfo.arguments
     guard let i = args.firstIndex(of: "-screen"), i + 1 < args.count else { return }
     let name = args[i + 1].filter { $0.isLetter }

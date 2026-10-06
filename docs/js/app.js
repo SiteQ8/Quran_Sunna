@@ -252,6 +252,27 @@
       motion === null || motion === undefined ? prefers('(prefers-reduced-motion: reduce)') : !!motion);
   }
 
+  /* ---------------- the book ----------------
+
+     iPhone Duo opens like a book, and its fold then runs down the middle of
+     an inner display some nine hundred and fifty points wide; an iPad on its
+     side and a desktop window are as wide. Safari does not say where the fold
+     is (the viewport segments api is Chromium's alone), so the page does not
+     ask: on any screen this wide nothing is laid across the middle. The right
+     half is the app as on a phone, the left half keeps the hour, and the
+     mushaf opens on both halves with the fold for its spine. */
+  var BOOK = window.matchMedia
+    ? window.matchMedia('(min-width: 860px) and (min-aspect-ratio: 6/5)') : null;
+
+  function isBook() { return !!(BOOK && BOOK.matches); }
+
+  function applyBook() {
+    var root = document.documentElement;
+    var was = root.classList.contains('book');
+    root.classList.toggle('book', isBook());
+    if (was !== isBook() && state.view === 'page') renderPage();
+  }
+
   function applyFont() {
     var scale = Store.get('fontScale') / 100;
     document.documentElement.style.setProperty('--quran-scale', String(scale));
@@ -431,6 +452,9 @@
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
     target.classList.add('is-open');
     state.view = name;
+    /* the stylesheet lays the book out by what is open: the hour stays on the
+       left half beside every screen but the mushaf, which takes both */
+    document.documentElement.setAttribute('data-view', name);
 
     var owner = tabOwner(name);
     $$('.tab').forEach(function (t) {
@@ -2678,39 +2702,12 @@
     go('page');
   }
 
-  function renderPage() {
-    var body = $('page-body');
-    if (!body) return;
-    if (!Mushaf.ready()) { body.innerHTML = empty('نص المصحف لم يكتمل تحميله بعد'); return; }
-    var n = state.page || +Store.get('lastPage') || 1;
-    state.page = n;
+  /* One page of the mushaf as markup: the flowing text, or the printed page
+     line by line. A spread is two of these side by side. */
+  function pageMarkup(n, marked) {
     var verses = Mushaf.pageVerses(n);
-    if (!verses.length) { body.innerHTML = empty('تعذّر بناء هذه الصفحة'); return; }
-
-    var first = verses[0], last = verses[verses.length - 1];
-    var firstMeta = surahMeta(first.s), lastMeta = surahMeta(last.s);
-    /* the page's own figure in the mushaf's arabic digits, to match the one
-       footing the page below; ar() elsewhere stays latin, a taste not forced */
-    if ($('page-title')) $('page-title').textContent = 'صفحة ' + mushafDigits(n);
-    if ($('page-meta')) {
-      /* a mushaf names the quarter reached by the end of the page */
-      /* arabic digits here too, so the whole of this quranic screen speaks one
-         set of figures: the title, this line, and the figure footing the page */
-      $('page-meta').textContent = 'الجزء ' + mushafDigits(Mushaf.juzOf(first.s, first.a)) + '، ' + hizbLabel(last.s, last.a, true) + '، ' +
-        (first.s === last.s ? 'سورة ' + firstMeta.ar : 'من ' + firstMeta.ar + ' إلى ' + lastMeta.ar);
-    }
-
-    var marked = {};
-    Store.bookmarks().forEach(function (b) { marked[b.s + ':' + b.a] = true; });
-
-    if (Store.get('pageLayout') === 'madinah' && MADINAH_LINES) {
-      renderPrintedPage(body, n, verses, marked);
-      if ($('page-prev')) $('page-prev').disabled = n <= 1;
-      if ($('page-next')) $('page-next').disabled = n >= PAGES_IN_MUSHAF;
-      rememberPlace(first.s, first.a);
-      if (window.scrollTo) window.scrollTo(0, 0);
-      return;
-    }
+    if (!verses.length) return empty('تعذّر بناء هذه الصفحة');
+    if (Store.get('pageLayout') === 'madinah' && MADINAH_LINES) return printedPageMarkup(n, verses, marked);
 
     var html = '', current = 0;
     verses.forEach(function (v) {
@@ -2725,13 +2722,67 @@
       var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
-        esc(v.text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
+        esc(v.text) + sajda + '⁠<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
     });
-    body.innerHTML = '<div class="ayah-block">' + html + '</div>' +
-      '<div class="page-foot"><span class="page-foot-num" aria-label="صفحة ' + n + '">' + mushafDigits(n) + '</span></div>';
+    return '<div class="ayah-block">' + html + '</div>' + pageFoot(n);
+  }
 
-    if ($('page-prev')) $('page-prev').disabled = n <= 1;
-    if ($('page-next')) $('page-next').disabled = n >= PAGES_IN_MUSHAF;
+  function pageFoot(n) {
+    return '<div class="page-foot"><span class="page-foot-num" aria-label="صفحة ' + n + '">' + mushafDigits(n) + '</span></div>';
+  }
+
+  /* The spread a page belongs to. A printed mushaf opens with al-Fatiha on the
+     right and the start of al-Baqara facing it, so a spread starts on an odd
+     page, which stands on the right; the last, 604, faces 603. */
+  function spreadOf(n) {
+    var right = n % 2 ? n : n - 1;
+    return { right: right, left: Math.min(PAGES_IN_MUSHAF, right + 1) };
+  }
+
+  function renderPage() {
+    var body = $('page-body');
+    if (!body) return;
+    if (!Mushaf.ready()) { body.innerHTML = empty('نص المصحف لم يكتمل تحميله بعد'); return; }
+    var n = state.page || +Store.get('lastPage') || 1;
+    state.page = n;
+    /* the book shows the spread the page belongs to; the phone, the page */
+    var book = isBook();
+    var leaves = book ? spreadOf(n) : { right: n, left: n };
+    var verses = Mushaf.pageVerses(leaves.right);
+    var tail = book ? Mushaf.pageVerses(leaves.left) : verses;
+    if (!verses.length || !tail.length) { body.innerHTML = empty('تعذّر بناء هذه الصفحة'); return; }
+
+    var first = verses[0], last = tail[tail.length - 1];
+    var firstMeta = surahMeta(first.s), lastMeta = surahMeta(last.s);
+    /* the page's own figure in the mushaf's arabic digits, to match the one
+       footing the page below; ar() elsewhere stays latin, a taste not forced */
+    if ($('page-title')) {
+      $('page-title').textContent = book
+        ? 'الصفحتان ' + mushafDigits(leaves.right) + ' و' + mushafDigits(leaves.left)
+        : 'صفحة ' + mushafDigits(n);
+    }
+    if ($('page-meta')) {
+      /* a mushaf names the quarter reached by the end of the page */
+      /* arabic digits here too, so the whole of this quranic screen speaks one
+         set of figures: the title, this line, and the figure footing the page */
+      $('page-meta').textContent = 'الجزء ' + mushafDigits(Mushaf.juzOf(first.s, first.a)) + '، ' + hizbLabel(last.s, last.a, true) + '، ' +
+        (first.s === last.s ? 'سورة ' + firstMeta.ar : 'من ' + firstMeta.ar + ' إلى ' + lastMeta.ar);
+    }
+
+    var marked = {};
+    Store.bookmarks().forEach(function (b) { marked[b.s + ':' + b.a] = true; });
+
+    /* in the book the two pages face each other across the fold, the odd one
+       on the right as a printed mushaf has it, each with its own figure */
+    body.innerHTML = book
+      ? '<div class="spread"><div class="leaf">' + pageMarkup(leaves.right, marked) + '</div>' +
+        '<div class="leaf">' + pageMarkup(leaves.left, marked) + '</div></div>'
+      : pageMarkup(n, marked);
+    body.classList.toggle('is-spread', book);
+    fitPrintedLines(body);
+
+    if ($('page-prev')) $('page-prev').disabled = leaves.right <= 1;
+    if ($('page-next')) $('page-next').disabled = leaves.left >= PAGES_IN_MUSHAF;
     /* the place is remembered as a verse too, so تابع القراءة finds it */
     rememberPlace(first.s, first.a);
     if (window.scrollTo) window.scrollTo(0, 0);
@@ -2768,8 +2819,13 @@
      on the page. The text is the one the app already holds; only its shape
      comes from the layout. */
   function renderPrintedPage(body, n, verses, marked) {
+    body.innerHTML = printedPageMarkup(n, verses, marked);
+    fitPrintedLines(body);
+  }
+
+  function printedPageMarkup(n, verses, marked) {
     var page = MADINAH_LINES[n];
-    if (!page) { body.innerHTML = empty('تعذّر بناء هذه الصفحة'); return; }
+    if (!page) return empty('تعذّر بناء هذه الصفحة');
     var starts = {};
     verses.forEach(function (v) { if (v.a === 1) starts[v.s] = true; });
 
@@ -2797,9 +2853,7 @@
       }).join(' ') + '</div>';
     });
 
-    body.innerHTML = '<div class="mad-page">' + html + '</div>' +
-      '<div class="page-foot"><span class="page-foot-num" aria-label="صفحة ' + n + '">' + mushafDigits(n) + '</span></div>';
-    fitPrintedLines(body);
+    return '<div class="mad-page">' + html + '</div>' + pageFoot(n);
   }
 
   /* Each line carries the words of one printed line and no others, so it is
@@ -2832,7 +2886,8 @@
   }
 
   function turnPage(by) {
-    var n = (state.page || 1) + by;
+    /* in the book a turn moves a whole spread, as a printed mushaf turns */
+    var n = isBook() ? spreadOf(state.page || 1).right + by * 2 : (state.page || 1) + by;
     if (n < 1 || n > PAGES_IN_MUSHAF) return;
     openPage(n);
   }
@@ -7684,6 +7739,11 @@
     applyTheme();
     applyFont();
     applyAccess();
+    applyBook();
+    if (BOOK) {
+      if (BOOK.addEventListener) BOOK.addEventListener('change', applyBook);
+      else if (BOOK.addListener) BOOK.addListener(applyBook);
+    }
     computeQibla();
     refreshTimes();
     wire();
@@ -7722,7 +7782,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount,

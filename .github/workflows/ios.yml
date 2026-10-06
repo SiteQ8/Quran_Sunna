@@ -27,6 +27,14 @@ on:
   push:
     tags: ['ios-v*']
   workflow_dispatch:
+    inputs:
+      # A run by hand can ask for another Xcode, so the first build with 27.1,
+      # the Xcode that builds for iPhone Duo, is tried before a release tag
+      # depends on it. A tag always builds with the default.
+      xcode:
+        description: 'Xcode major version to build with (27 builds for iPhone Duo once GitHub has it)'
+        required: false
+        default: '26'
 
 jobs:
   build:
@@ -55,10 +63,12 @@ jobs:
       # path breaks the day the one it names is gone. What is used is printed,
       # so the log says which Xcode built this.
       - name: Xcode
+        env:
+          WANT: ${{ github.event.inputs.xcode || '26' }}
         run: |
-          XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | grep -v -i "beta\|release_candidate" | sort -V | tail -1)
-          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
-          [ -n "$XCODE" ] || { echo "::error::no Xcode 26 on this image"; ls /Applications | grep Xcode; exit 1; }
+          XCODE=$(ls -d /Applications/Xcode_${WANT}*.app 2>/dev/null | grep -v -i "beta\|release_candidate" | sort -V | tail -1)
+          [ -n "$XCODE" ] || XCODE=$(ls -d /Applications/Xcode_${WANT}*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] || { echo "::error::no Xcode ${WANT} on this image"; ls /Applications | grep Xcode; exit 1; }
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
 

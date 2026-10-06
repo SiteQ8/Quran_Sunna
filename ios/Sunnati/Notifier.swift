@@ -76,13 +76,24 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                               didReceive response: UNNotificationResponse,
                               withCompletionHandler done: @escaping () -> Void) {
     let kind = response.notification.request.content.userInfo["kind"] as? String ?? ""
-    if !kind.isEmpty { onTap?(kind) }
+    if !kind.isEmpty {
+      if let tell = onTap { tell(kind) } else { waiting = kind }
+    }
     done()
   }
 
   /* Set by the reader once its web view exists. Held here rather than reached
-     for, so the notifier knows nothing about the view it is talking to. */
-  var onTap: ((String) -> Void)?
+     for, so the notifier knows nothing about the view it is talking to.
+
+     With a scene the window is made after launch rather than during it, so a
+     tap that started the app can arrive before the reader is there to hear
+     it. It is held until the reader sets this, and handed over then. */
+  var onTap: ((String) -> Void)? {
+    didSet {
+      if let tell = onTap, let kind = waiting { waiting = nil; tell(kind) }
+    }
+  }
+  private var waiting: String?
 }
 
 struct Reminder {
