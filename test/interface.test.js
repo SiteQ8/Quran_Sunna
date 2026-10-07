@@ -8012,9 +8012,9 @@ const SPLASH_ZONES = {
   'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae',
   'Asia/Qatar': 'qa', 'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om'
 };
-const SPLASH_PAINTINGS = [];
+const ANDROID_SPLASH_PAINTINGS = [];
 ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default'].forEach(function (p) {
-  SPLASH_PAINTINGS.push('splash_bg_' + p + '_day', 'splash_bg_' + p + '_night');
+  ANDROID_SPLASH_PAINTINGS.push('splash_bg_' + p + '_day', 'splash_bg_' + p + '_night');
 });
 
 /* the width and height a webp says it has, read off its own header */
@@ -8034,8 +8034,8 @@ test('the opening is painted for the reader\'s own country, by day and by night,
   const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
   /* six countries with a landmark of their own and the open shore for
      everyone else, each once by day and once by night */
-  assert.strictEqual(SPLASH_PAINTINGS.length, 14);
-  SPLASH_PAINTINGS.forEach(function (name) {
+  assert.strictEqual(ANDROID_SPLASH_PAINTINGS.length, 14);
+  ANDROID_SPLASH_PAINTINGS.forEach(function (name) {
     const file = path.join(res, name + '.webp');
     assert.ok(fs.existsSync(file), name + ' is there');
     const buf = fs.readFileSync(file);
@@ -8052,7 +8052,7 @@ test('the opening is painted for the reader\'s own country, by day and by night,
      would rightly call an unused resource */
   const shipped = fs.readdirSync(res).filter(function (f) { return f.indexOf('splash_bg_') === 0; })
     .map(function (f) { return f.replace(/\.webp$/, ''); }).sort();
-  assert.deepStrictEqual(shipped, SPLASH_PAINTINGS.slice().sort(), 'every painting shipped is one the view can choose');
+  assert.deepStrictEqual(shipped, ANDROID_SPLASH_PAINTINGS.slice().sort(), 'every painting shipped is one the view can choose');
   /* they are made from the masters by one tool, which holds the same budget */
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/android/splash-bg.py'), 'utf8');
   assert.ok(tool.indexOf('SIZE = (1080, 1920)') !== -1 && tool.indexOf('Image.LANCZOS') !== -1,
@@ -8098,9 +8098,9 @@ test('java itself gives every zone at every hour the painting it should', {
     fs.writeFileSync(path.join(dir, 'Check.java'), [
       'public class Check {',
       '  static final class R { static final class drawable {',
-      SPLASH_PAINTINGS.map(function (n, i) { return '    static final int ' + n + ' = ' + (i + 1) + ';'; }).join('\n'),
+      ANDROID_SPLASH_PAINTINGS.map(function (n, i) { return '    static final int ' + n + ' = ' + (i + 1) + ';'; }).join('\n'),
       '  } }',
-      '  static final String[] NAMES = { ' + SPLASH_PAINTINGS.map(function (n) { return '"' + n + '"'; }).join(', ') + ' };',
+      '  static final String[] NAMES = { ' + ANDROID_SPLASH_PAINTINGS.map(function (n) { return '"' + n + '"'; }).join(', ') + ' };',
       isDay, paintingFor,
       '  public static void main(String[] a) {',
       '    StringBuilder sb = new StringBuilder();',
