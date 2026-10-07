@@ -10580,6 +10580,14 @@ test('the Play page is changed only by hand: its film from any link YouTube give
     'each kind of picture is replaced whole, so no old screenshot stays among the new');
   assert.ok(tool.indexOf("(w, h) != (512, 512)") !== -1 && tool.indexOf("(w, h) != (1024, 500)") !== -1, 'the sizes Play takes are checked before the edit');
   assert.ok(tool.indexOf('2 <= len(paths) <= 8') !== -1, 'two to eight phone screenshots');
+  const icon = fs.readFileSync(path.join(__dirname, '..', 'play', 'listing', 'icon-512.png'));
+  assert.deepStrictEqual([icon.readUInt32BE(16), icon.readUInt32BE(20)], [512, 512], 'the store icon, as Play wants it');
+  const shots = fs.readdirSync(path.join(__dirname, '..', 'play', 'listing', 'phone')).filter((n) => n.endsWith('.png'));
+  assert.ok(shots.length >= 2 && shots.length <= 8, 'and the phone screenshots it takes');
+  shots.forEach((n) => {
+    const b = fs.readFileSync(path.join(__dirname, '..', 'play', 'listing', 'phone', n));
+    assert.deepStrictEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [1080, 1920], n + ' at the size of the others');
+  });
 });
 
 test('the App Store screenshots are replaced only by hand, and a version is taken back from review only when asked', () => {
@@ -10595,4 +10603,10 @@ test('the App Store screenshots are replaced only by hand, and a version is take
   assert.ok(only.indexOf('withdraw() if a.withdraw else None') !== -1, 'never taken back unless asked');
   assert.ok(/if taken_back and not DRY:\s*send\(taken_back\)/.test(only), 'and what was taken back is sent again');
   assert.ok(only.indexOf('attach(') === -1 && only.indexOf('write_notes(') === -1, 'the build and its notes stay as they were');
+  const files = fs.readdirSync(path.join(__dirname, '..', 'ios', 'screenshots', '6.9-inch')).filter((n) => n.endsWith('.png'));
+  assert.ok(files.length >= 3 && files.length <= 10, 'the set is there to place');
+  files.forEach((n) => {
+    const b = fs.readFileSync(path.join(__dirname, '..', 'ios', 'screenshots', '6.9-inch', n));
+    assert.deepStrictEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [1320, 2868], n + ' at the 6.9 inch size');
+  });
 });
