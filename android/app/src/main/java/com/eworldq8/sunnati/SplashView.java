@@ -49,12 +49,18 @@ final class SplashView extends View {
     private static final float ICON_DP = 132f;
     private static final float ART_PER_ICON = 1080f / 886f;
     /* the centre of the icon, as a share of the height: up in the calm sky
-       that fills the top of every painting, with the landmark low down. Only
-       the spire of the Kuwait Towers reaches as high as the greeting, and the
-       soft shadow behind the words keeps them clear of it. */
+       that fills the top of every painting, with the landmark low down. It is
+       the lowest the icon stands, and it goes higher whenever the landmark
+       rises near the words, as the Kuwait Towers do. */
     private static final float ICON_AT = 0.42f;
+    /* and the highest it goes, so it is never pressed against the top */
+    private static final float ICON_HIGHEST = 0.2f;
+    /* the open sky kept between the foot of the words and the top of the
+       landmark, so no spire or dome ever runs into a word */
+    private static final float CLEAR_DP = 40f;
 
     private final Drawable painting;
+    private final float[] landmark;  // its middle across and its top, from landmarkFor
     private final Drawable art;
     private final String hail;       // «حيّ الله أهل» or «حيّاكم الله»
     private final String city;       // the place, on its own line, or empty
@@ -76,7 +82,9 @@ final class SplashView extends View {
         /* the sky of the hour in one flat colour, which is what shows under
            the painting until the painting draws */
         setBackgroundColor(day ? 0xFFCFE2F1 : 0xFF0D1B3D);
-        painting = context.getDrawable(paintingFor(TimeZone.getDefault().getID(), day));
+        String zone = TimeZone.getDefault().getID();
+        painting = context.getDrawable(paintingFor(zone, day));
+        landmark = landmarkFor(zone, day);
         art = context.getDrawable(day ? R.drawable.splash_art : R.drawable.splash_art_night);
         /* the icon is drawn at well under half of its picture's size, and
            plain filtering would leave its name and its frame shimmering at
@@ -143,54 +151,118 @@ final class SplashView extends View {
         }
     }
 
+    /** Where the landmark of each painting stands, read off the paintings in
+     *  drawable-nodpi: the middle of it across, as a share of the painting's
+     *  width, and its top, as a share of the painting's height. The middle is
+     *  where the landmark's own weight centres, the three towers of Kuwait
+     *  taken together and not the tallest alone, and the top is the highest
+     *  point of it that can come under the words: the spire of the tallest
+     *  tower, the dome between the minarets, the crown of the fort or the
+     *  mountains behind it. */
+    static float[] landmarkFor(String zone, boolean day) {
+        switch (zone == null ? "" : zone) {
+            case "Asia/Kuwait":
+                return day ? new float[] { 0.512f, 0.512f } : new float[] { 0.53f, 0.546f };
+            case "Asia/Riyadh":
+                return day ? new float[] { 0.53f, 0.665f } : new float[] { 0.56f, 0.655f };
+            case "Asia/Dubai":
+                return day ? new float[] { 0.5f, 0.65f } : new float[] { 0.5f, 0.65f };
+            case "Asia/Qatar":
+                return day ? new float[] { 0.49f, 0.633f } : new float[] { 0.53f, 0.64f };
+            case "Asia/Bahrain":
+                return day ? new float[] { 0.53f, 0.675f } : new float[] { 0.52f, 0.702f };
+            case "Asia/Muscat":
+                return day ? new float[] { 0.49f, 0.643f } : new float[] { 0.5f, 0.651f };
+            default:
+                return day ? new float[] { 0.51f, 0.72f } : new float[] { 0.515f, 0.712f };
+        }
+    }
+
+    /** Where everything stands in a view w by h, for words that reach `reach`
+     *  below the middle of the icon: that middle, down from the top, then the
+     *  painting's left, top, width and height. Plain arithmetic, so a test can
+     *  run it without android.
+     *
+     *  The painting fills the view and keeps its proportions, standing on its
+     *  foot so the landmark low down is always whole. It is moved across until
+     *  the landmark stands under the icon, and made a little wider when that
+     *  would bare an edge. The icon and the words then rise into the sky as far
+     *  as they must for the landmark to stand below them with open sky between.
+     *  Only on a phone too short for that does the painting come down instead,
+     *  over the water or the ground at its foot. */
+    static float[] place(float w, float h, float dp, float reach, float[] landmark, float pw, float ph) {
+        float across = landmark[0];
+        float rises = landmark[1];
+        float clear = CLEAR_DP * dp;
+        float scale = Math.max(Math.max(w / pw, h / ph), w / (2f * Math.min(across, 1f - across) * pw));
+        float sw = pw * scale;
+        float sh = ph * scale;
+        float y = h - sh;
+        float landTop = y + rises * sh;
+        float iconY = Math.max(h * ICON_HIGHEST, Math.min(h * ICON_AT, landTop - clear - reach));
+        float lacking = iconY + reach + clear - landTop;
+        if (lacking > 0) {
+            float down = Math.min(lacking, -y);
+            y += down;
+            if (lacking > down) {
+                sh = (iconY + reach + clear) / rises;
+                sw = sh * pw / ph;
+                y = 0;
+            }
+        }
+        float x = Math.min(0f, Math.max(w - sw, w / 2f - across * sw));
+        return new float[] { iconY, x, y, sw, sh };
+    }
+
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
         midX = w / 2f;
 
-        /* The painting fills the view and keeps its proportions. It is centred
-           across and anchored at its foot, so a tall phone loses a little of
-           each side and a wide one loses the top of the sky, and the landmark
-           low down is always whole. */
+        /* The words are sized first, since how far they reach below the icon
+           decides how high the icon must stand. A long city name is made
+           smaller rather than cut at the edges. */
+        float icon = ICON_DP * dp;
+        if (city.isEmpty()) {
+            hailPaint.setTextSize(23 * dp);
+        } else {
+            hailPaint.setTextSize(18 * dp);
+            cityPaint.setTextSize(31 * dp);
+            float room = w * 0.86f;
+            float wide = cityPaint.measureText(city);
+            if (wide > room) cityPaint.setTextSize(cityPaint.getTextSize() * room / wide);
+        }
+        /* from the middle of the icon to the foot of the last word: half the
+           icon, the rule with the space around it, the hail, and the city */
+        float toHail = icon / 2f + 32 * dp + hailPaint.getTextSize() * 0.85f;
+        float reach = city.isEmpty() ? toHail + hailPaint.descent()
+            : toHail + cityPaint.getTextSize() * 1.2f + cityPaint.descent();
+
+        float iconY = h * ICON_AT;
         if (painting != null) {
             int pw = painting.getIntrinsicWidth();
             int ph = painting.getIntrinsicHeight();
             if (pw > 0 && ph > 0) {
-                float scale = Math.max((float) w / pw, (float) h / ph);
-                int sw = Math.round(pw * scale);
-                int sh = Math.round(ph * scale);
-                int across = Math.round((w - sw) / 2f);
-                painting.setBounds(across, h - sh, across + sw, h);
+                float[] at = place(w, h, dp, reach, landmark, pw, ph);
+                iconY = at[0];
+                painting.setBounds(Math.round(at[1]), Math.round(at[2]),
+                    Math.round(at[1] + at[3]), Math.round(at[2] + at[4]));
             }
         }
 
-        /* The icon is centred across with its own centre at 42% of the height,
-           in the calm sky above the landmark. */
-        float icon = ICON_DP * dp;
-        float iconY = h * ICON_AT;
+        /* the icon centred across, its middle where the landmark left it */
         int side = Math.round(icon * ART_PER_ICON);
         int left = Math.round(midX - side / 2f);
         int top = Math.round(iconY - side / 2f);
         if (art != null) art.setBounds(left, top, left + side, top + side);
 
         /* Under the icon itself, not under its shadow: the rule, then the
-           greeting, the hail first and the city larger under it. A long city
-           name is made smaller rather than cut at the edges. */
+           greeting, the hail first and the city larger under it. */
         float foot = iconY + icon / 2f;
         ruleTop = foot + 18 * dp;
         ruleBottom = ruleTop + 2 * dp;
         ruleLeft = midX - 14 * dp;
         ruleRight = midX + 14 * dp;
-        if (city.isEmpty()) {
-            hailPaint.setTextSize(23 * dp);
-            hailY = ruleBottom + 12 * dp + hailPaint.getTextSize() * 0.85f;
-            return;
-        }
-        hailPaint.setTextSize(18 * dp);
-        cityPaint.setTextSize(31 * dp);
-        float room = w * 0.86f;
-        float wide = cityPaint.measureText(city);
-        if (wide > room) cityPaint.setTextSize(cityPaint.getTextSize() * room / wide);
         hailY = ruleBottom + 12 * dp + hailPaint.getTextSize() * 0.85f;
         cityY = hailY + cityPaint.getTextSize() * 1.2f;
     }

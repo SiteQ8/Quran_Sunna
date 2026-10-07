@@ -79,20 +79,41 @@
   html[data-splash="om-night"] { --boot-art: url('img/splash/om-night.webp'); }
   html[data-splash="default-day"] { --boot-art: url('img/splash/default-day.webp'); }
   html[data-splash="default-night"] { --boot-art: url('img/splash/default-night.webp'); }
-  /* full bleed on a phone, held to the bottom so the landmark stays in view */
+  /* Where each landmark stands, as the android splash reads it off the same
+     paintings: --boot-f is the middle of it across, as a share of the
+     painting's width, and --boot-t its top, as a share of its height. */
+  html[data-splash="kw-day"] { --boot-f: .512; --boot-t: .512; }
+  html[data-splash="kw-night"] { --boot-f: .53; --boot-t: .546; }
+  html[data-splash="sa-day"] { --boot-f: .53; --boot-t: .665; }
+  html[data-splash="sa-night"] { --boot-f: .56; --boot-t: .655; }
+  html[data-splash="ae-day"] { --boot-f: .5; --boot-t: .65; }
+  html[data-splash="ae-night"] { --boot-f: .5; --boot-t: .65; }
+  html[data-splash="qa-day"] { --boot-f: .49; --boot-t: .633; }
+  html[data-splash="qa-night"] { --boot-f: .53; --boot-t: .64; }
+  html[data-splash="bh-day"] { --boot-f: .53; --boot-t: .675; }
+  html[data-splash="bh-night"] { --boot-f: .52; --boot-t: .702; }
+  html[data-splash="om-day"] { --boot-f: .49; --boot-t: .643; }
+  html[data-splash="om-night"] { --boot-f: .5; --boot-t: .651; }
+  html[data-splash="default-day"] { --boot-f: .51; --boot-t: .72; }
+  html[data-splash="default-night"] { --boot-f: .515; --boot-t: .712; }
+  /* Full bleed on a phone, standing on its foot so the landmark stays in
+     view, and moved across until the landmark stands under the icon. The
+     painting fills the height here, so it is 56.25vh wide, and it is never
+     moved so far that an edge shows. */
   #boot-sky { background: #cfe2f1 var(--boot-art, url('img/splash/default-day.webp')) 50% 100% / cover no-repeat; }
+  #boot-sky { background-position: clamp(calc(100vw - 56.25vh), calc(50vw - var(--boot-f, .5) * 56.25vh), 0px) 100%; }
   html[data-splash$="-night"] #boot-sky { background-color: #0d1b3d; }
-  /* the towers of Kuwait rise higher than any other landmark, into the band
-     the greeting is written on, so that painting is held by its left edge:
-     a phone crops it on the right, and the towers stand beside the words */
-  html[data-splash^="kw-"] #boot-sky { background-position: 0 100%; }
+  /* The icon stands with its middle at 42% of the height, and rises into the
+     sky whenever a landmark would come near the words: the words reach 150px
+     below the icon's middle, and 40px of open sky is kept beneath them. */
+  #boot-splash { --boot-at: min(42%, calc(var(--boot-t, 1) * 100vh - 190px)); }
   /* A shorter phone has no room to spare beneath the icon, so the painting
      is drawn a little larger from the top: the sky reaches further down and
-     every landmark stays below the greeting, and only water is cropped. An
-     iPhone, at 9 by 19.5, keeps the whole painting. */
+     only water is cropped. It is then 64.125vh wide, and its landmark 14%
+     lower. An iPhone, at 9 by 19.5, keeps the whole painting. */
   @media (min-aspect-ratio: 19/40) {
-    #boot-sky { background-size: auto 114%; background-position: 50% 0; }
-    html[data-splash^="kw-"] #boot-sky { background-position: 0 0; }
+    #boot-sky { background-size: auto 114%; background-position: clamp(calc(100vw - 64.125vh), calc(50vw - var(--boot-f, .5) * 64.125vh), 0px) 0; }
+    #boot-splash { --boot-at: min(42%, calc(var(--boot-t, 1) * 114vh - 190px)); }
   }
   /* A screen wider than a phone would crop the painting to its landmark and
      set the icon on it, so there the painting stands whole in the middle and
@@ -133,12 +154,13 @@
      paints with the very first frame, before any stylesheet or script: the
      painting of the reader's country under its sky, the icon where the
      phone's own opening picture puts it, its middle at 42 per cent of the
-     height, and the greeting beneath. The colours by day and by night are
+     height or higher when the landmark rises near the words, and the
+     greeting beneath. The colours by day and by night, and the height, are
      in the head, keyed on the painting boot.js chose. -->
 <div id="boot-splash" style="position:fixed;inset:0;z-index:999;overflow:hidden;background:#cfe2f1;transition:opacity .38s ease">
   <div id="boot-sky" style="position:absolute;inset:0"></div>
-  <img id="boot-mark" src="icons/icon-384.png" alt="سُنّتي" width="132" height="132" style="position:absolute;left:50%;top:42%;width:132px;height:132px;margin:-66px 0 0 -66px;border-radius:30px">
-  <span style="position:absolute;left:16px;right:16px;top:calc(42% + 80px);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+  <img id="boot-mark" src="icons/icon-384.png" alt="سُنّتي" width="132" height="132" style="position:absolute;left:50%;top:var(--boot-at,42%);width:132px;height:132px;margin:-66px 0 0 -66px;border-radius:30px">
+  <span style="position:absolute;left:16px;right:16px;top:calc(var(--boot-at,42%) + 80px);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
     <span id="boot-rule" style="width:72px;height:2px;border-radius:1px"></span>
     <span id="boot-greet" style="display:flex;flex-direction:column;align-items:center;gap:2px"><span id="boot-hail" style="font:600 15px/1.5 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif"></span><span id="boot-city" style="font:600 26px/1.2 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif"></span></span>
   </span>
