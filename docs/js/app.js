@@ -2270,23 +2270,33 @@
     renderHeat($('home-heat'), 30);
   }
 
+  /* Each section wears a small painting of the shore the sky of the hour is
+     painted on, named after the section in img/sections. The painting only
+     dresses the card, so it says nothing to a screen reader: the name and
+     the note beneath it already say where the card goes. */
   var TILES = [
-    { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'أذكار وقتك وحصن المسلم' },
-    { act: 'mosques', icon: 'mosque', name: 'المساجد', note: 'أقرب المساجد إليك' },
-    { nav: 'qada', icon: 'clock', name: 'القضاء', note: 'ما عليك من صلاة وصيام' },
-    { nav: 'umrah', icon: 'ihram', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
-    { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة' },
-    { nav: 'khatma', icon: 'target', name: 'الختمة', note: 'خطة قراءة' },
-    { nav: 'hadith', icon: 'text', name: 'الأربعون', note: 'النووية' },
-    { nav: 'ruqyah', icon: 'shield', name: 'الرقية', note: 'آيات وأدعية' },
-    { nav: 'dua', icon: 'dua', name: 'الأدعية', note: 'مأثورة' }
+    { nav: 'azkar', name: 'الأذكار', note: 'أذكار وقتك وحصن المسلم' },
+    { act: 'mosques', name: 'المساجد', note: 'أقرب المساجد إليك' },
+    { nav: 'qada', name: 'القضاء', note: 'ما عليك من صلاة وصيام' },
+    { nav: 'umrah', name: 'صفة العمرة', note: 'خطوات العمرة والمواقيت والمحظورات' },
+    { nav: 'qibla', name: 'القبلة', note: 'اتجاه الكعبة' },
+    { nav: 'khatma', name: 'الختمة', note: 'خطة قراءة' },
+    { nav: 'hadith', name: 'الأربعون', note: 'النووية' },
+    { nav: 'ruqyah', name: 'الرقية', note: 'آيات وأدعية' },
+    { nav: 'dua', name: 'الأدعية', note: 'مأثورة' }
   ];
 
+  /* The sections never change, so the grid is drawn once and kept. Drawing
+     it on every return home made nine new pictures each time, and each was
+     decoded again and blinked in. A grid found empty is drawn afresh. */
   function renderTiles() {
     var host = $('home-tiles');
-    if (!host) return;
+    if (!host || host.firstElementChild) return;
     host.innerHTML = TILES.map(function (t) {
-      return '<button class="tile" ' + (t.act ? 'data-act="' + esc(t.act) + '"' : 'data-go="' + esc(t.nav) + '"') + '>' + icon(t.icon) +
+      var key = t.act || t.nav;
+      return '<button class="tile" ' + (t.act ? 'data-act="' + esc(t.act) + '"' : 'data-go="' + esc(t.nav) + '"') + '>' +
+        '<img class="tile-art" src="img/sections/' + esc(key) + '.webp" width="384" height="288" alt=""' +
+        ' decoding="async" draggable="false">' +
         '<span class="tile-name">' + esc(t.name) + '</span>' +
         '<span class="tile-note">' + esc(t.note) + '</span></button>';
     }).join('');
