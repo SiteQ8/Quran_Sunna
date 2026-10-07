@@ -635,12 +635,17 @@ async def main():
 
         # صور البدء التي يعرضها آيفون للتطبيق المثبّت من المتصفّح: لوحة الفجر تغطّي
         # الشاشة، والأيقونة عرضها ١٣٢ نقطة ومركزها على ٤٢٪ من الارتفاع
+        # وتُحفظ JPEG لا PNG: اللوحة بألوانها الكاملة كانت تجعل الصورة الواحدة ثلاثة
+        # ميغابايت، وآيفون يقبل JPEG لصور البدء كما يقبل PNG
         dawn = Image.open(DAWN).convert('RGB')
-        for f in sorted((ROOT / 'docs' / 'splash').glob('splash-*.png')):
+        for f in sorted((ROOT / 'docs' / 'splash').glob('splash-*.*')):
             w, h = map(int, f.stem.split('-')[1].split('x'))
             icon = 132 * apple_scale(w, h)
             mark = await shot(pg, splash_page(w, h, icon, 0.42, f'0 {icon // 24}px {icon // 10}px rgba(40,10,10,.28)'), w, h, f)
-            Image.alpha_composite(cover(dawn, w, h).convert('RGBA'), mark).convert('RGB').save(f, optimize=True)
+            out = f.with_suffix('.jpg')
+            Image.alpha_composite(cover(dawn, w, h).convert('RGBA'), mark).convert('RGB').save(out, quality=84, optimize=True, progressive=True)
+            if f != out:
+                f.unlink()
 
         # صورة العرض في Play
         out = ROOT / 'play' / 'feature-graphic-1024x500.png'
