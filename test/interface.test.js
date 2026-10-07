@@ -1453,6 +1453,65 @@ test('eight paintings of one shore ship with the app and work offline', () => {
   assert.ok(/png\|svg\|webp/.test(sw), 'and is read from the cache once kept, since a painting never changes under its name');
 });
 
+/* in the order the cards stand in «الأقسام», each named after its section */
+const SECTION_ART = ['azkar', 'mosques', 'qada', 'umrah', 'qibla', 'khatma', 'hadith', 'ruqyah', 'dua'];
+
+/* the size a webp says it is, read from its first chunk */
+function webpSize(buf) {
+  const kind = buf.toString('latin1', 12, 16);
+  if (kind === 'VP8 ') return [buf.readUInt16LE(26) & 0x3fff, buf.readUInt16LE(28) & 0x3fff];
+  if (kind === 'VP8L') { const b = buf.readUInt32LE(21); return [(b & 0x3fff) + 1, ((b >>> 14) & 0x3fff) + 1]; }
+  if (kind === 'VP8X') return [buf.readUIntLE(24, 3) + 1, buf.readUIntLE(27, 3) + 1];
+  return null;
+}
+
+test('each section wears a painting of the same shore, which ships with the app and works offline', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  SECTION_ART.forEach(function (name) {
+    const file = path.join(DOCS, 'img', 'sections', name + '.webp');
+    assert.ok(fs.existsSync(file), name + ' is there');
+    const bytes = fs.readFileSync(file);
+    const head = bytes.subarray(0, 12).toString('latin1');
+    assert.ok(head.indexOf('RIFF') === 0 && head.indexOf('WEBP') === 8, name + ' is a webp');
+    assert.deepStrictEqual(webpSize(bytes), [384, 288], name + ' is drawn at the size the card declares for it');
+    assert.ok(fs.statSync(file).size < 30000, name + ' stays light');
+    assert.ok(sw.indexOf("'./img/sections/" + name + ".webp'") !== -1, name + ' is kept for offline use');
+  });
+
+  const { doc } = boot();
+  const cards = [...doc.querySelectorAll('#home-tiles button')];
+  assert.strictEqual(cards.length, SECTION_ART.length, 'one card for each section');
+  cards.forEach(function (card) {
+    const art = card.querySelectorAll('img.tile-art');
+    assert.strictEqual(art.length, 1, 'each card carries one painting');
+    /* it only dresses the card: the name and the note say where it goes */
+    assert.strictEqual(art[0].getAttribute('alt'), '', 'a screen reader passes over the painting');
+    assert.strictEqual(art[0].getAttribute('width'), '384');
+    assert.strictEqual(art[0].getAttribute('height'), '288', 'its box is held before it arrives, so nothing jumps');
+  });
+  const srcs = cards.map(function (c) { return c.querySelector('img.tile-art').getAttribute('src'); });
+  assert.strictEqual(new Set(srcs).size, srcs.length, 'no two sections share a painting');
+  assert.deepStrictEqual(srcs, SECTION_ART.map(function (n) { return 'img/sections/' + n + '.webp'; }),
+    'and each section wears its own');
+  assert.strictEqual(doc.querySelectorAll('#home-tiles svg.icon').length, 0,
+    'the painting takes the place of the line drawing');
+});
+
+test('coming back home keeps the sections as they were drawn, and an emptied grid is drawn again', () => {
+  const { win, doc } = boot();
+  const first = doc.querySelector('#home-tiles .tile-art');
+  assert.ok(first, 'the sections are drawn on the way in');
+  win.App.go('quran');
+  win.App.go('home');
+  assert.strictEqual(doc.querySelector('#home-tiles .tile-art'), first,
+    'the same picture, not a new one decoded again on every return');
+  assert.strictEqual(doc.querySelectorAll('#home-tiles .tile').length, SECTION_ART.length);
+  doc.getElementById('home-tiles').innerHTML = '';
+  win.App.go('home');
+  assert.strictEqual(doc.querySelectorAll('#home-tiles .tile').length, SECTION_ART.length,
+    'a grid found empty is drawn afresh');
+});
+
 test('the sky in the niche turns with the place\'s own times', () => {
   const { win } = boot({ now: new Date(2026, 9, 7, 12, 0, 0) });
   const t = win.App.helpers.computeTimes ? win.App.helpers.computeTimes(new Date(2026, 9, 7, 12)) : null;
@@ -7782,18 +7841,25 @@ test('every mark the app names is drawn, and the umrah stages each wear their ow
 test('no two entries in a list wear the same mark', () => {
   const { win, doc } = boot();
   win.App.go('home');
-  const tiles = [...doc.querySelectorAll('#home-tiles .tile use')].map(function (u) { return u.getAttribute('href'); });
+  /* the sections wear paintings rather than line drawings, one to each */
+  const tiles = [...doc.querySelectorAll('#home-tiles .tile-art')].map(function (i) { return i.getAttribute('src'); });
+  assert.ok(tiles.length >= 9, 'every section wears a painting, got ' + tiles.length);
   assert.strictEqual(new Set(tiles).size, tiles.length,
     'two sections looked alike: ' + tiles.filter(function (t, i) { return tiles.indexOf(t) !== i; }).join(' '));
+  /* the umrah and the mosques were once the same drawing, which read as one
+     thing being two, and the adhkar and the duas are told apart the same way */
+  ['umrah', 'mosques', 'azkar', 'dua'].forEach(function (key) {
+    assert.ok(tiles.indexOf('img/sections/' + key + '.webp') !== -1, key + ' wears a painting of its own');
+  });
   win.App.go('more');
   const rows = [...doc.querySelectorAll('#more-list .row use')].map(function (u) { return u.getAttribute('href'); });
   assert.strictEqual(new Set(rows).size, rows.length,
     'two rows looked alike: ' + rows.filter(function (r, i) { return rows.indexOf(r) !== i; }).join(' '));
-  /* the umrah wears the pilgrim and the mosques wear a mosque; they were once
-     the same drawing, which read as one thing being two */
-  assert.ok(tiles.indexOf('#i-ihram') !== -1 && tiles.indexOf('#i-mosque') !== -1);
-  assert.ok(tiles.indexOf('#i-dua') !== -1 && tiles.indexOf('#i-hands') !== -1,
-    'the raised palm for the adhkar and the cupped hands for the supplications');
+  /* the line drawings live on in the more list: the pilgrim for the umrah and
+     a mosque for the mosques, the raised palm for the adhkar and the cupped
+     hands for the supplications */
+  assert.ok(rows.indexOf('#i-ihram') !== -1 && rows.indexOf('#i-mosque') !== -1);
+  assert.ok(rows.indexOf('#i-hands') !== -1 && rows.indexOf('#i-dua') !== -1);
 });
 
 test('the pause mark is drawn, not filled into nothing', () => {
