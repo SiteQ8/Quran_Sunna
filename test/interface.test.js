@@ -7812,9 +7812,14 @@ test('the page sits below the phone bars, inset by the framework rather than by 
 
 test('the splash is drawn and held, not a logo blinking past', () => {
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
-  /* it is the app's own paper, and it eases in rather than snapping on */
+  /* it was the app's own paper, and it is a painting now: under the painting
+     lies the sky of the hour in one flat colour, the pale blue of the day and
+     the deep blue of the night, for the moment before the painting draws */
+  ['0xFFCFE2F1', '0xFF0D1B3D'].forEach(function (c) {
+    assert.ok(splash.indexOf(c) !== -1, 'both skies, ' + c);
+  });
   ['0xFFF6F4EE', '0xFF10161A'].forEach(function (c) {
-    assert.ok(splash.indexOf(c) !== -1, 'both papers, ' + c);
+    assert.ok(splash.indexOf(c) === -1, 'the old paper is gone from under the painting, ' + c);
   });
   assert.ok(splash.indexOf("animate().alpha(1f)") !== -1, 'it eases in rather than appearing whole');
 
@@ -7866,9 +7871,15 @@ test('the opening is held long enough to be seen, and no longer', () => {
 test('the splash is the app\'s own mark and face, drawn where the fonts can be read', () => {
   const splash = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java'), 'utf8');
   /* android cannot open a woff2 face, so the picture is made at build time
-     with the real fonts rather than approximated in canvas */
+     with the real fonts rather than approximated in canvas. There is one for
+     the day and one for the night, and the hour chooses between them now,
+     not the dark theme. */
   assert.ok(/R\.drawable\.splash_art_night/.test(splash) &&
-    /R\.drawable\.splash_art(?![_a-zA-Z])/.test(splash), 'a picture for each theme');
+    /R\.drawable\.splash_art(?![_a-zA-Z])/.test(splash), 'a picture for the day and one for the night');
+  assert.ok(/day \? R\.drawable\.splash_art : R\.drawable\.splash_art_night/.test(splash),
+    'the day takes the icon with the shadow and the night the one with the glow');
+  assert.ok(splash.indexOf('uiMode') === -1 && splash.indexOf('UI_MODE_NIGHT') === -1,
+    'the theme has no say in the opening, the hour does');
   assert.ok(splash.indexOf('createFromAsset') !== -1, 'the app face is loaded, not the system face');
   /* the picture is made at build time and knows nobody, so the greeting is
      drawn over it from a city the page handed the wrapper last time */
@@ -7894,6 +7905,130 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/store/icon-build.py'), 'utf8');
   assert.ok(/def splash_page\(/.test(tool) && tool.indexOf("'splash_art_night'") !== -1, 'both pictures come from the icon tool');
   assert.ok(/data_uri\(svg\(background\(\) \+ figure\(\)/.test(tool), 'and they carry the icon itself, not a drawing of one');
+});
+
+/* ---------------- the opening painted for the reader's own country ---------------- */
+
+const SPLASH_JAVA = path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java');
+const SPLASH_ZONES = {
+  'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae',
+  'Asia/Qatar': 'qa', 'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om'
+};
+const SPLASH_PAINTINGS = [];
+['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default'].forEach(function (p) {
+  SPLASH_PAINTINGS.push('splash_bg_' + p + '_day', 'splash_bg_' + p + '_night');
+});
+
+/* the width and height a webp says it has, read off its own header */
+function webpSize(buf) {
+  const chunk = buf.subarray(12, 16).toString('latin1');
+  if (chunk === 'VP8 ') return [buf.readUInt16LE(26) & 0x3fff, buf.readUInt16LE(28) & 0x3fff];
+  if (chunk === 'VP8X') return [1 + buf.readUIntLE(24, 3), 1 + buf.readUIntLE(27, 3)];
+  if (chunk === 'VP8L') {
+    const bits = buf.readUInt32LE(21);
+    return [1 + (bits & 0x3fff), 1 + ((bits >> 14) & 0x3fff)];
+  }
+  return null;
+}
+
+test('the opening is painted for the reader\'s own country, by day and by night, and every painting is light', () => {
+  const res = path.join(__dirname, '..', 'android/app/src/main/res/drawable-nodpi');
+  const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
+  /* six countries with a landmark of their own and the open shore for
+     everyone else, each once by day and once by night */
+  assert.strictEqual(SPLASH_PAINTINGS.length, 14);
+  SPLASH_PAINTINGS.forEach(function (name) {
+    const file = path.join(res, name + '.webp');
+    assert.ok(fs.existsSync(file), name + ' is there');
+    const buf = fs.readFileSync(file);
+    const head = buf.subarray(0, 12).toString('latin1');
+    assert.ok(head.indexOf('RIFF') === 0 && head.indexOf('WEBP') === 8, name + ' is a webp');
+    assert.ok(buf.length < 200000, name + ' stays under its budget of 200000 bytes: ' + buf.length);
+    assert.deepStrictEqual(webpSize(buf), [1080, 1920], name + ' is 1080 by 1920, the 9:16 the view crops from');
+    /* named, never looked up by a string, so lint does not call it unused
+       and the shrinker does not drop it */
+    assert.ok(new RegExp('R\\.drawable\\.' + name + '(?![_a-zA-Z0-9])').test(splash),
+      name + ' is named through R.drawable');
+  });
+  /* and nothing ships in the folder that the view cannot choose, which lint
+     would rightly call an unused resource */
+  const shipped = fs.readdirSync(res).filter(function (f) { return f.indexOf('splash_bg_') === 0; })
+    .map(function (f) { return f.replace(/\.webp$/, ''); }).sort();
+  assert.deepStrictEqual(shipped, SPLASH_PAINTINGS.slice().sort(), 'every painting shipped is one the view can choose');
+  /* they are made from the masters by one tool, which holds the same budget */
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/android/splash-bg.py'), 'utf8');
+  assert.ok(tool.indexOf('SIZE = (1080, 1920)') !== -1 && tool.indexOf('Image.LANCZOS') !== -1,
+    'cut to 9:16 from the middle and made 1080 by 1920');
+  assert.ok(tool.indexOf('BUDGET = 200000') !== -1, 'and the tool refuses what this test refuses');
+  assert.ok(tool.indexOf("'drawable-nodpi'") !== -1, 'into nodpi, once, since a painting does not change with the density');
+});
+
+test('the painting is chosen by the phone\'s time zone and by the hour, and the theme has no say', () => {
+  const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
+  assert.ok(splash.indexOf('paintingFor(TimeZone.getDefault().getID(), day)') !== -1,
+    'the country is read from the time zone, which asks for no permission');
+  assert.ok(splash.indexOf('isDay(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))') !== -1,
+    'and the hour from the phone\'s own clock');
+  const pick = /static int paintingFor\(String zone, boolean day\) \{([\s\S]*?)\n    \}\n/.exec(splash);
+  assert.ok(pick, 'the painting is chosen in one place');
+  Object.keys(SPLASH_ZONES).forEach(function (zone) {
+    const code = SPLASH_ZONES[zone];
+    assert.ok(new RegExp('case "' + zone + '":\\s*return day \\? R\\.drawable\\.splash_bg_' + code +
+      '_day : R\\.drawable\\.splash_bg_' + code + '_night;').test(pick[1]), zone + ' is shown its own landmark');
+  });
+  assert.ok(/default:\s*return day \? R\.drawable\.splash_bg_default_day : R\.drawable\.splash_bg_default_night;/.test(pick[1]),
+    'and every other zone the open shore');
+  const day = /static boolean isDay\(int hour\) \{([\s\S]*?)\n    \}\n/.exec(splash);
+  assert.ok(day && /return hour >= 5 && hour < 18;/.test(day[1]), 'day is 05:00 to 17:59, and every other hour is night');
+  /* the colours of the hour, as the painting is lit */
+  ['0xFFA87B25', '0xFF16241C', '0xFFE2C06A', '0xFFF3EFE6'].forEach(function (c) {
+    assert.ok(splash.indexOf(c) !== -1, 'the greeting is written in ' + c);
+  });
+  assert.ok(splash.indexOf('setShadowLayer') !== -1, 'with a soft shadow, so it holds wherever the painting is busier');
+});
+
+test('java itself gives every zone at every hour the painting it should', {
+  skip: require('node:child_process').spawnSync('javac', ['-version']).status !== 0 && 'no jdk here'
+}, () => {
+  const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
+  /* the two choices are pure, so they are lifted out as they are and run
+     against a stand-in for R, without android */
+  const isDay = /    static boolean isDay\(int hour\) \{[\s\S]*?\n    \}\n/.exec(splash)[0];
+  const paintingFor = /    static int paintingFor\(String zone, boolean day\) \{[\s\S]*?\n    \}\n/.exec(splash)[0];
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'sunnati-splash-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'Check.java'), [
+      'public class Check {',
+      '  static final class R { static final class drawable {',
+      SPLASH_PAINTINGS.map(function (n, i) { return '    static final int ' + n + ' = ' + (i + 1) + ';'; }).join('\n'),
+      '  } }',
+      '  static final String[] NAMES = { ' + SPLASH_PAINTINGS.map(function (n) { return '"' + n + '"'; }).join(', ') + ' };',
+      isDay, paintingFor,
+      '  public static void main(String[] a) {',
+      '    StringBuilder sb = new StringBuilder();',
+      '    for (String zone : a[0].split(",")) for (int hour = 0; hour < 24; hour++) {',
+      '      int id = paintingFor(zone.equals("none") ? null : zone, isDay(hour));',
+      '      sb.append(zone).append(" ").append(hour).append(" ").append(NAMES[id - 1]).append("\\n");',
+      '    }',
+      '    System.out.print(sb);',
+      '  }',
+      '}'
+    ].join('\n'));
+    execFileSync('javac', ['-d', dir, path.join(dir, 'Check.java')], { stdio: 'pipe' });
+    const zones = Object.keys(SPLASH_ZONES)
+      .concat(['Asia/Aden', 'Asia/Baghdad', 'Europe/London', 'America/New_York', 'UTC', 'GMT+03:00', 'none']);
+    const out = execFileSync('java', ['-cp', dir, 'Check', zones.join(',')], { stdio: 'pipe' })
+      .toString().trim().split('\n');
+    assert.strictEqual(out.length, zones.length * 24, 'every zone at every hour');
+    out.forEach(function (line) {
+      const [zone, hour, name] = line.split(' ');
+      const h = +hour;
+      const want = 'splash_bg_' + (SPLASH_ZONES[zone] || 'default') + '_' + (h >= 5 && h <= 17 ? 'day' : 'night');
+      assert.strictEqual(name, want, zone + ' at ' + hour + ':00');
+    });
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test('pressing a mosque brings the map onto it and names it', () => {
