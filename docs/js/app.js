@@ -585,7 +585,58 @@
     /* the times are worked out from the place, so this is where the place is
        settled and the right moment to hand it over for the next opening */
     tellPlace();
+    tellSun(state.times);
     return state.times;
+  }
+
+  /* The opening screen paints its night or its day before any of this has
+     run, so the place's own fajr and maghrib are left where boot.js can read
+     them, with the day they belong to: boot.js trusts them only on that day
+     and keeps to the clock on any other. */
+  function tellSun(times) {
+    var t = times || computeTimes(new Date());
+    if (!t || typeof t.fajr !== 'number' || typeof t.maghrib !== 'number' ||
+        !isFinite(t.fajr) || !isFinite(t.maghrib)) return false;
+    try {
+      window.localStorage.setItem('sunnati.sun', JSON.stringify({
+        d: Store.dayKey(), f: Math.round(t.fajr), m: Math.round(t.maghrib)
+      }));
+      return true;
+    } catch (e) { return false; }
+  }
+
+  /* boot.js picks the painting by the zone the reader set, else the phone's
+     own, and this is the same table so the paintings warmed are the ones the
+     next opening asks for. */
+  var SPLASH_LANDS = { 'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae', 'Asia/Qatar': 'qa',
+    'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om' };
+
+  function splashLand() {
+    var zone = Store.get('zone');
+    if (typeof zone !== 'string' || !zone) {
+      try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { zone = ''; }
+    }
+    return Object.prototype.hasOwnProperty.call(SPLASH_LANDS, zone) ? SPLASH_LANDS[zone] : 'default';
+  }
+
+  /* Only the two plain paintings come with the app; a country's own pair is
+     fetched once the app is up, so the worker has it for the next opening
+     and the sky does not wait on the network then. The worker keeps only
+     what passes through it, so on a first visit, before it has taken the
+     page, the pair waits until it has. */
+  function warmSplash() {
+    var sw = window.navigator && window.navigator.serviceWorker;
+    if (sw && !sw.controller && sw.addEventListener) {
+      var once = function () { sw.removeEventListener('controllerchange', once); warmSplash(); };
+      sw.addEventListener('controllerchange', once);
+      return [];
+    }
+    var land = splashLand();
+    return ['day', 'night'].map(function (half) {
+      var src = 'img/splash/' + land + '-' + half + '.webp';
+      try { var img = new window.Image(); img.decoding = 'async'; img.src = src; } catch (e) { /* no pictures here */ }
+      return src;
+    });
   }
 
   function methodName(key) {
@@ -1224,15 +1275,20 @@
     state.shownSunnah = { day: shownDay, hour: c.windowKey };
     maybeNotify(c);
     maybeSalawat(false);
-    if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); }
+    if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); tellSun(computeTimes(new Date())); }
     if (!state.askedPlace) {
       state.askedPlace = true;
       adoptGrantedNotifications();
       /* the app holds its splash until the page says it has painted, and the
-         page's own splash goes at the same moment */
+         page's own splash goes at the same moment; a wrapper with no splash of
+         its own has nothing to hand over to, so there the page's is held and
+         faded as in a browser */
       var app = bridge();
       if (app && app.pageReady) { try { app.pageReady(); } catch (e) { /* older package */ } }
-      dismissBootSplash(!!app);
+      dismissBootSplash(appDrawsSplash());
+      /* and once the first screen is up, the country's own paintings are
+         fetched for the next opening */
+      window.setTimeout(warmSplash, 4000);
       if (Store.get('pageLayout') === 'madinah') loadMadinahLines().then(function () { if (state.view === 'page') renderPage(); });
       /* The sheets are checked when the app opens, and again whenever the
          reader comes back to it. Without the second check a phone left open
@@ -8444,6 +8500,15 @@
       .catch(function () { /* offline install is optional */ });
   }
 
+  /* Only the android package draws a splash of its own and holds it until the
+     page calls pageReady. The iOS wrapper has a bridge but no splash and no
+     pageReady, and taking the page's splash away there at once meant an
+     iPhone never saw any opening at all. */
+  function appDrawsSplash() {
+    var app = bridge();
+    return !!(app && app.pageReady);
+  }
+
   /* The splash written into the page itself: it fades once the first screen
      is drawn, so the reader never sees a bare page waiting to be filled. */
   function dismissBootSplash(atOnce) {
@@ -8474,7 +8539,7 @@
   }
 
   function boot() {
-    if (bridge()) dismissBootSplash(true);
+    if (appDrawsSplash()) dismissBootSplash(true);
     Store.attach();
     Store.migrate();
     settleTicks();
@@ -8524,7 +8589,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
