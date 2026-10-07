@@ -404,6 +404,22 @@ button { background: none; border: none; cursor: pointer; }
 .mihrab-inner { opacity: .2; }
 .mihrab-star { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .5; }
 .mihrab-moon { fill: currentColor; stroke: none; }
+/* The sky of the hour: a painting of one shore seen through the niche, lit as
+   the day lights it, fading out above the countdown so the numbers stand on
+   the card. It is the painting, so the tint of the niche is taken off while it
+   shows, and in the dark theme the daylight is lowered rather than shone. */
+.sky { display: none; }
+html.has-sky .sky { display: inline; }
+html.has-sky .mihrab-fill { display: none; }
+html[data-theme="dark"] .sky { opacity: .8; }
+.sky-stars circle { fill: #fff; animation: twinkle 4.2s ease-in-out infinite; }
+.sky-stars circle:nth-child(3n) { animation-duration: 5.3s; animation-delay: -1.7s; }
+.sky-stars circle:nth-child(3n+1) { animation-duration: 3.4s; animation-delay: -2.6s; }
+.sky-stars circle:nth-child(4n) { animation-delay: -.8s; }
+@keyframes twinkle { 0%, 100% { opacity: .22; } 50% { opacity: .95; } }
+html.less-motion .sky-stars circle { animation: none; opacity: .6; }
+.moon-dark { fill: #fff; opacity: .07; }
+.moon-lit { fill: #f7f0da; }
 /* Tall enough that the whole countdown sits inside the niche rather than
    spilling out under its base. No padding, or the niche and the arc it frames
    start at different heights and the niche stretches to cover the difference. */

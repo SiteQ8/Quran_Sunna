@@ -1436,6 +1436,126 @@ test('a day kept with a field of the wrong kind does not stop the app', () => {
   assert.strictEqual(digits(doc.getElementById('tracker-done').textContent), 1);
 });
 
+/* ---------------- the sky of the hour ---------------- */
+
+const SKY_PLATES = ['night', 'fajr', 'sunrise', 'morning', 'noon', 'afternoon', 'sunset', 'dusk'];
+
+test('eight paintings of one shore ship with the app and work offline', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  SKY_PLATES.forEach(function (name) {
+    const file = path.join(DOCS, 'img', 'sky', name + '.webp');
+    assert.ok(fs.existsSync(file), name + ' is there');
+    const head = fs.readFileSync(file).subarray(0, 12).toString('latin1');
+    assert.ok(head.indexOf('RIFF') === 0 && head.indexOf('WEBP') === 8, name + ' is a webp');
+    assert.ok(fs.statSync(file).size < 60000, name + ' stays light');
+    assert.ok(sw.indexOf("'./img/sky/" + name + ".webp'") !== -1, name + ' is kept for offline use');
+  });
+  assert.ok(/png\|svg\|webp/.test(sw), 'and is read from the cache once kept, since a painting never changes under its name');
+});
+
+test('the sky in the niche turns with the place\'s own times', () => {
+  const { win } = boot({ now: new Date(2026, 9, 7, 12, 0, 0) });
+  const t = win.App.helpers.computeTimes ? win.App.helpers.computeTimes(new Date(2026, 9, 7, 12)) : null;
+  const times = t || { fajr: 265, sunrise: 344, dhuhr: 696, asr: 897, maghrib: 1047, isha: 1124 };
+  const at = (m) => win.App.helpers.skyAt(times, m);
+  const pure = (m, name) => {
+    const s = at(m);
+    /* the painting alone: at one end of a blend, or held between two of itself */
+    return (s.a === name && (s.mix < .02 || s.b === name)) || (s.b === name && s.mix > .98);
+  };
+  assert.ok(pure(times.fajr - 60, 'night'), 'before the dawn, the night');
+  const dawn = at(times.fajr + 10);
+  assert.strictEqual(dawn.a, 'night'); assert.strictEqual(dawn.b, 'fajr');
+  assert.ok(dawn.mix > 0 && dawn.mix < 1, 'the dawn comes in after the fajr, not at once');
+  assert.ok(pure(times.sunrise + 12, 'sunrise'));
+  assert.ok(pure(times.dhuhr, 'noon'));
+  const asr = at(times.asr);
+  assert.strictEqual(asr.a, 'noon'); assert.strictEqual(asr.b, 'afternoon');
+  assert.ok(pure(times.maghrib + 6, 'sunset'), 'the glow is the maghrib\'s own');
+  assert.ok(pure(times.isha + 30, 'night'));
+  assert.ok(pure(1439, 'night') && pure(0, 'night'));
+  /* every minute of the day blends forward and never runs back */
+  let last = -1;
+  win.App.helpers.skyStops(times).forEach(function (stop) {
+    assert.ok(stop[0] > last); last = stop[0];
+    assert.ok(SKY_PLATES.indexOf(stop[1]) !== -1);
+  });
+  /* a place whose sun does not set or rise that day keeps a sky, and no error */
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(win.App.helpers.skyAt({ fajr: NaN, sunrise: NaN, dhuhr: 700, maghrib: NaN }, 600))),
+    { a: 'noon', b: 'noon', mix: 0 });
+  /* and the squeezed day of a summer far north still runs forward */
+  let prev = -Infinity;
+  win.App.helpers.skyStops({ fajr: 120, sunrise: 125, dhuhr: 780, asr: 1000, maghrib: 1430, isha: NaN }).forEach(function (stop) {
+    assert.ok(stop[0] > prev); prev = stop[0];
+  });
+});
+
+test('the moon is drawn as it stands, full on the white days and gone at the new moon', () => {
+  const { win } = boot({ now: new Date(2026, 9, 7, 12, 0, 0) });
+  const t = { fajr: 265, sunrise: 344, dhuhr: 696, asr: 897, maghrib: 1047, isha: 1124 };
+  const moon = (d) => win.App.helpers.moonAt(d, t);
+  /* the full moon of the 26th of october 2026, and the new moon of the 10th */
+  assert.ok(moon(new Date(Date.UTC(2026, 9, 26, 4, 12))).lit > .99);
+  assert.ok(moon(new Date(Date.UTC(2026, 9, 10, 15, 50))).lit < .02);
+  assert.ok(moon(new Date(Date.UTC(2026, 8, 30, 12))).waxing === false, 'past the full, waning');
+  /* a crescent four days old has set some hours after maghrib, and a full moon is up at midnight */
+  const young = moon(new Date(2026, 9, 14, 21, 30));
+  assert.ok(young.waxing && young.lit < .25);
+  assert.strictEqual(young.up, false, 'a young crescent is down by half past nine');
+  assert.strictEqual(moon(new Date(2026, 9, 14, 18, 15)).up, true, 'and up just after maghrib');
+  assert.strictEqual(moon(new Date(2026, 9, 25, 23, 30)).up, true);
+  /* the lit part: a half moon's edge is straight, a crescent's bows out */
+  assert.match(win.App.helpers.moonPath(.5, true, 6), /^M0 -6A6 6 0 0 1 0 6A0\.00 6 0 0 [01] 0 -6Z$/);
+  assert.match(win.App.helpers.moonPath(.2, true, 6), /A3\.60 6 0 0 0 0 -6Z$/);
+  assert.match(win.App.helpers.moonPath(.8, false, 6), /^M0 -6A6 6 0 0 0 0 6A3\.60 6 0 0 0 0 -6Z$/);
+});
+
+test('the niche shows the sky of the hour, its stars at night and its moon on the white nights', () => {
+  const noon = boot({ now: new Date(2026, 9, 7, 12, 30, 0) });
+  assert.ok(noon.doc.documentElement.classList.contains('has-sky'));
+  const a = noon.doc.getElementById('sky-a').getAttribute('href');
+  assert.match(a, /^img\/sky\/(noon|afternoon)\.webp$/);
+  assert.strictEqual(Number(noon.doc.getElementById('sky-stars').getAttribute('opacity')), 0, 'no stars at noon');
+  assert.strictEqual(Number(noon.doc.getElementById('sky-moon').getAttribute('opacity')), 0);
+
+  const night = boot({ now: new Date(2026, 9, 25, 23, 30, 0) });
+  assert.strictEqual(night.doc.getElementById('sky-a').getAttribute('href'), 'img/sky/night.webp');
+  assert.ok(Number(night.doc.getElementById('sky-stars').getAttribute('opacity')) > .9);
+  assert.ok(Number(night.doc.getElementById('sky-moon').getAttribute('opacity')) > .9, 'the full moon of the fourteenth');
+  assert.match(night.doc.getElementById('sky-moon').getAttribute('transform'), /^translate\([\d.]+ [\d.]+\) rotate\(-?[\d.]+\)$/);
+  assert.ok(night.doc.getElementById('moon-lit').getAttribute('d').indexOf('M0 -6') === 0);
+
+  /* it stays inside the niche and out of the countdown's way */
+  const svg = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(svg.indexOf('<g class="sky" id="sky" clip-path="url(#sky-arch)">') !== -1);
+  assert.ok(svg.indexOf('<mask id="sky-mask"') !== -1, 'fading out above the numbers');
+});
+
+test('the sky can be put away, and the plain niche comes back', () => {
+  const storage = memoryStorage();
+  const first = boot({ storage: storage, now: new Date(2026, 9, 7, 12, 30, 0) });
+  first.win.App.go('settings');
+  const sw = first.doc.getElementById('settings-sky');
+  assert.ok(sw, 'a switch in the settings');
+  assert.strictEqual(sw.getAttribute('aria-checked'), 'true', 'on unless put away');
+  click(first.win, sw);
+  assert.strictEqual(sw.getAttribute('aria-checked'), 'false');
+  assert.ok(!first.doc.documentElement.classList.contains('has-sky'));
+  const again = boot({ storage: storage, now: new Date(2026, 9, 7, 12, 30, 0) });
+  assert.ok(!again.doc.documentElement.classList.contains('has-sky'), 'and it stays away');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf('html.has-sky .mihrab-fill { display: none; }') !== -1);
+  assert.ok(css.indexOf('html.less-motion .sky-stars circle { animation: none;') !== -1, 'still stars for whoever asked for less motion');
+});
+
+test('a picture of the times carries the sky of the moment it is made', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(fn.indexOf('skyAt(t, nowMinutes(now))') !== -1);
+  assert.ok(fn.indexOf('paintSky(ctx, painted, sky, moonAt(now, t)') !== -1);
+  assert.ok(fn.indexOf('var SKY_H = painted ? 330 : 0;') !== -1, 'and no room is kept when there is none to paint');
+});
+
 test('the sunrise notice quotes a sunnah of the duha, not of the dhuhr', () => {
   const { win } = boot({ now: new Date(2026, 9, 6, 12, 0, 0) });
   const pick = win.App.helpers.windowSunnah;

@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.87.61';
+var VERSION = 'sunnati-v8.87.62';
 
 var SHELL = [
   './',
@@ -35,6 +35,14 @@ var SHELL = [
   './audio/salawat/ibrahimiyya.mp3',
   './data/content.js',
   './data/extras.js',
+  './img/sky/night.webp',
+  './img/sky/fajr.webp',
+  './img/sky/sunrise.webp',
+  './img/sky/morning.webp',
+  './img/sky/noon.webp',
+  './img/sky/afternoon.webp',
+  './img/sky/sunset.webp',
+  './img/sky/dusk.webp',
   './icons/badge-googleplay.png',
   './icons/badge-appstore.png',
   './data/mushaf.json',
@@ -76,7 +84,7 @@ var SHELL = [
 function isSettled(pathname) {
   return /\/data\/mushaf\.json$/.test(pathname) ||
     /\/icons\//.test(pathname) ||
-    /\.(png|svg|woff2?)$/.test(pathname);
+    /\.(png|svg|webp|woff2?)$/.test(pathname);
 }
 
 /* The page hands over the day's prayer times and the reminder interval, and
