@@ -5347,17 +5347,38 @@ test('a reader who asked for less motion is not slid across the page by the scri
     'and the stylesheet stills the rest');
 });
 
-test('the mark is the heartbeat drawing the Prophet\'s mosque, over the name as the app writes it', () => {
+test('the mark is the painted mihrab window onto the evening sky, over the name as the app writes it', () => {
   const svg = fs.readFileSync(path.join(DOCS, 'icons', 'icon.svg'), 'utf8');
-  /* the red of the app, lighter where the heartbeat glows, and its gold */
-  for (const c of ['#b5372f', '#6e1c1c', '#3a0d0d', '#e0b04a', '#fff0c4']) {
-    assert.ok(svg.indexOf(c) !== -1, 'the mark keeps ' + c);
-  }
   /* the name is outlines from the font, shaped with its damma and shadda, so it
      looks the same everywhere and needs no font where it is shown */
   assert.ok(svg.indexOf('<text') === -1, 'no live text: the name would fall back to another face');
   assert.ok(/<path d='M[^']{400,}' fill='url\(#ng\)'/.test(svg), 'the name, drawn as outlines in graded gold');
-  assert.ok(/stroke='#fff0c4' stroke-width='11'/.test(svg), 'the heartbeat line');
+  for (const c of ['#fff6d8', '#f7d27a', '#d4952f']) {
+    assert.ok(svg.indexOf(c) !== -1, 'the gold of the name keeps ' + c);
+  }
+  /* the mihrab, its star and the sky in its window are a painting, and the
+     painting is carried inside the mark and cut to its rounded corners, so the
+     mark is still one file that needs nothing beside it. Nothing shows the mark
+     larger than 512, so it carries the painting at 512 and not at full size. */
+  function jpegSize(b) {
+    for (let i = 2; i + 9 < b.length && b[i] === 0xff;) {
+      const m = b[i + 1];
+      if (m >= 0xc0 && m <= 0xcf && m !== 0xc4 && m !== 0xc8 && m !== 0xcc) return { w: b.readUInt16BE(i + 7), h: b.readUInt16BE(i + 5) };
+      i += 2 + b.readUInt16BE(i + 2);
+    }
+    return null;
+  }
+  assert.ok(svg.indexOf("width='512' height='512'") !== -1);
+  assert.ok(svg.indexOf("<clipPath id='round'><rect width='1024' height='1024' rx='230'/></clipPath>") !== -1,
+    'rounded at the corners as a home screen rounds it');
+  const painting = /<g clip-path='url\(#round\)'><image width='1024' height='1024' href='data:image\/jpeg;base64,([A-Za-z0-9+/=]{20000,})'\/>/.exec(svg);
+  assert.ok(painting, 'the painting fills the mark, inside the rounded corners');
+  assert.deepStrictEqual(jpegSize(Buffer.from(painting[1], 'base64')), { w: 512, h: 512 }, 'carried at the size the mark is drawn');
+  /* and the painting itself is kept beside the tool that draws every size from
+     it, square and large enough for the largest */
+  const store = path.join(__dirname, '..', 'tools', 'store');
+  assert.deepStrictEqual(jpegSize(fs.readFileSync(path.join(store, 'icon-art.jpg'))), { w: 2048, h: 2048 }, 'the painting, kept whole');
+  assert.ok(!fs.existsSync(path.join(store, 'icon-scene.jpg')), 'and nothing is left of the drawing it replaced');
 
   /* every size where it lands, at the size it should be, and the ones Apple
      masks itself carry no transparency: App Store Connect refuses an icon
@@ -5377,11 +5398,17 @@ test('the mark is the heartbeat drawing the Prophet\'s mosque, over the name as 
   assert.strictEqual(ios.w, 1024);
   assert.ok(!ios.alpha, 'the App Store icon carries no alpha channel');
 
-  /* android: the red behind, the figure in front inside the safe circle, and
-     the same drawing in one colour for themed icons */
+  /* android: the crimson of the painting behind, the mihrab and the name cut
+     out of it in front inside the safe circle, and the same drawing in one
+     colour for themed icons */
   const android = path.join(__dirname, '..', 'android/app/src/main/res');
   assert.ok(fs.readFileSync(path.join(android, 'values/colors.xml'), 'utf8').indexOf('#9c2b2b') !== -1, 'the wrapper is red too');
-  assert.ok(fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8').indexOf('#b5372f') !== -1);
+  const ground = fs.readFileSync(path.join(android, 'drawable/ic_launcher_background.xml'), 'utf8');
+  assert.ok(ground.indexOf('android:type="radial"') !== -1, 'the ground glows where the mihrab stands');
+  const reds = [...ground.matchAll(/android:(?:start|center|end)Color="#([0-9a-fA-F]{6})"/g)].map((m) => parseInt(m[1], 16));
+  assert.strictEqual(reds.length, 3);
+  reds.forEach((c) => assert.ok((c >> 16) > 0x50 && ((c >> 8) & 0xff) < 0x20 && (c & 0xff) < 0x10,
+    'a deep crimson, as the painting is: #' + c.toString(16)));
   const mono = fs.readFileSync(path.join(android, 'drawable/ic_launcher_monochrome.xml'), 'utf8');
   assert.ok(/<vector[\s\S]*android:pathData="M[^"]{400,}"/.test(mono), 'the themed icon carries the name too');
   for (const d of ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi']) {
@@ -5409,7 +5436,7 @@ test('the mark lives in the app: the crown of the mihrab, the about page, the ba
   assert.ok(/<g class="mihrab-star"[^>]*>\s*<path d="M0 -15 L15 0 L0 15 L-15 0z"\/>/.test(html), 'the eye crowns the mihrab');
   assert.ok(html.indexOf('class="mihrab-moon"') !== -1, 'with the crescent in it');
   assert.ok(html.indexOf('<img class="brand-mark" src="icons/icon.svg"') !== -1, 'the about page opens with the mark');
-  assert.ok(html.indexOf('عين السدو الكويتي، وفي قلبها هلال') !== -1, 'and says what it is');
+  assert.ok(html.indexOf('الشعار محراب يطل على سماء الوقت، وفيه مئذنة على الساحل وهلال فوقها') !== -1, 'and says what it is');
   assert.ok(html.indexOf('<img class="banner-mark" src="icons/icon.svg"') !== -1, 'the banner carries it');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   assert.ok(app.indexOf('function eyeMark(ctx, cx, cy, r)') !== -1 && app.indexOf('eyeMark(ctx, W / 2, footY, 22)') !== -1, 'the picture card closes with the eye');
@@ -6100,10 +6127,12 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
     const p = path.join(res, 'mipmap-' + d, 'ic_launcher_foreground.png');
     assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/ic_launcher_foreground.png');
   });
-  /* the status bar draws a silhouette in its own colour: the heartbeat and
-     the mosque as one white line, and nothing in any other colour */
+  /* the status bar draws a silhouette in its own colour: the mihrab as one
+     white outline with the crescent inside it, and nothing in any other colour */
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
-  assert.ok(/android:strokeColor="#FFFFFFFF"[\s\S]*android:pathData="M1\.5,16\.5/.test(status), 'the heartbeat line');
+  assert.ok(/android:strokeColor="#FFFFFFFF"[\s\S]*android:pathData="M[\d.]+,[\d.]+ V[\d.]+ A([\d.]+),\1 0 0,1 12,[\d.]+ A\1,\1 0 0,1 [\d.]+,[\d.]+ V[\d.]+ Z"/.test(status),
+    'the mihrab, two arcs meeting over the middle of the box');
+  assert.strictEqual((status.match(/<path /g) || []).length, 2, 'and the crescent, nothing else');
   const colours = status.match(/#[0-9A-Fa-f]{8}/g) || [];
   assert.ok(colours.length && colours.every((c) => c === '#FFFFFFFF' || c === '#00000000'), 'one colour only, as the status bar draws it');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the square artwork, written by icon-build.py with every size');
