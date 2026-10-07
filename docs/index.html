@@ -167,7 +167,7 @@
       <button class="date-nudge" id="hijri-up" aria-label="أضف يوماً إلى التاريخ الهجري"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-plus"/></svg></button>
     </div>
 
-    <div class="arc-wrap">
+    <div class="arc-wrap" id="arc-wrap">
       <svg class="mihrab" viewBox="0 0 240 152" aria-hidden="true">
         <defs>
           <linearGradient id="niche" x1="0" y1="0" x2="0" y2="1">
@@ -186,11 +186,34 @@
             <stop offset="0" stop-color="#fff6dc" stop-opacity=".45"/>
             <stop offset="1" stop-color="#fff6dc" stop-opacity="0"/>
           </radialGradient>
+          <radialGradient id="cloud-fill">
+            <stop class="cloud-stop" offset="0" stop-color="#fff" stop-opacity=".9"/>
+            <stop class="cloud-stop" offset=".55" stop-color="#fff" stop-opacity=".45"/>
+            <stop class="cloud-stop" offset="1" stop-color="#fff" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="horizon-glow">
+            <stop class="glow-stop" offset="0" stop-color="#ffc9a0" stop-opacity=".9"/>
+            <stop class="glow-stop" offset="1" stop-color="#ffc9a0" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="lantern-glow">
+            <stop offset="0" stop-color="#fff1c9" stop-opacity="1"/>
+            <stop offset=".35" stop-color="#ffc56b" stop-opacity=".75"/>
+            <stop offset="1" stop-color="#ff9d3a" stop-opacity="0"/>
+          </radialGradient>
         </defs>
         <g class="sky" id="sky" clip-path="url(#sky-arch)">
           <g mask="url(#sky-mask)">
-            <image class="sky-plate" id="sky-a" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice"/>
-            <image class="sky-plate" id="sky-b" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice" opacity="0"/>
+            <g class="sky-drift">
+              <image class="sky-plate" id="sky-a" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice"/>
+              <image class="sky-plate" id="sky-b" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice" opacity="0"/>
+              <g id="sky-lantern" opacity="0"><circle class="sky-lantern" cx="184.5" cy="66.4" r="4.6" fill="url(#lantern-glow)"/></g>
+            </g>
+            <g id="sky-glow" opacity="0"><ellipse class="sky-glow" id="sky-glow-shape" cx="30" cy="80" rx="80" ry="20" fill="url(#horizon-glow)"/></g>
+            <g class="sky-clouds" id="sky-clouds" opacity="0">
+              <g transform="translate(0 38)"><g class="cloud cloud-1"><ellipse cx="60" rx="30" ry="4.2" fill="url(#cloud-fill)"/><ellipse cx="72" cy="-2.6" rx="15" ry="3.6" fill="url(#cloud-fill)"/></g></g>
+              <g transform="translate(0 53)"><g class="cloud cloud-2"><ellipse cx="150" rx="38" ry="5" fill="url(#cloud-fill)"/><ellipse cx="136" cy="-3" rx="18" ry="4" fill="url(#cloud-fill)"/></g></g>
+              <g transform="translate(0 31)"><g class="cloud cloud-3"><ellipse cx="190" rx="22" ry="3.2" fill="url(#cloud-fill)"/></g></g>
+            </g>
             <g class="sky-stars" id="sky-stars" opacity="0"><circle cx="70" cy="62" r=".9"/><circle cx="86" cy="54" r=".6"/><circle cx="96" cy="66" r=".6"/><circle cx="108" cy="47" r=".6"/><circle cx="131" cy="48" r=".9"/><circle cx="146" cy="57" r=".6"/><circle cx="154" cy="56" r=".6"/><circle cx="171" cy="63" r=".6"/><circle cx="184" cy="70" r=".9"/><circle cx="60" cy="74" r=".6"/><circle cx="115" cy="58" r=".6"/><circle cx="140" cy="70" r=".6"/><circle cx="192" cy="58" r=".9"/><circle cx="48" cy="60" r=".6"/><circle cx="204" cy="72" r=".6"/><circle cx="122" cy="36" r=".6"/></g>
             <g class="sky-moon" id="sky-moon" opacity="0">
               <circle class="moon-glow" r="15" fill="url(#moon-glow)"/>
@@ -964,6 +987,52 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="skyview" id="skyview" role="dialog" aria-modal="true" aria-label="سماء الوقت" tabindex="-1" hidden>
+  <div class="skyview-scene" id="skyview-scene">
+    <img class="skyview-plate" id="skyview-a" alt="" decoding="async">
+    <img class="skyview-plate" id="skyview-b" alt="" decoding="async">
+    <svg class="skyview-over" viewBox="0 0 1000 560" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+      <defs>
+        <radialGradient id="sv-cloud">
+          <stop class="cloud-stop" offset="0" stop-color="#fff" stop-opacity=".9"/>
+          <stop class="cloud-stop" offset=".55" stop-color="#fff" stop-opacity=".45"/>
+          <stop class="cloud-stop" offset="1" stop-color="#fff" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="sv-glow-fill">
+          <stop class="glow-stop" offset="0" stop-color="#ffc9a0" stop-opacity=".9"/>
+          <stop class="glow-stop" offset="1" stop-color="#ffc9a0" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="sv-moon-glow">
+          <stop offset="0" stop-color="#fff6dc" stop-opacity=".5"/>
+          <stop offset="1" stop-color="#fff6dc" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <g id="sv-lantern" opacity="0"><circle class="sky-lantern" cx="748" cy="278" r="15" fill="url(#lantern-glow)"/></g>
+      <g id="sv-glow" opacity="0"><ellipse class="sky-glow" id="sv-glow-shape" cx="120" cy="320" rx="380" ry="70" fill="url(#sv-glow-fill)"/></g>
+      <g id="sv-clouds" opacity="0">
+        <g transform="translate(0 120)"><g class="cloud cloud-1"><ellipse cx="180" rx="150" ry="18" fill="url(#sv-cloud)"/><ellipse cx="240" cy="-12" rx="70" ry="15" fill="url(#sv-cloud)"/></g></g>
+        <g transform="translate(0 200)"><g class="cloud cloud-2"><ellipse cx="560" rx="190" ry="22" fill="url(#sv-cloud)"/><ellipse cx="490" cy="-13" rx="90" ry="17" fill="url(#sv-cloud)"/></g></g>
+        <g transform="translate(0 80)"><g class="cloud cloud-3"><ellipse cx="820" rx="110" ry="13" fill="url(#sv-cloud)"/></g></g>
+      </g>
+      <g class="sky-stars" id="sv-stars" opacity="0"></g>
+    </svg>
+  </div>
+  <svg class="skyview-far" id="skyview-far" aria-hidden="true">
+    <g id="sv-moon" opacity="0">
+      <circle id="sv-moon-halo" r="40" fill="url(#sv-moon-glow)"/>
+      <circle class="moon-dark" id="sv-moon-disc" r="14"/>
+      <path class="moon-lit" id="sv-moon-lit" d=""/>
+    </g>
+  </svg>
+  <div class="skyview-text">
+    <div class="skyview-label" id="skyview-label"></div>
+    <div class="skyview-name" id="skyview-name"></div>
+    <div class="skyview-count" id="skyview-count"></div>
+    <div class="skyview-date" id="skyview-date"></div>
+  </div>
+  <p class="skyview-hint">المس للعودة</p>
+</div>
 
 <div class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
   <div class="sheet-panel">

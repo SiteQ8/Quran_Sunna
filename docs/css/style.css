@@ -420,6 +420,67 @@ html[data-theme="dark"] .sky { opacity: .8; }
 html.less-motion .sky-stars circle { animation: none; opacity: .6; }
 .moon-dark { fill: #fff; opacity: .07; }
 .moon-lit { fill: #f7f0da; }
+/* The sky breathes: the painting swells and settles over most of a minute,
+   clouds drift across it at the pace of real ones, the lantern on the
+   minaret trembles at night, and the glow of the dawn and the sunset rises
+   and falls. Slow enough to rest the eye, and all of it still for whoever
+   asked for less motion. */
+.sky-drift { transform-origin: 120px 76px; animation: sky-breathe 46s ease-in-out infinite alternate; }
+@keyframes sky-breathe { from { transform: scale(1); } to { transform: scale(1.05) translate(-2px, 0); } }
+.cloud { animation: cloud-drift linear infinite; }
+.cloud-1 { animation-duration: 150s; animation-delay: -40s; }
+.cloud-2 { animation-duration: 210s; animation-delay: -150s; }
+.cloud-3 { animation-duration: 260s; animation-delay: -60s; }
+@keyframes cloud-drift { from { transform: translateX(-130px); } to { transform: translateX(200px); } }
+.sky-lantern { transform-box: fill-box; transform-origin: center; animation: lantern 3.1s ease-in-out infinite; }
+@keyframes lantern { 0%, 100% { opacity: 1; transform: scale(1); } 27% { opacity: .78; transform: scale(.9); } 52% { opacity: .96; transform: scale(1.06); } 78% { opacity: .84; transform: scale(.95); } }
+.sky-glow { animation: glow-breathe 9s ease-in-out infinite alternate; }
+@keyframes glow-breathe { from { opacity: .7; } to { opacity: 1; } }
+html.less-motion .sky-drift, html.less-motion .cloud,
+html.less-motion .sky-lantern, html.less-motion .sky-glow { animation: none; }
+
+/* A touch on the niche opens the sky of the hour on the whole screen: the
+   painting moves slowly along the shore as an eye would, with the countdown
+   over it, for a moment of quiet between two prayers. */
+html.has-sky .arc-wrap { cursor: pointer; }
+.skyview {
+  position: fixed; inset: 0; z-index: 900; overflow: hidden;
+  background: #0b1a33; color: #fff; cursor: pointer;
+  opacity: 0; transition: opacity .7s ease;
+}
+.skyview.is-open { opacity: 1; }
+.skyview[hidden] { display: none; }
+.skyview:focus { outline: none; }
+.skyview-scene {
+  position: absolute; top: 0; left: 0; height: 100%;
+  aspect-ratio: 960 / 538; min-width: 100%;
+}
+.skyview-plate, .skyview-over { position: absolute; inset: 0; width: 100%; height: 100%; }
+/* the moon is far off, so it stays where it is while the shore drifts by */
+.skyview-far { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+.skyview-plate { object-fit: cover; transition: opacity 1.2s linear; }
+.skyview-over { overflow: visible; }
+.skyview-text {
+  position: absolute; inset-inline: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 13vh);
+  text-align: center; pointer-events: none;
+  text-shadow: 0 1px 18px rgba(0, 0, 0, .45), 0 1px 3px rgba(0, 0, 0, .35);
+}
+.skyview-label { font-size: var(--step-0); opacity: .85; }
+.skyview-name { font-size: var(--step-3); font-weight: 600; margin-top: 2px; }
+.skyview-count { font-size: clamp(44px, 13vw, 84px); font-weight: 300; letter-spacing: .02em; direction: ltr; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.skyview-date { font-size: var(--step--1); opacity: .8; margin-top: 8px; }
+.skyview-hint {
+  position: absolute; inset-inline: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
+  margin: 0; text-align: center; font-size: var(--step--1); opacity: .5; pointer-events: none;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
+}
+/* on a wide screen the shore sits lower in the frame, so the words go
+   further down and keep clear of the minaret */
+@media (orientation: landscape) {
+  .skyview-text { bottom: calc(env(safe-area-inset-bottom, 0px) + 6vh); }
+  .skyview-count { font-size: clamp(40px, 10vh, 76px); }
+  .skyview-hint { bottom: calc(env(safe-area-inset-bottom, 0px) + 10px); }
+}
 /* Tall enough that the whole countdown sits inside the niche rather than
    spilling out under its base. No padding, or the niche and the arc it frames
    start at different heights and the niche stretches to cover the difference. */

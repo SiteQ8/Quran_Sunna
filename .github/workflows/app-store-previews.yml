@@ -1,0 +1,34 @@
+# Places the preview films of ios/previews in the App Store version being
+# prepared, or in a new one when there is none, without building anything:
+# a film changes more often than the app around it, and a mac building the
+# same app again only to carry a film would be a mac wasted. The phone's
+# screenshots are carried over into a new version so it never stands empty.
+#
+# Nothing is sent for review from here. The films go to the store with the
+# next version sent, and the store job of the iOS workflow places them again
+# whenever they have changed since.
+#
+# Run by hand only, from the Actions tab: «App Store previews», Run workflow.
+name: App Store previews
+
+on:
+  workflow_dispatch:
+
+jobs:
+  previews:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: المكتبة
+        run: python3 -m pip install --quiet --break-system-packages pyjwt cryptography
+      # the version a new one is made as, if one must be: the app's own, as
+      # project.yml has it
+      - name: الأفلام إلى الإصدار المُعَدّ
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          V=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
+          python3 tools/ios/asc-release.py --previews-only --version "$V" --previews ios/previews
