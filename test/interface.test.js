@@ -8070,8 +8070,9 @@ test('the opening is painted for the reader\'s own country, by day and by night,
 
 test('the painting is chosen by the phone\'s time zone and by the hour, and the theme has no say', () => {
   const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
-  assert.ok(splash.indexOf('paintingFor(TimeZone.getDefault().getID(), day)') !== -1,
-    'the country is read from the time zone, which asks for no permission');
+  assert.ok(splash.indexOf('String zone = TimeZone.getDefault().getID();') !== -1 &&
+    splash.indexOf('paintingFor(zone, day)') !== -1 && splash.indexOf('landmarkFor(zone, day)') !== -1,
+    'the country is read from the time zone, which asks for no permission, and names the painting and where its landmark stands');
   assert.ok(splash.indexOf('isDay(Calendar.getInstance().get(Calendar.HOUR_OF_DAY))') !== -1,
     'and the hour from the phone\'s own clock');
   const pick = /static int paintingFor\(String zone, boolean day\) \{([\s\S]*?)\n    \}\n/.exec(splash);
@@ -8232,7 +8233,8 @@ test('the page shows its own splash while it wakes: a painting, the icon where t
   assert.strictEqual(mark.getAttribute('alt'), 'سُنّتي');
   assert.strictEqual(mark.getAttribute('width'), '132');
   const placed = mark.getAttribute('style');
-  ['position:absolute', 'left:50%', 'top:42%', 'width:132px', 'margin:-66px 0 0 -66px', 'border-radius:30px'].forEach(function (rule) {
+  /* 42% unless the head raises it over a landmark that rises near the words */
+  ['position:absolute', 'left:50%', 'top:var(--boot-at,42%)', 'width:132px', 'margin:-66px 0 0 -66px', 'border-radius:30px'].forEach(function (rule) {
     assert.ok(placed.indexOf(rule) !== -1, 'the icon has ' + rule);
   });
   assert.ok(splash.getAttribute('style').indexOf('justify-content') === -1, 'and no column is centred to place it');
@@ -8241,7 +8243,7 @@ test('the page shows its own splash while it wakes: a painting, the icon where t
   const greet = splash.querySelector('#boot-greet');
   assert.ok(rule && greet, 'a rule and a greeting');
   assert.ok(mark.compareDocumentPosition(rule) & 4 && rule.compareDocumentPosition(greet) & 4, 'in that order, beneath the icon');
-  assert.ok(/top:calc\(42% \+ \d+px\)/.test(rule.parentNode.getAttribute('style')), 'hung from the icon\'s own middle');
+  assert.ok(/top:calc\(var\(--boot-at,42%\) \+ \d+px\)/.test(rule.parentNode.getAttribute('style')), 'hung from the icon\'s own middle');
   assert.deepStrictEqual([...greet.children].map(function (e) { return e.id; }), ['boot-hail', 'boot-city']);
   /* the paper is painted before any stylesheet lands, or a white flash shows
      through in the dark theme */
@@ -8400,6 +8402,140 @@ test('the head picks the painting the root names, before the first frame', () =>
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(html.indexOf('<script src="js/boot.js"></script>') < html.indexOf('<body>'));
   assert.ok(html.indexOf('--boot-art') < html.indexOf('</head>'));
+});
+
+/* landmarkFor as the java writes it, read into { 'kw-day': [middle, top], ... } */
+function splashLandmarks(java) {
+  const body = /    static float\[\] landmarkFor\(String zone, boolean day\) \{([\s\S]*?)\n    \}\n/.exec(java)[1];
+  const out = {};
+  const each = /(?:case "([^"]+)"|default):\s*return day \? new float\[\] \{ ([\d.]+)f, ([\d.]+)f \} : new float\[\] \{ ([\d.]+)f, ([\d.]+)f \};/g;
+  let m;
+  while ((m = each.exec(body))) {
+    const land = m[1] ? SPLASH_ZONES[m[1]] : 'default';
+    out[land + '-day'] = [+m[2], +m[3]];
+    out[land + '-night'] = [+m[4], +m[5]];
+  }
+  return out;
+}
+
+test('every painting says where its landmark stands, for the same zones that choose it', () => {
+  const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
+  const lands = splashLandmarks(splash);
+  assert.deepStrictEqual(Object.keys(lands).sort(), SPLASH_PAINTINGS.slice().sort(), 'each of the fourteen, once');
+  Object.keys(lands).forEach(function (name) {
+    const [middle, top] = lands[name];
+    /* the paintings were made with their landmark near the middle and low
+       down, and a reading far from that is a slip of the pen */
+    assert.ok(middle > 0.45 && middle < 0.6, name + ' stands near the middle: ' + middle);
+    assert.ok(top > 0.45 && top < 0.8, name + ' rises out of the lower half: ' + top);
+  });
+  /* the towers of Kuwait rise highest of all, which is why the icon rises */
+  ['kw-day', 'kw-night'].forEach(function (name) {
+    Object.keys(lands).filter(function (n) { return n.indexOf('kw-') !== 0; }).forEach(function (other) {
+      assert.ok(lands[name][1] < lands[other][1], name + ' reaches higher than ' + other);
+    });
+  });
+  /* and the layout uses it, the icon rising no higher than a fifth of the height */
+  assert.ok(splash.indexOf('landmark = landmarkFor(zone, day);') !== -1);
+  assert.ok(splash.indexOf('place(w, h, dp, reach, landmark, pw, ph)') !== -1);
+  assert.ok(/private static final float ICON_AT = 0\.42f;/.test(splash) && /private static final float ICON_HIGHEST = 0\.2f;/.test(splash));
+  assert.ok(/private static final float CLEAR_DP = 40f;/.test(splash));
+});
+
+test('java itself centres every landmark under the icon and keeps the words clear of it, on every phone', {
+  skip: require('node:child_process').spawnSync('javac', ['-version']).status !== 0 && 'no jdk here'
+}, () => {
+  const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
+  const constant = function (name) { return new RegExp('    private static final float ' + name + ' = [^;]+;').exec(splash)[0]; };
+  const landmarkFor = /    static float\[\] landmarkFor\(String zone, boolean day\) \{[\s\S]*?\n    \}\n/.exec(splash)[0];
+  const place = /    static float\[\] place\([^)]*\) \{[\s\S]*?\n    \}\n/.exec(splash)[0];
+  /* the view between the bars, in dp, and the density: ordinary phones with
+     gestures or with three buttons, tall ones, a small old one, and a wide
+     one where the painting is cut by the width */
+  const phones = [[411, 845, 2.625], [411, 914, 2.625], [450, 1000, 2.4], [411, 751, 2.625], [393, 800, 2.75],
+    [360, 568, 2], [384, 790, 2.8125], [480, 1000, 3], [600, 900, 2]];
+  const zones = Object.keys(SPLASH_ZONES).concat(['Europe/London']);
+  const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'sunnati-place-'));
+  try {
+    fs.writeFileSync(path.join(dir, 'Check.java'), [
+      'public class Check {',
+      constant('ICON_AT'), constant('ICON_HIGHEST'), constant('CLEAR_DP'),
+      landmarkFor, place,
+      '  public static void main(String[] a) {',
+      '    float[][] phones = { ' + phones.map(function (p) { return '{ ' + p.join('f, ') + 'f }'; }).join(', ') + ' };',
+      '    StringBuilder sb = new StringBuilder();',
+      '    for (String zone : a[0].split(",")) for (int half = 0; half < 2; half++) for (float[] p : phones) {',
+      '      float dp = p[2], w = p[0] * dp, h = p[1] * dp;',
+      /* the words of a named city: half the icon, the rule, the hail, the
+         city, and the city's descent, about three tenths of its size */
+      '      float reach = 66 * dp + 32 * dp + 18 * dp * 0.85f + 31 * dp * 1.2f + 31 * dp * 0.3f;',
+      '      boolean day = half == 0;',
+      '      float[] lm = landmarkFor(zone, day);',
+      '      float[] at = place(w, h, dp, reach, lm, 1080, 1920);',
+      '      sb.append(zone).append(" ").append(day ? "day" : "night").append(" ").append(p[0]).append("x").append(p[1])',
+      '        .append(" ").append(w).append(" ").append(h).append(" ").append(dp).append(" ").append(reach)',
+      '        .append(" ").append(lm[0]).append(" ").append(lm[1]);',
+      '      for (float v : at) sb.append(" ").append(v);',
+      '      sb.append("\\n");',
+      '    }',
+      '    System.out.print(sb);',
+      '  }',
+      '}'
+    ].join('\n'));
+    execFileSync('javac', ['-d', dir, path.join(dir, 'Check.java')], { stdio: 'pipe' });
+    const out = execFileSync('java', ['-cp', dir, 'Check', zones.join(',')], { stdio: 'pipe' })
+      .toString().trim().split('\n');
+    assert.strictEqual(out.length, zones.length * 2 * phones.length, 'every country, both halves of the day, every phone');
+    const raised = {};
+    out.forEach(function (line) {
+      const f = line.split(' ');
+      const where = f[0] + ' ' + f[1] + ' on ' + f[2];
+      const [w, h, dp, reach, middle, top, iconY, x, y, sw, sh] = f.slice(3).map(Number);
+      /* the painting covers the whole view, keeping its proportions */
+      assert.ok(x <= 0.5 && y <= 0.5 && x + sw >= w - 0.5 && y + sh >= h - 0.5, where + ' is covered');
+      assert.ok(Math.abs(sw / sh - 1080 / 1920) < 1e-3, where + ' keeps the painting\'s shape');
+      /* the landmark stands under the icon */
+      assert.ok(Math.abs(x + middle * sw - w / 2) < 1, where + ': the landmark is centred, off by ' + (x + middle * sw - w / 2));
+      /* with 40dp of open sky between the words and the top of it */
+      const sky = (y + top * sh) - (iconY + reach);
+      assert.ok(sky >= 40 * dp - 0.5, where + ': ' + (sky / dp).toFixed(1) + 'dp between the words and the landmark');
+      /* the icon at 42% at the lowest and a fifth of the height at the
+         highest, and raised only as far as the landmark asks */
+      assert.ok(iconY <= 0.42 * h + 0.5 && iconY >= 0.2 * h - 0.5, where + ': the icon at ' + (iconY / h).toFixed(3));
+      if (iconY < 0.42 * h - 0.5 && iconY > 0.2 * h + 0.5) {
+        assert.ok(Math.abs(sky - 40 * dp) < 1, where + ' rose further than it had to');
+      }
+      if (iconY < 0.42 * h - 0.5) raised[f[0] + ' ' + f[1] + ' ' + f[2]] = true;
+    });
+    /* the towers of Kuwait lift the icon on an ordinary phone, by day and by
+       night, and the open shore leaves it where it was on a tall one */
+    assert.ok(raised['Asia/Kuwait day 411.0x845.0'] && raised['Asia/Kuwait night 411.0x845.0'], 'the icon rises over the towers');
+    assert.ok(!raised['Europe/London day 450.0x1000.0'] && !raised['Europe/London night 450.0x1000.0'],
+      'and stays at 42% over the open shore');
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('the page\'s own splash stands the landmark under the icon and raises the icon over it, as android does', () => {
+  const { head } = splashParts();
+  const lands = splashLandmarks(fs.readFileSync(SPLASH_JAVA, 'utf8'));
+  /* the very readings of the android splash, so the two never part ways */
+  SPLASH_PAINTINGS.forEach(function (name) {
+    const m = new RegExp('html\\[data-splash="' + name + '"\\] \\{ --boot-f: ([\\d.]+); --boot-t: ([\\d.]+); \\}').exec(head);
+    assert.ok(m, name + ' says where its landmark stands');
+    assert.strictEqual(+m[1], lands[name][0], name + ': its middle, as android has it');
+    assert.strictEqual(+m[2], lands[name][1], name + ': its top, as android has it');
+  });
+  /* the painting is moved across by its landmark and never bares an edge,
+     filling the height on a tall phone and drawn 114% on a shorter one */
+  assert.ok(head.indexOf('#boot-sky { background-position: clamp(calc(100vw - 56.25vh), calc(50vw - var(--boot-f, .5) * 56.25vh), 0px) 100%; }') !== -1);
+  assert.ok(head.indexOf('background-position: clamp(calc(100vw - 64.125vh), calc(50vw - var(--boot-f, .5) * 64.125vh), 0px) 0;') !== -1);
+  /* the icon rises over the landmark, with its words and 40px of sky */
+  assert.ok(head.indexOf('#boot-splash { --boot-at: min(42%, calc(var(--boot-t, 1) * 100vh - 190px)); }') !== -1);
+  assert.ok(head.indexOf('#boot-splash { --boot-at: min(42%, calc(var(--boot-t, 1) * 114vh - 190px)); }') !== -1);
+  /* and the towers of Kuwait are no longer pushed aside to the right */
+  assert.ok(head.indexOf('html[data-splash^="kw-"]') === -1, 'Kuwait is centred like every other painting');
 });
 
 test('only the two plain paintings come with the app, and a country\'s own are kept once fetched', () => {
