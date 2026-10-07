@@ -1217,6 +1217,30 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .tile-glyph .icon { width: 24px; height: 24px; stroke-width: 1.5; }
 
+/* The sections on the home screen: each card a small painting of the shore
+   the sky of the hour is painted on, edge to edge across its top, with the
+   name and the note beneath it on the card's own ground. The rules above
+   are shared with the cards of the adhkar and the duas, so these are said
+   for this grid alone. Every row is as tall as the tallest, so the cards
+   line up across the grid, and a note keeps to two lines. */
+#home-tiles { grid-auto-rows: 1fr; }
+#home-tiles .tile {
+  height: 100%; min-width: 0; padding: 0 0 var(--s3); gap: 0;
+  justify-content: flex-start; overflow: hidden; border: 1px solid var(--line-soft);
+}
+/* its frame keeps a plain ground until the painting is decoded */
+#home-tiles .tile-art {
+  display: block; width: 100%; height: auto; aspect-ratio: 4 / 3; object-fit: cover;
+  margin-bottom: var(--s2); background: var(--sunken);
+}
+#home-tiles .tile-name, #home-tiles .tile-note { max-width: 100%; padding-inline: var(--s2); }
+#home-tiles .tile-note {
+  margin-top: 2px; line-height: 1.5; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+/* the daylight in them is lowered in the dark, as the sky in the niche is */
+html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
+
 /* ---------- list rows ---------- */
 
 .row {
