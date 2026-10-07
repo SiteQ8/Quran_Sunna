@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.60';
+  var VERSION = '8.87.61';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1772,7 +1772,13 @@
      kept under now and the old name dropped, so a day ticked before reads
      the same after. A name with nowhere to go is left as it was: the meter
      does not count it, and nothing is lost by keeping it. */
+  /* A row of the card whose words were changed after its old name was last
+     written keeps the meaning it had then: «الاستغفار والذكر» named no count,
+     so an old tick of it is not taken for the hundred. */
+  var OLD_CARD = { 'now:asr:3': ['sunnah:13:7'] };
+
   function movedTicks(id) {
+    if (OLD_CARD[id]) return OLD_CARD[id].slice();
     var m = /^now:(fajr|duha|dhuhr|asr|maghrib|isha):(\d+)$/.exec(id);
     if (m) {
       var block = typeof CURRENT_SUNNAH !== 'undefined' ? CURRENT_SUNNAH[m[1]] : null;
