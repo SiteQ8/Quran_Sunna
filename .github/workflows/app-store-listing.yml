@@ -1,0 +1,43 @@
+# The app's page on the App Store, without building anything: what each
+# version is and where its review stands, and the 6.9 inch screenshots of
+# ios/screenshots/6.9-inch put in place of those there.
+#
+# Run by hand only, from the Actions tab: «App Store listing», Run workflow.
+#   status       reads, and changes nothing
+#   screenshots  places them in the version being prepared, or a new one
+#   withdraw     a version waiting for review is taken back, given them, and
+#                sent again, so it waits its turn once more; one Apple has
+#                begun to look at is left as it is
+name: App Store listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      what:
+        description: 'status, screenshots, or withdraw (take back a version waiting for review, place them, send it again)'
+        type: choice
+        options: [status, screenshots, withdraw]
+        default: status
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v7
+      - name: المكتبة
+        run: python3 -m pip install --quiet --break-system-packages pyjwt cryptography
+      - name: صفحة التطبيق
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+          WHAT: ${{ inputs.what }}
+        run: |
+          python3 tools/ios/asc-release.py --status
+          V=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
+          case "$WHAT" in
+            screenshots) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version "$V" ;;
+            withdraw) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version "$V" --withdraw ;;
+          esac
+          [ "$WHAT" = status ] || python3 tools/ios/asc-release.py --status
