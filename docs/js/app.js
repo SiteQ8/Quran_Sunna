@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.61';
+  var VERSION = '8.87.62';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -742,6 +742,208 @@
     };
   }
 
+  /* ---------------- the sky of the hour ---------------- */
+
+  /* Eight paintings of one shore of the Gulf, the same horizon, minaret and
+     palms in each, lit as the day lights them. The niche shows the one the
+     sky is in now and passes from each to the next on the place's own times:
+     the dawn comes in on this town's fajr and the glow fades with its maghrib,
+     so the window turns with the real sun and not with the clock. The light
+     falls from the left in the morning and from the right in the evening, as
+     it does through a window that faces the qibla from the Gulf. */
+  var SKY_DARK = { night: 1, dusk: .8, fajr: .55, sunset: .15, sunrise: .05, morning: 0, noon: 0, afternoon: 0 };
+
+  function skyStops(t) {
+    var ok = function (v) { return typeof v === 'number' && isFinite(v); };
+    if (!t || !ok(t.sunrise) || !ok(t.dhuhr) || !ok(t.maghrib)) return null;
+    var f = ok(t.fajr) ? t.fajr : t.sunrise - 80;
+    var i = ok(t.isha) ? t.isha : t.maghrib + 80;
+    var a = ok(t.asr) ? t.asr : (t.dhuhr + t.maghrib) / 2;
+    var list = [
+      [f - 10, 'night'],
+      [f + (t.sunrise - f) * .5, 'fajr'],
+      [t.sunrise + 12, 'sunrise'],
+      [t.sunrise + (t.dhuhr - t.sunrise) * .45, 'morning'],
+      [t.dhuhr - 25, 'noon'],
+      [t.dhuhr + 30, 'noon'],
+      [a + (t.maghrib - a) * .55, 'afternoon'],
+      [t.maghrib + 6, 'sunset'],
+      [t.maghrib + (i - t.maghrib) * .55, 'dusk'],
+      [i + 20, 'night']
+    ];
+    /* a summer far north squeezes the day until two turns meet; each is kept
+       a minute past the one before so the blend never runs backwards */
+    for (var k = 1; k < list.length; k++) if (list[k][0] <= list[k - 1][0]) list[k][0] = list[k - 1][0] + 1;
+    return list;
+  }
+
+  /* The two paintings the sky is between at a minute of the day, and how far
+     it has gone from the first to the second. */
+  function skyAt(t, minute) {
+    var stops = skyStops(t);
+    if (!stops) return { a: 'noon', b: 'noon', mix: 0 };
+    if (minute <= stops[0][0]) return { a: 'night', b: 'night', mix: 0 };
+    for (var k = 1; k < stops.length; k++) {
+      if (minute <= stops[k][0]) {
+        var from = stops[k - 1], to = stops[k];
+        var x = (minute - from[0]) / (to[0] - from[0]);
+        /* eased, so a change of light starts and settles gently */
+        return { a: from[1], b: to[1], mix: x * x * (3 - 2 * x) };
+      }
+    }
+    return { a: 'night', b: 'night', mix: 0 };
+  }
+
+  /* The moon as it stands tonight. Its age is counted on the mean month from
+     a new moon known to the minute, which is right to within hours; how much
+     of it is lit follows from the age, and since it rises about fifty minutes
+     later each day it is up from its rising to its setting on that lag behind
+     the sun. So the white days show it full the night through, and the first
+     nights of a month show a thin crescent low in the west after maghrib. */
+  var NEW_MOON = Date.UTC(2000, 0, 6, 18, 14);
+  var SYNODIC = 29.530588853;
+
+  function moonAt(when, t) {
+    var age = ((when.getTime() - NEW_MOON) / 86400000) % SYNODIC;
+    if (age < 0) age += SYNODIC;
+    var out = { age: age, lit: (1 - Math.cos(2 * Math.PI * age / SYNODIC)) / 2, waxing: age < SYNODIC / 2, up: false, along: 0 };
+    if (!t || typeof t.sunrise !== 'number' || typeof t.maghrib !== 'number') return out;
+    var lag = age / SYNODIC * 1440;
+    var rise = (t.sunrise + lag) % 1440;
+    var span = ((t.maghrib + lag) % 1440 - rise + 1440) % 1440;
+    var since = (nowMinutes(when) - rise + 1440) % 1440;
+    out.up = since <= span;
+    out.along = span ? since / span : 0;
+    return out;
+  }
+
+  /* The lit part of a disc: the bright limb on one side, and on the other the
+     line between light and dark, half an ellipse that bows out for a crescent
+     and in for a moon past its half. */
+  function moonPath(lit, waxing, r) {
+    var rx = Math.abs(1 - 2 * lit) * r;
+    var crescent = lit < .5;
+    var limb = waxing ? 1 : 0;
+    var edge = waxing ? (crescent ? 0 : 1) : (crescent ? 1 : 0);
+    return 'M0 ' + (-r) + 'A' + r + ' ' + r + ' 0 0 ' + limb + ' 0 ' + r +
+      'A' + rx.toFixed(2) + ' ' + r + ' 0 0 ' + edge + ' 0 ' + (-r) + 'Z';
+  }
+
+  var skyShown = '';
+
+  function skyOn() { return Store.get('sky') !== false; }
+
+  function renderSky(force) {
+    var root = document.documentElement;
+    if (!skyOn() || !$('sky')) { root.classList.remove('has-sky'); skyShown = ''; return; }
+    var t = state.times || refreshTimes();
+    var now = new Date();
+    var minute = nowMinutes(now);
+    /* drawn again when the minute or the day's times move, not every second */
+    var stamp = Math.floor(minute) + '|' + (t && t.fajr) + '|' + (t && t.maghrib);
+    if (!force && stamp === skyShown) return;
+    skyShown = stamp;
+    root.classList.add('has-sky');
+    var sky = skyAt(t, minute);
+    var a = $('sky-a'), b = $('sky-b');
+    var hrefA = 'img/sky/' + sky.a + '.webp', hrefB = 'img/sky/' + sky.b + '.webp';
+    if (a.getAttribute('href') !== hrefA) a.setAttribute('href', hrefA);
+    if (b.getAttribute('href') !== hrefB) b.setAttribute('href', hrefB);
+    b.setAttribute('opacity', sky.mix.toFixed(3));
+    var dark = SKY_DARK[sky.a] * (1 - sky.mix) + SKY_DARK[sky.b] * sky.mix;
+    $('sky-stars').setAttribute('opacity', Math.max(0, (dark - .35) / .65).toFixed(3));
+    var moon = moonAt(now, t);
+    var shown = moon.up && moon.lit > .02 ? Math.max(0, Math.min(1, (dark - .3) / .5)) : 0;
+    var g = $('sky-moon');
+    g.setAttribute('opacity', shown.toFixed(3));
+    if (!shown) return;
+    /* from its rising on the left to its setting on the right, inside the
+       arc of the countdown and above the shore */
+    var angle = (126 - 72 * moon.along) * Math.PI / 180;
+    var x = 120 + 80 * Math.cos(angle), y = 140 - 80 * Math.sin(angle);
+    /* the lit side faces the sun under the horizon, on the side it set for an
+       evening moon and the side it will rise for a morning one, so a young
+       crescent lies tilted like a boat as it does over the Gulf */
+    var sunX = moon.waxing ? 250 : -10;
+    var turn = Math.atan2(110 - y, sunX - x) * 180 / Math.PI - (moon.waxing ? 0 : 180);
+    g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + turn.toFixed(1) + ')');
+    $('moon-lit').setAttribute('d', moonPath(Math.max(moon.lit, .08), moon.waxing, 6));
+  }
+
+  /* Where the moon stands in the arch at the head of a picture, rising on
+     the left and setting on the right as it does in the niche, and which way
+     its lit side turns. */
+  function moonPlace(moon, x0, y0, w, h) {
+    var x = x0 + w * (.15 + .7 * moon.along);
+    var y = y0 + h * (.66 - .48 * Math.sin(Math.PI * moon.along));
+    var sunX = moon.waxing ? x0 + w + w * .1 : x0 - w * .1;
+    var turn = Math.atan2(y0 + h * .8 - y, sunX - x) - (moon.waxing ? 0 : Math.PI);
+    return { x: x, y: y, turn: turn };
+  }
+
+  function loadPlate(name) {
+    return new Promise(function (resolve) {
+      var img = new Image();
+      img.onload = function () { resolve(img); };
+      img.onerror = function () { resolve(null); };
+      img.src = 'img/sky/' + name + '.webp';
+    });
+  }
+
+  /* The sky of the moment a picture is made, at its head under an arch like
+     the niche's, so times shared at maghrib carry the sunset and those shared
+     at night carry tonight's moon. */
+  function paintSky(ctx, plates, sky, moon, x0, y0, w, h, paper) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(x0, y0 + h);
+    ctx.lineTo(x0, y0 + h * .5);
+    ctx.ellipse(x0 + w / 2, y0 + h * .5, w / 2, h * .5, 0, Math.PI, 0);
+    ctx.lineTo(x0 + w, y0 + h);
+    ctx.closePath();
+    var arch = new Path2D();
+    arch.moveTo(x0, y0 + h); arch.lineTo(x0, y0 + h * .5);
+    arch.ellipse(x0 + w / 2, y0 + h * .5, w / 2, h * .5, 0, Math.PI, 0);
+    arch.lineTo(x0 + w, y0 + h);
+    ctx.clip();
+    /* the shore stands a little above the foot, where the arch begins to fade */
+    var ih = w * 538 / 960, iy = y0 + h * .74 - ih * .5825;
+    if (plates[0]) ctx.drawImage(plates[0], x0, iy, w, ih);
+    if (plates[1] && sky.mix > 0) { ctx.globalAlpha = sky.mix; ctx.drawImage(plates[1], x0, iy, w, ih); ctx.globalAlpha = 1; }
+    var dark = SKY_DARK[sky.a] * (1 - sky.mix) + SKY_DARK[sky.b] * sky.mix;
+    var stars = Math.max(0, (dark - .35) / .65);
+    if (stars > 0) {
+      ctx.fillStyle = 'rgba(255,255,255,' + (.75 * stars).toFixed(3) + ')';
+      for (var k = 0; k < 46; k++) {
+        var sx = x0 + w * ((k * 0.6180339 + .07) % 1), sy = y0 + h * (.08 + .5 * ((k * 0.4142136 + .13) % 1));
+        ctx.beginPath(); ctx.arc(sx, sy, k % 5 ? 1.6 : 2.6, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    var shown = moon.up && moon.lit > .02 ? Math.max(0, Math.min(1, (dark - .3) / .5)) : 0;
+    if (shown > 0) {
+      var at = moonPlace(moon, x0, y0, w, h);
+      var r = Math.round(w * .032);
+      ctx.save();
+      ctx.translate(at.x, at.y); ctx.rotate(at.turn);
+      ctx.globalAlpha = shown;
+      var glow = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 2.6);
+      glow.addColorStop(0, 'rgba(255,246,220,.45)'); glow.addColorStop(1, 'rgba(255,246,220,0)');
+      ctx.fillStyle = glow; ctx.beginPath(); ctx.arc(0, 0, r * 2.6, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,.08)'; ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#f7f0da';
+      ctx.fill(new Path2D(moonPath(Math.max(moon.lit, .08), moon.waxing, r)));
+      ctx.restore();
+    }
+    /* and the sea fades into the paper at the foot of the arch */
+    var fade = ctx.createLinearGradient(0, y0 + h * .78, 0, y0 + h);
+    fade.addColorStop(0, paper.replace('1)', '0)')); fade.addColorStop(1, paper);
+    ctx.fillStyle = fade;
+    ctx.fillRect(x0, y0 + h * .78, w, h * .22 + 1);
+    ctx.restore();
+    ctx.strokeStyle = '#b08833'; ctx.lineWidth = 2;
+    ctx.stroke(arch);
+  }
+
   /* ---------------- the clock ---------------- */
 
   function tick() {
@@ -797,6 +999,7 @@
     }
 
     renderWindows(c);
+    renderSky();
     /* The hour card follows the hour and the list its day. A screen left
        open across the fajr, or across the start of a window, used to go on
        showing what had passed, and a touch on it landed on a day it no
@@ -5523,9 +5726,14 @@
     var ready = document.fonts && document.fonts.load
       ? Promise.all(faces.map(function (f) { return document.fonts.load(f, 'الفجر'); })).catch(function () {})
       : Promise.resolve();
+    var now = new Date();
+    var sky = skyOn() ? skyAt(t, nowMinutes(now)) : null;
+    var plates = sky ? Promise.all([loadPlate(sky.a), loadPlate(sky.b)]) : Promise.resolve(null);
 
-    return ready.then(function () {
-      var H = PAD + 190 + rows.length * (ROW + GAP) + 150;
+    return Promise.all([ready, plates]).then(function (got) {
+      var painted = got[1] && got[1][0] ? got[1] : null;
+      var SKY_H = painted ? 330 : 0;
+      var H = PAD + 190 + rows.length * (ROW + GAP) + 150 + SKY_H;
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
@@ -5542,17 +5750,18 @@
       ctx.strokeRect(52, 52, W - 104, H - 104);
       cardStar(ctx, 52, 52, 14); cardStar(ctx, W - 52, 52, 14);
       cardStar(ctx, 52, H - 52, 14); cardStar(ctx, W - 52, H - 52, 14);
+      if (painted) paintSky(ctx, painted, sky, moonAt(now, t), PAD + 24, PAD - 8, W - 2 * (PAD + 24), SKY_H - 24, 'rgba(247,245,239,1)');
 
       ctx.direction = 'rtl'; ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillStyle = fill;
       ctx.font = "700 44px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText(Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust'))), W / 2, PAD + 30);
+      ctx.fillText(Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust'))), W / 2, PAD + 30 + SKY_H);
       ctx.fillStyle = '#5e6c65';
       ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText((where ? where.n + '، ' : '') + gregorianLine(new Date()), W / 2, PAD + 86);
+      ctx.fillText((where ? where.n + '، ' : '') + gregorianLine(new Date()), W / 2, PAD + 86 + SKY_H);
 
-      var top = PAD + 150;
+      var top = PAD + 150 + SKY_H;
       rows.forEach(function (row, i) {
         var y = top + i * (ROW + GAP);
         ctx.fillStyle = row.night ? 'rgba(176, 136, 51, .10)' : 'rgba(22, 36, 28, .05)';
@@ -6627,6 +6836,7 @@
     setSwitch($('settings-after-prayer'), !Store.get('afterPrayerOff'));
     setSwitch($('settings-jumuah-night'), !!Store.get('jumuahNight'));
     setSwitch($('settings-jumuah-sheet'), !!Store.get('jumuahNightSheet'));
+    setSwitch($('settings-sky'), skyOn());
     setSwitch($('settings-fast-note'), !!Store.get('fastNote'));
     if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
@@ -7598,6 +7808,12 @@
        notification's. Its button used to hide it for good with no sign left
        anywhere that it was hidden, and the toast that said how to bring it
        back was gone in seconds. */
+    bind('settings-sky', 'click', function () {
+      var on = !skyOn();
+      Store.set('sky', on);
+      setSwitch($('settings-sky'), on);
+      renderSky(true);
+    });
     bind('settings-jumuah-sheet', 'click', function () {
       var on = !Store.get('jumuahNightSheet');
       Store.set('jumuahNightSheet', on);
@@ -8079,7 +8295,7 @@
       verseCard: verseCard, textCard: textCard, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
- totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks,
+ totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },

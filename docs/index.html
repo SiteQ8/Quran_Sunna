@@ -174,7 +174,31 @@
             <stop offset="0" stop-color="currentColor" stop-opacity=".14"/>
             <stop offset=".75" stop-color="currentColor" stop-opacity="0"/>
           </linearGradient>
+          <clipPath id="sky-arch"><path d="M6 152V140a114 114 0 0 1 228 0v12Z"/></clipPath>
+          <linearGradient id="sky-fade" x1="0" y1="0" x2="0" y2="152" gradientUnits="userSpaceOnUse">
+            <stop offset=".36" stop-color="#fff"/>
+            <stop offset=".7" stop-color="#fff" stop-opacity="0"/>
+          </linearGradient>
+          <mask id="sky-mask" maskUnits="userSpaceOnUse" x="0" y="0" width="240" height="152">
+            <rect width="240" height="152" fill="url(#sky-fade)"/>
+          </mask>
+          <radialGradient id="moon-glow">
+            <stop offset="0" stop-color="#fff6dc" stop-opacity=".45"/>
+            <stop offset="1" stop-color="#fff6dc" stop-opacity="0"/>
+          </radialGradient>
         </defs>
+        <g class="sky" id="sky" clip-path="url(#sky-arch)">
+          <g mask="url(#sky-mask)">
+            <image class="sky-plate" id="sky-a" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice"/>
+            <image class="sky-plate" id="sky-b" x="-10" y="-6" width="260" height="146" preserveAspectRatio="xMidYMid slice" opacity="0"/>
+            <g class="sky-stars" id="sky-stars" opacity="0"><circle cx="70" cy="62" r=".9"/><circle cx="86" cy="54" r=".6"/><circle cx="96" cy="66" r=".6"/><circle cx="108" cy="47" r=".6"/><circle cx="131" cy="48" r=".9"/><circle cx="146" cy="57" r=".6"/><circle cx="154" cy="56" r=".6"/><circle cx="171" cy="63" r=".6"/><circle cx="184" cy="70" r=".9"/><circle cx="60" cy="74" r=".6"/><circle cx="115" cy="58" r=".6"/><circle cx="140" cy="70" r=".6"/><circle cx="192" cy="58" r=".9"/><circle cx="48" cy="60" r=".6"/><circle cx="204" cy="72" r=".6"/><circle cx="122" cy="36" r=".6"/></g>
+            <g class="sky-moon" id="sky-moon" opacity="0">
+              <circle class="moon-glow" r="15" fill="url(#moon-glow)"/>
+              <circle class="moon-dark" r="6"/>
+              <path class="moon-lit" id="moon-lit" d=""/>
+            </g>
+          </g>
+        </g>
         <path class="mihrab-fill" d="M6 152V140a114 114 0 0 1 228 0v12Z" fill="url(#niche)"/>
         <path class="mihrab-line" d="M6 152V140a114 114 0 0 1 228 0v12"/>
         <path class="mihrab-line mihrab-inner" d="M20 152V140a100 100 0 0 1 200 0v12"/>
@@ -703,6 +727,8 @@
     <div class="setting"><span class="setting-label">الزخرفة</span>
       <select class="select" id="settings-pattern"></select>
     </div>
+    <div class="setting"><span><span class="setting-label">سماء الوقت في المحراب</span><br><span class="setting-note">لوحة لساحل الخليج يتبدّل ضوؤها مع مواقيتك، والقمر فيها بطوره الحقيقي ليلاً</span></span>
+      <button class="switch" id="settings-sky" role="switch" aria-checked="true" aria-label="سماء الوقت في المحراب"></button></div>
     <div class="setting"><span><span class="setting-label">شكل صفحة المصحف</span><br><span class="setting-note">نصّاً متّصلاً، أو خمسة عشر سطراً كما طُبعت في مصحف المدينة</span></span>
       <select class="select" id="settings-page-layout">
         <option value="flow">نص متّصل</option>

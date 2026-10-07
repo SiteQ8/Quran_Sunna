@@ -63,6 +63,8 @@
        notification: a reader who wants no notice at night may still want the
        app to tell him which night it is when he opens it */
     jumuahNightSheet: true,
+    /* the painted sky of the hour in the niche of the clock */
+    sky: true,
     jumuahNightArmed: '',
     qadaDone: {},
     afterPrayerOff: false,
