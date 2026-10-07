@@ -90,6 +90,9 @@ function boot(options) {
   };
   win.navigator.vibrate = function () { return true; };
   win.scrollTo = function () {};
+  /* a wrapper's bridge handed in is there before the app wakes, as the
+     packages put it there before the page loads */
+  if (opts.bridge) win.SunnatiApp = opts.bridge;
 
   SCRIPTS.forEach(function (rel) {
     const code = fs.readFileSync(path.join(DOCS, rel), 'utf8');
@@ -7933,17 +7936,76 @@ test('the map asks for no more tiles than it shows, and says plainly when it fin
   assert.ok(app.indexOf('لم يُعثر على مساجد مسجّلة حولك.') !== -1);
 });
 
-test('the page shows its own splash while it wakes, in the colours already chosen', async () => {
+/* The opening screen as the page writes it, read as markup and never run:
+   the splash with everything in it, and the head that dresses it. */
+function splashParts() {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html);
+  const dom = new JSDOM(html);
+  opened.push(dom);
+  const doc = dom.window.document;
+  return { html: html, head: html.slice(0, html.indexOf('</head>')), splash: doc.getElementById('boot-splash') };
+}
+
+/* boot.js on its own, as the page runs it before the first frame, on a phone
+   set to a zone of its own, at an hour of a day, with whatever the store
+   holds. It answers with the painting it named. */
+function openingPainting(o) {
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  const dom = new JSDOM(html, { url: 'https://siteq8.github.io/Quran_Sunna/', runScripts: 'outside-only' });
+  opened.push(dom);
+  const win = dom.window;
+  const storage = o.storage || memoryStorage();
+  if (o.settings !== undefined) storage.setItem('sunnati.settings', typeof o.settings === 'string' ? o.settings : JSON.stringify(o.settings));
+  if (o.sun !== undefined) storage.setItem('sunnati.sun', typeof o.sun === 'string' ? o.sun : JSON.stringify(o.sun));
+  Object.defineProperty(win, 'localStorage', { value: storage, configurable: true });
+  const Real = win.Date;
+  const fixed = o.now.getTime();
+  function Fixed(...args) { return args.length ? new Real(...args) : new Real(fixed); }
+  Fixed.prototype = Real.prototype;
+  Fixed.now = () => fixed;
+  win.Date = Fixed;
+  win.Intl = { DateTimeFormat: function () { return { resolvedOptions: function () { return { timeZone: o.phone }; } }; } };
+  vm.runInContext(fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8'), dom.getInternalVMContext(), { filename: 'js/boot.js' });
+  return win.document.documentElement.getAttribute('data-splash');
+}
+
+const SPLASH_LANDS = { 'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae', 'Asia/Qatar': 'qa',
+  'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om' };
+const SPLASH_PAINTINGS = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default'].reduce(function (all, land) {
+  return all.concat([land + '-day', land + '-night']);
+}, []);
+
+test('the page shows its own splash while it wakes: a painting, the icon where the phone put it, and the greeting', async () => {
+  const { html, splash } = splashParts();
   assert.ok(splash, 'the page carries one');
   /* written inline and styled inline, so it paints with the first frame
      rather than waiting on a stylesheet or a script */
-  assert.ok(splash[1].indexOf('position:fixed') !== -1 && splash[1].indexOf('style=') !== -1);
-  assert.ok(html.indexOf('<div id="boot-splash"') < html.indexOf('css/style.css') ||
-    html.indexOf('<div id="boot-splash"') > 0, 'it is in the body itself');
-  assert.ok(splash[1].indexOf('icons/icon-192.png') !== -1, 'the app\'s own mark');
-  assert.ok(splash[1].indexOf('سُنّتي') !== -1);
+  assert.ok(splash.getAttribute('style').indexOf('position:fixed') !== -1);
+  assert.ok(html.indexOf('<div id="boot-splash"') > html.indexOf('<body>'), 'it is in the body itself');
+  /* the painting is drawn first, so everything else stands on it */
+  const sky = splash.querySelector('#boot-sky');
+  assert.ok(sky && splash.firstElementChild === sky, 'the painting is under the rest');
+  assert.ok(sky.getAttribute('style').indexOf('position:absolute;inset:0') !== -1, 'and fills the screen');
+  /* The icon at the width of the phone's own opening picture, its middle where
+     that picture has it, so the one gives way to the other without a jump.
+     It is placed by its own middle, not by centring a column, since a column
+     moves with whatever is written beneath it. */
+  const mark = splash.querySelector('img');
+  assert.strictEqual(mark.getAttribute('src'), 'icons/icon-384.png', 'sharp at three pixels to the point');
+  assert.strictEqual(mark.getAttribute('alt'), 'سُنّتي');
+  assert.strictEqual(mark.getAttribute('width'), '132');
+  const placed = mark.getAttribute('style');
+  ['position:absolute', 'left:50%', 'top:42%', 'width:132px', 'margin:-66px 0 0 -66px', 'border-radius:30px'].forEach(function (rule) {
+    assert.ok(placed.indexOf(rule) !== -1, 'the icon has ' + rule);
+  });
+  assert.ok(splash.getAttribute('style').indexOf('justify-content') === -1, 'and no column is centred to place it');
+  /* beneath it a short gold rule, then the hail, then the city */
+  const rule = splash.querySelector('#boot-rule');
+  const greet = splash.querySelector('#boot-greet');
+  assert.ok(rule && greet, 'a rule and a greeting');
+  assert.ok(mark.compareDocumentPosition(rule) & 4 && rule.compareDocumentPosition(greet) & 4, 'in that order, beneath the icon');
+  assert.ok(/top:calc\(42% \+ \d+px\)/.test(rule.parentNode.getAttribute('style')), 'hung from the icon\'s own middle');
+  assert.deepStrictEqual([...greet.children].map(function (e) { return e.id; }), ['boot-hail', 'boot-city']);
   /* the paper is painted before any stylesheet lands, or a white flash shows
      through in the dark theme */
   const bootjs = fs.readFileSync(path.join(DOCS, 'js', 'boot.js'), 'utf8');
@@ -7963,22 +8025,225 @@ test('the page shows its own splash while it wakes, in the colours already chose
   assert.ok(app.indexOf('splash.parentNode.removeChild(splash)') !== -1, 'and then removed');
 });
 
-test('only one splash shows: inside the app the page yields to the app\'s own', async () => {
+test('only one splash shows: the android package draws its own, and an iPhone keeps the page\'s', async () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function dismissBootSplash\(atOnce\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(fn.indexOf('if (atOnce) {') !== -1 && fn.indexOf('removeChild(splash)') !== -1,
     'taken out without a fade rather than showing beneath the app\'s as a second');
-  assert.ok(app.indexOf('dismissBootSplash(!!app);') !== -1, 'and the app is what decides');
-  assert.ok(app.indexOf('if (bridge()) dismissBootSplash(true);') !== -1,
-    'from the first moment, before anything is drawn');
+  /* Only the wrapper that draws a splash of its own and waits to be told
+     pageReady can stand in for the page's. The iOS wrapper has a bridge as
+     well, but no splash, and asking only whether there was a bridge took the
+     page's splash away there at once: an iPhone never saw any opening. */
+  const draws = /function appDrawsSplash\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(draws.indexOf('app.pageReady') !== -1, 'the package that draws a splash is the one with pageReady');
+  assert.ok(app.indexOf('dismissBootSplash(appDrawsSplash());') !== -1, 'it decides after the first screen');
+  assert.ok(app.indexOf('if (appDrawsSplash()) dismissBootSplash(true);') !== -1,
+    'and from the first moment, before anything is drawn');
+  assert.ok(app.indexOf('dismissBootSplash(!!app);') === -1 && app.indexOf('if (bridge()) dismissBootSplash(true);') === -1,
+    'a bridge alone no longer decides it');
 
-  const { win, doc } = boot();
+  /* the android package: its own splash is over the page, so the page's goes at once */
+  let readied = 0;
+  const android = boot({ bridge: { pageReady: function () { readied++; } } });
+  assert.strictEqual(android.doc.getElementById('boot-splash'), null, 'gone at once');
+  assert.strictEqual(readied, 1, 'and the package is told the page has painted');
+
+  /* the iPhone: a bridge with no splash and no pageReady */
+  const iphone = boot({ bridge: { platform: function () { return 'ios'; }, version: function () { return '2.0'; } } });
+  assert.strictEqual(iphone.win.App.helpers.appDrawsSplash(), false);
+  assert.ok(iphone.doc.getElementById('boot-splash'), 'the page\'s own is kept on an iPhone');
+  assert.notStrictEqual(iphone.doc.getElementById('boot-splash').style.opacity, '0', 'and not faded straight away');
+
   /* with no app around, the page keeps its own, holds it a moment, fades it */
-  void win;
+  const { doc } = boot();
   assert.ok(doc.getElementById('boot-splash'), 'held, not flashed');
   await new Promise(function (done) { setTimeout(done, 3500); });
-  const left = doc.getElementById('boot-splash');
-  assert.ok(!left || left.style.opacity === '0');
+  [doc, iphone.doc].forEach(function (d) {
+    const left = d.getElementById('boot-splash');
+    assert.ok(!left || left.style.opacity === '0', 'and then it goes, on an iPhone as in a browser');
+  });
+});
+
+test('the opening painting is the reader\'s country, by day or by night as it is there now', () => {
+  const day = new Date(2026, 9, 7, 10, 0, 0);
+  const night = new Date(2026, 9, 7, 22, 0, 0);
+  /* the zone the reader set names the country, whatever the phone says */
+  Object.keys(SPLASH_LANDS).forEach(function (zone) {
+    assert.strictEqual(openingPainting({ settings: { zone: zone }, phone: 'Europe/London', now: day }), SPLASH_LANDS[zone] + '-day', zone);
+    assert.strictEqual(openingPainting({ settings: { zone: zone }, phone: 'Europe/London', now: night }), SPLASH_LANDS[zone] + '-night', zone);
+  });
+  /* with none set, the phone's own zone; a phone in Riyadh is not shown Kuwait */
+  Object.keys(SPLASH_LANDS).forEach(function (zone) {
+    assert.strictEqual(openingPainting({ phone: zone, now: day }), SPLASH_LANDS[zone] + '-day', 'a phone set to ' + zone);
+  });
+  assert.strictEqual(openingPainting({ settings: { zone: 'Asia/Riyadh' }, phone: 'Asia/Kuwait', now: day }), 'sa-day',
+    'the reader\'s own choice over the phone\'s');
+  assert.strictEqual(openingPainting({ settings: { zone: null, city: '' }, phone: 'Asia/Muscat', now: day }), 'om-day');
+  assert.strictEqual(openingPainting({ settings: '{not json', phone: 'Asia/Qatar', now: night }), 'qa-night',
+    'a store that cannot be read leaves it to the phone');
+  /* anywhere else, the plain shore with its minaret */
+  ['Europe/London', 'Africa/Cairo', 'Asia/Baghdad', 'America/New_York', ''].forEach(function (zone) {
+    assert.strictEqual(openingPainting({ phone: zone, now: night }), 'default-night', 'a phone set to ' + (zone || 'nothing'));
+  });
+  ['constructor', '__proto__', 'toString'].forEach(function (zone) {
+    assert.strictEqual(openingPainting({ settings: { zone: zone }, phone: 'Asia/Kuwait', now: day }), 'default-day',
+      'a name that is only a word of the language is no country: ' + zone);
+  });
+
+  /* The hour is the place's own: the night runs from its maghrib to its fajr,
+     as the app worked them out for today. Here fajr at 4:31 and maghrib at
+     17:29, and each hour below is one the clock alone would get wrong. */
+  const sun = { d: '2026-10-07', f: 271, m: 1049 };
+  const at = (h, m) => new Date(2026, 9, 7, h, m, 0);
+  const kw = { zone: 'Asia/Kuwait' };
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(17, 40) }), 'kw-night',
+    'after maghrib it is night, though the clock says day until six');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(4, 45) }), 'kw-day',
+    'after fajr it is day, though the clock says night until five');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(4, 30) }), 'kw-night', 'a minute before fajr');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(4, 31) }), 'kw-day', 'fajr itself');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(17, 28) }), 'kw-day', 'a minute before maghrib');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(17, 29) }), 'kw-night', 'maghrib itself');
+  assert.strictEqual(openingPainting({ settings: kw, sun: sun, phone: 'Asia/Kuwait', now: at(23, 50) }), 'kw-night');
+
+  /* a note left on another day is not trusted, and the clock decides: day
+     from five in the morning until six in the evening */
+  const stale = { d: '2026-10-06', f: 271, m: 1049 };
+  assert.strictEqual(openingPainting({ settings: kw, sun: stale, phone: 'Asia/Kuwait', now: at(17, 40) }), 'kw-day', 'yesterday\'s maghrib');
+  [[4, 59, 'night'], [5, 0, 'day'], [17, 59, 'day'], [18, 0, 'night'], [0, 0, 'night']].forEach(function (c) {
+    assert.strictEqual(openingPainting({ settings: kw, phone: 'Asia/Kuwait', now: at(c[0], c[1]) }), 'kw-' + c[2],
+      'by the clock at ' + c[0] + ':' + String(c[1]).padStart(2, '0'));
+  });
+  /* and a note that makes no sense is no note */
+  ['{oops', JSON.stringify({ d: '2026-10-07', f: 'x', m: 1049 }), JSON.stringify({ d: '2026-10-07', f: 1049, m: 271 }), 'null']
+    .forEach(function (bad) {
+      assert.strictEqual(openingPainting({ settings: kw, sun: bad, phone: 'Asia/Kuwait', now: at(17, 40) }), 'kw-day', bad);
+    });
+});
+
+test('every opening painting is there, is a WebP of the size it was made at, and is light enough', () => {
+  const dir = path.join(DOCS, 'img', 'splash');
+  assert.deepStrictEqual(fs.readdirSync(dir).filter(function (f) { return /\.webp$/.test(f); }).sort(),
+    SPLASH_PAINTINGS.map(function (n) { return n + '.webp'; }).sort(), 'fourteen, and no stray ones');
+  SPLASH_PAINTINGS.forEach(function (name) {
+    const bytes = fs.readFileSync(path.join(dir, name + '.webp'));
+    assert.strictEqual(bytes.subarray(0, 4).toString('latin1'), 'RIFF', name);
+    assert.strictEqual(bytes.subarray(8, 12).toString('latin1'), 'WEBP', name);
+    assert.ok(bytes.length < 180000, name + ' is ' + bytes.length + ' bytes');
+    /* 900 by 1600, as the converter cuts them: read from the frame itself */
+    const kind = bytes.subarray(12, 16).toString('latin1');
+    let w, h;
+    if (kind === 'VP8 ') { w = bytes.readUInt16LE(26) & 0x3fff; h = bytes.readUInt16LE(28) & 0x3fff; }
+    else if (kind === 'VP8X') { w = 1 + bytes.readUIntLE(24, 3); h = 1 + bytes.readUIntLE(27, 3); }
+    else if (kind === 'VP8L') { const b = bytes.readUInt32LE(21); w = 1 + (b & 0x3fff); h = 1 + ((b >> 14) & 0x3fff); }
+    assert.deepStrictEqual([w, h], [900, 1600], name);
+  });
+  /* the converter that makes them names the same fourteen */
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'splash-art.py'), 'utf8');
+  assert.ok(tool.indexOf("COUNTRIES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default']") !== -1);
+  assert.ok(/SIZE = \(900, 1600\)/.test(tool) && /LIMIT = 180000/.test(tool) && /method=6/.test(tool));
+});
+
+test('the head picks the painting the root names, before the first frame', () => {
+  const { head } = splashParts();
+  /* a rule for every painting, keyed on the name boot.js puts on the root */
+  SPLASH_PAINTINGS.forEach(function (name) {
+    assert.ok(head.indexOf('html[data-splash="' + name + '"] { --boot-art: url(\'img/splash/' + name + '.webp\'); }') !== -1, name);
+  });
+  /* the sky's own colour while the painting arrives, by day and by night */
+  assert.ok(/#boot-sky \{ background: #cfe2f1 var\(--boot-art/.test(head), 'a day sky');
+  assert.ok(head.indexOf('html[data-splash$="-night"] #boot-sky { background-color: #0d1b3d; }') !== -1, 'and a night one');
+  assert.ok(/#boot-sky \{[^}]*50% 100% \/ cover/.test(head), 'filling the screen, held to the bottom where the landmark is');
+  /* the words in the colours of the hour, each lifted off the painting */
+  assert.ok(head.indexOf('#boot-hail { color: #a87b25; text-shadow: 0 1px 12px rgba(255, 255, 255, .75); }') !== -1);
+  assert.ok(head.indexOf('#boot-city { color: #16241c; text-shadow: 0 1px 12px rgba(255, 255, 255, .75); }') !== -1);
+  assert.ok(head.indexOf('html[data-splash$="-night"] #boot-hail { color: #e2c06a; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }') !== -1);
+  assert.ok(head.indexOf('html[data-splash$="-night"] #boot-city { color: #f3efe6; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }') !== -1);
+  /* the rules are in the head itself, and boot.js runs before the body */
+  const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.ok(html.indexOf('<script src="js/boot.js"></script>') < html.indexOf('<body>'));
+  assert.ok(html.indexOf('--boot-art') < html.indexOf('</head>'));
+});
+
+test('only the two plain paintings come with the app, and a country\'s own are kept once fetched', () => {
+  const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
+  const shell = /var SHELL = \[([\s\S]*?)\];/.exec(sw)[1];
+  assert.ok(shell.indexOf("'./img/splash/default-day.webp'") !== -1 && shell.indexOf("'./img/splash/default-night.webp'") !== -1,
+    'the plain shore, by day and by night, is there the first time offline');
+  SPLASH_PAINTINGS.filter(function (n) { return n.indexOf('default-') !== 0; }).forEach(function (name) {
+    assert.ok(shell.indexOf('img/splash/' + name) === -1, name + ' is not carried by everyone');
+  });
+  /* and a painting once fetched is read from the cache from then on */
+  const settled = /function isSettled\(pathname\) \{([\s\S]*?)\n\}/.exec(sw)[1];
+  assert.ok(/webp/.test(settled), 'a webp is kept the first time it is fetched');
+});
+
+test('the app leaves the day\'s fajr and maghrib for the next opening, and keeps them current', async () => {
+  const storage = memoryStorage();
+  const { win } = boot({ storage: storage, now: new Date(2026, 9, 7, 12, 0, 0) });
+  const hint = JSON.parse(storage.getItem('sunnati.sun'));
+  const t = win.App.helpers.computeTimes(new Date(2026, 9, 7, 12, 0, 0));
+  assert.deepStrictEqual(hint, { d: '2026-10-07', f: Math.round(t.fajr), m: Math.round(t.maghrib) },
+    'today\'s, for the place the app is set to');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const refresh = /function refreshTimes\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(refresh.indexOf('tellSun(state.times);') !== -1, 'written wherever the times are worked out');
+
+  /* a new place, new times */
+  win.App.helpers.setPlace({ n: 'مسقط', lat: 23.588, lng: 58.3829, tz: 4, z: 'Asia/Muscat', method: 'MWL' }, true);
+  const muscat = win.App.helpers.computeTimes(new Date(2026, 9, 7, 12, 0, 0));
+  assert.strictEqual(JSON.parse(storage.getItem('sunnati.sun')).m, Math.round(muscat.maghrib), 'Muscat\'s maghrib, not Kuwait\'s');
+
+  /* a phone left open past midnight writes the new day's */
+  win.__setNow(new Date(2026, 9, 8, 0, 1, 0));
+  await until(function () { return JSON.parse(storage.getItem('sunnati.sun')).d === '2026-10-08'; });
+  const next = win.App.helpers.computeTimes(new Date(2026, 9, 8, 0, 1, 0));
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.sun')), { d: '2026-10-08', f: Math.round(next.fajr), m: Math.round(next.maghrib) });
+
+  /* and the opening reads what was left: an hour after that maghrib is night */
+  const after = new Date(2026, 9, 8, 0, Math.round(next.maghrib) + 60, 0);
+  assert.strictEqual(openingPainting({ storage: storage, phone: 'Asia/Kuwait', now: after }), 'om-night',
+    'the place set in the app, and its own night');
+});
+
+test('the country\'s own paintings are fetched once the app is up, the very ones the next opening asks for', () => {
+  const { win } = boot();
+  const made = [];
+  win.Image = function () { const img = {}; made.push(img); return img; };
+  win.Store.set('zone', 'Asia/Riyadh');
+  assert.deepStrictEqual([...win.App.helpers.warmSplash()], ['img/splash/sa-day.webp', 'img/splash/sa-night.webp']);
+  assert.deepStrictEqual(made.map(function (img) { return img.src; }), ['img/splash/sa-day.webp', 'img/splash/sa-night.webp'],
+    'both halves of the day, so the worker has them by the next opening');
+  /* the same choice as boot.js, zone by zone, so what is warmed is what is asked for */
+  Object.keys(SPLASH_LANDS).concat(['Europe/London', 'Asia/Baghdad']).forEach(function (zone) {
+    win.Store.set('zone', zone);
+    const opening = openingPainting({ settings: { zone: zone }, phone: 'UTC', now: new Date(2026, 9, 7, 10, 0, 0) });
+    assert.strictEqual(win.App.helpers.splashLand() + '-day', opening, zone);
+  });
+  /* with no zone set, the phone's own, as boot.js does */
+  win.Store.set('zone', null);
+  win.Intl = { DateTimeFormat: function () { return { resolvedOptions: function () { return { timeZone: 'Asia/Bahrain' }; } }; } };
+  assert.strictEqual(win.App.helpers.splashLand(), 'bh');
+  /* On a first visit the worker has not yet taken the page, and a picture
+     fetched then never passes through it, so the pair waits for it. */
+  const waiting = {};
+  const worker = {
+    controller: null,
+    addEventListener: function (type, fn) { waiting[type] = fn; },
+    removeEventListener: function (type) { delete waiting[type]; }
+  };
+  Object.defineProperty(win.navigator, 'serviceWorker', { value: worker, configurable: true });
+  made.length = 0;
+  assert.deepStrictEqual([...win.App.helpers.warmSplash()], [], 'nothing yet');
+  assert.strictEqual(made.length, 0);
+  worker.controller = {};
+  waiting.controllerchange();
+  assert.deepStrictEqual(made.map(function (img) { return img.src; }), ['img/splash/bh-day.webp', 'img/splash/bh-night.webp'],
+    'and is fetched the moment the worker has the page');
+  assert.ok(!waiting.controllerchange, 'once');
+  /* after the first screen, when the opening is over and nothing waits on it */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('window.setTimeout(warmSplash, 4000);') !== -1);
 });
 
 test('a new version is never taken without the reader saying so', () => {
@@ -9420,8 +9685,11 @@ test('the splash writes the app\'s name in the app\'s own face', () => {
     'and holds the word back until it is ready rather than flashing a wrong face');
   assert.ok(head.indexOf('<link rel="preload" href="fonts/plex-arabic-600-arabic.woff2"') !== -1,
     'and it is fetched at once');
-  /* the weight the splash asks for is the weight declared */
-  const splash = /<div id="boot-splash"([\s\S]*?)<\/div>/.exec(html)[1];
+  /* the weight the splash asks for is the weight declared; the splash holds a
+     block of its own now, the painting, so it is read to its own closing tag */
+  const start = html.indexOf('<div id="boot-splash"');
+  const splash = html.slice(start, html.indexOf('\n</div>', start));
+  assert.ok(splash.indexOf('id="boot-city"') !== -1, 'the whole of it, down to the greeting');
   /* the name is inside the icon now, drawn from the font, so the splash does
      not write it a second time; the greeting under it asks for the face */
   assert.ok(splash.indexOf("font:600 15px/1.5 'Sunnati Splash'") !== -1 &&

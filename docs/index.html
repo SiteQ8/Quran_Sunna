@@ -61,6 +61,67 @@
     src: url('fonts/plex-arabic-600-arabic.woff2') format('woff2');
     unicode-range: U+0600-06FF, U+0750-077F, U+08A0-08FF, U+FB50-FDFF, U+FE70-FEFF;
   }
+  /* The painting behind the splash is the reader's country by day or by
+     night, named on the root by boot.js before the first frame, so these
+     rules pick it in time and no picture is ever swapped once seen. The sky
+     shows its own colour while the painting arrives. */
+  html[data-splash="kw-day"] { --boot-art: url('img/splash/kw-day.webp'); }
+  html[data-splash="kw-night"] { --boot-art: url('img/splash/kw-night.webp'); }
+  html[data-splash="sa-day"] { --boot-art: url('img/splash/sa-day.webp'); }
+  html[data-splash="sa-night"] { --boot-art: url('img/splash/sa-night.webp'); }
+  html[data-splash="ae-day"] { --boot-art: url('img/splash/ae-day.webp'); }
+  html[data-splash="ae-night"] { --boot-art: url('img/splash/ae-night.webp'); }
+  html[data-splash="qa-day"] { --boot-art: url('img/splash/qa-day.webp'); }
+  html[data-splash="qa-night"] { --boot-art: url('img/splash/qa-night.webp'); }
+  html[data-splash="bh-day"] { --boot-art: url('img/splash/bh-day.webp'); }
+  html[data-splash="bh-night"] { --boot-art: url('img/splash/bh-night.webp'); }
+  html[data-splash="om-day"] { --boot-art: url('img/splash/om-day.webp'); }
+  html[data-splash="om-night"] { --boot-art: url('img/splash/om-night.webp'); }
+  html[data-splash="default-day"] { --boot-art: url('img/splash/default-day.webp'); }
+  html[data-splash="default-night"] { --boot-art: url('img/splash/default-night.webp'); }
+  /* full bleed on a phone, held to the bottom so the landmark stays in view */
+  #boot-sky { background: #cfe2f1 var(--boot-art, url('img/splash/default-day.webp')) 50% 100% / cover no-repeat; }
+  html[data-splash$="-night"] #boot-sky { background-color: #0d1b3d; }
+  /* the towers of Kuwait rise higher than any other landmark, into the band
+     the greeting is written on, so that painting is held by its left edge:
+     a phone crops it on the right, and the towers stand beside the words */
+  html[data-splash^="kw-"] #boot-sky { background-position: 0 100%; }
+  /* A shorter phone has no room to spare beneath the icon, so the painting
+     is drawn a little larger from the top: the sky reaches further down and
+     every landmark stays below the greeting, and only water is cropped. An
+     iPhone, at 9 by 19.5, keeps the whole painting. */
+  @media (min-aspect-ratio: 19/40) {
+    #boot-sky { background-size: auto 114%; background-position: 50% 0; }
+    html[data-splash^="kw-"] #boot-sky { background-position: 0 0; }
+  }
+  /* A screen wider than a phone would crop the painting to its landmark and
+     set the icon on it, so there the painting stands whole in the middle and
+     the same painting, blurred, fills the sides. */
+  @media (min-aspect-ratio: 3/5) {
+    #boot-sky { background-image: none; }
+    #boot-sky::before, #boot-sky::after {
+      content: ''; position: absolute; background: var(--boot-art, url('img/splash/default-day.webp')) 50% 0 no-repeat;
+    }
+    /* the sides are the same painting drawn out to the edges at the same
+       height and blurred, so every band of it, sky, horizon and shore, runs
+       on into the sides with no edge to see */
+    #boot-sky::before { inset: -48px; background-size: 100% calc(114vh + 48px); background-position: 50% 0; filter: blur(36px); }
+    /* the painting is 9:16, so at 114% of the height it is 64% of the height
+       wide, and its edges melt into the blurred sky over the last few points */
+    #boot-sky::after {
+      inset: 0; background-size: auto 114%;
+      -webkit-mask-image: linear-gradient(90deg, transparent calc(50% - 32vh), #000 calc(50% - 28vh), #000 calc(50% + 28vh), transparent calc(50% + 32vh));
+      mask-image: linear-gradient(90deg, transparent calc(50% - 32vh), #000 calc(50% - 28vh), #000 calc(50% + 28vh), transparent calc(50% + 32vh));
+    }
+  }
+  #boot-mark { box-shadow: 0 5px 14px rgba(40, 10, 10, .3); }
+  html[data-splash$="-night"] #boot-mark { box-shadow: 0 0 28px rgba(255, 196, 110, .22), 0 3px 12px rgba(0, 0, 0, .3); }
+  #boot-rule { background: linear-gradient(90deg, rgba(168, 123, 37, 0), #a87b25 50%, rgba(168, 123, 37, 0)); }
+  html[data-splash$="-night"] #boot-rule { background: linear-gradient(90deg, rgba(226, 192, 106, 0), #e2c06a 50%, rgba(226, 192, 106, 0)); }
+  #boot-hail { color: #a87b25; text-shadow: 0 1px 12px rgba(255, 255, 255, .75); }
+  #boot-city { color: #16241c; text-shadow: 0 1px 12px rgba(255, 255, 255, .75); }
+  html[data-splash$="-night"] #boot-hail { color: #e2c06a; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
+  html[data-splash$="-night"] #boot-city { color: #f3efe6; text-shadow: 0 1px 12px rgba(0, 0, 0, .55); }
 </style>
 <link rel="preload" href="fonts/plex-arabic-400-arabic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/plex-arabic-700-arabic.woff2" as="font" type="font/woff2" crossorigin>
@@ -69,11 +130,18 @@
 </head>
 <body>
 <!-- What shows while the app wakes. Written inline and styled inline so it
-     paints with the very first frame, before any stylesheet or script. -->
-<div id="boot-splash" style="position:fixed;inset:0;z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;background:var(--paper,#f6f4ee);transition:opacity .38s ease">
-  <img src="icons/icon-192.png" alt="سُنّتي" width="132" height="132" style="border-radius:30px;box-shadow:0 8px 22px rgba(60,10,10,.22)">
-  <span style="width:132px;height:2px;background:#b08833;opacity:.7"></span>
-  <span id="boot-greet" style="display:flex;flex-direction:column;align-items:center;gap:2px"><span id="boot-hail" style="font:600 15px/1.5 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif;color:#b08833"></span><span id="boot-city" style="font:600 26px/1.2 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif;color:var(--ink,#16241c)"></span></span>
+     paints with the very first frame, before any stylesheet or script: the
+     painting of the reader's country under its sky, the icon where the
+     phone's own opening picture puts it, its middle at 42 per cent of the
+     height, and the greeting beneath. The colours by day and by night are
+     in the head, keyed on the painting boot.js chose. -->
+<div id="boot-splash" style="position:fixed;inset:0;z-index:999;overflow:hidden;background:#cfe2f1;transition:opacity .38s ease">
+  <div id="boot-sky" style="position:absolute;inset:0"></div>
+  <img id="boot-mark" src="icons/icon-384.png" alt="سُنّتي" width="132" height="132" style="position:absolute;left:50%;top:42%;width:132px;height:132px;margin:-66px 0 0 -66px;border-radius:30px">
+  <span style="position:absolute;left:16px;right:16px;top:calc(42% + 80px);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center">
+    <span id="boot-rule" style="width:72px;height:2px;border-radius:1px"></span>
+    <span id="boot-greet" style="display:flex;flex-direction:column;align-items:center;gap:2px"><span id="boot-hail" style="font:600 15px/1.5 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif"></span><span id="boot-city" style="font:600 26px/1.2 'Sunnati Splash','IBM Plex Sans Arabic',system-ui,sans-serif"></span></span>
+  </span>
 </div>
 
 

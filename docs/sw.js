@@ -43,6 +43,11 @@ var SHELL = [
   './img/sky/afternoon.webp',
   './img/sky/sunset.webp',
   './img/sky/dusk.webp',
+  /* the opening painting of a place with no painting of its own, by day and
+     by night; each country's pair is kept by the worker the first time the
+     app fetches it, so the shell does not carry all fourteen */
+  './img/splash/default-day.webp',
+  './img/splash/default-night.webp',
   './icons/badge-googleplay.png',
   './icons/badge-appstore.png',
   './data/mushaf.json',
