@@ -10565,12 +10565,34 @@ test('a grid of two is not laid out by the rules of a grid of three', () => {
   assert.match(css, /grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
 });
 
-test('the film on the Play page is set only by hand, from any link YouTube gives', () => {
+test('the Play page is changed only by hand: its film from any link YouTube gives, its pictures from the repository', () => {
   const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/play-listing.yml'), 'utf8');
   assert.ok(/on:\s*workflow_dispatch:/.test(flow) && flow.indexOf('push:') === -1, 'a person decides when the page changes');
-  assert.ok(flow.indexOf('python3 tools/android/play-listing.py --video "$VIDEO"') !== -1);
+  assert.ok(flow.indexOf('[ -n "$VIDEO" ] && set -- "$@" --video "$VIDEO"') !== -1, 'the film only when one is given');
+  assert.ok(/\[ "\$GRAPHICS" = true \] && set -- "\$@" --icon play\/listing\/icon-512\.png\s*\\\s*--feature play\/feature-graphic-1024x500\.png --phone play\/listing\/phone/.test(flow),
+    'and the pictures only when asked, from the repository');
+  assert.ok(flow.indexOf('set -- --status') !== -1, 'with the tracks and the page read first, so the log says what was there');
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/android/play-listing.py'), 'utf8');
   assert.ok(tool.indexOf("'https://www.youtube.com/watch?v=' + m.group(1)") !== -1, 'every form of the link becomes the one the page knows');
   assert.ok(tool.indexOf('youtu\\.be/') !== -1 && tool.indexOf('shorts') !== -1, 'short links and shorts are both read');
   assert.ok(tool.indexOf("call('DELETE', f'{base}/edits/{edit}', tok)") !== -1, 'and a failed edit is dropped, so nothing changes');
+  assert.ok(/pu\.call\('DELETE', f'\{base\}\/edits\/\{edit\}\/listings\/\{lang\}\/\{kind\}', tok\)\s*for p in paths:/.test(tool),
+    'each kind of picture is replaced whole, so no old screenshot stays among the new');
+  assert.ok(tool.indexOf("(w, h) != (512, 512)") !== -1 && tool.indexOf("(w, h) != (1024, 500)") !== -1, 'the sizes Play takes are checked before the edit');
+  assert.ok(tool.indexOf('2 <= len(paths) <= 8') !== -1, 'two to eight phone screenshots');
+});
+
+test('the App Store screenshots are replaced only by hand, and a version is taken back from review only when asked', () => {
+  const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-listing.yml'), 'utf8');
+  assert.ok(/on:\s*workflow_dispatch:/.test(flow) && flow.indexOf('push:') === -1 && flow.indexOf('schedule:') === -1, 'only ever by hand');
+  assert.ok(/default: status/.test(flow), 'and reading is what it does unless told otherwise');
+  assert.ok(/withdraw\) python3 tools\/ios\/asc-release\.py --shots-only --shots ios\/screenshots\/6\.9-inch --version "\$V" --withdraw ;;/.test(flow));
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  const back = /def withdraw\(\):([\s\S]*?)\n\n\n/.exec(release)[1];
+  assert.ok(back.indexOf("if state == 'IN_REVIEW':") !== -1 && back.indexOf('raise SystemExit') !== -1, 'what Apple has begun to look at is left');
+  assert.ok(back.indexOf("'attributes': {'canceled': True}") !== -1, 'a version waiting is taken back by its submission');
+  const only = /if a\.shots_only:([\s\S]*?)\n    if a\.previews_only:/.exec(release)[1];
+  assert.ok(only.indexOf('withdraw() if a.withdraw else None') !== -1, 'never taken back unless asked');
+  assert.ok(/if taken_back and not DRY:\s*send\(taken_back\)/.test(only), 'and what was taken back is sent again');
+  assert.ok(only.indexOf('attach(') === -1 && only.indexOf('write_notes(') === -1, 'the build and its notes stay as they were');
 });

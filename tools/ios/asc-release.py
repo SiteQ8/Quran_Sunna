@@ -31,6 +31,18 @@ already there with the same bytes is left; one that changed replaces the set.
 when there is none, with the phone's screenshots carried over so it does not
 stand empty, and changes nothing else: no build, no notes, no review. They go
 to the store with the next version sent.
+
+The 6.9 inch screenshots are carried over only when none are given. --shots
+names a folder of them, 1320 by 2868 in the order of their names, and they
+replace the set in every language of the version; with --shots-only that is
+all that is done, in the version being prepared. A version Apple has not
+started looking at, WAITING_FOR_REVIEW, takes nothing; --withdraw takes it
+back from review first, places the screenshots, and sends it again, so it
+waits its turn once more. One Apple is already looking at cannot be taken
+back, and is left.
+
+    asc-release.py --status
+    asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version 8.87.67 [--withdraw]
 """
 
 import argparse
@@ -411,6 +423,87 @@ def version_to_prepare(version):
     return made['data']['id']
 
 
+# ------------------------------------------------- the phone's screenshots
+
+PHONE = 'APP_IPHONE_67'
+PHONE_SIZES = {(1320, 2868), (2868, 1320), (1290, 2796), (2796, 1290)}
+
+
+def phone_shots(folder):
+    files = []
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        if name.endswith('.png'):
+            size = png_size(path)
+            if size not in PHONE_SIZES:
+                raise SystemExit('%s is %s, not a size the 6.9 inch set takes' % (name, size))
+            files.append(path)
+    if not files:
+        raise SystemExit('no screenshots in %s' % folder)
+    return files[:10]
+
+
+def place_phone_shots(loc_id, sets, files):
+    if PHONE in sets:
+        log('replacing the 6.9 inch screenshots (%d were there)' % len(sets[PHONE][1]))
+        api('DELETE', '/v1/appScreenshotSets/' + sets[PHONE][0])
+    log('6.9 inch: %s' % ', '.join(os.path.basename(f) for f in files))
+    set_id = new_set(loc_id, PHONE)
+    for path in files:
+        with open(path, 'rb') as f:
+            upload(set_id, os.path.basename(path), f.read())
+
+
+def status():
+    """What is where, read and nothing changed."""
+    vs = versions()
+    for v in vs:
+        at = v['attributes']
+        log('version %s: %s (made %s)' % (at['versionString'], at['appStoreState'], (at.get('createdDate') or '')[:10]))
+    for sub in api('GET', '/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&limit=5' % APP)['data']:
+        at = sub['attributes']
+        log('review submission %s: %s (sent %s)' % (sub['id'][:8], at.get('state'), (at.get('submittedDate') or '')[:16]))
+    for v in vs[:2]:
+        for loc in localizations(v['id']):
+            sets = sets_of(loc['id'])
+            films = preview_sets_of(loc['id'])
+            log('  %s %s: %s; previews %s' % (
+                v['attributes']['versionString'], loc['attributes']['locale'],
+                ', '.join('%s %d' % (k, len(x[1])) for k, x in sorted(sets.items())) or 'no screenshots',
+                ', '.join('%s %d' % (k, len(x[1])) for k, x in sorted(films.items())) or 'none'))
+
+
+def withdraw():
+    """The version waiting its turn, taken back from review so it can take
+    screenshots; its id, to send it again after. Nothing is taken back from
+    Apple once it has begun to look."""
+    for v in versions():
+        state = v['attributes']['appStoreState']
+        if state == 'IN_REVIEW':
+            raise SystemExit('version %s is in review now; it cannot be taken back, and the screenshots wait for the next one'
+                             % v['attributes']['versionString'])
+        if state != 'WAITING_FOR_REVIEW':
+            continue
+        subs = api('GET', '/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&filter[state]=WAITING_FOR_REVIEW'
+                   % APP)['data']
+        if not subs:
+            raise SystemExit('version %s waits for review, but no submission was found to take back'
+                             % v['attributes']['versionString'])
+        log('taking version %s back from review' % v['attributes']['versionString'])
+        api('PATCH', '/v1/reviewSubmissions/' + subs[0]['id'], {'data': {
+            'type': 'reviewSubmissions', 'id': subs[0]['id'], 'attributes': {'canceled': True}}})
+        if DRY:
+            return v['id']
+        for _ in range(60):
+            now = api('GET', '/v1/appStoreVersions/' + v['id'])['data']['attributes']['appStoreState']
+            if now in EDITABLE:
+                log('version %s is %s, and can take screenshots' % (v['attributes']['versionString'], now))
+                return v['id']
+            time.sleep(10)
+        raise SystemExit('the version did not come back from review in ten minutes')
+    return None
+
+
 # ------------------------------------------------------------------ review
 
 def send(version_id):
@@ -437,7 +530,12 @@ def send(version_id):
 def main():
     global DRY
     p = argparse.ArgumentParser()
-    p.add_argument('--version', required=True)
+    p.add_argument('--version')
+    p.add_argument('--status', action='store_true', help='read the versions, the review and the sets, change nothing')
+    p.add_argument('--shots', help='a folder of 6.9 inch screenshots to replace the set with, in the order of their names')
+    p.add_argument('--shots-only', action='store_true', help='place --shots in the version being prepared and nothing else')
+    p.add_argument('--withdraw', action='store_true',
+                   help='with --shots-only: take a version waiting for review back, place the screenshots, send it again')
     p.add_argument('--build')
     p.add_argument('--duo')
     p.add_argument('--notes')
@@ -449,6 +547,31 @@ def main():
     p.add_argument('--no-submit', action='store_true')
     a = p.parse_args()
     DRY = a.dry_run
+
+    if a.status:
+        status()
+        return
+    if not a.version:
+        p.error('--version is needed')
+
+    if a.shots_only:
+        if not a.shots:
+            p.error('--shots-only needs --shots')
+        files = phone_shots(a.shots)
+        taken_back = withdraw() if a.withdraw else None
+        version_id = taken_back or version_to_prepare(a.version)
+        reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
+        locs = localizations(reading)
+        if not locs:
+            raise SystemExit('the version has no languages yet to place the screenshots in')
+        for loc in locs:
+            place_phone_shots(loc['id'], sets_of(loc['id']), files)
+        if taken_back and not DRY:
+            send(taken_back)
+            log('the screenshots are placed, and the version is waiting for review again')
+            return
+        log('the screenshots are placed; nothing was sent')
+        return
 
     if a.previews_only:
         if not a.previews:
@@ -477,7 +600,10 @@ def main():
     for loc in localizations(reading):
         locale = loc['attributes']['locale']
         sets = sets_of(loc['id'])
-        carry_phone_shots(loc['id'], locale, sets)
+        if a.shots:
+            place_phone_shots(loc['id'], sets, phone_shots(a.shots))
+        else:
+            carry_phone_shots(loc['id'], locale, sets)
         place_duo(loc['id'], sets_of(loc['id']), a.duo)
         if a.previews:
             place_previews(loc['id'], a.previews)

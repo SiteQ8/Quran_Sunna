@@ -1,28 +1,41 @@
-# Puts the promotional film on the app's Google Play page. Play takes the film
-# only as a YouTube link, so it is uploaded to the channel first and its link
-# given here. Every language of the listing gets the same film.
+# The app's page on Google Play: the promotional film, the icon, the feature
+# graphic and the phone screenshots. Play takes the film only as a YouTube
+# link, so it is uploaded to the channel first and its link given here; the
+# pictures come from the repository, play/listing and play/feature-graphic,
+# and each kind is replaced whole in every language of the page.
 #
-# Run by hand only, from the Actions tab: «Play listing», Run workflow, with the
-# film's link. Nothing else on the page changes.
+# Run by hand only, from the Actions tab: «Play listing», Run workflow. With
+# nothing asked it reads the tracks and the page and changes nothing.
 name: Play listing
 
 on:
   workflow_dispatch:
     inputs:
       video:
-        description: 'the film on YouTube, in any form YouTube writes it'
-        required: true
+        description: 'the film on YouTube, in any form YouTube writes it (empty leaves the film as it is)'
+        required: false
+        default: ''
+      graphics:
+        description: 'replace the icon, the feature graphic and the phone screenshots from play/listing'
+        type: boolean
+        default: false
 
 jobs:
   listing:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - name: المكتبة
         run: python3 -m pip install --quiet --break-system-packages cryptography
-      - name: الفيلم إلى صفحة التطبيق
+      - name: صفحة التطبيق
         env:
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
           VIDEO: ${{ inputs.video }}
-        run: python3 tools/android/play-listing.py --video "$VIDEO"
+          GRAPHICS: ${{ inputs.graphics }}
+        run: |
+          set -- --status
+          [ -n "$VIDEO" ] && set -- "$@" --video "$VIDEO"
+          [ "$GRAPHICS" = true ] && set -- "$@" --icon play/listing/icon-512.png \
+            --feature play/feature-graphic-1024x500.png --phone play/listing/phone
+          python3 tools/android/play-listing.py "$@"
