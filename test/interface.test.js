@@ -1142,8 +1142,8 @@ test('every row of the hour card ticks the rows of the list it says again', () =
     dhuhr: [{ 'sunnah:6:0': 'أربع ركعات قبل الظهر وأربع بعدها', 'sunnah:6:1': 'الراتبة' }, { 'sunnah:6:1': 'الراتبة' },
       { 'sunnah:4:0': 'اللهم أنت السلام', 'sunnah:4:1': 'لا إله إلا الله وحده لا شريك له', 'sunnah:4:2': 'التسبيح', 'sunnah:4:3': 'آية الكرسي', 'sunnah:4:4': 'المعوذات' },
       { 'sunnah:6:2': 'القيلولة' }],
-    asr: [{ 'sunnah:7:2': 'أذكار المساء' }, { 'sunnah:7:1': 'المحافظة على العصر' }, { 'sunnah:7:0': 'لا راتبة قبل العصر' },
-      { 'sunnah:13:7': 'سبحان الله وبحمده مئة مرة' }],
+    asr: [{ 'sunnah:7:2': 'أذكار المساء' }, { 'sunnah:7:1': 'المحافظة على صلاة العصر' }, { 'sunnah:7:0': 'التطوع قبل العصر' },
+      { 'sunnah:13:6': 'الاستغفار مئة مرة', 'sunnah:13:7': 'سبحان الله وبحمده مئة مرة' }],
     maghrib: [{ 'sunnah:8:0': 'ركعتان قبل المغرب' }, { 'sunnah:8:1': 'كفّ الصبيان' }, { 'sunnah:8:2': 'إغلاق الأبواب' },
       { 'sunnah:8:3': 'ركعتان بعد المغرب' }, { 'wird:evening': 'أذكار المساء' }, { 'sunnah:8:4': 'ترك النوم قبل العشاء' }],
     isha: [{ 'sunnah:9:1': 'ركعتان بعد العشاء', 'wird:witr': 'الوتر' }, { 'sunnah:9:2': 'ترك الحديث بعد العشاء' },
@@ -1346,7 +1346,7 @@ test('ticks kept under the old names are carried to the rows they stand for', as
 
   /* a backup from before, restored from the settings, brings the old names
      back, and they are carried again */
-  const backup = JSON.stringify({ app: 'sunnati', data: { 'sunnati.day.2026-10-05': JSON.stringify({ sunnah: { 'now:maghrib:4': true } }) } });
+  const backup = JSON.stringify({ app: 'sunnati', data: { 'sunnati.day.2026-10-05': JSON.stringify({ sunnah: { 'now:maghrib:4': true, 'now:asr:3': true } }) } });
   const input = doc.getElementById('data-file');
   Object.defineProperty(input, 'files', { value: [new win.File([backup], 'backup.json', { type: 'application/json' })] });
   fire(win, input, 'change');
@@ -1354,7 +1354,9 @@ test('ticks kept under the old names are carried to the rows they stand for', as
     const day = JSON.parse(storage.getItem('sunnati.day.2026-10-05') || 'null');
     return day && day.sunnah && day.sunnah['wird:evening'] === true;
   });
-  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-05')).sunnah, { 'wird:evening': true });
+  /* the asr line named no count for its istighfar when that tick was made,
+     so it is carried to the tasbih alone */
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-05')).sunnah, { 'wird:evening': true, 'sunnah:13:7': true });
 });
 
 test('a row of the card clears only what it marked, not what the list had', () => {
@@ -4267,6 +4269,34 @@ test('every group of the tracker shows its page from the book', () => {
   const sources = [...doc.querySelectorAll('#tracker-list .fold-source')].map((e) => e.textContent);
   assert.strictEqual(sources.length, win.SUNNAH_TRACKER.length);
   assert.ok(sources[0].indexOf('المنح العلية') !== -1 && sources[0].indexOf('ص 25') !== -1, sources[0]);
+});
+
+test('the rows say what the book says where it settles the matter', () => {
+  const { win } = boot();
+  const row = (g, i) => win.SUNNAH_TRACKER[g].i[i];
+  /* المنح العلية: «فالصحيح أنه لا حدّ لأكثرها، خلافاً لمن حدّها بثمان ركعات» */
+  assert.ok(row(5, 0).indexOf('لا حدّ لأكثرها') !== -1 && row(5, 0).indexOf('ثمان') === -1, row(5, 0));
+  assert.strictEqual(win.CURRENT_SUNNAH.duha.items[0], row(5, 0), 'the card says it as the list does');
+  /* «لا يُسنّ سنة مقيّدة قبل العصر... فمن شاء صلى من قبيل التطوع المطلق»، and
+     the book reports the hadith of the four as disputed, so it is not called weak outright */
+  assert.ok(row(7, 0).indexOf('التطوع قبل العصر لمن شاء') === 0, row(7, 0));
+  assert.ok(row(7, 0).indexOf('مختلف في ثبوته') !== -1 && row(7, 0).indexOf('ضعيف') === -1);
+  assert.ok(!win.CURRENT_SUNNAH.asr.items.some((i) => i.indexOf('ضعيف') !== -1));
+  /* the obligation in its time is not offered as a sunnah, its first time is */
+  assert.ok(row(7, 1).indexOf('في أول وقتها') !== -1, row(7, 1));
+  /* «صلوا قبل المغرب»، قال في الثالثة: «لمن شاء» */
+  assert.ok(row(8, 0).indexOf('لمن شاء') !== -1 && win.CURRENT_SUNNAH.maghrib.items[0].indexOf('لمن شاء') !== -1);
+  /* the delay of isha: for the imam as the congregation bears it, and for whoever no congregation binds */
+  assert.ok(row(9, 0).indexOf('لمن لم تربطه جماعة') !== -1, row(9, 0));
+  /* the tahlil whose reward is promised is the whole of it */
+  [row(0, 7), row(4, 1), row(13, 5)].forEach(function (t) {
+    assert.ok(t.indexOf('له الملك وله الحمد وهو على كل شيء قدير') !== -1, t);
+  });
+  /* the evening reaches to isha, as the book has it */
+  assert.ok(row(7, 2).indexOf('إلى العشاء') !== -1);
+  /* and the wird's hundred is the hundred of the hadith, not the seventy */
+  const istighfar = win.WIRD_ITEMS.filter((w) => w.id === 'istighfar')[0];
+  assert.ok(istighfar.n.indexOf('مئة مرة') !== -1 && istighfar.n.indexOf('سبعين') === -1, istighfar.n);
 });
 
 test('the sunan of the hour agree with the book for every window', () => {
