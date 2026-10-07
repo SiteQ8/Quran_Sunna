@@ -11,7 +11,7 @@ import android.view.View;
 /**
  * What the reader sees while the mushaf loads: the app's own paper, its mark,
  * and a greeting by name. The mark and the word سُنّتي are baked into the
- * picture at build time by tools/store/splash.mjs; the greeting is drawn here,
+ * picture at build time by tools/store/icon-build.py; the greeting is drawn here,
  * because it names a city the picture could not know.
  *
  * The greeting is drawn in the app's own face, IBM Plex Sans Arabic, bundled
