@@ -68,3 +68,31 @@ python3 tools/ios/pick-xcode.py --release-only # 27.1 أو لا شيء
 بتشغيل iOS و store على prepare أو send. وبـ`--dry-run` يقرأ كل شيء ولا يغيّر
 شيئاً.
 
+ويضع معه أفلام المعاينة من `ios/previews`، فلكل جهاز مجلّد، و`iphone-67` لهاتف
+٦٫٩ بوصة بمقاس ٨٨٦ في ١٩٢٠، وبجانب كل فيلم ملف `.poster` فيه اللحظة التي
+يعرضها المتجر صورةً قبل أن يبدأ الفيلم، أي `00:00:18:24` بالساعات والدقائق
+والثواني والإطارات، والفيلم الموجود بالبايتات نفسها يُترك، والذي تغيّر يحلّ
+محلّ مجموعته.
+
+```
+python3 tools/ios/asc-release.py --previews-only --version 8.87.63 --previews ios/previews
+```
+
+وبـ`--previews-only` يضع الأفلام وحدها في الإصدار المُعَدّ، أو في إصدار جديد إن
+لم يكن، وينقل إليه لقطات الهاتف فلا يبقى فارغاً، ولا يبني شيئاً ولا يرسل شيئاً،
+فتذهب الأفلام إلى المتجر مع أول إصدار يُرسل بعدها، وهذا ما يفعله سير العمل
+«App Store previews» حين يُشغَّل بيد من صفحة Actions.
+
+## أفلام المعاينة
+
+`tools/store/sky-preview.mjs` يصوّر الفيلم من التطبيق نفسه إطاراً إطاراً، أي
+يوماً كاملاً من «سماء الوقت» في ثمانٍ وعشرين ثانية، فيمسك ساعة التطبيق ويحرّكها
+بيده، فكل إطار هو ما يرسمه التطبيق في تلك الدقيقة بعينها، ثم يجمعه ffmpeg بما
+يطلبه App Store Connect من الترميز والصوت.
+
+```
+python3 -m http.server 8765 --directory docs &
+node tools/store/sky-preview.mjs portrait     # ios/previews/iphone-67/sky-day.mp4
+node tools/store/sky-preview.mjs landscape    # 1920 في 1080 لـYouTube، ومنه يأخذ Google Play فيلمه
+```
+

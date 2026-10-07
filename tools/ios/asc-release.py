@@ -455,7 +455,10 @@ def main():
             p.error('--previews-only needs --previews')
         version_id = version_to_prepare(a.version)
         reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
-        for loc in localizations(reading):
+        locs = localizations(reading)
+        if not locs:
+            raise SystemExit('the version has no languages yet to place the films in')
+        for loc in locs:
             carry_phone_shots(loc['id'], loc['attributes']['locale'], sets_of(loc['id']))
             place_previews(loc['id'], a.previews)
         log('the previews are placed; nothing was sent')
