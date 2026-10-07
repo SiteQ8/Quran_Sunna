@@ -1548,6 +1548,180 @@ test('the sky can be put away, and the plain niche comes back', () => {
   assert.ok(css.indexOf('html.less-motion .sky-stars circle { animation: none;') !== -1, 'still stars for whoever asked for less motion');
 });
 
+/* a day at the hour and minute of one of the place's own times */
+function atTime(minutes, day) {
+  const d = day || [2026, 9, 7];
+  return new Date(d[0], d[1], d[2], Math.floor(minutes / 60), Math.floor(minutes % 60), 0);
+}
+
+test('the sky moves with its hour: clouds in its colours, the glow of dawn and sunset, the lantern at night', () => {
+  const probe = boot({ now: new Date(2026, 9, 7, 12, 0, 0) });
+  const t = probe.win.App.helpers.computeTimes(new Date(2026, 9, 7, 12));
+  const read = (doc, id, attr) => doc.getElementById(id).getAttribute(attr || 'opacity');
+  const stops = (doc) => Array.from(doc.querySelectorAll('#cloud-fill .cloud-stop')).map((s) => s.getAttribute('stop-color'));
+
+  /* the night: faint clouds lit by the moon, and the lantern burning */
+  const night = boot({ now: new Date(2026, 9, 25, 23, 30, 0) });
+  assert.ok(Number(read(night.doc, 'sky-lantern')) > .95, 'the lantern of the minaret at night');
+  assert.ok(Number(read(night.doc, 'sky-clouds')) < .2);
+  assert.strictEqual(Number(read(night.doc, 'sky-glow')), 0, 'no glow under a night sky');
+  assert.deepStrictEqual(stops(night.doc), ['#93a3c9', '#93a3c9', '#93a3c9']);
+
+  /* the noon: white clouds, no lantern and no glow */
+  const noon = boot({ now: atTime(t.dhuhr) });
+  assert.strictEqual(Number(read(noon.doc, 'sky-lantern')), 0);
+  assert.strictEqual(Number(read(noon.doc, 'sky-glow')), 0);
+  assert.ok(Number(read(noon.doc, 'sky-clouds')) > .3);
+  assert.deepStrictEqual(stops(noon.doc), ['#ffffff', '#ffffff', '#ffffff']);
+
+  /* the sunset: the glow rises on the side the sun went down, the clouds
+     take its colour, and the lantern is being lit */
+  const sunset = boot({ now: atTime(t.maghrib + 6) });
+  assert.ok(Number(read(sunset.doc, 'sky-glow')) > .5, 'the glow of the maghrib');
+  assert.strictEqual(read(sunset.doc, 'sky-glow-shape', 'cx'), '210', 'in the west of the painting');
+  assert.deepStrictEqual(stops(sunset.doc), ['#ffb08d', '#ffb08d', '#ffb08d']);
+  assert.ok(Number(read(sunset.doc, 'sky-lantern')) > 0 && Number(read(sunset.doc, 'sky-lantern')) < .5);
+
+  /* and the sunrise has its glow in the east */
+  const sunrise = boot({ now: atTime(t.sunrise + 12) });
+  assert.ok(Number(read(sunrise.doc, 'sky-glow')) > .4);
+  assert.strictEqual(read(sunrise.doc, 'sky-glow-shape', 'cx'), '30');
+
+  /* every hour's look is whole and in range, through the whole day */
+  const look = probe.win.App.helpers.skyLook;
+  for (let m = 0; m < 1440; m += 7) {
+    const l = look(probe.win.App.helpers.skyAt(t, m));
+    ['dark', 'clouds', 'glow', 'lantern'].forEach(function (k) {
+      assert.ok(l[k] >= 0 && l[k] <= 1, k + ' in range at minute ' + m);
+    });
+    assert.match(l.cloud, /^#[0-9a-f]{6}$/);
+    assert.match(l.glowColour, /^#[0-9a-f]{6}$/);
+  }
+
+  /* the motion itself is slow, and still for whoever asked for less of it */
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(css, /\.sky-drift \{[^}]*animation: sky-breathe 46s ease-in-out infinite alternate;/);
+  assert.match(css, /\.cloud-1 \{ animation-duration: 150s;/);
+  assert.match(css, /\.sky-lantern \{[^}]*animation: lantern 3\.1s/);
+  assert.ok(css.indexOf('html.less-motion .sky-drift, html.less-motion .cloud,\nhtml.less-motion .sky-lantern, html.less-motion .sky-glow { animation: none; }') !== -1);
+});
+
+test('a touch on the niche opens its sky on the whole screen, and a touch, escape or back closes it', async () => {
+  const { win, doc } = boot({ now: new Date(2026, 9, 25, 23, 30, 0) });
+  /* jsdom finishes loading the page on its own a moment later and starts the
+     app a second time, which goes home; it is let pass before anything opens */
+  await until(() => doc.readyState !== 'loading');
+  let lock = null;
+  Object.defineProperty(win.navigator, 'wakeLock', {
+    configurable: true,
+    value: { request: function (kind) { lock = { kind: kind, released: false, release() { this.released = true; return Promise.resolve(); } }; return Promise.resolve(lock); } }
+  });
+  const view = doc.getElementById('skyview');
+  const niche = doc.getElementById('arc-wrap');
+  assert.strictEqual(view.hidden, true, 'closed until asked for');
+  assert.strictEqual(niche.getAttribute('tabindex'), '0', 'and reachable from the keyboard');
+
+  click(win, niche);
+  assert.strictEqual(view.hidden, false);
+  assert.strictEqual(doc.getElementById('skyview-a').getAttribute('src'), 'img/sky/night.webp');
+  assert.strictEqual(doc.querySelectorAll('#sv-stars circle').length, 70, 'a sky full of stars');
+  assert.ok(Number(doc.getElementById('sv-moon').getAttribute('opacity')) > .9, 'and the full moon of the fourteenth');
+  assert.ok(Number(doc.getElementById('sv-lantern').getAttribute('opacity')) > .95);
+  assert.strictEqual(doc.getElementById('skyview-count').textContent, doc.getElementById('arc-count').textContent, 'the countdown goes with it');
+  assert.strictEqual(doc.getElementById('skyview-name').textContent, doc.getElementById('arc-name').textContent);
+  assert.ok(doc.getElementById('skyview-date').textContent.indexOf(doc.getElementById('hijri-date').textContent) === 0);
+  assert.strictEqual(doc.activeElement, view, 'the keyboard is taken into it');
+  assert.strictEqual(win.history.state && win.history.state.sky, true, 'a step of its own in the history');
+  await until(() => view.classList.contains('is-open'));
+  await until(() => lock && lock.kind === 'screen');
+  assert.ok(view.style.filter.indexOf('brightness') === 0, 'the night is shown dim');
+
+  /* a touch closes it, gives the screen back and steps the history back */
+  click(win, view);
+  assert.ok(!view.classList.contains('is-open'));
+  assert.strictEqual(lock.released, true, 'the screen may sleep again');
+  assert.strictEqual(doc.activeElement, niche, 'and the keyboard goes back to the niche');
+  await until(() => view.hidden === true);
+  await until(() => !(win.history.state && win.history.state.sky));
+  assert.ok(doc.getElementById('v-home').classList.contains('is-open'), 'the home screen, where it was');
+
+  /* the back button closes it and goes nowhere else */
+  win.App.go('tracker');
+  click(win, niche);
+  assert.strictEqual(view.hidden, false);
+  win.history.back();
+  await until(() => !view.classList.contains('is-open'));
+  assert.ok(doc.getElementById('v-tracker').classList.contains('is-open'), 'still on the screen it was opened over');
+
+  /* escape closes it too */
+  await until(() => view.hidden === true);
+  click(win, niche);
+  doc.dispatchEvent(new win.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  assert.ok(!view.classList.contains('is-open'));
+
+  /* and a sheet the app raises on its own is not left hidden under it */
+  await until(() => view.hidden === true);
+  click(win, niche);
+  win.App.helpers.markDaySheet(new Date(2026, 9, 25));
+  assert.ok(!view.classList.contains('is-open'), 'the sky gives way');
+  assert.ok(doc.getElementById('sheet').classList.contains('is-open'));
+});
+
+test('the whole-screen sky stays shut while the sky is put away', () => {
+  const first = boot({ now: new Date(2026, 9, 25, 23, 30, 0) });
+  first.win.App.go('settings');
+  const sw = first.doc.getElementById('settings-sky');
+  click(first.win, sw);
+  assert.strictEqual(sw.getAttribute('aria-checked'), 'false');
+  first.win.App.go('home');
+  const niche = first.doc.getElementById('arc-wrap');
+  assert.ok(!niche.hasAttribute('tabindex'), 'nothing to reach');
+  click(first.win, niche);
+  assert.strictEqual(first.doc.getElementById('skyview').hidden, true);
+  /* its motion is drawn from one source, the walk along the shore made with
+     the page's own animation and held still for less motion */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const pan = /function panSkyview\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(pan.indexOf("classList.contains('less-motion')") !== -1);
+  assert.ok(pan.indexOf("direction: 'alternate'") !== -1);
+});
+
+test('the film of a day in the sky is one the App Store takes, and goes up with the next version', () => {
+  const dir = path.join(__dirname, '..', 'ios', 'previews', 'iphone-67');
+  const film = fs.readFileSync(path.join(dir, 'sky-day.mp4'));
+  assert.strictEqual(film.subarray(4, 8).toString('latin1'), 'ftyp', 'an mp4');
+  assert.ok(film.length < 30 * 1048576, 'light enough to keep in the repository');
+  /* the moov box comes first, so the size and length are read from its head */
+  const box = (name, from) => film.indexOf(Buffer.from(name, 'latin1'), from || 0);
+  assert.ok(box('moov') < box('mdat'), 'and it starts playing before it has all arrived');
+  const mvhd = box('mvhd');
+  const seconds = film.readUInt32BE(mvhd + 20) / film.readUInt32BE(mvhd + 16);
+  assert.ok(seconds >= 15 && seconds <= 30, 'between fifteen and thirty seconds, as Apple asks: ' + seconds);
+  let size = null;
+  for (let at = box('tkhd'); at !== -1; at = box('tkhd', at + 4)) {
+    const w = film.readUInt32BE(at + 80) >>> 16, h = film.readUInt32BE(at + 84) >>> 16;
+    if (w) size = [w, h];
+  }
+  assert.deepStrictEqual(size, [886, 1920], 'the 6.9 inch phone, upright');
+  assert.ok(box('mp4a') !== -1, 'with the sound track Apple asks for, silent');
+  const poster = fs.readFileSync(path.join(dir, 'sky-day.poster'), 'utf8').trim();
+  const m = /^00:00:(\d\d):(\d\d)$/.exec(poster);
+  assert.ok(m && +m[1] < seconds && +m[2] < 30, 'the still it shows before it plays, inside the film');
+
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  assert.ok(release.indexOf("PREVIEW_KINDS = {'iphone-67': 'IPHONE_67'}") !== -1);
+  const only = /if a\.previews_only:([\s\S]*?)\n    if not \(/.exec(release)[1];
+  assert.ok(only.indexOf('place_previews') !== -1 && only.indexOf('send(') === -1 && only.indexOf('attach(') === -1,
+    'placing the films alone sends nothing and builds nothing');
+  assert.ok(/log\('no iPhone Duo screenshots in %s, so that set is left as it is' % folder\)\s*return/.test(release),
+    'a build that is not for iPhone Duo leaves its set alone');
+  const ios = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  assert.ok(ios.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews') !== -1, 'every version sent carries them');
+  const own = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-previews.yml'), 'utf8');
+  assert.ok(/on:\s*workflow_dispatch:\s*\n\s*\njobs:/.test(own), 'and the run that places them alone is only ever by hand');
+  assert.ok(own.indexOf('--previews-only') !== -1);
+});
+
 test('a picture of the times carries the sky of the moment it is made', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];

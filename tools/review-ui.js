@@ -182,8 +182,11 @@ const MIN_CONTRAST_LARGE = 3;
         root.querySelectorAll('*').forEach((el) => {
           const box = el.getBoundingClientRect();
           if (!box.width && !box.height) return;
+          /* what a clip path holds is cut to it, so a cloud drifting past the
+             arch of the niche is never seen past it, however far it goes */
+          if (el.closest('[clip-path]')) return;
           if (box.right > width + 1 || box.left < -1)
-            issues.push('spills off the edge: ' + (el.id ? '#' + el.id : el.className));
+            issues.push('spills off the edge: ' + (el.id ? '#' + el.id : el.getAttribute('class')));
         });
 
         /* Only leaf elements carry their own words, so only those are measured. */

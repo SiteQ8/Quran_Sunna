@@ -496,10 +496,11 @@ jobs:
 
   # The store, only when a run by hand asks for it: the version made or found,
   # the build attached, what is new from ios/whatsnew, the 6.9 inch
-  # screenshots carried over when the new version comes without them, and the
-  # iPhone Duo screenshots this run took. Prepare stops there for a person to
-  # look; send also sends it for review. On ubuntu, since most of it is
-  # waiting for Apple to process the build.
+  # screenshots carried over when the new version comes without them, the
+  # iPhone Duo screenshots this run took, and the preview films of
+  # ios/previews when they are not there already. Prepare stops there for a
+  # person to look; send also sends it for review. On ubuntu, since most of it
+  # is waiting for Apple to process the build.
   store:
     needs: build
     if: inputs.store == 'prepare' || inputs.store == 'send'
@@ -527,5 +528,5 @@ jobs:
         run: |
           python3 tools/ios/asc-release.py \
             --version "${{ needs.build.outputs.version }}" --build "${{ needs.build.outputs.number }}" \
-            --duo shots/iphone-duo --notes ios/whatsnew/ar-SA.txt \
+            --duo shots/iphone-duo --notes ios/whatsnew/ar-SA.txt --previews ios/previews \
             $([ "$SEND" = send ] || echo --no-submit)

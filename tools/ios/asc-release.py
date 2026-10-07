@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Takes a build that reached App Store Connect to the store: the version made
 or found, the build attached to it, what is new written, the screenshots of
-iPhone Duo placed, and the whole sent for review.
+iPhone Duo placed, the preview films placed, and the whole sent for review.
 
     asc-release.py --version 8.87.60 --build 346 --duo shots/iphone-duo \\
-                   --notes ios/whatsnew/ar-SA.txt [--dry-run] [--no-submit]
+                   --notes ios/whatsnew/ar-SA.txt --previews ios/previews \\
+                   [--dry-run] [--no-submit]
+
+    asc-release.py --previews-only --version 8.87.63 --previews ios/previews
 
 The key comes from the environment as the iOS workflow holds it: ASC_KEY_ID,
 ASC_ISSUER_ID and ASC_KEY_P8 (the .p8 in base64), or ASC_KEY_PATH to the .p8
@@ -15,8 +18,19 @@ person to look at and send.
 iPhone Duo has one kind of screenshot set, APP_IPHONE_DUO, which takes the
 outer display at 1398 by 2034 and the inner at 2853 by 2007, either way up.
 Apple's published description of the api does not list it yet; the server
-takes it. The six screenshots of the 6.9 inch phone are carried over from the
-version on sale when the new one comes without them.
+takes it. A build from an Xcode that does not know iPhone Duo comes with no
+screenshots of it, and then the set is left as it is. The six screenshots of
+the 6.9 inch phone are carried over from the version on sale when the new one
+comes without them.
+
+The previews are films in a folder for each kind of phone, ios/previews/
+iphone-67 for the 6.9 inch phone at 886 by 1920, with the still the store
+shows before one plays beside it in a .poster file, as 00:00:18:24. A film
+already there with the same bytes is left; one that changed replaces the set.
+--previews-only places them in the version being prepared, or in a new one
+when there is none, with the phone's screenshots carried over so it does not
+stand empty, and changes nothing else: no build, no notes, no review. They go
+to the store with the next version sent.
 """
 
 import argparse
@@ -259,7 +273,10 @@ def place_duo(loc_id, sets, folder):
                 log('  %s is %s, not a size iPhone Duo takes' % (stem, size))
     files = files[:10]
     if not files:
-        raise SystemExit('no iPhone Duo screenshots in %s' % folder)
+        # a build from an Xcode before 27.1 is not for iPhone Duo and has no
+        # pictures of it; what the version holds already is left as it is
+        log('no iPhone Duo screenshots in %s, so that set is left as it is' % folder)
+        return
     if DUO in sets:
         log('replacing the iPhone Duo screenshots')
         api('DELETE', '/v1/appScreenshotSets/' + sets[DUO][0])
@@ -268,6 +285,130 @@ def place_duo(loc_id, sets, folder):
     for path in files:
         with open(path, 'rb') as f:
             upload(set_id, os.path.basename(path), f.read())
+
+
+# ---------------------------------------------------------------- previews
+
+# the folder each kind of phone's films are kept in, and Apple's name for it;
+# the 6.9 inch phone's set is called 67, as its screenshots are
+PREVIEW_KINDS = {'iphone-67': 'IPHONE_67'}
+
+
+def preview_sets_of(loc_id):
+    res = api('GET', '/v1/appStoreVersionLocalizations/%s/appPreviewSets?limit=50&include=appPreviews' % loc_id)
+    films = {s['id']: s for s in res.get('included', []) if s['type'] == 'appPreviews'}
+    out = {}
+    for s in res.get('data', []):
+        ids = [x['id'] for x in s.get('relationships', {}).get('appPreviews', {}).get('data', [])]
+        out[s['attributes']['previewType']] = (s['id'], [films[i] for i in ids if i in films])
+    return out
+
+
+def films_in(folder):
+    """Up to three films for each kind of phone, in the order of their names."""
+    out = {}
+    for sub, kind in PREVIEW_KINDS.items():
+        here = os.path.join(folder, sub)
+        if os.path.isdir(here):
+            names = sorted(n for n in os.listdir(here) if n.endswith('.mp4'))[:3]
+            if names:
+                out[kind] = [os.path.join(here, n) for n in names]
+    return out
+
+
+def poster_of(path):
+    side = path[:-4] + '.poster'
+    return open(side).read().strip() if os.path.exists(side) else None
+
+
+def upload_film(set_id, path):
+    """As a screenshot goes up, then a wait while Apple makes the film ready,
+    which takes minutes rather than seconds."""
+    with open(path, 'rb') as f:
+        data = f.read()
+    name = os.path.basename(path)
+    poster = poster_of(path)
+    log('  uploading %s (%d bytes)%s' % (name, len(data), ', its still at ' + poster if poster else ''))
+    attrs = {'fileName': name, 'fileSize': len(data), 'mimeType': 'video/mp4'}
+    if poster:
+        attrs['previewFrameTimeCode'] = poster
+    made = api('POST', '/v1/appPreviews', {'data': {
+        'type': 'appPreviews', 'attributes': attrs,
+        'relationships': {'appPreviewSet': {'data': {'type': 'appPreviewSets', 'id': set_id}}}}})
+    if DRY:
+        return
+    film = made['data']
+    for op in film['attributes']['uploadOperations']:
+        part = data[op['offset']:op['offset'] + op['length']]
+        req = urllib.request.Request(op['url'], data=part, method=op['method'],
+                                     headers={h['name']: h['value'] for h in op.get('requestHeaders', [])})
+        with urllib.request.urlopen(req, timeout=300) as r:
+            r.read()
+    api('PATCH', '/v1/appPreviews/' + film['id'], {'data': {
+        'type': 'appPreviews', 'id': film['id'],
+        'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
+    for _ in range(90):
+        state = api('GET', '/v1/appPreviews/' + film['id'])['data']['attributes'].get('assetDeliveryState') or {}
+        if state.get('state') == 'COMPLETE':
+            log('  %s is in place' % name)
+            return
+        if state.get('state') == 'FAILED':
+            raise SystemExit('Apple refused %s: %s' % (name, json.dumps(state.get('errors'), ensure_ascii=False)))
+        time.sleep(10)
+    log('  %s went up and Apple is still making it ready; App Store Connect shows it when done' % name)
+
+
+def place_previews(loc_id, folder):
+    films = films_in(folder)
+    if not films:
+        log('no preview films in %s' % folder)
+        return
+    have = preview_sets_of(loc_id)
+    for kind, paths in films.items():
+        sums = []
+        for p in paths:
+            with open(p, 'rb') as f:
+                sums.append(hashlib.md5(f.read()).hexdigest())
+        there = have.get(kind)
+        if there and [f['attributes'].get('sourceFileChecksum') for f in there[1]] == sums:
+            # the same films; only the still is set again if it moved
+            for f, p in zip(there[1], paths):
+                poster = poster_of(p)
+                if poster and f['attributes'].get('previewFrameTimeCode') != poster:
+                    log('  the still of %s moves to %s' % (os.path.basename(p), poster))
+                    api('PATCH', '/v1/appPreviews/' + f['id'], {'data': {
+                        'type': 'appPreviews', 'id': f['id'], 'attributes': {'previewFrameTimeCode': poster}}})
+            log('the %s previews are there already' % kind)
+            continue
+        if there:
+            log('replacing the %s previews' % kind)
+            api('DELETE', '/v1/appPreviewSets/' + there[0])
+        log('%s: %s' % (kind, ', '.join(os.path.basename(p) for p in paths)))
+        set_id = api('POST', '/v1/appPreviewSets', {'data': {
+            'type': 'appPreviewSets', 'attributes': {'previewType': kind},
+            'relationships': {'appStoreVersionLocalization': {'data': {
+                'type': 'appStoreVersionLocalizations', 'id': loc_id}}}}})['data']['id']
+        for p in paths:
+            upload_film(set_id, p)
+
+
+def version_to_prepare(version):
+    """The version being prepared, as it is, or a new one when there is none.
+    Nothing is placed over a version Apple is looking at."""
+    for v in versions():
+        state = v['attributes']['appStoreState']
+        if state in BUSY:
+            raise SystemExit('version %s is %s; it cannot take anything until Apple is done'
+                             % (v['attributes']['versionString'], state))
+        if state in EDITABLE:
+            log('version %s is being prepared, %s' % (v['attributes']['versionString'], state))
+            return v['id']
+    log('making version %s to hold them' % version)
+    made = api('POST', '/v1/appStoreVersions', {'data': {
+        'type': 'appStoreVersions',
+        'attributes': {'platform': 'IOS', 'versionString': version, 'releaseType': 'AFTER_APPROVAL'},
+        'relationships': {'app': {'data': {'type': 'apps', 'id': APP}}}}})
+    return made['data']['id']
 
 
 # ------------------------------------------------------------------ review
@@ -297,14 +438,31 @@ def main():
     global DRY
     p = argparse.ArgumentParser()
     p.add_argument('--version', required=True)
-    p.add_argument('--build', required=True)
-    p.add_argument('--duo', required=True)
-    p.add_argument('--notes', required=True)
+    p.add_argument('--build')
+    p.add_argument('--duo')
+    p.add_argument('--notes')
+    p.add_argument('--previews', help='the folder of preview films, ios/previews')
+    p.add_argument('--previews-only', action='store_true',
+                   help='place the previews in the version being prepared and nothing else')
     p.add_argument('--wait', type=int, default=45, help='minutes to wait for Apple to process the build')
     p.add_argument('--dry-run', action='store_true')
     p.add_argument('--no-submit', action='store_true')
     a = p.parse_args()
     DRY = a.dry_run
+
+    if a.previews_only:
+        if not a.previews:
+            p.error('--previews-only needs --previews')
+        version_id = version_to_prepare(a.version)
+        reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
+        for loc in localizations(reading):
+            carry_phone_shots(loc['id'], loc['attributes']['locale'], sets_of(loc['id']))
+            place_previews(loc['id'], a.previews)
+        log('the previews are placed; nothing was sent')
+        return
+
+    if not (a.build and a.duo and a.notes):
+        p.error('--build, --duo and --notes are needed to send a build')
     notes = open(a.notes, encoding='utf-8').read().strip()
 
     build_id = wait_for_build(a.version, a.build, a.wait)
@@ -318,6 +476,8 @@ def main():
         sets = sets_of(loc['id'])
         carry_phone_shots(loc['id'], locale, sets)
         place_duo(loc['id'], sets_of(loc['id']), a.duo)
+        if a.previews:
+            place_previews(loc['id'], a.previews)
     if a.no_submit or DRY:
         log('left ready to send, not sent')
         return

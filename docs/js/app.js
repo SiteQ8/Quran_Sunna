@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.62';
+  var VERSION = '8.87.63';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -178,6 +178,9 @@
   function openSheet(title, html) {
     var sheet = $('sheet');
     if (!sheet) return;
+    /* a sheet the app raises on its own, at a night of jumuah or after a
+       prayer, is not left hidden under the sky */
+    if (skyview.open) closeSkyview();
     $('sheet-title').textContent = title;
     $('sheet-body').innerHTML = html;
     sheet.classList.add('is-open');
@@ -494,6 +497,7 @@
         name !== 'settings' && name !== 'reminders') stopSpeaking();
     var target = $('v-' + name);
     if (!target) return;
+    if (skyview.open) closeSkyview(true);
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
     target.classList.add('is-open');
     state.view = name;
@@ -833,9 +837,54 @@
 
   function skyOn() { return Store.get('sky') !== false; }
 
+  /* What the hour adds over its painting: the colour and weight of the
+     clouds drifting across it, the glow on the horizon and the side it rises
+     on, the lantern of the minaret, and how dark it is for the stars. */
+  var SKY_CLOUD = {
+    night: ['#93a3c9', .12], fajr: ['#d8def4', .3], sunrise: ['#ffd9c6', .5], morning: ['#ffffff', .55],
+    noon: ['#ffffff', .4], afternoon: ['#ffe6b5', .5], sunset: ['#ffb08d', .55], dusk: ['#b8a3d8', .28]
+  };
+  var SKY_GLOW = { fajr: ['#cfd8ff', .35, -1], sunrise: ['#ffc9a0', .55, -1], sunset: ['#ff9a6b', .6, 1], dusk: ['#ff8a70', .32, 1] };
+  var SKY_LANTERN = { night: 1, dusk: .9, fajr: .6, sunset: .25 };
+
+  function mixHex(c1, c2, t) {
+    var a = parseInt(c1.slice(1), 16), b = parseInt(c2.slice(1), 16);
+    var r = Math.round(((a >> 16) & 255) * (1 - t) + ((b >> 16) & 255) * t);
+    var g = Math.round(((a >> 8) & 255) * (1 - t) + ((b >> 8) & 255) * t);
+    var u = Math.round((a & 255) * (1 - t) + (b & 255) * t);
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + u).toString(16).slice(1);
+  }
+
+  function skyLook(sky) {
+    var m = sky.mix;
+    var ca = SKY_CLOUD[sky.a], cb = SKY_CLOUD[sky.b];
+    var ga = SKY_GLOW[sky.a], gb = SKY_GLOW[sky.b];
+    var glowA = ga ? ga[1] * (1 - m) : 0, glowB = gb ? gb[1] * m : 0;
+    return {
+      dark: SKY_DARK[sky.a] * (1 - m) + SKY_DARK[sky.b] * m,
+      cloud: mixHex(ca[0], cb[0], m),
+      clouds: ca[1] * (1 - m) + cb[1] * m,
+      glowColour: mixHex((ga || gb || ['#ffffff'])[0], (gb || ga || ['#ffffff'])[0], m),
+      glow: glowA + glowB,
+      glowSide: glowA >= glowB ? (ga ? ga[2] : 1) : gb[2],
+      lantern: (SKY_LANTERN[sky.a] || 0) * (1 - m) + (SKY_LANTERN[sky.b] || 0) * m
+    };
+  }
+
+  /* the colour of the clouds and the glow is held in their gradients, which
+     the niche and the whole screen share by class */
+  function tintSky(look) {
+    $$('.cloud-stop').forEach(function (stop) { stop.setAttribute('stop-color', look.cloud); });
+    $$('.glow-stop').forEach(function (stop) { stop.setAttribute('stop-color', look.glowColour); });
+  }
+
   function renderSky(force) {
     var root = document.documentElement;
-    if (!skyOn() || !$('sky')) { root.classList.remove('has-sky'); skyShown = ''; return; }
+    if (!skyOn() || !$('sky')) {
+      root.classList.remove('has-sky'); skyShown = '';
+      if ($('arc-wrap')) $('arc-wrap').removeAttribute('tabindex');
+      return;
+    }
     var t = state.times || refreshTimes();
     var now = new Date();
     var minute = nowMinutes(now);
@@ -844,30 +893,190 @@
     if (!force && stamp === skyShown) return;
     skyShown = stamp;
     root.classList.add('has-sky');
+    if ($('arc-wrap')) {
+      $('arc-wrap').setAttribute('tabindex', '0');
+      $('arc-wrap').setAttribute('title', 'المس لترى السماء على الشاشة كلها');
+    }
     var sky = skyAt(t, minute);
+    var look = skyLook(sky);
     var a = $('sky-a'), b = $('sky-b');
     var hrefA = 'img/sky/' + sky.a + '.webp', hrefB = 'img/sky/' + sky.b + '.webp';
     if (a.getAttribute('href') !== hrefA) a.setAttribute('href', hrefA);
     if (b.getAttribute('href') !== hrefB) b.setAttribute('href', hrefB);
     b.setAttribute('opacity', sky.mix.toFixed(3));
-    var dark = SKY_DARK[sky.a] * (1 - sky.mix) + SKY_DARK[sky.b] * sky.mix;
-    $('sky-stars').setAttribute('opacity', Math.max(0, (dark - .35) / .65).toFixed(3));
+    tintSky(look);
+    $('sky-clouds').setAttribute('opacity', look.clouds.toFixed(3));
+    $('sky-glow').setAttribute('opacity', look.glow.toFixed(3));
+    $('sky-glow-shape').setAttribute('cx', look.glowSide < 0 ? '30' : '210');
+    $('sky-lantern').setAttribute('opacity', look.lantern.toFixed(3));
+    $('sky-stars').setAttribute('opacity', Math.max(0, (look.dark - .35) / .65).toFixed(3));
     var moon = moonAt(now, t);
-    var shown = moon.up && moon.lit > .02 ? Math.max(0, Math.min(1, (dark - .3) / .5)) : 0;
+    var shown = moon.up && moon.lit > .02 ? Math.max(0, Math.min(1, (look.dark - .3) / .5)) : 0;
     var g = $('sky-moon');
     g.setAttribute('opacity', shown.toFixed(3));
-    if (!shown) return;
-    /* from its rising on the left to its setting on the right, inside the
-       arc of the countdown and above the shore */
-    var angle = (126 - 72 * moon.along) * Math.PI / 180;
-    var x = 120 + 80 * Math.cos(angle), y = 140 - 80 * Math.sin(angle);
-    /* the lit side faces the sun under the horizon, on the side it set for an
-       evening moon and the side it will rise for a morning one, so a young
-       crescent lies tilted like a boat as it does over the Gulf */
-    var sunX = moon.waxing ? 250 : -10;
-    var turn = Math.atan2(110 - y, sunX - x) * 180 / Math.PI - (moon.waxing ? 0 : 180);
-    g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + turn.toFixed(1) + ')');
-    $('moon-lit').setAttribute('d', moonPath(Math.max(moon.lit, .08), moon.waxing, 6));
+    if (shown) {
+      /* from its rising on the left to its setting on the right, inside the
+         arc of the countdown and above the shore */
+      var angle = (126 - 72 * moon.along) * Math.PI / 180;
+      var x = 120 + 80 * Math.cos(angle), y = 140 - 80 * Math.sin(angle);
+      /* the lit side faces the sun under the horizon, on the side it set for an
+         evening moon and the side it will rise for a morning one, so a young
+         crescent lies tilted like a boat as it does over the Gulf */
+      var sunX = moon.waxing ? 250 : -10;
+      var turn = Math.atan2(110 - y, sunX - x) * 180 / Math.PI - (moon.waxing ? 0 : 180);
+      g.setAttribute('transform', 'translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + turn.toFixed(1) + ')');
+      $('moon-lit').setAttribute('d', moonPath(Math.max(moon.lit, .08), moon.waxing, 6));
+    }
+    if (skyview.open) renderSkyview(sky, look, moon, shown);
+  }
+
+  /* ---------------- the sky on the whole screen ---------------- */
+
+  /* A touch on the niche opens its sky on the whole screen with the
+     countdown over it: the painting moves slowly along the shore as an eye
+     would, the clouds cross, the lantern trembles, and the screen is kept
+     awake while it is open, so it can stand by the bed through the night or
+     keep a moment of dhikr. A touch anywhere closes it. */
+  var skyview = { open: false, lock: null, pan: null, starred: false, pushed: false, skipPop: false };
+
+  function fillSkyviewStars() {
+    if (skyview.starred || !$('sv-stars')) return;
+    skyview.starred = true;
+    var html = '';
+    for (var k = 0; k < 70; k++) {
+      var x = ((k * 0.6180339 + .05) % 1) * 1000;
+      var y = 18 + ((k * 0.4142136 + .17) % 1) * 280;
+      html += '<circle cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (k % 6 ? 1.3 : 2.2) + '"/>';
+    }
+    $('sv-stars').innerHTML = html;
+  }
+
+  function panSkyview() {
+    var scene = $('skyview-scene');
+    if (!scene) return;
+    if (skyview.pan) { try { skyview.pan.cancel(); } catch (e) { /* gone */ } skyview.pan = null; }
+    var w = scene.getBoundingClientRect().width, vw = window.innerWidth;
+    var room = Math.max(0, w - vw);
+    /* it opens on the minaret, then drifts along the shore to the open sea */
+    var from = -Math.min(room, Math.max(0, w * .746 - vw * .62));
+    var to = -Math.min(room, Math.max(0, w * .2 - vw * .3));
+    if (document.documentElement.classList.contains('less-motion') || !scene.animate || Math.abs(from - to) < 2) {
+      scene.style.transform = 'translateX(' + from + 'px)';
+      return;
+    }
+    scene.style.transform = '';
+    skyview.pan = scene.animate([
+      { transform: 'translateX(' + from + 'px)' },
+      { transform: 'translateX(' + to + 'px)' }
+    ], { duration: Math.max(60000, Math.abs(from - to) * 160), iterations: Infinity, direction: 'alternate', easing: 'ease-in-out' });
+  }
+
+  function holdSkyAwake(on) {
+    try {
+      if (on && navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').then(function (lock) {
+          if (!skyview.open) { lock.release(); return; }
+          skyview.lock = lock;
+          /* let go of by the phone itself when the app went behind another */
+          if (lock.addEventListener) lock.addEventListener('release', function () { if (skyview.lock === lock) skyview.lock = null; });
+        }).catch(function () { /* the device keeps its own rule */ });
+      } else if (!on && skyview.lock) {
+        skyview.lock.release();
+        skyview.lock = null;
+      }
+    } catch (e) { /* no wake lock here */ }
+  }
+
+  function skyviewText() {
+    if (!skyview.open) return;
+    ['label', 'name', 'count'].forEach(function (part) {
+      var from = $('arc-' + part), to = $('skyview-' + part);
+      if (from && to && to.textContent !== from.textContent) to.textContent = from.textContent;
+    });
+    var where = place();
+    var date = ($('hijri-date') ? $('hijri-date').textContent : '') + (where && where.n ? '، ' + where.n : '');
+    if ($('skyview-date') && $('skyview-date').textContent !== date) $('skyview-date').textContent = date;
+  }
+
+  function renderSkyview(sky, look, moon, shown) {
+    var a = $('skyview-a'), b = $('skyview-b');
+    if (!a || !b) return;
+    var srcA = 'img/sky/' + sky.a + '.webp', srcB = 'img/sky/' + sky.b + '.webp';
+    if (a.getAttribute('src') !== srcA) a.setAttribute('src', srcA);
+    if (b.getAttribute('src') !== srcB) b.setAttribute('src', srcB);
+    b.style.opacity = sky.mix.toFixed(3);
+    $('sv-clouds').setAttribute('opacity', (look.clouds * 1.1).toFixed(3));
+    $('sv-glow').setAttribute('opacity', look.glow.toFixed(3));
+    $('sv-glow-shape').setAttribute('cx', look.glowSide < 0 ? '120' : '880');
+    $('sv-lantern').setAttribute('opacity', look.lantern.toFixed(3));
+    $('sv-stars').setAttribute('opacity', Math.max(0, (look.dark - .35) / .65).toFixed(3));
+    var g = $('sv-moon');
+    g.setAttribute('opacity', shown.toFixed(3));
+    if (shown) {
+      /* placed on the screen rather than on the painting: the horizon is
+         where the painting puts it, a little below the middle */
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var r = Math.max(10, Math.round(Math.min(vw, vh) * .036));
+      $('skyview-far').setAttribute('viewBox', '0 0 ' + vw + ' ' + vh);
+      var at = moonPlace(moon, vw * .06, vh * .1, vw * .88, vh * .7);
+      $('sv-moon-disc').setAttribute('r', r);
+      $('sv-moon-halo').setAttribute('r', r * 2.8);
+      g.setAttribute('transform', 'translate(' + at.x.toFixed(1) + ' ' + at.y.toFixed(1) + ') rotate(' + (at.turn * 180 / Math.PI).toFixed(1) + ')');
+      $('sv-moon-lit').setAttribute('d', moonPath(Math.max(moon.lit, .06), moon.waxing, r));
+    }
+    /* the night is shown dim, for a room where someone is sleeping, and the
+       dimming comes on with the dark rather than at once at one minute */
+    var dim = Math.max(0, Math.min(1, (look.dark - .55) / .35));
+    $('skyview').style.filter = dim > 0 ? 'brightness(' + (1 - .18 * dim).toFixed(3) + ')' : '';
+    skyviewText();
+  }
+
+  /* It opens as a step of its own in the history, so the back button of a
+     phone closes the sky and leaves the reader on the screen they were on,
+     and the keyboard is taken into it and handed back to the niche. */
+  function openSkyview() {
+    var view = $('skyview');
+    if (!view || !skyOn() || skyview.open) return;
+    skyview.open = true;
+    fillSkyviewStars();
+    view.hidden = false;
+    renderSky(true);
+    window.requestAnimationFrame(function () {
+      /* closed again before the frame came: nothing to fade in */
+      if (!skyview.open) return;
+      view.classList.add('is-open');
+      panSkyview();
+    });
+    holdSkyAwake(true);
+    try {
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ view: state.view, sky: true }, '');
+        skyview.pushed = true;
+      }
+    } catch (e) { /* file:// refuses */ }
+    try { view.focus({ preventScroll: true }); } catch (e) { /* not focusable here */ }
+  }
+
+  /* popped: the history has already stepped back, so it is not stepped
+     back again */
+  function closeSkyview(popped) {
+    var view = $('skyview');
+    if (!view || !skyview.open) return;
+    skyview.open = false;
+    view.classList.remove('is-open');
+    holdSkyAwake(false);
+    if (skyview.pan) { try { skyview.pan.cancel(); } catch (e) { /* gone */ } skyview.pan = null; }
+    if (skyview.pushed) {
+      skyview.pushed = false;
+      if (popped !== true) {
+        skyview.skipPop = true;
+        try { window.history.back(); } catch (e) { skyview.skipPop = false; }
+      }
+    }
+    if (view.contains(document.activeElement) && $('arc-wrap')) {
+      try { $('arc-wrap').focus({ preventScroll: true }); } catch (e) { /* gone */ }
+    }
+    window.setTimeout(function () { if (!skyview.open) view.hidden = true; }, 700);
   }
 
   /* Where the moon stands in the arch at the head of a picture, rising on
@@ -1000,6 +1209,7 @@
 
     renderWindows(c);
     renderSky();
+    skyviewText();
     /* The hour card follows the hour and the list its day. A screen left
        open across the fajr, or across the start of a window, used to go on
        showing what had passed, and a touch on it landed on a day it no
@@ -7560,6 +7770,10 @@
     window.addEventListener('scroll', updateReadProgress, { passive: true });
 
     window.addEventListener('popstate', function () {
+      /* the step the sky took is undone by its own closing, and a back
+         while it is open closes it and goes nowhere else */
+      if (skyview.skipPop) { skyview.skipPop = false; return; }
+      if (skyview.open) { closeSkyview(true); return; }
       if ($('sheet') && $('sheet').classList.contains('is-open')) { closeSheet(); return; }
       followAddress();
     });
@@ -7808,6 +8022,21 @@
        notification's. Its button used to hide it for good with no sign left
        anywhere that it was hidden, and the toast that said how to bring it
        back was gone in seconds. */
+    bind('arc-wrap', 'click', function () { if (skyOn()) openSkyview(); });
+    bind('arc-wrap', 'keydown', function (e) {
+      if (skyOn() && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openSkyview(); }
+    });
+    bind('skyview', 'click', function () { closeSkyview(); });
+    bind('skyview', 'keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); closeSkyview(); }
+    });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeSkyview(); });
+    window.addEventListener('resize', function () { if (skyview.open) { panSkyview(); renderSky(true); } });
+    /* a phone lets go of the screen when the app goes behind another, so
+       the sky asks for it again when it comes back in front */
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && skyview.open && !skyview.lock) holdSkyAwake(true);
+    });
     bind('settings-sky', 'click', function () {
       var on = !skyOn();
       Store.set('sky', on);
@@ -8295,7 +8524,7 @@
       verseCard: verseCard, textCard: textCard, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
- totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky,
+ totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },
