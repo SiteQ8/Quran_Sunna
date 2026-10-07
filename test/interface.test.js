@@ -6189,12 +6189,19 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
     const p = path.join(res, 'mipmap-' + d, 'ic_launcher_foreground.png');
     assert.ok(fs.existsSync(p) && fs.statSync(p).size > 400, d + '/ic_launcher_foreground.png');
   });
-  /* the status bar draws a silhouette in its own colour: the mihrab as one
-     white outline with the crescent inside it, and nothing in any other colour */
+  /* the status bar draws a silhouette in its own colour: the name alone, in
+     the heavy face of the icon, letter by letter as the themed icon has it;
+     the mihrab and its crescent crowded each other at that size */
   const status = fs.readFileSync(path.join(res, 'drawable/ic_notification.xml'), 'utf8');
-  assert.ok(/android:strokeColor="#FFFFFFFF"[\s\S]*android:pathData="M[\d.]+,[\d.]+ V[\d.]+ A([\d.]+),\1 0 0,1 12,[\d.]+ A\1,\1 0 0,1 [\d.]+,[\d.]+ V[\d.]+ Z"/.test(status),
-    'the mihrab, two arcs meeting over the middle of the box');
-  assert.strictEqual((status.match(/<path /g) || []).length, 2, 'and the crescent, nothing else');
+  assert.ok(/android:width="24dp" android:height="24dp"\s*android:viewportWidth="240" android:viewportHeight="240"/.test(status),
+    'twenty four points, drawn in tenths so one decimal place stays fine');
+  assert.ok(status.indexOf('tools:ignore="VectorPath"') !== -1, 'the letters kept whole, as the themed icon keeps them');
+  const letters = status.match(/<path [^>]*\/>/g) || [];
+  assert.ok(letters.length >= 4, 'the name, letter by letter: ' + letters.length);
+  letters.forEach((l) => assert.ok(/android:fillColor="#FFFFFFFF"/.test(l), 'every letter filled'));
+  const coords = status.match(/android:pathData="([^"]+)"/g).join(' ').match(/-?\d+(\.\d+)?/g).map(Number);
+  assert.ok(Math.min(...coords) >= 0 && Math.max(...coords) <= 240, 'and nothing of it cut by the edge of the box');
+  assert.ok(Math.max(...coords) - Math.min(...coords) > 200, 'and the word as wide as the box allows, so it reads');
   const colours = status.match(/#[0-9A-Fa-f]{8}/g) || [];
   assert.ok(colours.length && colours.every((c) => c === '#FFFFFFFF' || c === '#00000000'), 'one colour only, as the status bar draws it');
   assert.ok(fs.existsSync(path.join(__dirname, '..', 'tools/store/icon-master.png')), 'the square artwork, written by icon-build.py with every size');

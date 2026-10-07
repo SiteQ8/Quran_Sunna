@@ -4,7 +4,7 @@
 
 **مصحف ومواقيت وأذكار وسنن في جهازك، المصحف كاملاً وأوقات الصلاة والأذكار والقبلة وتتبع السنن، كله يعمل في جهازك بلا إنترنت**
 
-[![الإصدار](https://img.shields.io/badge/الإصدار-8.87.70-1e6f47?style=flat-square)]()
+[![الإصدار](https://img.shields.io/badge/الإصدار-8.87.71-1e6f47?style=flat-square)]()
 [![الرخصة](https://img.shields.io/badge/الحقوق-محفوظة-b08833?style=flat-square)](LICENSE)
 [![بلا اعتماديات](https://img.shields.io/badge/بلا_اعتماديات-0-1e6f47?style=flat-square)]()
 
