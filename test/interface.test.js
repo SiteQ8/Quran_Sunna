@@ -10564,3 +10564,13 @@ test('a grid of two is not laid out by the rules of a grid of three', () => {
   assert.match(css, /#azkar-groups \.tile, #dua-places \.tile \{[\s\S]*?min-width: 0;/);
   assert.match(css, /grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\);/);
 });
+
+test('the film on the Play page is set only by hand, from any link YouTube gives', () => {
+  const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/play-listing.yml'), 'utf8');
+  assert.ok(/on:\s*workflow_dispatch:/.test(flow) && flow.indexOf('push:') === -1, 'a person decides when the page changes');
+  assert.ok(flow.indexOf('python3 tools/android/play-listing.py --video "$VIDEO"') !== -1);
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools/android/play-listing.py'), 'utf8');
+  assert.ok(tool.indexOf("'https://www.youtube.com/watch?v=' + m.group(1)") !== -1, 'every form of the link becomes the one the page knows');
+  assert.ok(tool.indexOf('youtu\\.be/') !== -1 && tool.indexOf('shorts') !== -1, 'short links and shorts are both read');
+  assert.ok(tool.indexOf("call('DELETE', f'{base}/edits/{edit}', tok)") !== -1, 'and a failed edit is dropped, so nothing changes');
+});

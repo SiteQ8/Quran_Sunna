@@ -1,0 +1,28 @@
+# Puts the promotional film on the app's Google Play page. Play takes the film
+# only as a YouTube link, so it is uploaded to the channel first and its link
+# given here. Every language of the listing gets the same film.
+#
+# Run by hand only, from the Actions tab: «Play listing», Run workflow, with the
+# film's link. Nothing else on the page changes.
+name: Play listing
+
+on:
+  workflow_dispatch:
+    inputs:
+      video:
+        description: 'the film on YouTube, in any form YouTube writes it'
+        required: true
+
+jobs:
+  listing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: المكتبة
+        run: python3 -m pip install --quiet --break-system-packages cryptography
+      - name: الفيلم إلى صفحة التطبيق
+        env:
+          PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          VIDEO: ${{ inputs.video }}
+        run: python3 tools/android/play-listing.py --video "$VIDEO"

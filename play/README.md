@@ -15,7 +15,7 @@
 | `docs/screens/*.png` | ثماني لقطات من التطبيق نفسه بمقاس 1080 في 1920، وهو المقاس الذي يقبله المتجر، إذ يرفض ما زادت نسبة طوله إلى عرضه على اثنين |
 | `docs/splash/*.png` | أربع وعشرون شاشة بدء لأجهزة أبل |
 | `docs/privacy.html` | سياسة الخصوصية، والمتجر يشترطها |
-| فيلم الترويج | يومٌ في «سماء الوقت» مصوَّر من التطبيق نفسه بـ`node tools/store/sky-preview.mjs landscape` بمقاس 1920 في 1080، ويُرفع إلى YouTube ثم يوضع رابطه في صفحة المتجر، لأن Play لا يأخذ الفيلم إلا رابطاً من YouTube |
+| فيلم الترويج | يومٌ في «سماء الوقت» مصوَّر من التطبيق نفسه بـ`node tools/store/sky-preview.mjs landscape` بمقاس 1920 في 1080، وهو على YouTube في https://youtu.be/FgFGNEa8W-U، ويضعه سير العمل «Play listing» في صفحة المتجر بـ`tools/android/play-listing.py` لأن Play لا يأخذ الفيلم إلا رابطاً من YouTube، أما الطولي فعلى YouTube Shorts في https://youtube.com/shorts/NGdtcSd2Rmo |
 
 ## الخطوات
 
