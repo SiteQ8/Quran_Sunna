@@ -43,6 +43,11 @@ back, and is left.
 
     asc-release.py --status
     asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version 8.87.67 [--withdraw]
+
+--text names the folder of the page's own words, ios/store, a folder for each
+language with description.txt, keywords.txt and promotional.txt in it, and
+they are written into the version sent, beside what is new. Each is measured
+against what Apple takes before anything is sent.
 """
 
 import argparse
@@ -195,6 +200,48 @@ def write_notes(version_id, notes):
         log('what is new, %s' % loc['attributes']['locale'])
         api('PATCH', '/v1/appStoreVersionLocalizations/' + loc['id'], {'data': {
             'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': notes}}})
+
+
+# The words of the page itself, kept in the repository a folder for each
+# language, ios/store/ar-SA: description.txt, keywords.txt and promotional.txt,
+# whichever are there. Apple takes four thousand characters of description, a
+# hundred of keywords and a hundred and seventy of promotional text, and a
+# file longer than that stops the run before anything is sent.
+TEXT_FIELDS = (('description.txt', 'description', 4000),
+               ('keywords.txt', 'keywords', 100),
+               ('promotional.txt', 'promotionalText', 170))
+
+
+def store_text(folder, locale):
+    """What the folder says for a language, as the attributes Apple names."""
+    here = os.path.join(folder, locale)
+    words = {}
+    for name, field, limit in TEXT_FIELDS:
+        path = os.path.join(here, name)
+        if not os.path.isfile(path):
+            continue
+        text = open(path, encoding='utf-8').read().strip()
+        if field == 'keywords':
+            text = ','.join(k.strip() for k in text.replace('\n', ',').split(',') if k.strip())
+        if len(text) > limit:
+            raise SystemExit('%s is %d characters, and Apple takes %d' % (path, len(text), limit))
+        # Apple refused the page once for the sign of the salutation; it is
+        # written out in words there
+        if 'ﷺ' in text:
+            raise SystemExit('%s has the sign of the salutation, which Apple refuses: write it out' % path)
+        words[field] = text
+    return words
+
+
+def write_text(version_id, folder):
+    for loc in localizations(version_id):
+        locale = loc['attributes']['locale']
+        words = store_text(folder, locale)
+        if not words:
+            continue
+        log('the page, %s: %s' % (locale, ', '.join(sorted(words))))
+        api('PATCH', '/v1/appStoreVersionLocalizations/' + loc['id'], {'data': {
+            'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': words}})
 
 
 # ------------------------------------------------------------- screenshots
@@ -539,6 +586,7 @@ def main():
     p.add_argument('--build')
     p.add_argument('--duo')
     p.add_argument('--notes')
+    p.add_argument('--text', help='the words of the page, a folder for each language: ios/store')
     p.add_argument('--previews', help='the folder of preview films, ios/previews')
     p.add_argument('--previews-only', action='store_true',
                    help='place the previews in the version being prepared and nothing else')
@@ -590,11 +638,18 @@ def main():
     if not (a.build and a.duo and a.notes):
         p.error('--build, --duo and --notes are needed to send a build')
     notes = open(a.notes, encoding='utf-8').read().strip()
+    if a.text:
+        # read and measured before anything is sent, so a word too many stops it here
+        for locale in sorted(os.listdir(a.text)):
+            if os.path.isdir(os.path.join(a.text, locale)):
+                store_text(a.text, locale)
 
     build_id = wait_for_build(a.version, a.build, a.wait)
     version_id = version_to_send(a.version)
     attach(version_id, build_id)
     write_notes(version_id, notes)
+    if a.text:
+        write_text(version_id, a.text)
     # a dry run that would make the version reads the one on sale instead
     reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
     for loc in localizations(reading):

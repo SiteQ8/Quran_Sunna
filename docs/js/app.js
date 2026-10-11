@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.72';
+  var VERSION = '8.87.73';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -989,6 +989,9 @@
      awake while it is open, so it can stand by the bed through the night or
      keep a moment of dhikr. A touch anywhere closes it. */
   var skyview = { open: false, lock: null, pan: null, starred: false, pushed: false, skipPop: false };
+  /* the walkthrough: which step, whether it took a step in the history, and
+     whether this phone had the app open before today's start */
+  var tour = { open: false, at: 0, pushed: false, skipPop: false, returning: null, back: null, swap: 0 };
 
   function fillSkyviewStars() {
     if (skyview.starred || !$('sv-stars')) return;
@@ -1047,6 +1050,11 @@
     var where = place();
     var date = ($('hijri-date') ? $('hijri-date').textContent : '') + (where && where.n ? '، ' + where.n : '');
     if ($('skyview-date') && $('skyview-date').textContent !== date) $('skyview-date').textContent = date;
+    /* and the day by the calendar of the phone under it, as the picture of the
+       day's times carries both: a reader who keeps an appointment by the
+       month of the year had to close the sky to learn the date */
+    var greg = gregorianLine(new Date());
+    if ($('skyview-greg') && $('skyview-greg').textContent !== greg) $('skyview-greg').textContent = greg;
   }
 
   function renderSkyview(sky, look, moon, shown) {
@@ -7372,6 +7380,13 @@
   };
 
   var ACTIONS = {
+    'share-app': function () { shareApp(); },
+    'rate-app': function () { rateApp(); },
+    'send-feedback': function () { sendFeedback(); },
+    'start-tour': function () {
+      go('home');
+      window.setTimeout(function () { startTour(true); }, 320);
+    },
     bookmark: function (ref, el) {
       var parts = ref.split(':');
       var s = +parts[0], a = +parts[1];
@@ -7602,6 +7617,15 @@
   function onClick(event) {
     var target = event.target;
     if (!target || !target.closest) return;
+
+    /* the iPhone's web view lets a followed mail link die inside it, so the
+       address on the about screen reached no one from the app */
+    var mail = target.closest('a[href^="mailto:"]');
+    if (mail && inIosApp()) {
+      if (event.preventDefault) event.preventDefault();
+      openOutside(mail.getAttribute('href'));
+      return;
+    }
 
     var nav = target.closest('[data-go]');
     if (nav) { go(nav.getAttribute('data-go')); return; }
@@ -7839,10 +7863,32 @@
       /* the step the sky took is undone by its own closing, and a back
          while it is open closes it and goes nowhere else */
       if (skyview.skipPop) { skyview.skipPop = false; return; }
+      /* and the walkthrough the same: its own step undone by its end, and a
+         back while it is open ends it */
+      if (tour.skipPop) { tour.skipPop = false; return; }
+      if (tour.open) { endTour(true); return; }
       if (skyview.open) { closeSkyview(true); return; }
       if ($('sheet') && $('sheet').classList.contains('is-open')) { closeSheet(); return; }
       followAddress();
     });
+
+    /* set rather than added: the page wired a second time must not step the
+       walkthrough twice for one press */
+    if ($('tour-next')) $('tour-next').onclick = function () { stepTour(1); };
+    if ($('tour-skip')) $('tour-skip').onclick = function () { endTour(); };
+    if ($('tour')) $('tour').onkeydown = function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); endTour(); return; }
+      /* the screen reads from right to left, so the next step is to the left */
+      if (e.key === 'ArrowLeft') { e.preventDefault(); stepTour(1); return; }
+      if (e.key === 'ArrowRight') { e.preventDefault(); stepTour(-1); return; }
+      /* the keyboard stays with the two buttons while the tour is up */
+      if (e.key === 'Tab') {
+        var keys = [$('tour-skip'), $('tour-next')].filter(function (b) { return b && !b.hidden; });
+        var i = keys.indexOf(document.activeElement);
+        e.preventDefault();
+        keys[(i + (e.shiftKey ? keys.length - 1 : 1)) % keys.length].focus();
+      }
+    };
 
     bind('hijri-up', 'click', function () { nudgeHijri(1); });
     /* Both of these sat in the page with an id and a label and nothing
@@ -8379,6 +8425,301 @@
     document.documentElement.style.setProperty('--banner-room', '0px');
   }
 
+  /* ---------------- the app among others ---------------- */
+
+  var LINKS = {
+    play: 'https://play.google.com/store/apps/details?id=com.eworldq8.sunnati',
+    apple: 'https://apps.apple.com/app/id6814355836',
+    web: 'https://sunnati.3li.info/'
+  };
+
+  /* An address that leaves the app, handed to the phone the way each wrapper
+     takes one. The iPhone's web view gives the phone whatever window.open
+     asks for, of any scheme, but a mail link that is merely followed dies
+     inside it; the android one hands the phone any address the page moves to
+     that is not its own; and a browser opens a tab, or its mail program. */
+  function openOutside(url) {
+    if (inIosApp()) { window.open(url, '_blank'); return 'ios'; }
+    if (bridge() || /^mailto:/.test(url)) { window.location.href = url; return 'page'; }
+    window.open(url, '_blank', 'noopener');
+    return 'tab';
+  }
+
+  /* where this reader rates the app: the store of the phone in hand, and on
+     a computer the one its maker sells through */
+  function storeLink() {
+    var apple = LINKS.apple + '?action=write-review';
+    if (inIosApp()) return apple;
+    if (bridge()) return LINKS.play;
+    return /iPhone|iPad|iPod|Macintosh/.test(window.navigator.userAgent || '') ? apple : LINKS.play;
+  }
+
+  function rateApp() {
+    Store.set('rateAsked', true);
+    openOutside(storeLink());
+  }
+
+  /* The invitation is written out with every link in it, since it is read by
+     whoever it is sent to on whatever phone they have. */
+  function shareWords() {
+    return 'سُنّتي: المصحف ومواقيت الصلاة والأذكار والسنن في جهازك، مجاني بلا إعلانات ويعمل بلا إنترنت\n\n' +
+      'للآيفون: ' + LINKS.apple + '\n' +
+      'لأندرويد: ' + LINKS.play + '\n' +
+      'وموقعه: ' + LINKS.web;
+  }
+
+  function shareApp() {
+    var words = shareWords();
+    var app = bridge();
+    if (app && app.shareText) {
+      try { app.shareText(words); return 'app'; } catch (e) { /* the page's own way, then */ }
+    }
+    if (window.navigator.share) {
+      window.navigator.share({ title: 'سُنّتي', text: words }).catch(function () { /* closed */ });
+      return 'sheet';
+    }
+    copyText(words).then(function () { toast('نُسخت الدعوة بروابطها، فألصقها حيث شئت'); })
+      .catch(function () { toast('تعذّر النسخ، ورابط التطبيق ' + LINKS.web); });
+    return 'copy';
+  }
+
+  /* A letter already addressed, with the version in it, so a report says
+     which app it is about without anyone having to ask. */
+  function feedbackUrl() {
+    return 'mailto:Site@hotmail.com?subject=' + encodeURIComponent('ملاحظات على سُنّتي') +
+      '&body=' + encodeURIComponent('\n\n\nالنسخة ' + ar(VERSION) + packageLine());
+  }
+
+  function sendFeedback() {
+    return openOutside(feedbackUrl());
+  }
+
+  /* Each day the app is opened is counted once, and on the seventh it asks,
+     once and never again, whether the reader would rate it. Only inside the
+     store apps, where there is a store to rate it in, and never over anything
+     the reader is in the middle of. */
+  function countDay() {
+    var today = Store.dayKey(new Date());
+    if (Store.get('usedOn') === today) return;
+    Store.setMany({ usedOn: today, usedDays: (+Store.get('usedDays') || 0) + 1 });
+  }
+
+  function maybeAskRating() {
+    if (Store.get('rateAsked') || !bridge()) return false;
+    if ((+Store.get('usedDays') || 0) < 7) return false;
+    if (tour.open || skyview.open) return false;
+    if (!$('banner') || !$('banner').hidden) return false;
+    if ($('sheet') && $('sheet').classList.contains('is-open')) return false;
+    Store.set('rateAsked', true);
+    showBanner('إن نفعك سُنّتي فقيّمه في المتجر، فتقييمك يدلّ غيرك عليه', 'قيّمه', rateApp);
+    return true;
+  }
+
+  /* ---------------- the walkthrough ---------------- */
+
+  /* Six short steps over the real home screen, each lighting the one thing it
+     speaks of and dimming the rest: a welcome, the coming prayer, the day's
+     times, the mushaf, the sunnahs, and everything else. Shown once, to
+     whoever opens the app new, skipped at any step, and found again in the
+     settings by anyone who wants it. Nothing is drawn for it: the screen it
+     points at is the screen the reader will use. */
+  var TOUR = [
+    { title: 'أهلاً بك في سُنّتي',
+      body: 'مصحفك ومواقيت صلاتك وأذكارك وسننك في مكان واحد يعمل كله بلا إنترنت، وهذه جولة قصيرة فيه لا تأخذ منك دقيقة.',
+      next: 'ابدأ الجولة' },
+    { at: '#arc-wrap', round: 26, title: 'الصلاة القادمة',
+      body: 'العدّ إلى الصلاة القادمة في محراب يتبدّل ضوؤه مع الوقت، فالمس المحراب لترى سماء الوقت على الشاشة كلها.' },
+    { at: '#windows', round: 16, title: 'مواقيت اليوم',
+      body: 'مواقيت الصلوات لمدينتك، واضغط الصلاة بعد أدائها لتسجّل كيف صلّيتها وتتابع شهرك كله.' },
+    { at: '.tabs [data-go="quran"]', round: 14, title: 'المصحف',
+      body: 'المصحف كاملاً في جهازك برواية حفص بالرسم العثماني، ومعه التفسير والتلاوة بأصوات القرّاء.' },
+    { at: '.tabs [data-go="tracker"]', round: 14, title: 'السنن',
+      body: 'سنن يومك من الاستيقاظ إلى النوم، فسجّل ما أدّيته منها ليُحسب في وردك.' },
+    { at: '.tabs [data-go="more"]', round: 14, title: 'المزيد',
+      body: 'القبلة والمساجد القريبة والأذكار وصفة العمرة والتذكيرات والإعدادات، وفي الإعدادات تجد هذه الجولة متى أردتها.',
+      next: 'ابدأ' }
+  ];
+
+  /* Whether this phone had the app open before, read before anything of
+     today's start is written: someone who has used it for months is not
+     walked through it after an update. The iPhone's wrapper writes placeAsked
+     itself before the page wakes, so that alone says nothing; the keys with an
+     underscore are the first version's. With no store to ask, the tour could
+     never be remembered as seen, and it is not shown. */
+  function cameBefore() {
+    try {
+      var ls = window.localStorage;
+      for (var i = 0; i < ls.length; i++) {
+        var k = String(ls.key(i) || '');
+        if (k.indexOf('sunnati_') === 0) return true;
+        if (k.indexOf('sunnati.') !== 0 || k === 'sunnati.probe') continue;
+        if (k !== 'sunnati.settings') return true;
+        var saved = JSON.parse(ls.getItem(k) || '{}') || {};
+        if (Object.keys(saved).some(function (n) { return n !== 'placeAsked'; })) return true;
+      }
+      return false;
+    } catch (e) { return true; }
+  }
+
+  function lessMotion() {
+    return document.documentElement.classList.contains('less-motion');
+  }
+
+  /* After the opening has gone, on the home screen, with nothing else open
+     over it; while the splash is still up or a sheet is showing it waits a
+     little and looks again, and gives up for this opening after a few tries. */
+  function maybeStartTour(tries) {
+    if (Store.get('tour') || tour.open) return false;
+    var n = tries || 0;
+    var busy = document.getElementById('boot-splash') || state.view !== 'home' || skyview.open ||
+      ($('sheet') && $('sheet').classList.contains('is-open'));
+    if (busy) {
+      if (n < 12) window.setTimeout(function () { maybeStartTour(n + 1); }, 700);
+      return false;
+    }
+    return startTour(false);
+  }
+
+  function startTour(asked) {
+    var view = $('tour');
+    if (!view || tour.open) return false;
+    if (skyview.open) closeSkyview();
+    closeSheet();
+    Store.set('tour', true);
+    tour.open = true;
+    tour.at = 0;
+    tour.back = document.activeElement;
+    window.scrollTo(0, 0);
+    document.documentElement.classList.add('touring');
+    view.hidden = false;
+    paintTourStep();
+    window.requestAnimationFrame(function () { if (tour.open) view.classList.add('is-open'); });
+    window.addEventListener('resize', placeTour);
+    /* a step of its own in the history, so the back button of a phone ends
+       it and goes nowhere else */
+    try {
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ view: state.view, tour: true }, '');
+        tour.pushed = true;
+      }
+    } catch (e) { /* file:// refuses */ }
+    try { $('tour-next').focus({ preventScroll: true }); } catch (e) { /* not focusable here */ }
+    return asked ? 'asked' : 'first';
+  }
+
+  function stepTour(by) {
+    if (!tour.open) return;
+    var to = tour.at + by;
+    if (to < 0) return;
+    if (to >= TOUR.length) { endTour(); return; }
+    tour.at = to;
+    var card = $('tour-card');
+    /* the light moves at once, and the words fade out, change and come back
+       where the light has gone */
+    placeHole();
+    card.classList.add('is-swapping');
+    window.clearTimeout(tour.swap);
+    tour.swap = window.setTimeout(function () {
+      paintTourStep();
+      card.classList.remove('is-swapping');
+    }, lessMotion() ? 0 : 150);
+  }
+
+  function paintTourStep() {
+    var step = TOUR[tour.at];
+    $('tour-title').textContent = step.title;
+    $('tour-body').textContent = step.body;
+    $('tour-next').textContent = step.next || 'التالي';
+    $('tour-skip').hidden = tour.at === TOUR.length - 1;
+    var dots = $('tour-dots');
+    dots.innerHTML = TOUR.map(function (_, i) {
+      return '<span class="tour-dot' + (i === tour.at ? ' is-on' : '') + '"></span>';
+    }).join('');
+    dots.setAttribute('aria-label', 'الخطوة ' + ar(tour.at + 1) + ' من ' + ar(TOUR.length));
+    placeTour();
+  }
+
+  /* the box of what the step speaks of, on the screen, or null for the
+     welcome, which speaks of everything */
+  function tourBox() {
+    var step = TOUR[tour.at];
+    var el = step && step.at ? document.querySelector(step.at) : null;
+    if (!el) return null;
+    var r = el.getBoundingClientRect();
+    if (!r.width || !r.height) return null;
+    var vw = window.innerWidth, vh = window.innerHeight, pad = 8;
+    var x = Math.max(4, r.left - pad), y = Math.max(4, r.top - pad);
+    return { x: x, y: y, w: Math.min(vw - 4, r.right + pad) - x, h: Math.min(vh - 4, r.bottom + pad) - y };
+  }
+
+  function placeHole() {
+    var hole = $('tour-hole');
+    var box = tourBox();
+    if (box) {
+      hole.classList.remove('is-blank');
+      hole.style.width = box.w + 'px';
+      hole.style.height = box.h + 'px';
+      hole.style.transform = 'translate(' + box.x + 'px, ' + box.y + 'px)';
+      hole.style.borderRadius = (TOUR[tour.at].round || 16) + 'px';
+    } else {
+      hole.classList.add('is-blank');
+      hole.style.width = '0px';
+      hole.style.height = '0px';
+      hole.style.transform = 'translate(' + window.innerWidth / 2 + 'px, ' + window.innerHeight / 2 + 'px)';
+    }
+    return box;
+  }
+
+  /* The words sit beside the light: under it when it is in the upper half,
+     over it when it is low, as the tabs are, and in the middle for the
+     welcome. Across, they stand under what they speak of, within the screen. */
+  function placeTour() {
+    if (!tour.open) return;
+    var card = $('tour-card');
+    var vw = window.innerWidth, vh = window.innerHeight, edge = 16, gap = 14;
+    var box = placeHole();
+    var cw = Math.min(400, vw - edge * 2);
+    card.style.width = cw + 'px';
+    var ch = card.offsetHeight;
+    var left = (vw - cw) / 2, top;
+    if (box) {
+      left = Math.max(edge, Math.min(vw - edge - cw, box.x + box.w / 2 - cw / 2));
+      var below = box.y + box.h / 2 < vh / 2;
+      if (below && box.y + box.h + gap + ch > vh - edge) below = false;
+      if (!below && box.y - gap - ch < edge) below = true;
+      top = below ? box.y + box.h + gap : box.y - gap - ch;
+    } else {
+      top = (vh - ch) / 2;
+    }
+    card.style.left = Math.round(left) + 'px';
+    card.style.top = Math.round(Math.max(edge, Math.min(vh - edge - ch, top))) + 'px';
+  }
+
+  /* popped: the history has already stepped back, so it is not stepped
+     back again */
+  function endTour(popped) {
+    var view = $('tour');
+    if (!view || !tour.open) return;
+    tour.open = false;
+    window.clearTimeout(tour.swap);
+    view.classList.remove('is-open');
+    document.documentElement.classList.remove('touring');
+    window.removeEventListener('resize', placeTour);
+    if (tour.pushed) {
+      tour.pushed = false;
+      if (popped !== true) {
+        tour.skipPop = true;
+        try { window.history.back(); } catch (e) { tour.skipPop = false; }
+      }
+    }
+    var back = tour.back;
+    tour.back = null;
+    if (back && back.focus && document.contains(back)) {
+      try { back.focus({ preventScroll: true }); } catch (e) { /* gone */ }
+    }
+    window.setTimeout(function () { if (!tour.open) view.hidden = true; }, lessMotion() ? 0 : 280);
+  }
+
   /* The browser offers to install once, and only once, so the offer is kept
      until the reader is ready for it rather than thrown away. */
   function watchInstall() {
@@ -8539,9 +8880,13 @@
   }
 
   function boot() {
+    /* read before this start writes anything of its own, and only once */
+    if (tour.returning === null) tour.returning = cameBefore();
     if (appDrawsSplash()) dismissBootSplash(true);
     Store.attach();
     Store.migrate();
+    if (tour.returning && !Store.get('tour')) Store.set('tour', true);
+    countDay();
     settleTicks();
     Store.prune();
     applyTheme();
@@ -8565,6 +8910,12 @@
     renderSettings();
     /* the eid greets the reader once, on the days around it */
     window.setTimeout(offerEid, 1200);
+    /* The walkthrough waits for the opening to be gone: the page's own goes
+       3.6 seconds after the page began loading, and the android package's
+       after as long from when the app started, which is a little earlier. */
+    var since = (window.performance && window.performance.now) ? window.performance.now() : 0;
+    window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));
+    window.setTimeout(maybeAskRating, 9000);
     /* every select becomes our own menu, once the page is built */
     enhanceSelects();
     watchHeading();
@@ -8600,7 +8951,11 @@
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
-      addressOf: addressOf, readAddress: readAddress, standalone: standalone
+      addressOf: addressOf, readAddress: readAddress, standalone: standalone,
+      shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
+      feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
+      cameBefore: cameBefore, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
+      tourSteps: TOUR, tourState: tour
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },
     banner: { show: showBanner, hide: hideBanner }

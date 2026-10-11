@@ -1692,6 +1692,9 @@ test('a touch on the niche opens its sky on the whole screen, and a touch, escap
   assert.strictEqual(doc.getElementById('skyview-count').textContent, doc.getElementById('arc-count').textContent, 'the countdown goes with it');
   assert.strictEqual(doc.getElementById('skyview-name').textContent, doc.getElementById('arc-name').textContent);
   assert.ok(doc.getElementById('skyview-date').textContent.indexOf(doc.getElementById('hijri-date').textContent) === 0);
+  /* and the day by the months of the year beneath it, as the picture of the
+     day's times has it */
+  assert.strictEqual(doc.getElementById('skyview-greg').textContent, 'الأحد 25 أكتوبر 2026', 'the gregorian date under the hijri');
   assert.strictEqual(doc.activeElement, view, 'the keyboard is taken into it');
   assert.strictEqual(win.history.state && win.history.state.sky, true, 'a step of its own in the history');
   await until(() => view.classList.contains('is-open'));
@@ -4965,12 +4968,24 @@ test('the real voice is the default, in front, and the phone voice row appears o
 /* ---------------- the store listing ---------------- */
 
 test('the store listing describes the app as it is, within the store limits', () => {
-  const listing = fs.readFileSync(path.join(__dirname, '..', 'play', 'README.md'), 'utf8');
-  const short = /### الوصف القصير\n```\n([^\n]+)\n```/.exec(listing);
-  assert.ok(short, 'a short description');
-  assert.ok(short[1].length <= 80, 'the store allows eighty characters, found ' + short[1].length);
-  const full = /### الوصف الكامل\n```\n([\s\S]*?)\n```/.exec(listing)[1];
+  /* the words of the page are kept as the files the listing tool writes */
+  const words = path.join(__dirname, '..', 'play', 'listing', 'ar');
+  const short = fs.readFileSync(path.join(words, 'short.txt'), 'utf8').trim();
+  assert.ok(short.length && short.indexOf('\n') === -1, 'a short description, on one line');
+  assert.ok(short.length <= 80, 'the store allows eighty characters, found ' + short.length);
+  const full = fs.readFileSync(path.join(words, 'full.txt'), 'utf8').trim();
   assert.ok(full.length <= 4000, 'the store allows four thousand, found ' + full.length);
+  /* it opens with what people search for, before Play folds the rest away */
+  const opening = full.slice(0, 170);
+  ['القرآن الكريم', 'مواقيت الصلاة', 'الأذان', 'أذكار الصباح والمساء'].forEach(function (k) {
+    assert.ok(opening.indexOf(k) !== -1 || short.indexOf(k) !== -1, k + ' is said at once');
+  });
+  assert.ok(opening.indexOf('بلا إنترنت') !== -1, 'and that it works with no connection');
+  const listing = fs.readFileSync(path.join(__dirname, '..', 'play', 'README.md'), 'utf8');
+  assert.ok(listing.indexOf('play/listing/ar/full.txt') !== -1, 'the document says where the words are');
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools', 'android', 'play-listing.py'), 'utf8');
+  assert.ok(tool.indexOf("('short.txt', 'shortDescription', 80)") !== -1 && tool.indexOf("('full.txt', 'fullDescription', 4000)") !== -1,
+    'and the tool that writes them holds the same limits');
   ['العجيري', 'صفحة صفحة', 'مئة واثنان وثلاثون باباً', 'المنح العلية', 'الصلاة الإبراهيمية', 'السدو'].forEach(function (k) {
     assert.ok(full.indexOf(k) !== -1, 'the listing should mention ' + k);
   });
@@ -10752,4 +10767,269 @@ test('the App Store screenshots are replaced only by hand, and a version is take
     const b = fs.readFileSync(path.join(__dirname, '..', 'ios', 'screenshots', '6.9-inch', n));
     assert.deepStrictEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [1320, 2868], n + ' at the 6.9 inch size');
   });
+});
+
+/* ---------------- sharing, rating, the letter, and the walkthrough ---------------- */
+
+const LINK_APPLE = 'https://apps.apple.com/app/id6814355836';
+const LINK_PLAY = 'https://play.google.com/store/apps/details?id=com.eworldq8.sunnati';
+const LINK_WEB = 'https://sunnati.3li.info/';
+
+test('the settings end with sharing the app, rating it, the tour again and a letter to us', () => {
+  const { doc } = boot();
+  const spread = doc.getElementById('settings-spread');
+  const help = doc.getElementById('settings-help');
+  assert.ok(spread && help, 'two cards at the foot of the settings');
+  const cards = doc.querySelectorAll('#v-settings > .card');
+  assert.strictEqual(cards[cards.length - 2], spread, 'the next to last card');
+  assert.strictEqual(cards[cards.length - 1], help, 'and the last');
+  assert.ok(spread.querySelector('[data-act="share-app"]') && spread.querySelector('[data-act="rate-app"]'));
+  assert.ok(help.querySelector('[data-act="start-tour"]') && help.querySelector('[data-act="send-feedback"]'));
+  /* the hadith under the share, as Muslim narrates it */
+  assert.ok(spread.textContent.indexOf('«مَن دلّ على خيرٍ فله مثلُ أجرِ فاعله» رواه مسلم') !== -1);
+  /* and the address written out, for a phone with no mail program to open */
+  assert.ok(help.textContent.indexOf('Site@hotmail.com') !== -1);
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf('.setting > .setting-act { align-self: center; }') !== -1);
+  assert.ok(css.indexOf('#v-settings { padding-bottom: 88px; }') !== -1, 'the last button clears the one that goes to the top');
+});
+
+test('sharing the app sends one invitation with every store in it, by whatever the phone offers', async () => {
+  let shared = null;
+  const android = boot({ bridge: { shareText: function (t) { shared = t; }, pageReady: function () {} } });
+  assert.strictEqual(android.win.App.helpers.shareApp(), 'app', 'the package hands it to the share sheet');
+  assert.ok(shared.indexOf('سُنّتي: ') === 0, 'it says what the app is first');
+  [LINK_APPLE, LINK_PLAY, LINK_WEB].forEach(function (link) { assert.ok(shared.indexOf(link) !== -1, link); });
+  assert.ok(shared.indexOf('مجاني بلا إعلانات ويعمل بلا إنترنت') !== -1);
+  shared = null;
+  click(android.win, android.doc.querySelector('[data-act="share-app"]'));
+  assert.strictEqual(shared, android.win.App.helpers.shareWords(), 'and the button in the settings is the same thing');
+
+  /* a browser with a share sheet of its own */
+  const web = boot();
+  let asked = null;
+  Object.defineProperty(web.win.navigator, 'share', { configurable: true, value: function (d) { asked = d; return Promise.resolve(); } });
+  assert.strictEqual(web.win.App.helpers.shareApp(), 'sheet');
+  assert.strictEqual(asked.title, 'سُنّتي');
+  assert.strictEqual(asked.text, web.win.App.helpers.shareWords());
+
+  /* and one with neither: the invitation is copied, and the reader told */
+  const bare = boot();
+  let copied = null;
+  Object.defineProperty(bare.win.navigator, 'clipboard', { configurable: true, value: { writeText: function (t) { copied = t; return Promise.resolve(); } } });
+  assert.strictEqual(bare.win.App.helpers.shareApp(), 'copy');
+  await until(() => copied !== null);
+  assert.strictEqual(copied, bare.win.App.helpers.shareWords());
+  await until(() => bare.doc.getElementById('toast').textContent.indexOf('نُسخت الدعوة') === 0);
+});
+
+test('rating opens the store of the phone in hand, and the letter is addressed with the version in it', () => {
+  const opened = [];
+  const ios = boot({ bridge: { platform: function () { return 'ios'; }, version: function () { return '2.0'; } } });
+  ios.win.open = function (url) { opened.push(url); return null; };
+  assert.strictEqual(ios.win.App.helpers.storeLink(), LINK_APPLE + '?action=write-review');
+  click(ios.win, ios.doc.querySelector('[data-act="rate-app"]'));
+  assert.deepStrictEqual(opened, [LINK_APPLE + '?action=write-review'], 'handed to the phone, which opens the store');
+  assert.strictEqual(ios.win.Store.get('rateAsked'), true, 'and the reader is not asked again later');
+
+  /* the letter, by the window the iPhone hands to the phone */
+  click(ios.win, ios.doc.querySelector('[data-act="send-feedback"]'));
+  assert.ok(opened[1].indexOf('mailto:Site@hotmail.com?subject=' + encodeURIComponent('ملاحظات على سُنّتي') + '&body=') === 0);
+  const body = decodeURIComponent(opened[1].split('&body=')[1]);
+  assert.ok(body.indexOf('النسخة ' + ios.win.App.version + '، وحزمة آيفون 2.0') !== -1, 'which app it is about: ' + body);
+  /* the about screen's address, which a followed link left dead inside the
+     iPhone's web view */
+  const about = ios.doc.querySelector('#v-about a[href^="mailto:"]');
+  click(ios.win, about);
+  assert.strictEqual(opened[2], about.getAttribute('href'));
+
+  /* the android package rates on Play, and a browser by the phone it is on */
+  assert.strictEqual(boot({ bridge: { pageReady: function () {} } }).win.App.helpers.storeLink(), LINK_PLAY);
+  const web = boot();
+  Object.defineProperty(web.win.navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)' });
+  assert.strictEqual(web.win.App.helpers.storeLink(), LINK_APPLE + '?action=write-review');
+  Object.defineProperty(web.win.navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' });
+  assert.strictEqual(web.win.App.helpers.storeLink(), LINK_PLAY);
+  /* a browser opens the store in a tab of its own */
+  const tabs = [];
+  web.win.open = function (url, name, features) { tabs.push([url, name, features]); return null; };
+  assert.strictEqual(web.win.App.helpers.openOutside(LINK_PLAY), 'tab');
+  assert.deepStrictEqual(tabs, [[LINK_PLAY, '_blank', 'noopener']]);
+});
+
+test('the store apps ask to be rated once, on the seventh day the app is opened, and never over anything', () => {
+  const { win, doc } = boot({ now: new Date(2026, 9, 1, 9, 0, 0), bridge: { pageReady: function () {} } });
+  const h = win.App.helpers;
+  assert.strictEqual(win.Store.get('usedDays'), 1, 'the opening itself counts the day');
+  h.countDay();
+  assert.strictEqual(win.Store.get('usedDays'), 1, 'once a day however often it is opened');
+  for (let d = 2; d <= 6; d++) { win.__setNow(new Date(2026, 9, d, 9, 0, 0)); h.countDay(); }
+  assert.strictEqual(win.Store.get('usedDays'), 6);
+  win.App.banner.hide();
+  assert.strictEqual(h.maybeAskRating(), false, 'not before the seventh day');
+  win.__setNow(new Date(2026, 9, 7, 21, 0, 0));
+  h.countDay();
+  /* a banner already up is left alone */
+  win.App.banner.show('وصل تحديث للتطبيق');
+  assert.strictEqual(h.maybeAskRating(), false, 'not over another notice');
+  win.App.banner.hide();
+  assert.strictEqual(h.maybeAskRating(), true);
+  assert.strictEqual(doc.getElementById('banner').hidden, false);
+  assert.strictEqual(doc.getElementById('banner-text').textContent, 'إن نفعك سُنّتي فقيّمه في المتجر، فتقييمك يدلّ غيرك عليه');
+  assert.strictEqual(doc.getElementById('banner-act').textContent, 'قيّمه');
+  win.App.banner.hide();
+  assert.strictEqual(h.maybeAskRating(), false, 'and never again');
+  /* a browser has no store to be rated in */
+  const web = boot();
+  web.win.Store.set('usedDays', 30);
+  web.win.App.banner.hide();
+  assert.strictEqual(web.win.App.helpers.maybeAskRating(), false);
+  /* the app asks some seconds after it opens, not at once */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('window.setTimeout(maybeAskRating, 9000);') !== -1);
+  ['usedDays', 'usedOn', 'rateAsked', 'tour'].forEach(function (k) {
+    assert.ok(Object.prototype.hasOwnProperty.call(win.Store.DEFAULTS, k), k + ' is kept with the settings');
+  });
+});
+
+test('a reader who opens the app new is walked through it once, step by step over the real screen', async () => {
+  const { win, doc } = boot();
+  const h = win.App.helpers;
+  assert.strictEqual(h.tourState.returning, false, 'a phone that never had the app');
+  assert.strictEqual(win.Store.get('tour'), false);
+  assert.strictEqual(h.maybeStartTour(), false, 'not over the opening while it is still up');
+  h.dismissBootSplash(true);
+  assert.strictEqual(h.maybeStartTour(), 'first');
+  const tour = doc.getElementById('tour');
+  assert.strictEqual(tour.hidden, false);
+  assert.strictEqual(tour.getAttribute('role'), 'dialog');
+  assert.strictEqual(win.Store.get('tour'), true, 'remembered at once, so it is never shown twice');
+  assert.ok(doc.documentElement.classList.contains('touring'), 'the page under it holds still');
+  assert.strictEqual(doc.getElementById('tour-title').textContent, 'أهلاً بك في سُنّتي');
+  assert.strictEqual(doc.getElementById('tour-next').textContent, 'ابدأ الجولة');
+  assert.strictEqual(doc.getElementById('tour-skip').hidden, false, 'with its skip in plain sight');
+  assert.strictEqual(doc.activeElement, doc.getElementById('tour-next'), 'the keyboard is taken into it');
+  assert.strictEqual(win.history.state && win.history.state.tour, true, 'a step of its own in the history');
+  assert.strictEqual(doc.querySelectorAll('#tour-dots .tour-dot').length, 6);
+  assert.strictEqual(doc.getElementById('tour-dots').getAttribute('aria-label'), 'الخطوة 1 من 6');
+  /* every step lights something that is on the screen */
+  h.tourSteps.forEach(function (step) { if (step.at) assert.ok(doc.querySelector(step.at), step.at + ' is there'); });
+  const seen = [];
+  for (let i = 1; i < h.tourSteps.length; i++) {
+    click(win, doc.getElementById('tour-next'));
+    await until(() => doc.getElementById('tour-title').textContent === h.tourSteps[i].title);
+    seen.push(doc.getElementById('tour-title').textContent);
+  }
+  assert.deepStrictEqual(seen, ['الصلاة القادمة', 'مواقيت اليوم', 'المصحف', 'السنن', 'المزيد']);
+  assert.strictEqual(doc.getElementById('tour-dots').getAttribute('aria-label'), 'الخطوة 6 من 6');
+  assert.strictEqual(doc.getElementById('tour-next').textContent, 'ابدأ', 'the last step lets the reader begin');
+  assert.strictEqual(doc.getElementById('tour-skip').hidden, true, 'and has nothing left to skip');
+  click(win, doc.getElementById('tour-next'));
+  assert.strictEqual(h.tourState.open, false);
+  assert.ok(!doc.documentElement.classList.contains('touring'));
+  await until(() => tour.hidden === true);
+  await until(() => !(win.history.state && win.history.state.tour));
+  assert.strictEqual(h.maybeStartTour(), false, 'and once only');
+  /* it waits for the opening to be gone, in the package and in a browser alike */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf('window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));') !== -1);
+});
+
+test('the walkthrough ends by its skip, by escape and by the back button, and the settings bring it back', async () => {
+  const { win, doc } = boot();
+  const h = win.App.helpers;
+  h.dismissBootSplash(true);
+  h.maybeStartTour();
+  click(win, doc.getElementById('tour-skip'));
+  assert.strictEqual(h.tourState.open, false);
+  await until(() => !(win.history.state && win.history.state.tour));
+
+  /* taken again from the settings, even once seen, over the home screen */
+  win.App.go('settings');
+  click(win, doc.querySelector('[data-act="start-tour"]'));
+  await until(() => h.tourState.open);
+  assert.ok(doc.getElementById('v-home').classList.contains('is-open'), 'over the screen it speaks of');
+  const keys = function (key) { doc.getElementById('tour').dispatchEvent(new win.KeyboardEvent('keydown', { key: key, bubbles: true })); };
+  /* left is onward on a screen that reads from the right */
+  keys('ArrowLeft');
+  assert.strictEqual(h.tourState.at, 1);
+  keys('ArrowRight');
+  assert.strictEqual(h.tourState.at, 0);
+  keys('ArrowRight');
+  assert.strictEqual(h.tourState.at, 0, 'there is nothing before the first');
+  keys('Escape');
+  assert.strictEqual(h.tourState.open, false);
+  await until(() => !(win.history.state && win.history.state.tour));
+
+  /* the back button of a phone ends it and goes nowhere else */
+  h.startTour(true);
+  assert.strictEqual(win.history.state && win.history.state.tour, true);
+  win.history.back();
+  await until(() => h.tourState.open === false);
+  assert.ok(doc.getElementById('v-home').classList.contains('is-open'), 'still on the home screen');
+});
+
+test('someone who used the app before is not walked through it after an update, and a new iPhone is', () => {
+  const used = memoryStorage();
+  used.setItem('sunnati.days', JSON.stringify({ '2026-10-01': {} }));
+  const a = boot({ storage: used });
+  assert.strictEqual(a.win.App.helpers.tourState.returning, true);
+  assert.strictEqual(a.win.Store.get('tour'), true, 'counted as seen');
+  a.win.App.helpers.dismissBootSplash(true);
+  assert.strictEqual(a.win.App.helpers.maybeStartTour(), false);
+  /* the first version kept its own keys */
+  const old = memoryStorage();
+  old.setItem('sunnati_fontSize', '110');
+  assert.strictEqual(boot({ storage: old }).win.App.helpers.tourState.returning, true);
+  /* settings of the reader's own */
+  const mine = memoryStorage();
+  mine.setItem('sunnati.settings', JSON.stringify({ placeAsked: true, theme: 'dark' }));
+  assert.strictEqual(boot({ storage: mine }).win.App.helpers.tourState.returning, true);
+  /* but the placeAsked the iPhone's wrapper writes before the page wakes is no past */
+  const ios = memoryStorage();
+  ios.setItem('sunnati.settings', JSON.stringify({ placeAsked: true }));
+  const fresh = boot({ storage: ios, bridge: { platform: function () { return 'ios'; }, version: function () { return '2.0'; } } });
+  assert.strictEqual(fresh.win.App.helpers.tourState.returning, false);
+  assert.strictEqual(fresh.win.Store.get('tour'), false, 'a new iPhone is walked through it');
+});
+
+test('the walkthrough speaks the app\'s own arabic, a sentence a step with its full stop at the end, and sits above everything', () => {
+  const { win } = boot();
+  const steps = win.App.helpers.tourSteps;
+  assert.strictEqual(steps.length, 6, 'short: a welcome and five steps');
+  steps.forEach(function (s) {
+    assert.ok(/\.$/.test(s.body), s.title + ' ends with its full stop');
+    assert.strictEqual(s.body.split('.').length, 2, s.title + ' has no full stop in its middle');
+    assert.ok(!/[–—]/.test(s.title + s.body), s.title + ' has no dashes');
+  });
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const z = /\.tour \{[^}]*z-index: (\d+);/.exec(css);
+  assert.ok(z && +z[1] > 200 && +z[1] < 900, 'over the sheets, the toast and the tabs, and under nothing but the sky it closes');
+  assert.ok(/\.tour-hole \{[^}]*0 0 0 200vmax var\(--tour-dim\)/.test(css), 'one light, its shadow the dimness');
+  assert.ok(css.indexOf('html.touring { overflow: hidden; }') !== -1);
+});
+
+test('the App Store page is written from the repository with each version, within what Apple takes', () => {
+  const words = path.join(__dirname, '..', 'ios', 'store', 'ar-SA');
+  const description = fs.readFileSync(path.join(words, 'description.txt'), 'utf8').trim();
+  const keywords = fs.readFileSync(path.join(words, 'keywords.txt'), 'utf8').trim();
+  const promo = fs.readFileSync(path.join(words, 'promotional.txt'), 'utf8').trim();
+  assert.ok(description.length <= 4000, 'four thousand at most: ' + description.length);
+  assert.ok(keywords.length <= 100, 'a hundred at most: ' + keywords.length);
+  assert.ok(promo.length <= 170, 'a hundred and seventy at most: ' + promo.length);
+  assert.ok(!/ \s*,|,\s+/.test(keywords), 'commas with no spaces around them, which would be spent from the hundred');
+  /* the name and the subtitle are searched already, so the keywords do not
+     spend their hundred on the same words */
+  ['السنن', 'الأذكار', 'أوقات الصلاة'].forEach(function (w) { assert.ok(keywords.split(',').indexOf(w) === -1, w + ' is in the subtitle'); });
+  assert.ok(description.indexOf('ﷺ') === -1 && promo.indexOf('ﷺ') === -1, 'Apple refuses the sign of the salutation');
+  assert.ok(description.indexOf('ودجت') !== -1, 'the iPhone has its widget');
+  assert.ok(description.indexOf('والتطبيق مغلق') === -1, 'and no claim of the android alarm');
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  assert.ok(release.indexOf("('keywords.txt', 'keywords', 100)") !== -1 && release.indexOf("('description.txt', 'description', 4000)") !== -1 &&
+    release.indexOf("('promotional.txt', 'promotionalText', 170)") !== -1, 'the tool holds the same limits');
+  assert.ok(/write_notes\(version_id, notes\)\n    if a\.text:\n        write_text\(version_id, a\.text\)/.test(release), 'written beside what is new');
+  const flow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'ios.yml'), 'utf8');
+  assert.ok(flow.indexOf('--text ios/store') !== -1, 'with every version sent');
+  const play = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'play-listing.yml'), 'utf8');
+  assert.ok(play.indexOf('[ "$TEXT" = true ] && set -- "$@" --text play/listing/ar') !== -1, 'and the Play page by hand');
 });

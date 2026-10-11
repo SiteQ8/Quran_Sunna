@@ -529,5 +529,5 @@ jobs:
           python3 tools/ios/asc-release.py \
             --version "${{ needs.build.outputs.version }}" --build "${{ needs.build.outputs.number }}" \
             --duo shots/iphone-duo --notes ios/whatsnew/ar-SA.txt --previews ios/previews \
-            --shots ios/screenshots/6.9-inch \
+            --shots ios/screenshots/6.9-inch --text ios/store \
             $([ "$SEND" = send ] || echo --no-submit)

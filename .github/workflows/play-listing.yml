@@ -1,8 +1,10 @@
 # The app's page on Google Play: the promotional film, the icon, the feature
-# graphic and the phone screenshots. Play takes the film only as a YouTube
-# link, so it is uploaded to the channel first and its link given here; the
-# pictures come from the repository, play/listing and play/feature-graphic,
-# and each kind is replaced whole in every language of the page.
+# graphic, the phone screenshots, and the words of the page. Play takes the
+# film only as a YouTube link, so it is uploaded to the channel first and its
+# link given here; the pictures come from the repository, play/listing and
+# play/feature-graphic, and each kind is replaced whole in every language of
+# the page. The short and the full description come from play/listing/ar and
+# are written in the Arabic page alone.
 #
 # Run by hand only, from the Actions tab: «Play listing», Run workflow. With
 # nothing asked it reads the tracks and the page and changes nothing.
@@ -19,6 +21,10 @@ on:
         description: 'replace the icon, the feature graphic and the phone screenshots from play/listing'
         type: boolean
         default: false
+      text:
+        description: 'write the short and the full description from play/listing/ar'
+        type: boolean
+        default: false
 
 jobs:
   listing:
@@ -33,9 +39,11 @@ jobs:
           PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
           VIDEO: ${{ inputs.video }}
           GRAPHICS: ${{ inputs.graphics }}
+          TEXT: ${{ inputs.text }}
         run: |
           set -- --status
           [ -n "$VIDEO" ] && set -- "$@" --video "$VIDEO"
           [ "$GRAPHICS" = true ] && set -- "$@" --icon play/listing/icon-512.png \
             --feature play/feature-graphic-1024x500.png --phone play/listing/phone
+          [ "$TEXT" = true ] && set -- "$@" --text play/listing/ar
           python3 tools/android/play-listing.py "$@"
