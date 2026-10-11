@@ -181,6 +181,10 @@ files.push(['js/store.js', stringsFrom(path.join(DOCS, 'js', 'store.js'))]);
 files.push(['README.md', textFromMarkdown(path.join(ROOT, 'README.md'))]);
 files.push(['play/README.md', textFromMarkdown(path.join(ROOT, 'play', 'README.md'))]);
 files.push(['android/README.md', textFromMarkdown(path.join(ROOT, 'android', 'README.md'))]);
+/* the words of the two store pages, which a reader meets before the app */
+['play/listing/ar/short.txt', 'play/listing/ar/full.txt', 'ios/store/ar-SA/description.txt', 'ios/store/ar-SA/promotional.txt']
+  .filter(function (rel) { return fs.existsSync(path.join(ROOT, rel)); })
+  .forEach(function (rel) { files.push([rel, textFromMarkdown(path.join(ROOT, rel))]); });
 
 files.forEach(function (pair) {
   pair[1].forEach(function (entry) { check(pair[0], entry); });

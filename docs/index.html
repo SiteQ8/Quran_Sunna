@@ -899,6 +899,22 @@
     <button class="btn btn-ghost btn-block" id="offline-refresh" style="margin-top:10px">أعد تحميل التطبيق</button>
     <p class="setting-note" style="margin-top:8px">إذا رأيت التطبيق لا يتحدّث، أو ظهر لك شيء قديم، فاضغط هذا الزر، فهو يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة من الموقع، وتبقى بياناتك وأذكارك وعلاماتك كما هي.</p>
   </div>
+
+  <div class="card" id="settings-spread">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-heart"/></svg>انشر الخير</h2></div>
+    <div class="setting"><span><span class="setting-label">شارك التطبيق</span><br><span class="setting-note">«مَن دلّ على خيرٍ فله مثلُ أجرِ فاعله» رواه مسلم</span></span>
+      <button class="btn btn-ghost setting-act" data-act="share-app"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-share"/></svg>شارك</button></div>
+    <div class="setting"><span><span class="setting-label">قيّم التطبيق</span><br><span class="setting-note">تقييمك في المتجر يدلّ غيرك عليه</span></span>
+      <button class="btn btn-ghost setting-act" data-act="rate-app"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"/></svg>قيّم</button></div>
+  </div>
+
+  <div class="card" id="settings-help">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-info"/></svg>المساعدة</h2></div>
+    <div class="setting"><span><span class="setting-label">جولة في التطبيق</span><br><span class="setting-note">تعرّف على أقسامه في أقل من دقيقة</span></span>
+      <button class="btn btn-ghost setting-act" data-act="start-tour">ابدأ</button></div>
+    <div class="setting"><span><span class="setting-label">أرسل ملاحظاتك</span><br><span class="setting-note">اقتراح أو خلل وجدته، يصلنا على Site@hotmail.com</span></span>
+      <button class="btn btn-ghost setting-act" data-act="send-feedback">راسلنا</button></div>
+  </div>
 </section>
 
 <!-- ══════════ عن التطبيق ══════════ -->
@@ -1078,6 +1094,21 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+<!-- The walkthrough, over the real home screen: the light falls on what each
+     step speaks of and the rest is dimmed. Filled and placed by app.js. -->
+<div class="tour" id="tour" role="dialog" aria-modal="true" aria-labelledby="tour-title" aria-describedby="tour-body" hidden>
+  <div class="tour-hole" id="tour-hole" aria-hidden="true"></div>
+  <div class="tour-card" id="tour-card">
+    <h2 class="tour-title" id="tour-title"></h2>
+    <p class="tour-body" id="tour-body"></p>
+    <div class="tour-foot">
+      <div class="tour-dots" id="tour-dots" role="img"></div>
+      <button class="tour-skip" id="tour-skip">تخطَّ</button>
+      <button class="btn btn-primary tour-next" id="tour-next">التالي</button>
+    </div>
+  </div>
+</div>
+
 <div class="skyview" id="skyview" role="dialog" aria-modal="true" aria-label="سماء الوقت" tabindex="-1" hidden>
   <div class="skyview-scene" id="skyview-scene">
     <img class="skyview-plate" id="skyview-a" alt="" decoding="async">
@@ -1120,6 +1151,7 @@
     <div class="skyview-name" id="skyview-name"></div>
     <div class="skyview-count" id="skyview-count"></div>
     <div class="skyview-date" id="skyview-date"></div>
+    <div class="skyview-greg" id="skyview-greg"></div>
   </div>
   <p class="skyview-hint">المس للعودة</p>
 </div>

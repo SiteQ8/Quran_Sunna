@@ -93,7 +93,13 @@
     khatmaStart: null,
     vibrate: true,
     lastRead: null,
-    tour: false
+    /* the walkthrough of the app, shown once to whoever opens it new */
+    tour: false,
+    /* the days the app has been opened, each counted once, and whether the
+       reader has been asked to rate it, which happens once at most */
+    usedDays: 0,
+    usedOn: '',
+    rateAsked: false
   };
 
   var memory = {};

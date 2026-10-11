@@ -469,6 +469,7 @@ html.has-sky .arc-wrap { cursor: pointer; }
 .skyview-name { font-size: var(--step-3); font-weight: 600; margin-top: 2px; }
 .skyview-count { font-size: clamp(44px, 13vw, 84px); font-weight: 300; letter-spacing: .02em; direction: ltr; margin-top: 4px; font-variant-numeric: tabular-nums; }
 .skyview-date { font-size: var(--step--1); opacity: .8; margin-top: 8px; }
+.skyview-greg { font-size: var(--step--1); opacity: .7; margin-top: 2px; }
 .skyview-hint {
   position: absolute; inset-inline: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
   margin: 0; text-align: center; font-size: var(--step--1); opacity: .5; pointer-events: none;
@@ -1588,6 +1589,64 @@ input, textarea, [contenteditable] {
   max-width: var(--shell); margin: 0 auto;
 }
 .toast.is-open { opacity: 1; transform: none; }
+
+/* ---------- the walkthrough ----------
+   One light over the real screen: a box the size of what the step speaks of,
+   whose shadow is the dimness over everything else, so the light can travel
+   from one thing to the next and nothing is drawn twice. The ring is the gold
+   of the niche's star. It moves with the strong ease the sheets use, and the
+   words beside it fade out, change and come back where it has gone. */
+html.touring { overflow: hidden; }
+.tour {
+  --tour-dim: rgba(12, 18, 22, .68);
+  --tour-ease: cubic-bezier(.23, 1, .32, 1);
+  position: fixed; inset: 0; z-index: 800; opacity: 0;
+  transition: opacity .28s var(--tour-ease);
+  touch-action: none; overscroll-behavior: contain;
+}
+[data-theme='dark'] .tour { --tour-dim: rgba(0, 0, 0, .74); }
+.tour[hidden] { display: none; }
+.tour.is-open { opacity: 1; }
+.tour-hole {
+  position: absolute; top: 0; left: 0; width: 0; height: 0; border-radius: 16px; pointer-events: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gold) 85%, transparent), 0 0 0 200vmax var(--tour-dim);
+  transition: transform .42s var(--tour-ease), width .42s var(--tour-ease),
+    height .42s var(--tour-ease), border-radius .42s var(--tour-ease);
+}
+.tour-hole.is-blank { box-shadow: 0 0 0 200vmax var(--tour-dim); }
+.tour-card {
+  position: absolute; top: 0; left: 16px; width: calc(100vw - 32px); max-width: 400px;
+  background: var(--raised); color: var(--ink); border-radius: var(--r-lg);
+  padding: var(--s5) var(--s5) var(--s3);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, .14), 0 22px 48px rgba(0, 0, 0, .28);
+  text-align: right;
+  transition: opacity .22s var(--tour-ease), transform .26s var(--tour-ease);
+}
+.tour:not(.is-open) .tour-card { transform: translateY(10px) scale(.98); }
+.tour-card.is-swapping { opacity: 0; transform: translateY(6px); transition-duration: .15s; }
+.tour-title { font-size: var(--step-2); font-weight: 700; line-height: 1.4; margin-bottom: var(--s2); }
+.tour-body { font-size: var(--step-0); line-height: 1.9; color: var(--ink-2); }
+.tour-foot { display: flex; align-items: center; gap: var(--s2); margin-top: var(--s4); }
+.tour-dots { flex: 1; display: flex; align-items: center; gap: 6px; }
+.tour-dot {
+  width: 6px; height: 6px; border-radius: 3px; background: var(--line);
+  transition: width .3s var(--tour-ease), background-color .3s var(--tour-ease);
+}
+.tour-dot.is-on { width: 18px; background: var(--accent-solid); }
+.tour-skip {
+  min-height: 44px; padding: 0 var(--s3); border-radius: var(--r-sm);
+  font-size: var(--step--1); font-weight: 600; color: var(--ink-3);
+  transition: transform .12s var(--tour-ease);
+}
+.tour-skip:active { transform: scale(.97); }
+.tour-next { height: 44px; min-height: 44px; padding: 0 var(--s5); }
+
+/* the share, rate, help and letter buttons of the settings sit beside their
+   words, in the middle of the row rather than at its top */
+.setting > .setting-act { align-self: center; }
+/* and the last of them clears the button that takes the page back to its top,
+   which floats over the foot of the screen on the same side */
+#v-settings { padding-bottom: 88px; }
 
 .sheet {
   position: fixed; inset: 0; z-index: 150; display: none;

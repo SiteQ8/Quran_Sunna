@@ -9,7 +9,11 @@ Play لا يأخذ الفيلم ملفاً بل رابطاً من YouTube، في
     PLAY_SERVICE_ACCOUNT='<json>' python3 tools/android/play-listing.py \\
         [--video https://youtu.be/VONcaRYi91M] \\
         [--icon play/listing/icon-512.png] [--feature play/feature-graphic-1024x500.png] \\
-        [--phone play/listing/phone] [--status] [--dry-run]
+        [--phone play/listing/phone] [--text play/listing/ar] [--status] [--dry-run]
+
+ونص الصفحة من مجلّد باسم لغتها، play/listing/ar، فيه الاسم والوصف القصير
+والكامل في title.txt وshort.txt وfull.txt، وما وُجد منها يُكتب في صفحة تلك اللغة
+وحدها، ويُقاس قبل أن يُرسل شيء.
 
 --status يقرأ المسارات وما فيها من إصدارات، وما في الصفحة من فيلم وصور، ولا
 يغيّر شيئاً. وبـ--dry-run يقرأ ما سيتغيّر ولا يغيّره. وأيّ خطأ يترك التحرير بلا
@@ -65,6 +69,28 @@ def checked(kind, paths):
     return paths
 
 
+# النص في المستودع مجلّد لكل لغة باسمها، play/listing/ar: الاسم في title.txt
+# والوصف القصير في short.txt والكامل في full.txt، وما وُجد منها يُكتب، ويحدّ Play
+# الاسم بثلاثين حرفاً والقصير بثمانين والكامل بأربعة آلاف
+TEXT_FIELDS = (('title.txt', 'title', 30), ('short.txt', 'shortDescription', 80),
+               ('full.txt', 'fullDescription', 4000))
+
+
+def listing_text(folder):
+    words = {}
+    for name, field, limit in TEXT_FIELDS:
+        path = Path(folder) / name
+        if not path.is_file():
+            continue
+        text = path.read_text(encoding='utf-8').strip()
+        if len(text) > limit:
+            raise SystemExit(f'{path} طوله {len(text)} حرفاً، وPlay يأخذ {limit}')
+        words[field] = text
+    if not words:
+        raise SystemExit(f'لا نص في {folder}: title.txt أو short.txt أو full.txt')
+    return words
+
+
 def status(base, edit, tok):
     for t in pu.call('GET', f'{base}/edits/{edit}/tracks', tok).get('tracks', []):
         for r in t.get('releases', []) or [{}]:
@@ -73,6 +99,9 @@ def status(base, edit, tok):
     for item in pu.call('GET', f'{base}/edits/{edit}/listings', tok).get('listings', []):
         lang = item['language']
         print(f"  الصفحة {lang}: {item.get('title', '')} | فيلم {item.get('video') or 'لا شيء'}")
+        short, full = item.get('shortDescription', ''), item.get('fullDescription', '')
+        print(f"    الوصف القصير ({len(short)}): {short}")
+        print(f"    الوصف الكامل ({len(full)}): {full[:300]}{'…' if len(full) > 300 else ''}")
         for kind in ('icon', 'featureGraphic', 'phoneScreenshots'):
             imgs = pu.call('GET', f'{base}/edits/{edit}/listings/{lang}/{kind}', tok).get('images', [])
             print(f"    {kind}: {len(imgs)} {' '.join(i.get('sha1', '')[:8] for i in imgs)}")
@@ -84,6 +113,7 @@ def main():
     ap.add_argument('--icon')
     ap.add_argument('--feature')
     ap.add_argument('--phone', help='مجلّد لقطات الهاتف، تُرفع بترتيب أسمائها')
+    ap.add_argument('--text', help='مجلّد نص الصفحة بلغة واحدة، واسمه اللغة: play/listing/ar')
     ap.add_argument('--status', action='store_true')
     ap.add_argument('--package', default=pu.PACKAGE)
     ap.add_argument('--dry-run', action='store_true')
@@ -98,8 +128,10 @@ def main():
         shots = sorted(str(p) for p in Path(a.phone).glob('*.png'))
         images['phoneScreenshots'] = checked('phoneScreenshots', shots)
     video = watch_url(a.video) if a.video else None
-    if not (video or images or a.status):
-        ap.error('لا شيء ليُفعل: --video أو --icon أو --feature أو --phone أو --status')
+    text = listing_text(a.text) if a.text else None
+    text_lang = Path(a.text).name if a.text else None
+    if not (video or images or text or a.status):
+        ap.error('لا شيء ليُفعل: --video أو --icon أو --feature أو --phone أو --text أو --status')
 
     raw = os.environ.get('PLAY_SERVICE_ACCOUNT')
     if not raw:
@@ -115,15 +147,22 @@ def main():
     try:
         if a.status or a.dry_run:
             status(base, edit, tok)
-        if a.status and not (video or images):
+        if a.status and not (video or images or text):
             pu.call('DELETE', f'{base}/edits/{edit}', tok)
             print('قراءة فقط، ولم يتغيّر شيء')
             return
         listings = pu.call('GET', f'{base}/edits/{edit}/listings', tok).get('listings', [])
         if not listings:
             raise RuntimeError('لا صفحة متجر لهذا التطبيق بعد')
+        if text and text_lang not in [i['language'] for i in listings]:
+            raise RuntimeError(f'لا صفحة بلغة {text_lang} يُكتب فيها النص')
         for item in listings:
             lang = item['language']
+            if text and lang == text_lang:
+                if not a.dry_run:
+                    pu.call('PATCH', f'{base}/edits/{edit}/listings/{lang}', tok, text)
+                for field, words in text.items():
+                    print(f'  {lang}: {field} {len(item.get(field, ""))} حرفاً، وصار {len(words)}')
             if video:
                 was = item.get('video') or 'لا فيلم'
                 if not a.dry_run:
