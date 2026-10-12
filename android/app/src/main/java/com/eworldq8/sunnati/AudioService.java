@@ -76,12 +76,18 @@ public final class AudioService extends Service {
         PendingIntent tap = PendingIntent.getActivity(host, 0, open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
 
-        Notification.Builder b = new Notification.Builder(host, AdhanReceiver.CHANNEL_REMINDERS)
+        /* The notice of what is playing rang the reminders' tone each time it
+           was raised or reworded, on every play, pause and surah, over the very
+           recitation it described. It has a quiet channel of its own now, and
+           it alerts once at most. */
+        AdhanReceiver.ensureChannels(host);
+        Notification.Builder b = new Notification.Builder(host, AdhanReceiver.CHANNEL_PLAYING)
             .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(title == null || title.isEmpty() ? "سُنّتي" : title)
             .setContentText(sub == null ? "" : sub)
             .setContentIntent(tap)
             .setOngoing(true)
+            .setOnlyAlertOnce(true)
             .setShowWhen(false)
             .setVisibility(Notification.VISIBILITY_PUBLIC);
         b.addAction(new Notification.Action.Builder(
