@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.75';
+  var VERSION = '8.87.76';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2759,7 +2759,7 @@
     markReciting(r.at);
     var meta = surahMeta(r.surah);
     playAudio(
-      'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + Mushaf.globalIndex(r.surah, r.at) + '.mp3',
+      verseUrl(r.surah, r.at),
       'آية ' + ar(r.at) + ' من ' + (meta ? meta.ar : ''),
       'الجولة ' + ar(r.round) + ' من ' + ar(r.times)
     );
@@ -3241,8 +3241,7 @@
     markReciting(r.a);
     var meta = surahMeta(r.s);
     playAudio(
-      'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' +
-        Mushaf.globalIndex(r.s, r.a) + '.mp3',
+      verseUrl(r.s, r.a),
       'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(r.a),
       reciterName()
     );
@@ -3261,8 +3260,7 @@
   function warmNextVerse(surah, ayah) {
     var total = Mushaf.surah(surah) ? Mushaf.surah(surah).length : 0;
     if (!total || ayah > total) return;
-    var url = 'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' +
-      Mushaf.globalIndex(surah, ayah) + '.mp3';
+    var url = verseUrl(surah, ayah);
     if (state.warmed === url) return;
     state.warmed = url;
     try {
@@ -3298,10 +3296,9 @@
   }
 
   function playVerse(s, a) {
-    var index = Mushaf.globalIndex(s, a);
     var meta = surahMeta(s);
     playAudio(
-      'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + index + '.mp3',
+      verseUrl(s, a),
       'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a),
       reciterName()
     );
@@ -3926,8 +3923,30 @@
   var AUDIO_STORE = 'sunnati-audio';
   var BYTES_PER_VERSE = 90000;
 
+  /* The source keeps each reciter at the rate he was recorded at and refuses
+     any other, so seven of the sixteen were silent while every one was asked
+     at 128. The rate is the reciter's own, from the list, and 128 where the
+     list names none. Every verse heard, repeated, fetched ahead or kept comes
+     from this one address. */
+  var CDN_AUDIO = 'https://cdn.islamic.network/quran/audio/';
+
+  function rateOf(id) {
+    var list = typeof RECITERS !== 'undefined' ? RECITERS : [];
+    var pick = list.filter(function (r) { return r.id === id; })[0];
+    return (pick && pick.kbps) || 128;
+  }
+
+  function verseAudioUrl(id, index) {
+    return CDN_AUDIO + rateOf(id) + '/' + id + '/' + index + '.mp3';
+  }
+
   function verseUrl(s, a) {
-    return 'https://cdn.islamic.network/quran/audio/128/' + reciterId() + '/' + Mushaf.globalIndex(s, a) + '.mp3';
+    return verseAudioUrl(reciterId(), Mushaf.globalIndex(s, a));
+  }
+
+  /* what a kept verse weighs, which halves with the rate */
+  function bytesPerVerse(id) {
+    return Math.round(BYTES_PER_VERSE * rateOf(id) / 128);
   }
 
   function savedAudio() { return Store.get('audioSaved') || {}; }
@@ -3937,10 +3956,12 @@
     return !!by[n];
   }
 
+  /* the rate is kept with the surah, so one kept from the refused address
+     can be told from one kept since */
   function rememberSaved(n, verses) {
     var all = savedAudio();
     if (!all[reciterId()]) all[reciterId()] = {};
-    all[reciterId()][n] = { v: verses, at: Date.now() };
+    all[reciterId()][n] = { v: verses, at: Date.now(), k: rateOf(reciterId()) };
     Store.set('audioSaved', all);
   }
 
@@ -3958,7 +3979,7 @@
     if (!verses) return Promise.resolve(false);
     state.downloading = { s: n, done: 0, total: verses, stop: false };
     openSheet('حفظ سورة ' + (meta ? meta.ar : ''),
-      '<p class="setting-note">بصوت ' + esc(reciterName()) + '، نحو ' + megabytes(verses * BYTES_PER_VERSE) + '، وتبقى في جهازك حتى تحذفها</p>' +
+      '<p class="setting-note">بصوت ' + esc(reciterName()) + '، نحو ' + megabytes(verses * bytesPerVerse(reciterId())) + '، وتبقى في جهازك حتى تحذفها</p>' +
       '<div class="meter" style="margin:12px 0"><div class="meter-fill" id="dl-meter" style="width:0%"></div></div>' +
       '<p class="setting-note" id="dl-count">0 من ' + ar(verses) + '</p>' +
       '<button class="btn btn-ghost btn-block" data-act="download-stop">أوقف</button>');
@@ -4000,17 +4021,36 @@
     });
   }
 
+  /* both addresses go: the reciter's own, and the 128 every surah was once
+     kept from, which for seven of them holds only a refusal */
   function removeSurahAudio(reciter, n) {
     if (!window.caches) return Promise.resolve();
-    var saved = reciterId();
     var verses = Mushaf.surah(n).length;
     return window.caches.open(AUDIO_STORE).then(function (store) {
       var jobs = [];
       for (var a = 1; a <= verses; a++) {
-        jobs.push(store.delete('https://cdn.islamic.network/quran/audio/128/' + reciter + '/' + Mushaf.globalIndex(n, a) + '.mp3'));
+        var index = Mushaf.globalIndex(n, a);
+        jobs.push(store.delete(verseAudioUrl(reciter, index)));
+        if (rateOf(reciter) !== 128) jobs.push(store.delete(CDN_AUDIO + '128/' + reciter + '/' + index + '.mp3'));
       }
       return Promise.all(jobs);
-    }).then(function () { forgetSaved(reciter, n); void saved; });
+    }).then(function () { forgetSaved(reciter, n); });
+  }
+
+  /* A surah kept in one of the seven voices before each was asked at his own
+     rate was kept from an address that refuses, so it holds no sound. It is
+     let go, and reads as not kept, so the reader can keep it again and have
+     it heard. Run once the mushaf is in, since the verses are counted from it. */
+  function dropSilentSaves() {
+    var all = savedAudio();
+    var jobs = [];
+    Object.keys(all).forEach(function (id) {
+      if (rateOf(id) === 128) return;
+      Object.keys(all[id] || {}).forEach(function (n) {
+        if (!all[id][n] || !all[id][n].k) jobs.push(removeSurahAudio(id, +n));
+      });
+    });
+    return Promise.all(jobs);
   }
 
   function megabytes(bytes) {
@@ -4712,20 +4752,21 @@
     var all = savedAudio();
     var reciters = Object.keys(all);
     var rows = [];
-    var totalVerses = 0;
+    var totalBytes = 0;
     reciters.forEach(function (rid) {
       var who = (typeof RECITERS !== 'undefined' ? RECITERS : []).filter(function (r) { return r.id === rid; })[0];
       Object.keys(all[rid]).map(Number).sort(function (a, b) { return a - b; }).forEach(function (n) {
         var meta = surahMeta(n);
-        totalVerses += all[rid][n].v;
+        var bytes = all[rid][n].v * bytesPerVerse(rid);
+        totalBytes += bytes;
         rows.push('<div class="row"><span class="row-mark">' + ar(n) + '</span>' +
           '<span class="row-body"><span class="row-title">' + esc(meta ? meta.ar : '') + '</span>' +
-          '<span class="row-note">' + esc(who ? who.name : rid) + '، ' + ayat(all[rid][n].v) + '، نحو ' + megabytes(all[rid][n].v * BYTES_PER_VERSE) + '</span></span>' +
+          '<span class="row-note">' + esc(who ? who.name : rid) + '، ' + ayat(all[rid][n].v) + '، نحو ' + megabytes(bytes) + '</span></span>' +
           '<button class="btn btn-ghost" data-remove-audio="' + esc(rid) + ':' + n + '" aria-label="احذف">' + icon('close') + '</button></div>');
       });
     });
     host.innerHTML = rows.length
-      ? rows.join('') + '<p class="setting-note" style="margin-top:8px">المجموع نحو ' + megabytes(totalVerses * BYTES_PER_VERSE) + '</p>'
+      ? rows.join('') + '<p class="setting-note" style="margin-top:8px">المجموع نحو ' + megabytes(totalBytes) + '</p>'
       : '<p class="setting-note">لم تحفظ سورة بعد، وفي المصحف عند كل سورة زر يحفظها</p>';
   }
 
@@ -8390,6 +8431,7 @@
   function afterMushaf() {
     if (RENDERERS[state.view]) RENDERERS[state.view]();
     renderDailyAyah();
+    dropSilentSaves().then(function (gone) { if (gone.length) renderSettings(); }, function () {});
     if ($('offline-state')) {
       $('offline-state').textContent = 'نص المصحف محمّل في جهازك، فالقراءة تعمل بلا إنترنت';
     }
@@ -8940,7 +8982,7 @@
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
-      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
+      renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,

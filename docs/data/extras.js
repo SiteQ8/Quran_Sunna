@@ -1,23 +1,24 @@
 /* بيانات مساعدة للتطبيق: القرّاء والإذاعات والمدن والورد والمسبحة */
 
-/* معرّفات القرّاء مأخوذة من فهرس alquran.cloud الصوتي */
+/* معرّفات القرّاء مأخوذة من فهرس alquran.cloud الصوتي، ومصدر الآيات يحفظ كل قارئ بالجودة التي سُجّل بها
+   ويرفض ما سواها، فمن لم يُحفظ عنده بجودة 128 ذُكرت جودته بجانبه (kbps)، ومن لم تُذكر جودته فهو على 128 */
 var RECITERS = [
-  { id: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', country: 'مصر' },
-  { id: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', country: 'السعودية' },
+  { id: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', country: 'مصر', kbps: 64 },
+  { id: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', country: 'السعودية', kbps: 64 },
   { id: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', country: 'السعودية' },
-  { id: 'ar.saoodshuraym', name: 'سعود الشريم', country: 'السعودية' },
+  { id: 'ar.saoodshuraym', name: 'سعود الشريم', country: 'السعودية', kbps: 64 },
   { id: 'ar.husary', name: 'محمود خليل الحصري', country: 'مصر' },
   { id: 'ar.husarymujawwad', name: 'محمود خليل الحصري بالمجوّد', country: 'مصر' },
   { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', country: 'مصر' },
   { id: 'ar.shaatree', name: 'أبو بكر الشاطري', country: 'السعودية' },
   { id: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', country: 'السعودية' },
   { id: 'ar.hudhaify', name: 'علي الحذيفي', country: 'السعودية' },
-  { id: 'ar.hanirifai', name: 'هاني الرفاعي', country: 'السعودية' },
-  { id: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', country: 'السعودية' },
+  { id: 'ar.hanirifai', name: 'هاني الرفاعي', country: 'السعودية', kbps: 64 },
+  { id: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', country: 'السعودية', kbps: 32 },
   { id: 'ar.muhammadayyoub', name: 'محمد أيوب', country: 'السعودية' },
   { id: 'ar.muhammadjibreel', name: 'محمد جبريل', country: 'مصر' },
-  { id: 'ar.abdullahbasfar', name: 'عبدالله بصفر', country: 'السعودية' },
-  { id: 'ar.aymanswoaid', name: 'أيمن سويد', country: 'سوريا' }
+  { id: 'ar.abdullahbasfar', name: 'عبدالله بصفر', country: 'السعودية', kbps: 64 },
+  { id: 'ar.aymanswoaid', name: 'أيمن سويد', country: 'سوريا', kbps: 64 }
 ];
 
 var RADIO_STATIONS = [

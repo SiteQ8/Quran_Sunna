@@ -9339,12 +9339,82 @@ test('the two recitations stay apart: a verse from its own file, a surah from on
   ['function playVerse(', 'function verseUrl('].forEach(function (f) {
     assert.ok(app.indexOf(f) !== -1, f + ' should still exist');
   });
-  const perVerse = (app.match(/cdn\.islamic\.network\/quran\/audio\/128\//g) || []).length;
-  assert.ok(perVerse >= 5, 'the per verse files are used in several places, found ' + perVerse);
-  /* the walk, the repeat, and what is saved for offline all use them */
-  assert.ok(/function reciteVerse[\s\S]{0,900}audio\/128\//.test(app), 'the walk verse by verse');
-  assert.ok(/function saveSurahAudio|jobs\.push\(store\.delete\('https:\/\/cdn\.islamic\.network\/quran\/audio\/128\//.test(app),
+  /* the walk, the repeat, the fetch ahead and what is kept all ask the one
+     address, so no place can ask a reciter at a rate he is not kept at */
+  assert.ok(/function reciteVerse[\s\S]{0,900}verseUrl\(r\.s, r\.a\)/.test(app), 'the walk verse by verse');
+  assert.ok(/function reciteCurrent[\s\S]{0,400}verseUrl\(r\.surah, r\.at\)/.test(app), 'the repeat');
+  assert.ok(/function warmNextVerse[\s\S]{0,300}verseUrl\(surah, ayah\)/.test(app), 'the fetch ahead');
+  assert.ok(/function downloadSurah[\s\S]{0,1400}urls\.push\(verseUrl\(n, a\)\)/.test(app),
     'and what is kept for hearing without a network');
+  const written = (app.match(/cdn\.islamic\.network\/quran\/audio\//g) || []).length;
+  assert.strictEqual(written, 1, 'the address is written in one place, found ' + written);
+});
+
+test('each reciter is asked at the rate the source keeps him at, or he is silent', () => {
+  const { win } = boot();
+  /* the source refuses any rate a reciter is not kept at, so asking all
+     sixteen at 128 left seven of them silent: a verse tapped, a verse
+     repeated, a surah kept, all gave nothing. These are the rates the source
+     answered for each of the seven when this was written; the rest are at 128. */
+  const kept = {
+    'ar.abdulsamad': 64, 'ar.abdurrahmaansudais': 64, 'ar.saoodshuraym': 64, 'ar.hanirifai': 64,
+    'ar.ibrahimakhbar': 32, 'ar.abdullahbasfar': 64, 'ar.aymanswoaid': 64
+  };
+  assert.strictEqual(win.RECITERS.length, 16);
+  win.RECITERS.forEach(function (r) {
+    const rate = kept[r.id] || 128;
+    assert.strictEqual(win.App.helpers.rateOf(r.id), rate, r.id);
+    win.Store.set('reciter', r.id);
+    assert.strictEqual(win.App.helpers.verseUrl(13, 28),
+      'https://cdn.islamic.network/quran/audio/' + rate + '/' + r.id + '/1735.mp3', r.name);
+    if (r.kbps) assert.ok([32, 48, 64, 192].indexOf(r.kbps) !== -1, r.id + ' is named a rate the source has no folder for');
+  });
+  assert.strictEqual(win.App.helpers.rateOf('ar.unknown'), 128, 'a reciter the list does not know is asked at 128');
+  /* a kept verse at half the rate weighs half, and the sizes shown say so */
+  assert.strictEqual(win.App.helpers.bytesPerVerse('ar.abdulsamad') * 2, win.App.helpers.bytesPerVerse('ar.minshawi'));
+});
+
+test('a surah kept from the address that refused is let go, so it can be kept again and heard', () => {
+  const { win } = boot();
+  const stores = fakeCaches(win);
+  const asked = [];
+  const refused = 'https://cdn.islamic.network/quran/audio/128/ar.abdulsamad/';
+  return win.caches.open('sunnati-audio').then(function (store) {
+    /* al ikhlas kept in abdulbasit's voice from the old address: four refusals */
+    return Promise.all([6222, 6223, 6224, 6225].map(function (i) { return store.put(refused + i + '.mp3', { type: 'opaque' }); }));
+  }).then(function () {
+    win.Store.set('audioSaved', {
+      'ar.abdulsamad': { 112: { v: 4, at: 1 } },
+      'ar.minshawi': { 112: { v: 4, at: 1 } },
+      'ar.aymanswoaid': { 1: { v: 7, at: 2, k: 64 } }
+    });
+    return win.App.helpers.dropSilentSaves();
+  }).then(function () {
+    const saved = win.Store.get('audioSaved');
+    assert.ok(!saved['ar.abdulsamad'], 'the silent one is let go, and reads as not kept');
+    assert.ok(saved['ar.minshawi'] && saved['ar.minshawi'][112], 'a reciter kept at 128 all along stays');
+    assert.ok(saved['ar.aymanswoaid'] && saved['ar.aymanswoaid'][1], 'and one kept at his own rate stays');
+    assert.strictEqual(stores['sunnati-audio'].size, 0, 'the refusals are cleared from the store');
+    /* kept again, it comes from his own rate and carries it */
+    win.fetch = function (url) { asked.push(String(url)); return Promise.resolve({ type: 'opaque' }); };
+    win.Store.set('reciter', 'ar.abdulsamad');
+    return win.App.helpers.downloadSurah(112);
+  }).then(function (ok) {
+    assert.strictEqual(ok, true);
+    assert.deepStrictEqual(asked, [6222, 6223, 6224, 6225].map(function (i) {
+      return 'https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/' + i + '.mp3';
+    }));
+    assert.strictEqual(win.Store.get('audioSaved')['ar.abdulsamad'][112].k, 64, 'the rate is kept with it');
+    /* and a second pass leaves it be */
+    return win.App.helpers.dropSilentSaves();
+  }).then(function () {
+    assert.ok(win.Store.get('audioSaved')['ar.abdulsamad'][112], 'a surah kept at the right rate is never let go');
+    /* removing it clears both addresses it could be under */
+    return win.App.helpers.removeSurahAudio('ar.abdulsamad', 112);
+  }).then(function () {
+    assert.strictEqual(stores['sunnati-audio'].size, 0);
+    assert.ok(!win.Store.get('audioSaved')['ar.abdulsamad']);
+  });
 });
 
 test('the reminder falls on the hour, not an hour from whenever it was chosen', () => {
