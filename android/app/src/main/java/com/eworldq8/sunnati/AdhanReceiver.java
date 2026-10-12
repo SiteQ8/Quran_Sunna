@@ -34,6 +34,10 @@ public final class AdhanReceiver extends BroadcastReceiver {
        This one is new, and it neither sounds nor vibrates: it is for the
        reader who asked for silence, not for the app sounding the adhan itself. */
     public static final String CHANNEL_HUSH = "adhan_hush_v2";
+    /* The notice of what is playing, a recitation, a station or a dhikr. It
+       sat on the reminders channel, which rings, so it rang over the sound it
+       named; this one never sounds or buzzes. */
+    public static final String CHANNEL_PLAYING = "playing";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -149,6 +153,14 @@ public final class AdhanReceiver extends BroadcastReceiver {
             channel.setSound(null, null);
             /* silence means silence: a buzz is a sound to anyone holding the phone */
             channel.enableVibration(false);
+            manager.createNotificationChannel(channel);
+        }
+        if (manager.getNotificationChannel(CHANNEL_PLAYING) == null) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_PLAYING, "ما يُسمع الآن", NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription("التلاوة والإذاعة والذكر وهي تُسمع، بأزرار الإيقاف ومن غير صوت للإشعار نفسه");
+            channel.setSound(null, null);
+            channel.enableVibration(false);
+            channel.setShowBadge(false);
             manager.createNotificationChannel(channel);
         }
     }

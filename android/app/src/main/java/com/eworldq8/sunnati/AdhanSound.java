@@ -49,9 +49,15 @@ public final class AdhanSound {
             prefs(c).edit().putString(KEY_HAVE, "").apply();
             return;
         }
-        if (url.equals(prefs(c).getString(KEY_HAVE, null)) && file(c, false).exists()) return;
+        /* The pair is what is kept, so the pair is what is compared. Three
+           voices share one ordinary adhan, and comparing that one alone left
+           the fajr of whichever was fetched first in place for good. A phone
+           that kept the old single address finds it no longer matches, so it
+           fetches the pair once more and gets the recordings as they are now. */
+        String pair = url + "|" + fajrUrl;
+        if (pair.equals(prefs(c).getString(KEY_HAVE, null)) && have(c, false) && have(c, true)) return;
         boolean ok = fetch(url, file(c, false)) && fetch(fajrUrl, file(c, true));
-        prefs(c).edit().putString(KEY_HAVE, ok ? url : "").apply();
+        prefs(c).edit().putString(KEY_HAVE, ok ? pair : "").apply();
     }
 
     private static boolean fetch(String url, File into) {
