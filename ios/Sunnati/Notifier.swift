@@ -50,7 +50,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let body = UNMutableNotificationContent()
         body.title = item.title
         body.body = item.text
-        body.sound = item.chime.sound
+        body.sound = Notifier.sound(for: item)
         if !item.kind.isEmpty { body.userInfo = ["kind": item.kind] }
         let parts = Calendar.current.dateComponents(
           [.year, .month, .day, .hour, .minute], from: item.at)
@@ -58,6 +58,30 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         self.centre.add(UNNotificationRequest(identifier: "\(prefix)\(i)", content: body, trigger: when))
       }
     }
+  }
+
+  /* The sound a notification carries. Silence is silence whatever else is
+     named, a muadhin's clip is used where one is named, and otherwise the
+     choice of the three. A named file that is not in the bundle falls back to
+     the phone's own tone, which is iOS's doing and not a silence. */
+  static func sound(for item: Reminder) -> UNNotificationSound? {
+    if item.chime == .silent { return nil }
+    if let named = item.sound, !named.isEmpty {
+      return UNNotificationSound(named: UNNotificationSoundName(named))
+    }
+    return item.chime.sound
+  }
+
+  /* The page hands over the address of the adhan it would play, and the app
+     carries a clip of each muadhin under adhan-<id>.caf, cut to 29 seconds
+     since iOS plays nothing longer than 30 as a notification. The fajr and the
+     ordinary adhan of one muadhin open the same way, so one clip serves both. */
+  static func adhanClip(_ address: String) -> String? {
+    guard let last = address.split(separator: "/").last, last.hasSuffix(".mp3") else { return nil }
+    var id = String(last.dropLast(4))
+    if id.hasSuffix("-fajr") { id = String(id.dropLast(5)) }
+    guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
+    return "adhan-\(id).caf"
   }
 
   /* iOS hides a notification while its own app is in front, which would mean a
@@ -104,4 +128,6 @@ struct Reminder {
   /* which reminder this is, carried through to the notification so a tap can
      open the app on its own subject rather than wherever it was last left */
   var kind: String = ""
+  /* a sound file in the bundle, for the adhan in the muadhin's own voice */
+  var sound: String? = nil
 }

@@ -75,6 +75,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         setQiyamTimes: call('setQiyamTimes'),
         setPrayerTimes: call('setPrayerTimes'),
         setAdhanSilent: call('setAdhanSilent'),
+        setAdhanSound: call('setAdhanSound'),
+        setQiyamSound: call('setQiyamSound'),
         shareText: call('shareText'),
         shareImage: call('shareImage'),
         shareImageWithText: call('shareImageWithText'),
@@ -125,9 +127,12 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     view.addSubview(web)
     web.load(URLRequest(url: site))
 
-    /* the adhan and the recitations must keep sounding with the screen off */
+    /* The adhan and the recitations must keep sounding with the screen off,
+       which is what the category is for. The session is not made active here:
+       an active playback session stops whatever else the phone is playing, so
+       opening the app used to silence the reader's own music before anything
+       had been played. It becomes active when the page plays something. */
     try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .default)
-    try? AVAudioSession.sharedInstance().setActive(true)
 
     /* Not while the store screenshots are taken: simctl can grant location
        but has no way to grant notifications, so the question stood in the
@@ -203,23 +208,42 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       Notifier.shared.replace(parse(json), prefix: "remind-")
 
     case "setQiyamTimes":
+      /* qiyam comes as a bare list of times, as android reads it, and the
+         reminder parser found no rows in it, so no qiyam was ever scheduled */
       guard let json = args.first as? String else { return }
-      Notifier.shared.replace(parse(json), prefix: "qiyam-")
+      qiyamTimes = parseTimes(json)
+      Notifier.shared.replace(qiyamReminders(), prefix: "qiyam-")
+
+    case "setQiyamSound":
+      qiyamChime = Chime(rawValue: args.first as? String ?? "device") ?? .device
+      Notifier.shared.replace(qiyamReminders(), prefix: "qiyam-")
 
     case "setPrayerTimes":
       guard let json = args.first as? String else { return }
       /* prayer times come as {at, name}, not the {at, t, b, s} a reminder uses:
          reading them with the reminder parser lost every name and left every
          adhan on the default sound */
-      let times = parsePrayers(json)
+      prayerRows = parsePrayers(json)
+      let times = prayerReminders()
       Notifier.shared.replace(times, prefix: "adhan-")
       shareWithWidget(times)
 
     case "setAdhanSilent":
       adhanSilent = (args.first as? Bool) ?? ((args.first as? Int) == 1)
-      /* the times were scheduled before this arrived, so they are rebuilt with
-         the sound the reader actually chose */
-      Notifier.shared.replace(lastPrayers, prefix: "adhan-")
+      /* The times were scheduled before this arrived, so they are rebuilt with
+         the sound the reader actually chose. They used to be put back exactly
+         as they were made, so the change of sound never reached them. */
+      Notifier.shared.replace(prayerReminders(), prefix: "adhan-")
+
+    case "setAdhanSound":
+      /* the address of the ordinary adhan and of the fajr, or two empty ones
+         for the phone's tone; each becomes the muadhin's clip in the bundle */
+      let plain = Notifier.adhanClip(args.first as? String ?? "")
+      let fajr = Notifier.adhanClip(args.count > 1 ? (args[1] as? String ?? "") : "")
+      guard plain != adhanClip || fajr != fajrClip else { return }
+      adhanClip = plain
+      fajrClip = fajr
+      Notifier.shared.replace(prayerReminders(), prefix: "adhan-")
 
     case "shareText":
       guard let text = args.first as? String else { return }
@@ -283,14 +307,18 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       preview?.presentPreview(animated: true)
 
     default:
-      /* setAdhanSilent, setSalawatEvery and the rest are carried in the list
-         the page already sends, so there is nothing separate to do for them */
+      /* whatever the page may ask that this wrapper does not declare */
       break
     }
   }
 
   private var adhanSilent = false
-  private var lastPrayers: [Reminder] = []
+  /* the muadhin's clips for the ordinary adhan and the fajr, nil for the tone */
+  private var adhanClip: String?
+  private var fajrClip: String?
+  private var prayerRows: [(at: Date, name: String)] = []
+  private var qiyamTimes: [Date] = []
+  private var qiyamChime: Chime = .device
   private var preview: UIDocumentInteractionController?
 
   func documentInteractionControllerViewControllerForPreview(_ c: UIDocumentInteractionController) -> UIViewController { self }
@@ -316,22 +344,46 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     }
   }
 
-  /* The prayer list is its own shape: {at, name}. Each becomes a notification
-     titled with the prayer, silent or not as the reader asked. */
-  private func parsePrayers(_ json: String) -> [Reminder] {
+  /* The prayer list is its own shape: {at, name}. It is kept as it came, and
+     the notifications are made from it whenever the sound changes. */
+  private func parsePrayers(_ json: String) -> [(at: Date, name: String)] {
     guard let data = json.data(using: .utf8),
           let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
     else { return [] }
-    lastPrayers = rows.compactMap { row in
+    return rows.compactMap { row in
       guard let ms = row["at"] as? Double else { return nil }
+      return (at: Date(timeIntervalSince1970: ms / 1000), name: row["name"] as? String ?? "الصلاة")
+    }
+  }
+
+  /* Each prayer becomes a notification titled with the prayer: silent when
+     the reader asked for silence, in the chosen muadhin's voice when there is
+     one, the fajr's clip at the fajr, and the phone's tone otherwise. */
+  private func prayerReminders() -> [Reminder] {
+    prayerRows.map { row in
+      let clip = row.name.contains("الفجر") ? fajrClip : adhanClip
       return Reminder(
-        at: Date(timeIntervalSince1970: ms / 1000),
-        title: row["name"] as? String ?? "الصلاة",
+        at: row.at,
+        title: row.name,
         text: "حان وقت الصلاة",
         chime: adhanSilent ? .silent : .device,
-        kind: "adhan")
+        kind: "adhan",
+        sound: adhanSilent ? nil : clip)
     }
-    return lastPrayers
+  }
+
+  private func parseTimes(_ json: String) -> [Date] {
+    guard let data = json.data(using: .utf8),
+          let list = try? JSONSerialization.jsonObject(with: data) as? [Double]
+    else { return [] }
+    return list.map { Date(timeIntervalSince1970: $0 / 1000) }
+  }
+
+  private func qiyamReminders() -> [Reminder] {
+    qiyamTimes.map {
+      Reminder(at: $0, title: "قيام الليل", text: "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى",
+               chime: qiyamChime, kind: "qiyam")
+    }
   }
 
   /* The page sends a list of {at, t, b, s}: when in milliseconds, a title, a
