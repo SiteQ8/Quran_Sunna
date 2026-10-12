@@ -255,11 +255,88 @@
       '<button class="btn btn-ghost btn-block" data-act="sheet-cancel" style="margin-top:8px">تراجع</button>');
   }
 
-  function empty(message, actionLabel, actionNav) {
+  /* The grip says the sheet can be pulled down, so from the grip or the title
+     the sheet follows the finger with the veil behind it lightening as it
+     goes, and let go past a quarter of its height or flicked down it leaves
+     the screen while short of that it settles back, but upward it does not
+     move and a button in the title is still only a button. */
+  function bindSheetDrag() {
+    var sheet = $('sheet');
+    var panel = sheet ? sheet.querySelector('.sheet-panel') : null;
+    if (!panel) return;
+    var EASE = 'cubic-bezier(.32, .72, 0, 1)';
+    var drag = null;
+    var swallowUntil = 0;
+    /* the moment of a touch is the event's own, which runs on whatever the
+       page's clock is set to */
+    function when(e) { return e.timeStamp || Date.now(); }
+    function pull(dy) {
+      panel.style.transform = dy ? 'translateY(' + dy + 'px)' : '';
+      var left = 1 - Math.min(1, dy / Math.max(1, panel.offsetHeight));
+      sheet.style.backgroundColor = dy ? 'rgba(10, 16, 13, ' + (0.5 * left).toFixed(3) + ')' : '';
+    }
+    panel.addEventListener('pointerdown', function (e) {
+      var t = e.target;
+      if (!t || !t.closest || t.closest('button')) return;
+      if (!t.closest('.sheet-grip, .sheet-panel > .card-head')) return;
+      drag = { y: e.clientY, dy: 0, at: when(e), v: 0, id: e.pointerId, moved: false };
+    });
+    panel.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dy = Math.max(0, e.clientY - drag.y);
+      var now = when(e);
+      if (!drag.moved) {
+        if (dy < 4) return;
+        drag.moved = true;
+        try { panel.setPointerCapture(drag.id); } catch (err) { /* the move is still heard on the panel */ }
+        panel.style.transition = 'none';
+        sheet.style.transition = 'none';
+      }
+      drag.v = (dy - drag.dy) / Math.max(1, now - drag.at);
+      drag.dy = dy;
+      drag.at = now;
+      pull(dy);
+    });
+    function release(e) {
+      if (!drag) return;
+      var d = drag;
+      drag = null;
+      if (!d.moved) return;
+      swallowUntil = when(e) + 350;
+      /* a flick is a finger still moving when it lifts, not one that came to
+         rest first */
+      var speed = when(e) - d.at > 80 ? 0 : d.v;
+      var gone = e.type !== 'pointercancel' && (d.dy > panel.offsetHeight * 0.25 || speed > 0.11);
+      panel.style.transition = 'transform .24s ' + EASE;
+      sheet.style.transition = 'background-color .24s ' + EASE;
+      if (gone) {
+        panel.style.transform = 'translateY(100%)';
+        sheet.style.backgroundColor = 'rgba(10, 16, 13, 0)';
+      } else {
+        pull(0);
+      }
+      window.setTimeout(function () {
+        if (gone) closeSheet();
+        panel.style.transition = '';
+        sheet.style.transition = '';
+        pull(0);
+      }, 240);
+    }
+    panel.addEventListener('pointerup', release);
+    panel.addEventListener('pointercancel', release);
+    /* the press that ended a pull is not also a tap on what lay under it */
+    panel.addEventListener('click', function (e) {
+      if (when(e) < swallowUntil) { e.stopPropagation(); e.preventDefault(); }
+    }, true);
+  }
+
+
+  /* an empty screen may carry the mark of what would fill it, over its words */
+  function empty(message, actionLabel, actionNav, glyph) {
     var button = actionLabel
       ? '<button class="btn btn-primary" data-go="' + esc(actionNav) + '" style="margin-top:12px">' + esc(actionLabel) + '</button>'
       : '';
-    return '<div class="empty">' + esc(message) + button + '</div>';
+    return '<div class="empty">' + (glyph ? icon(glyph) : '') + esc(message) + button + '</div>';
   }
 
   function skeleton(rows) {
@@ -292,6 +369,10 @@
       dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    /* The iPhone draws its clock and battery over the page, so it is told the
+       theme and draws them light on the dark one, where they were black on
+       black, and elsewhere there is no such handler and nothing is sent. */
+    try { window.webkit.messageHandlers.sunnati.postMessage({ fn: 'setTheme', args: [dark ? 'dark' : 'light'] }); } catch (e) { /* not the iPhone app */ }
   }
 
   /* The reader's answer wins; with no answer the phone's own setting does.
@@ -2225,9 +2306,13 @@
     var now = new Date();
     var h = Hijri.toHijri(now, adjust);
     if ($('hijri-date')) $('hijri-date').textContent = Hijri.format(h);
+    /* the day written in words, as the hijri one beside it is, since 12/10/2026
+       is read the other way round in half the world and the date fields of the
+       app wrote the same day as 10/12/2026, and without its year, which is
+       today's and kept the line from fitting a phone of three hundred and sixty
+       points */
     if ($('greg-date')) {
-      $('greg-date').textContent = h.weekday + '، ' +
-        ar(now.getDate()) + '/' + ar(now.getMonth() + 1) + '/' + ar(now.getFullYear());
+      $('greg-date').textContent = h.weekday + '، ' + ar(now.getDate()) + ' ' + GREG_MONTHS[now.getMonth()];
     }
     if ($('hijri-reset')) {
       var shift = +adjust || 0;
@@ -2287,7 +2372,9 @@
 
     var fold = $('now-fold');
     if (fold) {
-      var open = openGroups.now === true;
+      /* open unless the reader shut it: what can be done in this hour is the
+         first thing under the clock, and it was folded away behind a tally */
+      var open = openGroups.now !== false;
       fold.classList.toggle('is-open', open);
       var head = fold.querySelector('.fold-head');
       if (head) head.setAttribute('aria-expanded', open ? 'true' : 'false');
@@ -2797,18 +2884,22 @@
       chip.setAttribute('aria-selected', on ? 'true' : 'false');
     });
 
+    /* the rows stand in one card, and a skeleton or an empty word does not */
+    host.classList.remove('row-group');
     if (state.browse === 'juz') {
       if (!Mushaf.ready()) { host.innerHTML = skeleton(4); return; }
       var rows = '';
       for (var j = 1; j <= 30; j++) rows += juzRow(j);
       host.innerHTML = rows;
+      host.classList.add('row-group');
       return;
     }
 
     var needle = state.filter.trim();
     var list = SURAHS.filter(function (m) { return matchesFilter(m, needle); });
-    if (!list.length) { host.innerHTML = empty('لا سورة بهذا الاسم'); return; }
+    if (!list.length) { host.innerHTML = empty('لا سورة بهذا الاسم', null, null, 'search'); return; }
     host.innerHTML = list.map(surahRow).join('');
+    host.classList.add('row-group');
   }
 
   function renderResume() {
@@ -3168,10 +3259,17 @@
       showInShade(sitting, sub, true);
     }
     var player = $('player');
-    if (player) player.classList.add('is-open');
+    if (player) {
+      player.classList.add('is-open');
+      /* the previous and the next verse are a walk's alone: a single verse, a
+         whole surah in one recording and the radio have nothing to step to */
+      player.classList.toggle('can-step', !!state.recite);
+    }
     markPlayerToggle();
     if ($('player-title')) $('player-title').textContent = title;
     if ($('player-sub')) $('player-sub').textContent = sub || '';
+    /* and the page keeps its foot clear of it, as it does for the banner */
+    if (player) document.documentElement.style.setProperty('--player-room', player.offsetHeight + 'px');
     var play = audio.play();
     if (play && play.catch) play.catch(function () { toast('تعذّر التشغيل، فتأكد من الاتصال'); });
   }
@@ -3288,12 +3386,28 @@
     try { window.scrollTo({ top: 0, behavior: glide() }); } catch (e) { window.scrollTo(0, 0); }
   }
 
+  /* The arrow shows while the reader scrolls back up, which is when it is
+     wanted, and steps aside while they read on down or once the page has
+     rested a moment: standing there for good it lay over a switch or a button
+     on most of the long screens. */
   function watchScrollPosition() {
     var btn = $('to-top');
     if (!btn) return;
-    var show = function () { btn.hidden = window.scrollY < 400; };
+    var last = window.scrollY;
+    var rest = null;
+    var show = function () {
+      var y = window.scrollY;
+      var up = y < last;
+      last = y;
+      /* the bars of the mushaf hold under the clock once the page has moved
+         past its top margin, and only then is the strip over them painted */
+      document.documentElement.classList.toggle('is-scrolled', y > 18);
+      window.clearTimeout(rest);
+      btn.hidden = y < 400 || !up;
+      if (!btn.hidden) rest = window.setTimeout(function () { btn.hidden = true; }, 2500);
+    };
     window.addEventListener('scroll', show, { passive: true });
-    show();
+    btn.hidden = true;
   }
 
   /* ---------------- أدعية القرآن بمواضيعها ---------------- */
@@ -3424,6 +3538,7 @@
     state.playing = null;
     var player = $('player');
     if (player) player.classList.remove('is-open');
+    document.documentElement.style.setProperty('--player-room', '0px');
     markPlayerToggle();
   }
 
@@ -5271,7 +5386,7 @@
   }
 
   function renderTextHits(host, hits, needle) {
-    if (!hits.length) { host.innerHTML = empty('لا نتيجة في هذا المجال'); return; }
+    if (!hits.length) { host.innerHTML = empty('لا نتيجة في هذا المجال', null, null, 'search'); return; }
     host.innerHTML = hits.map(function (hit) {
       var target = hit.key.indexOf('azkar:') === 0 ? ' data-azkar="' + esc(hit.key.slice(6)) + '"'
         : hit.key.indexOf('hisn:') === 0 ? ' data-hisn="' + esc(hit.key.slice(5)) + '"'
@@ -5302,6 +5417,17 @@
       if (out.length >= 4) break;
     }
     return out;
+  }
+
+  /* A blank screen under the field was all a search showed until two letters
+     were typed, so it offers six words of the mushaf to start from, each of
+     them found in it. */
+  var SEARCH_WORDS = ['الصبر', 'الرحمة', 'التوبة', 'الجنة', 'الصلاة', 'التقوى'];
+
+  function searchSuggestions() {
+    return '<div class="chip-grid search-words" style="--cols:3">' + SEARCH_WORDS.map(function (w) {
+      return '<button class="chip" data-suggest="' + esc(w) + '">' + icon('search') + esc(w) + '</button>';
+    }).join('') + '</div>';
   }
 
   function renderSearch() {
@@ -5336,8 +5462,8 @@
     if (!Mushaf.ready()) { host.innerHTML = skeleton(3); return; }
     var needle = state.query.trim();
     if (needle.length < 2) {
-      if ($('search-count')) $('search-count').textContent = 'اكتب حرفين على الأقل';
-      host.innerHTML = '';
+      if ($('search-count')) $('search-count').textContent = 'اكتب حرفين على الأقل، أو ابدأ بكلمة من هذه';
+      host.innerHTML = searchSuggestions();
       return;
     }
 
@@ -5361,7 +5487,7 @@
         '<span class="row-note">' + note + '</span></span></button>';
     }).join('');
 
-    if (!hits.length && !named.length) { host.innerHTML = empty('لم نجد هذه الكلمة في المصحف'); return; }
+    if (!hits.length && !named.length) { host.innerHTML = empty('لم نجد هذه الكلمة في المصحف', null, null, 'search'); return; }
     if (!hits.length) { host.innerHTML = surahRows; return; }
 
     host.innerHTML = surahRows + hits.map(function (hit) {
@@ -5378,8 +5504,12 @@
     var host = $('bookmark-list');
     if (!host) return;
     var list = Store.bookmarks();
+    /* the way to the mushaf belongs to an empty list, and under a full one it
+       was a loud button for something the tabs already do */
+    var way = document.querySelector('#v-bookmarks > .btn');
+    if (way) way.hidden = list.length > 0;
     if (!list.length) {
-      host.innerHTML = empty('لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها');
+      host.innerHTML = empty('لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها', null, null, 'bookmark');
       return;
     }
     /* the four kinds, each its own group with its colour, in the order of the marks */
@@ -5848,14 +5978,37 @@
     { nav: 'about', icon: 'info', name: 'عن التطبيق', note: 'المصادر وما يحتاج إنترنت' }
   ];
 
+  /* Sixteen entries in one stack, with the settings the fourteenth, are four
+     shelves under their names instead, worship, the Quran and the hadith, the
+     hours and the places, and the app itself last where a phone keeps it, and
+     each keeps the order the list gives it while an entry no shelf names goes
+     on the first rather than going missing. */
+  var MORE_SHELVES = [
+    { title: 'العبادة', keys: ['umrah', 'prayers', 'azkar', 'dua', 'ruqyah'] },
+    { title: 'القرآن والحديث', keys: ['khatma', 'bookmarks', 'radio', 'hadith'] },
+    { title: 'المواقيت والأماكن', keys: ['qibla', 'mosques', 'timetable', 'calendar'] },
+    { title: 'التطبيق', keys: ['reminders', 'settings', 'about'] }
+  ];
+
   function renderMore() {
     var host = $('more-list');
     if (!host) return;
-    host.innerHTML = MORE_LINKS.map(function (l) {
+    var row = function (l) {
       return '<button class="row" ' + (l.act ? 'data-act="' + esc(l.act) + '"' : 'data-go="' + esc(l.nav) + '"') + '>' +
         '<span class="row-mark">' + icon(l.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(l.name) + '</span>' +
         '<span class="row-note">' + esc(l.note) + '</span></span></button>';
+    };
+    var shelved = {};
+    MORE_SHELVES.forEach(function (shelf) { shelf.keys.forEach(function (k) { shelved[k] = true; }); });
+    host.innerHTML = MORE_SHELVES.map(function (shelf, i) {
+      var links = MORE_LINKS.filter(function (l) {
+        var key = l.nav || l.act;
+        return shelf.keys.indexOf(key) !== -1 || (i === 0 && !shelved[key]);
+      });
+      if (!links.length) return '';
+      return '<h2 class="section-title">' + esc(shelf.title) + '</h2>' +
+        '<div class="row-group">' + links.map(row).join('') + '</div>';
     }).join('');
     if ($('version-line')) $('version-line').textContent = 'النسخة ' + ar(VERSION) + packageLine();
   }
@@ -7125,6 +7278,10 @@
     if ($('conv-hd') && !$('conv-hd').value) $('conv-hd').value = h.d;
     if ($('conv-hy') && !$('conv-hy').value) $('conv-hy').value = h.y;
     hm.value = String(h.m);
+    /* the month was set after its button was drawn, so the button stood empty
+       while the list beneath it had the month ticked */
+    syncPicker(hm);
+    syncDate($('conv-greg'));
     convertGregorian();
     convertHijri();
   }
@@ -7456,8 +7613,43 @@
     }
   }
 
+  /* A date field is drawn by the phone in the phone's own language and theme,
+     so it read mm/dd/yyyy on an english phone and its mark was black on the
+     dark theme, and it stays where it is and a tap still opens the phone's own
+     calendar, but over it lies the date in words as the home screen writes
+     the day. */
+  function enhanceDate(input) {
+    if (!input || input.dataset.picked === '1') return;
+    input.dataset.picked = '1';
+    var wrap = document.createElement('span');
+    wrap.className = 'datepick';
+    var face = document.createElement('span');
+    face.className = 'datepick-face';
+    face.setAttribute('aria-hidden', 'true');
+    input.parentNode.insertBefore(wrap, input);
+    wrap.appendChild(input);
+    wrap.appendChild(face);
+    input.addEventListener('input', function () { syncDate(input); });
+    input.addEventListener('change', function () { syncDate(input); });
+    syncDate(input);
+  }
+
+  function syncDate(input) {
+    var wrap = input ? input.parentNode : null;
+    if (!wrap || !wrap.classList.contains('datepick')) return;
+    var face = wrap.querySelector('.datepick-face');
+    var parts = String(input.value || '').split('-');
+    var date = parts.length === 3 ? new Date(+parts[0], +parts[1] - 1, +parts[2]) : null;
+    var known = date && !isNaN(date.getTime());
+    face.classList.toggle('is-empty', !known);
+    face.innerHTML = '<span>' + esc(known
+      ? Hijri.WEEKDAYS[date.getDay()] + '، ' + ar(date.getDate()) + ' ' + GREG_MONTHS[date.getMonth()] + ' ' + ar(date.getFullYear())
+      : 'اختر يوماً') + '</span>' + icon('calendar');
+  }
+
   function enhanceSelects() {
     document.querySelectorAll('input[type="time"]').forEach(enhanceTime);
+    document.querySelectorAll('input[type="date"]').forEach(enhanceDate);
     document.querySelectorAll('select').forEach(enhanceSelect);
   }
 
@@ -7539,6 +7731,13 @@
     if (!el) return;
     el.setAttribute('aria-checked', on ? 'true' : 'false');
     if (on) el.classList.add('is-on'); else el.classList.remove('is-on');
+    /* a reminder's row knows when it is off, and its sound and its hour are
+       put out of sight until the switch brings them back */
+    var row = el.parentNode;
+    if (!row || !row.children) return;
+    for (var i = 0; i < row.children.length; i++) {
+      if (row.children[i].classList.contains('remind-controls')) { row.classList.toggle('is-off', !on); return; }
+    }
   }
 
   /* The reminder says the fast is tomorrow, but not which fast. Monday and
@@ -8342,6 +8541,13 @@
       return;
     }
 
+    var word = target.closest('[data-suggest]');
+    if (word) {
+      state.query = word.getAttribute('data-suggest');
+      renderSearch();
+      return;
+    }
+
     var station = target.closest('[data-station]');
     if (station && typeof RADIO_STATIONS !== 'undefined') {
       var s = RADIO_STATIONS[+station.getAttribute('data-station')];
@@ -8963,6 +9169,7 @@
     bind('banner-close', 'click', hideBanner);
     bind('sheet-close', 'click', closeSheet);
     bind('sheet', 'click', function (e) { if (e.target && e.target.id === 'sheet') closeSheet(); });
+    bindSheetDrag();
 
     bind('player-stop', 'click', stopRecite);
     bind('player-prev', 'click', function () { stepRecite(-1); });

@@ -2835,17 +2835,24 @@ test('the sunnah card on the home view folds with its own tally', () => {
   const { win, doc } = boot();
   const fold = doc.getElementById('now-fold');
   assert.ok(fold, 'the home sunnah card should be a folding group');
-  assert.ok(!fold.classList.contains('is-open'), 'it starts folded away');
+  /* what can be done in this hour is the first thing under the clock, so it
+     starts open, and a reader who shuts it finds it shut */
+  assert.ok(fold.classList.contains('is-open'), 'it starts open');
   const tally = doc.getElementById('now-tally');
   assert.match(tally.textContent, /^[0-9]+ من [0-9]+$/, 'got ' + tally.textContent);
 
   click(win, fold.querySelector('.fold-head'));
-  assert.ok(doc.getElementById('now-fold').classList.contains('is-open'));
-  assert.strictEqual(fold.querySelector('.fold-head').getAttribute('aria-expanded'), 'true');
+  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'));
+  assert.strictEqual(fold.querySelector('.fold-head').getAttribute('aria-expanded'), 'false');
 
   win.App.render.home();
+  assert.ok(!doc.getElementById('now-fold').classList.contains('is-open'),
+    'it should stay shut when the home view is drawn again');
+
+  click(win, fold.querySelector('.fold-head'));
+  win.App.render.home();
   assert.ok(doc.getElementById('now-fold').classList.contains('is-open'),
-    'it should stay open when the home view is drawn again');
+    'and open once opened again');
 });
 
 test('the tally on the home card follows what is ticked', () => {
@@ -4050,15 +4057,27 @@ test('the suffix after a time is bound to its figures', () => {
 test('a previous button points right and a next button points left, as arabic reads', () => {
   const { doc } = boot();
   const arrow = function (id) { return doc.querySelector('#' + id + ' use').getAttribute('href'); };
-  ['reader', 'tt', 'cal', 'player'].forEach(function (pair) {
+  ['tt', 'cal'].forEach(function (pair) {
     assert.strictEqual(arrow(pair + '-prev'), '#i-step-prev', pair + '-prev should point right, back along the reading');
     assert.strictEqual(arrow(pair + '-next'), '#i-step-next', pair + '-next should point left, onward');
   });
+  /* the surahs step with two chevrons the same ways, since beside «back» a
+     single one was the same mark twice */
+  assert.strictEqual(arrow('reader-prev'), '#i-surah-prev');
+  assert.strictEqual(arrow('reader-next'), '#i-surah-next');
+  /* and the player's steps are drawn as playback is on every phone, the
+     previous on the left and the next on the right */
+  assert.strictEqual(arrow('player-prev'), '#i-media-prev');
+  assert.strictEqual(arrow('player-next'), '#i-media-next');
   /* and the sprite really draws them that way */
   const prev = doc.querySelector('#i-step-prev path').getAttribute('d');
   const next = doc.querySelector('#i-step-next path').getAttribute('d');
   assert.ok(/m10 5 7 7/.test(prev), 'i-step-prev is the right pointing chevron');
   assert.ok(/m14 5-7 7/.test(next), 'i-step-next is the left pointing chevron');
+  assert.ok(/m6 6 6 6/.test(doc.querySelector('#i-surah-prev path').getAttribute('d')), 'i-surah-prev points right');
+  assert.ok(/m18 6-6 6/.test(doc.querySelector('#i-surah-next path').getAttribute('d')), 'i-surah-next points left');
+  assert.ok(/M18\.5 5\.5 9 12/.test(doc.querySelector('#i-media-prev path').getAttribute('d')), 'i-media-prev points left');
+  assert.ok(/M5\.5 5\.5 15 12/.test(doc.querySelector('#i-media-next path').getAttribute('d')), 'i-media-next points right');
 });
 
 test('a time in the month table keeps its suffix on the line', () => {
@@ -4264,7 +4283,7 @@ test('a nudged hijri date is marked as such and one tap puts it back', () => {
 
 test('the converter shows a hijri date on one line, day then month then year, with room for the month', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  assert.match(css, /\.convert-hijri \{[^}]*grid-template-columns:\s*76px 1fr 100px/, 'the month takes the middle, the numbers their own columns');
+  assert.match(css, /\.convert-hijri \{[^}]*grid-template-columns:\s*64px 1fr 80px/, 'the month takes the middle, the numbers their own columns');
   assert.match(css, /\.convert-hijri \.picker, \.convert-hijri \.select, \.convert-hijri \.field \{[^}]*max-width:\s*none/, 'the general cap on a select would narrow the month');
   const { doc } = boot();
   const row = doc.querySelector('.convert-hijri');
@@ -6235,10 +6254,12 @@ test('the launcher icon is the app\'s own artwork, whole inside the safe middle'
 
 /* ---------------- every arrow points the way the language runs ---------------- */
 
-test('the play mark points the way arabic runs, and every step arrow agrees with its label', () => {
+test('the play mark points as playback does on every phone, and every step arrow agrees with its label', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
-  /* the triangle opens toward the left, as the reading does */
-  assert.match(html, /<g id="i-play"><path d="M17 4\.5 5 12 17 19\.5z"\/><\/g>/, 'a play mark pointing right reads backwards in an arabic interface');
+  /* The triangle points right in every language, as the phone's own player
+     draws it: playback is not mirrored for a right to left reading, on
+     Android or on the iPhone, and a triangle pointing left read as rewind. */
+  assert.match(html, /<g id="i-play"><path d="M7 4\.5 19 12 7 19\.5z"\/><\/g>/, 'the play mark points right');
   /* every direction arrow is a plain chevron now; the return arrow was a long
      tailed arrow that read as «forward» rather than «back», and a chevron
      pointing the way the text runs is the plainer sign of going back */
@@ -6247,11 +6268,11 @@ test('the play mark points the way arabic runs, and every step arrow agrees with
   assert.match(html, /<g id="i-back"><path d="m9 6 6 6-6 6"\/><\/g>/, 'the return arrow is a right chevron');
 
   const { win, doc } = boot();
-  const drawn = { 'i-back': 'right', 'i-step-prev': 'right', 'i-step-next': 'left', 'i-next': 'left', 'i-play': 'left' };
+  const drawn = { 'i-back': 'right', 'i-step-prev': 'right', 'i-step-next': 'left', 'i-surah-prev': 'right', 'i-surah-next': 'left', 'i-next': 'left', 'i-play': 'right' };
   const wanted = function (label) {
     if (/سابق|رجوع|السابقة/.test(label)) return 'right';
     if (/تالي|التالية/.test(label)) return 'left';
-    if (/اسمع|تشغيل|استماع/.test(label)) return 'left';
+    if (/اسمع|تشغيل|استماع/.test(label)) return 'right';
     return null;
   };
   const views = ['home', 'quran', 'reader', 'page', 'azkar', 'hisn', 'tracker', 'prayers', 'more', 'radio', 'calendar', 'timetable', 'settings'];
@@ -6411,7 +6432,7 @@ test('the arrow to the top waits until there is something to come back from', ()
   assert.match(css, /\.to-top \{[^}]*position:\s*fixed/, 'it stays in reach while the screen moves');
   assert.match(css, /\.to-top \{[^}]*width:\s*48px/, 'and is a full thumb');
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.ok(/btn\.hidden = window\.scrollY < 400/.test(app), 'it shows once the reader has come some way down');
+  assert.ok(/btn\.hidden = y < 400 \|\| !up;/.test(app), 'it shows once the reader has come some way down, on the way back up');
 });
 
 test("the qur'an's own supplications are gathered by theme, and read from the mushaf", () => {
@@ -7628,12 +7649,14 @@ test('the reminder is not pushed away again every time the app is opened', () =>
     'and after one rings the next is armed outright');
 });
 
-test('every fold starts closed, so a screen shows its headings rather than its contents', () => {
+test('every fold but the hour\'s on the home starts closed, so a screen shows its headings rather than its contents', () => {
   const { win, doc } = boot();
   const open = function (view) { return doc.querySelectorAll('#v-' + view + ' .fold.is-open').length; };
   const all = function (view) { return doc.querySelectorAll('#v-' + view + ' .fold').length; };
   assert.ok(all('home') >= 1);
-  assert.strictEqual(open('home'), 0, 'the sunnahs of the hour are folded away');
+  /* all but the sunnahs of the hour on the home, which are what the hour
+     asks for and stand open under the clock */
+  assert.strictEqual(open('home'), 1, 'the sunnahs of the hour are open');
   win.App.go('tracker');
   assert.ok(all('tracker') > 5, 'many groups, ' + all('tracker'));
   assert.strictEqual(open('tracker'), 0);
@@ -7645,10 +7668,10 @@ test('every fold starts closed, so a screen shows its headings rather than its c
 test('a fold opens on its own head, whichever screen it is on', () => {
   const { win, doc } = boot();
   click(win, doc.querySelector('#v-home .fold-head'));
-  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 1);
-  assert.strictEqual(doc.querySelector('#v-home .fold-head').getAttribute('aria-expanded'), 'true');
+  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 0);
+  assert.strictEqual(doc.querySelector('#v-home .fold-head').getAttribute('aria-expanded'), 'false');
   click(win, doc.querySelector('#v-home .fold-head'));
-  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 0, 'and closes again');
+  assert.strictEqual(doc.querySelectorAll('#v-home .fold.is-open').length, 1, 'and opens again');
 
   win.App.go('tracker');
   click(win, doc.querySelectorAll('#v-tracker .fold-head')[2]);
