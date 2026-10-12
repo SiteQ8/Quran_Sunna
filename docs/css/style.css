@@ -46,13 +46,30 @@
 
   --danger: #b23c3c;
 
+  /* the seasons of the calendar, each in a colour of its own, which the dot
+     in the month and the mark in the list both wear */
+  --occ-eid: #b8860b;
+  --occ-fast: #2a72ad;
+  --occ-month: #1e6f47;
+  --occ-night: #5b4a99;
+  --occ-weekly: #8b5a3c;
+
+  /* the native controls, the date fields and their calendars, are drawn in
+     the theme the page is in */
+  color-scheme: light;
+
   /* type */
   --ui: 'IBM Plex Sans Arabic', 'Tajawal', system-ui, sans-serif;
   --naskh: 'Amiri', 'Noto Naskh Arabic', serif;
   --quran: 'Amiri Quran', 'Amiri', serif;
 
-  --step--1: .74rem;
-  --step-0: .86rem;
+  /* Twelve pixels is the least any word is drawn at, thirteen the least for a
+     line of small print and fifteen for the words of a control, because Arabic
+     needs its dots and its marks to read and the tab names, the names of the
+     five windows and the badges were nine and ten. */
+  --step--2: .75rem;
+  --step--1: .8125rem;
+  --step-0: .9375rem;
   --step-1: 1rem;
   --step-2: 1.22rem;
   --step-3: 1.55rem;
@@ -66,7 +83,8 @@
   --s5: 24px;
   --s6: 32px;
 
-  --r-md: 20px;
+  /* one corner for every card, panel and fold, so a stack of them lines up */
+  --r-md: 16px;
   --r-sm: 10px;
   --r: 16px;
   --r-lg: 22px;
@@ -112,6 +130,13 @@
   --w-isha: #8a79c9;
   --w-isha-ink: #9c89e3;
   --danger: #e07272;
+  /* the seasons lightened for the night ground: the day's colours fell to two
+     to one against the card, and the dots of the month all but vanished */
+  --occ-fast: #6aa8de;
+  --occ-month: #5cb88a;
+  --occ-night: #a99be0;
+  --occ-weekly: #c99a7a;
+  color-scheme: dark;
   --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 18px rgba(0, 0, 0, .3);
   --shadow-lift: 0 2px 6px rgba(0, 0, 0, .35), 0 14px 32px rgba(0, 0, 0, .45);
 }
@@ -131,7 +156,9 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
   line-height: 1.6;
-  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--banner-room, 0px));
+  /* and the player, while it is open, keeps the foot of the page clear of it:
+     it lay over the last button of a surah, «أنهيت هذه السورة» */
+  padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--banner-room, 0px) + var(--player-room, 0px));
   /* The page is drawn edge to edge, so on a phone with a notch or a dynamic
      island the first thing on the screen sits underneath it. Android has no
      such cutout and never showed this; iOS hid the date and the two head
@@ -187,7 +214,9 @@ button { background: none; border: none; cursor: pointer; }
 @keyframes view-in { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 
 .view-head {
-  margin: 0 calc(var(--s2) * -1) var(--s4);
+  /* on the same two edges as every card beneath it: it reached eight points
+     past them on either side, and the edges stepped in and out down the page */
+  margin: 0 0 var(--s4);
   padding: var(--s3) var(--s3) var(--s3);
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--raised) 82%, transparent);
@@ -205,7 +234,8 @@ button { background: none; border: none; cursor: pointer; }
 /* By class, not by :has(): that selector is missing on older android browsers
    and the rule did nothing there, so the triangle was drawn hollow and read as
    a back arrow. The :has form is kept for any icon built before this. */
-.ic-play, .icon:has(use[href='#i-play']) { fill: currentColor; stroke: none; }
+/* and the player's two steps are solid as the triangle between them is */
+.ic-play, .ic-media-prev, .ic-media-next, .icon:has(use[href='#i-play']) { fill: currentColor; stroke: none; }
 
 /* ---------- tab bar ---------- */
 
@@ -222,7 +252,7 @@ button { background: none; border: none; cursor: pointer; }
 
 .tab {
   flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; color: var(--ink-3); font-size: .6rem; position: relative; transition: color .18s;
+  gap: 3px; color: var(--ink-3); font-size: var(--step--2); position: relative; transition: color .18s;
 }
 .tab .icon { width: 22px; height: 22px; }
 .tab[aria-current='page'] { color: var(--accent-ink); }
@@ -239,11 +269,14 @@ button { background: none; border: none; cursor: pointer; }
    the reading rather than running under it. */
 .clock {
   text-align: center; padding: var(--s3) var(--s3) var(--s4);
-  margin: 0 calc(var(--s2) * -1) var(--s4);
+  /* on the edges of the cards below it, as the page heads are */
+  margin: 0 0 var(--s4);
   border-radius: var(--r-md);
   background: color-mix(in srgb, var(--raised) 88%, transparent);
   box-shadow: var(--shadow);
   position: relative; z-index: 1;
+  /* the strip of the six windows asks how wide the card is, below */
+  container-type: inline-size;
 }
 
 .clock-date {
@@ -255,7 +288,7 @@ button { background: none; border: none; cursor: pointer; }
    on it puts the reckoning back. Silent shifting is how a day gets lost. */
 .date-adjusted {
   display: inline-block; margin-inline-start: 6px; padding: 1px 8px; border-radius: 999px;
-  font-size: .62rem; font-weight: 700; background: color-mix(in srgb, #b8860b 18%, transparent);
+  font-size: var(--step--2); font-weight: 700; background: color-mix(in srgb, #b8860b 18%, transparent);
   color: #7d6124; vertical-align: middle;
 }
 [data-theme='dark'] .date-adjusted { color: #e0c070; }
@@ -289,12 +322,20 @@ button { background: none; border: none; cursor: pointer; }
   flex: 1; text-align: center; padding: var(--s2) 2px; border-radius: var(--r-sm);
   border: 1px solid transparent; transition: background .2s, border-color .2s;
 }
-.window-name { font-size: .62rem; color: var(--ink-2); }
+.window-name { font-size: var(--step--2); color: var(--ink-2); }
 .window-time {
   font-size: var(--step--1); font-weight: 600; direction: ltr;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
-.window-time .ampm { font-size: .72em; font-weight: 600; margin-inline-start: 2px; }
+.window-time .ampm { font-size: .8em; font-weight: 600; margin-inline-start: 2px; }
+/* The six windows share one line while their words fit it, but asked for
+   larger text in the phone's settings the words outgrow it, and at half again
+   the size the strip ran past the card and at four fifths more the whole home
+   moved sideways, so then it becomes two rows of three. */
+@container (max-width: 18.5rem) {
+  .windows { flex-wrap: wrap; row-gap: 4px; }
+  .windows > .window { flex: 1 0 calc((100% - 4px) / 3); }
+}
 .window.is-now { background: var(--accent-wash); border-color: var(--accent); }
 .window.is-now .window-name { color: var(--accent-ink); }
 /* A prayer already passed is quieter, but a person still reads it to check the
@@ -331,7 +372,7 @@ button { background: none; border: none; cursor: pointer; }
 
 /* The reading under the compass, on its own ground. */
 .compass-panel {
-  margin: var(--s3) calc(var(--s2) * -1) 0; padding: var(--s3);
+  margin: var(--s3) 0 0; padding: var(--s3);
   border-radius: var(--r-md); text-align: center;
   background: color-mix(in srgb, var(--raised) 88%, transparent);
 }
@@ -379,7 +420,7 @@ button { background: none; border: none; cursor: pointer; }
 .setting-note { display: block; line-height: 1.7; }
 .card > .setting-note { padding: var(--s2) 0 0; }
 
-.fold-source { font-size: .62rem; color: var(--ink-3); margin: 2px 0 var(--s2); }
+.fold-source { font-size: var(--step--2); color: var(--ink-3); margin: 2px 0 var(--s2); }
 
 /* the mark beside its name, on the about page and the banner */
 .brand-card { display: flex; align-items: center; gap: var(--s3); }
@@ -450,6 +491,13 @@ html.has-sky .arc-wrap { cursor: pointer; }
 }
 .skyview.is-open { opacity: 1; }
 .skyview[hidden] { display: none; }
+/* The words stand on the lower part of a painting, which by day is pale sea
+   and pale sky where white measured under two to one, so a shade rises from
+   the foot behind them and they read by day as they do by night. */
+.skyview::after {
+  content: ''; position: absolute; inset: auto 0 0 0; height: 58%; z-index: 1; pointer-events: none;
+  background: linear-gradient(to top, rgba(6, 18, 36, .6), rgba(6, 18, 36, 0));
+}
 .skyview:focus { outline: none; }
 .skyview-scene {
   position: absolute; top: 0; left: 0; height: 100%;
@@ -462,17 +510,17 @@ html.has-sky .arc-wrap { cursor: pointer; }
 .skyview-over { overflow: visible; }
 .skyview-text {
   position: absolute; inset-inline: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 13vh);
-  text-align: center; pointer-events: none;
+  text-align: center; pointer-events: none; z-index: 2;
   text-shadow: 0 1px 18px rgba(0, 0, 0, .45), 0 1px 3px rgba(0, 0, 0, .35);
 }
 .skyview-label { font-size: var(--step-0); opacity: .85; }
 .skyview-name { font-size: var(--step-3); font-weight: 600; margin-top: 2px; }
 .skyview-count { font-size: clamp(44px, 13vw, 84px); font-weight: 300; letter-spacing: .02em; direction: ltr; margin-top: 4px; font-variant-numeric: tabular-nums; }
-.skyview-date { font-size: var(--step--1); opacity: .8; margin-top: 8px; }
-.skyview-greg { font-size: var(--step--1); opacity: .7; margin-top: 2px; }
+.skyview-date { font-size: var(--step--1); opacity: .92; margin-top: 8px; }
+.skyview-greg { font-size: var(--step--1); opacity: .85; margin-top: 2px; }
 .skyview-hint {
   position: absolute; inset-inline: 0; bottom: calc(env(safe-area-inset-bottom, 0px) + 22px);
-  margin: 0; text-align: center; font-size: var(--step--1); opacity: .5; pointer-events: none;
+  margin: 0; text-align: center; font-size: var(--step--1); opacity: .75; pointer-events: none; z-index: 2;
   text-shadow: 0 1px 8px rgba(0, 0, 0, .5);
 }
 /* on a wide screen the shore sits lower in the frame, so the words go
@@ -566,6 +614,10 @@ html.has-sky .arc-wrap { cursor: pointer; }
 .page-foot-num { padding-bottom: 13px; }
 .page-nav { display: flex; gap: var(--s2); margin-top: var(--s3); }
 .page-nav .btn { flex: 1; }
+/* the two turns of the page take the room, and the random page and the
+   reading mode are squares beside them: the random page, pressed least, had
+   the widest place on the bar */
+#page-random, #page-autoscroll { flex: 0 0 48px; padding: 0; }
 .page-nav .btn:disabled { opacity: .4; }
 
 .goto-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: var(--s3); }
@@ -602,17 +654,21 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .prayer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
 .prayer-stat { text-align: center; padding: 10px 4px; border-radius: var(--r-sm); background: var(--sunken); }
 .prayer-stat b { display: block; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
-.prayer-stat span { font-size: .62rem; color: var(--ink-3); }
+.prayer-stat span { font-size: var(--step--2); color: var(--ink-3); }
 
 .prayer-grid { display: grid; gap: 3px; }
 .pg-row { display: grid; grid-template-columns: 34px repeat(5, 1fr); gap: 3px; align-items: center; }
-.pg-head span { font-size: .6rem; color: var(--ink-3); text-align: center; }
-.pg-day { font-size: .62rem; color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; }
+.pg-head span { font-size: var(--step--2); color: var(--ink-3); text-align: center; }
+.pg-day { font-size: var(--step--2); color: var(--ink-3); font-variant-numeric: tabular-nums; text-align: center; }
 .pg { display: block; width: 100%; height: 14px; border-radius: 4px; background: var(--sunken); border: 0; padding: 0; }
 .pg.jamaah { background: var(--accent-solid); }
 .pg.ontime { background: color-mix(in srgb, var(--accent-solid) 60%, var(--raised)); }
 .pg.late { background: var(--gold); }
-.pg.missed { background: var(--danger, #b3261e); }
+/* A prayer missed is an empty cell ringed in red rather than a filled one,
+   because filled it was the same red as a prayer in congregation in both
+   themes and the best and the worst of a month read alike, and the legend
+   wears the same ring. */
+.pg.missed { background: transparent; box-shadow: inset 0 0 0 2px var(--danger, #b3261e); }
 .pg-row.is-today .pg-day { color: var(--accent-ink); font-weight: 700; }
 .pg-row.is-today .pg { outline: 1px solid var(--accent-solid); outline-offset: 1px; }
 .prayer-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: var(--s3); }
@@ -621,7 +677,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 #reader-save.is-kept { color: var(--accent-ink); border-color: var(--accent-solid); }
 /* on a narrow phone the bar has room for the icon alone; the state shows by
    the icon and the colour, and the label reads it out */
-@media (max-width: 430px) { .reader-save-word { display: none; } #reader-save { width: 48px; padding: 0; } }
+/* and it keeps its square however narrow the phone: at 360 it was the one
+   control squeezed, to forty points, below a thumb */
+@media (max-width: 430px) { .reader-save-word { display: none; } #reader-save { width: 44px; padding: 0; flex: none; } }
+/* and under three hundred and eighty points «استمع» keeps its word and drops
+   its mark, which otherwise ran into the word */
+@media (max-width: 380px) { #reader-play .icon { display: none; } }
 
 /* ---------- صفة العمرة ---------- */
 
@@ -634,8 +695,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* the arrow back to the top of a long screen */
 .to-top {
   /* above the tab bar and its safe-area inset alike: without the inset the
-     button sat inside the bar on any iPhone with a home indicator */
-  position: fixed; inset-inline-end: calc(14px + var(--sal)); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + 16px); z-index: 40;
+     button sat inside the bar on any iPhone with a home indicator, and above
+     the player too while something sounds, which used to cover it */
+  position: fixed; inset-inline-end: calc(14px + var(--sal)); bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--player-room, 0px) + 16px); z-index: 40;
   width: 48px; height: 48px; border-radius: 50%; display: grid; place-items: center;
   background: var(--raised); color: var(--accent-ink); border: 1px solid var(--line);
   box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
@@ -684,11 +746,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .map-pin .icon { width: 18px; height: 18px; transform: rotate(45deg); }
 .map-me { position: absolute; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%;
   background: #2f7fc0; border: 3px solid #fff; box-shadow: 0 0 0 2px rgba(47,127,192,.4); }
-.map-zoom { position: absolute; inset-inline-end: 10px; top: 10px; width: 40px; height: 40px;
+/* a thumb's width each, with eight points between: they were forty */
+.map-zoom { position: absolute; inset-inline-end: 10px; top: 10px; width: 44px; height: 44px;
   border-radius: var(--r-sm); background: var(--raised); border: 1px solid var(--line);
   color: var(--ink); font-size: 1.3rem; font-weight: 700; line-height: 1; }
-.map-zoom.map-out { top: 58px; }
-.map-zoom.map-me-btn { top: 106px; }
+.map-zoom.map-out { top: 62px; }
+.map-zoom.map-me-btn { top: 114px; }
 .map-pin.is-on { background: var(--gold); color: #16241c; transform: rotate(-45deg) scale(1.18); }
 .map-chosen { display: flex; align-items: center; gap: var(--s3); margin: var(--s3) 0 0;
   padding: var(--s2) var(--s3); background: var(--sunken); border-radius: var(--r-sm); }
@@ -726,7 +789,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 .sheet-tools { display: flex; gap: 6px; margin-top: var(--s3); }
 .sheet-tools .btn { flex: 1 1 0; flex-direction: column; gap: 4px; height: auto; min-height: 58px;
-  padding: 8px 4px; font-size: .74rem; }
+  padding: 8px 4px; font-size: var(--step--2); }
 .sheet-tools .icon { width: 18px; height: 18px; }
 
 /* Choices of equal width, laid in a grid rather than pills of every size
@@ -767,7 +830,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .topic-count {
   flex: none; min-width: 28px; height: 24px; padding: 0 7px; border-radius: 999px;
   display: grid; place-items: center; background: var(--accent-wash); color: var(--accent-ink);
-  font-size: .72rem; font-weight: 700; font-variant-numeric: tabular-nums;
+  font-size: var(--step--2); font-weight: 700; font-variant-numeric: tabular-nums;
 }
 /* A supplication and the button that sends it: the button sits at the end of
    the line, and the room kept for it is at that same end, so no word of the
@@ -795,9 +858,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   /* five controls on the reader's bar: the icons take the least a thumb
      allows, and a button that carries a word drops it */
   /* six controls on one line: each icon takes the least a thumb allows, and a
-     button that carries a word drops it */
-  .reader-bar { gap: 5px; }
-  .bar-word { display: none; }
+     button that carries a word drops it, but the page's own bar keeps its two
+     words since the next page is the press made most and it was the bare
+     arrow while «السابقة» kept its word on the other side */
+  /* said as a value the bar's own rule reads, since that rule comes later in
+     the sheet and its eight points always won over these five */
+  .reader-bar { --bar-gap: 5px; }
   .reader-bar .btn-icon { width: 44px; }
   .reader-bar .btn-primary { padding-inline: 10px; }
 }
@@ -808,9 +874,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 /* On the narrowest phones the seven columns are given a touch less type. */
 @media (max-width: 340px) { .tt th, .tt td { font-size: .72rem; padding-inline: 2px; } }
 .tt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
-.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: var(--step--1); white-space: nowrap; }
+/* the table keeps to the least size, so seven columns still fit a phone */
+.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: var(--step--2); white-space: nowrap; }
 .tt td { direction: ltr; }
-.tt td .ampm { font-size: .72em; margin-inline-start: 2px; }
+.tt td .ampm { font-size: .8em; margin-inline-start: 2px; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
@@ -818,7 +885,10 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .tt tbody th { text-align: center; font-weight: 600; padding-inline-start: var(--s4); white-space: nowrap; }
 .tt-day { display: block; font-size: var(--step-0); }
-.tt-hijri { display: block; font-size: .62rem; color: var(--ink-3); font-weight: 400; margin-top: 1px; }
+/* the name of a hijri month may take a second line in its one row, between its
+   words and never inside one, so the seven columns still fit a phone of three
+   hundred and sixty points, where the last of them ran off the card */
+.tt-hijri { display: block; font-size: var(--step--2); color: var(--ink-3); font-weight: 400; margin-top: 1px; white-space: normal; }
 .tt tbody tr { border-bottom: 1px solid var(--line); }
 .tt tbody tr:last-child { border-bottom: 0; }
 .tt tbody tr[data-friday='1'] { background: var(--sunken); }
@@ -829,9 +899,33 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 .convert-field { display: block; }
 .convert-field .setting-label { display: block; margin-bottom: 6px; }
+/* A date field is drawn by the phone in the phone's language, so on a phone
+   set to english it read mm/dd/yyyy beside a page of arabic and in the dark
+   its mark was black on black, and the field stays and a tap on it still
+   opens the phone's own calendar, but what it shows is the date written in
+   words over it, as the head of the home screen writes the day. */
+.datepick { position: relative; display: block; }
+.datepick > input[type="date"] {
+  -webkit-appearance: none; appearance: none; color: transparent; cursor: pointer;
+}
+.datepick > input[type="date"]::-webkit-datetime-edit { color: transparent; }
+/* the phone's calendar mark is stretched over the whole field, so a press
+   anywhere on it opens the calendar, and is not seen */
+.datepick > input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute; inset: 0; width: auto; height: auto; margin: 0; opacity: 0; cursor: pointer;
+}
+.datepick-face {
+  position: absolute; inset: 0; display: flex; align-items: center; gap: var(--s2);
+  padding: 0 var(--s4); pointer-events: none; font-size: var(--step-0); color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.datepick-face .icon { margin-inline-start: auto; color: var(--accent-ink); }
+.datepick-face.is-empty { color: var(--ink-3); }
 /* Day, month and year on one line, as a date is read: the month takes the
    room it needs and the two numbers take the rest, so nothing is cut. */
-.convert-hijri { display: grid; grid-template-columns: 76px 1fr 100px; gap: 8px; align-items: stretch; }
+/* the two numbers are as narrow as two and four figures allow, since at three
+   hundred and sixty points the month's name was cut to «جمادى الأ…» */
+.convert-hijri { display: grid; grid-template-columns: 64px 1fr 80px; gap: 8px; align-items: stretch; }
 /* the month select is wrapped by its picker now, so the grid cell is the
    picker and the button inside it must fill it */
 .convert-hijri .picker, .convert-hijri .select, .convert-hijri .field { min-width: 0; width: 100%; max-width: none; }
@@ -854,15 +948,19 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .cal-step:active { transform: scale(.94); }
 
-.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+/* The month's card lends its grid half of its own padding and the cells stand
+   two points apart, so a day is a thumb wide even on a phone three hundred and
+   sixty points across, where it was thirty nine, and it is named with .card so
+   the card's own padding, which comes later in the sheet, does not win. */
+.card.cal-card { padding-inline: var(--s2); }
+.cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
 .cal-week { margin-bottom: 4px; }
 .cal-week span {
   text-align: center; font-size: .78rem; font-weight: 700; color: var(--ink-3);
   padding-bottom: 4px;
 }
-/* Seven columns across a phone leave a cell of forty three pixels, a pixel
-   short of a thumb, so each reaches one pixel into the four pixel gap. Two
-   pixels of that gap stay free, so no cell can claim its neighbour's tap. */
+/* Each cell reaches one pixel into the two pixel gap on either side, so a tap
+   on the gap still lands on a day and no cell claims its neighbour's. */
 .cal-cell::before { content: ''; position: absolute; inset: -1px; }
 .cal-cell {
   position: relative; aspect-ratio: 1; border-radius: var(--r-sm);
@@ -871,23 +969,25 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .cal-cell.is-empty { background: none; }
 .cal-num { font-size: var(--step-0); font-weight: 600; line-height: 1.1; }
-.cal-greg { font-size: .68rem; color: var(--ink-3); line-height: 1; }
+.cal-greg { font-size: var(--step--2); color: var(--ink-3); line-height: 1; }
 .cal-cell.is-today { background: var(--accent-solid); }
 .cal-cell.is-today .cal-num, .cal-cell.is-today .cal-greg { color: var(--on-accent); }
 .cal-cell.is-picked { box-shadow: inset 0 0 0 2px var(--accent-solid); }
+/* the mark of a season sits in the corner of its day, clear of both figures:
+   under them it fell on the gregorian one in a cell under forty points */
 .cal-dot {
-  position: absolute; bottom: 5px; width: 5px; height: 5px; border-radius: 50%;
+  position: absolute; top: 5px; inset-inline-end: 5px; width: 6px; height: 6px; border-radius: 50%;
   background: var(--ink-3);
 }
 .cal-cell.is-today .cal-dot { background: var(--on-accent); }
 
 /* A season reads differently from a fast, so each carries its own colour. */
-.cal-cell.kind-eid .cal-dot, .occasion.kind-eid { --occ: #b8860b; }
-.cal-cell.kind-fast .cal-dot, .occasion.kind-fast { --occ: #2a72ad; }
-.cal-cell.kind-month .cal-dot, .occasion.kind-month { --occ: #1e6f47; }
-.cal-cell.kind-season .cal-dot, .occasion.kind-season { --occ: #1e6f47; }
-.cal-cell.kind-night .cal-dot, .occasion.kind-night { --occ: #5b4a99; }
-.cal-cell.kind-weekly .cal-dot, .occasion.kind-weekly { --occ: #8b5a3c; }
+.cal-cell.kind-eid .cal-dot, .occasion.kind-eid { --occ: var(--occ-eid); }
+.cal-cell.kind-fast .cal-dot, .occasion.kind-fast { --occ: var(--occ-fast); }
+.cal-cell.kind-month .cal-dot, .occasion.kind-month { --occ: var(--occ-month); }
+.cal-cell.kind-season .cal-dot, .occasion.kind-season { --occ: var(--occ-month); }
+.cal-cell.kind-night .cal-dot, .occasion.kind-night { --occ: var(--occ-night); }
+.cal-cell.kind-weekly .cal-dot, .occasion.kind-weekly { --occ: var(--occ-weekly); }
 .cal-cell.has-mark .cal-dot { background: var(--occ, var(--ink-3)); }
 .cal-cell.is-today.has-mark .cal-dot { background: var(--on-accent); }
 
@@ -899,21 +999,21 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 
 /* The mark beside a season in the month list takes that season's own colour,
    the same one its dot wears in the grid above. */
-.row-mark.kind-eid { color: #b8860b; }
-.row-mark.kind-fast { color: #2a72ad; }
-.row-mark.kind-month, .row-mark.kind-season { color: #1e6f47; }
-.row-mark.kind-night { color: #5b4a99; }
-.row-mark.kind-weekly { color: #8b5a3c; }
+.row-mark.kind-eid { color: var(--occ-eid); }
+.row-mark.kind-fast { color: var(--occ-fast); }
+.row-mark.kind-month, .row-mark.kind-season { color: var(--occ-month); }
+.row-mark.kind-night { color: var(--occ-night); }
+.row-mark.kind-weekly { color: var(--occ-weekly); }
 
 /* The nearest fast: a line of grey prose was lost under the heading, and it is
    the one thing on that card a person actually acts on tonight. */
 .next-fast {
   display: flex; align-items: center; gap: var(--s3);
   padding: var(--s3) var(--s4); margin-bottom: var(--s4);
-  border-radius: var(--r-md); background: color-mix(in srgb, #2a72ad 7%, transparent);
-  border-inline-start: 3px solid #2a72ad;
+  border-radius: var(--r-md); background: color-mix(in srgb, var(--occ-fast) 7%, transparent);
+  border-inline-start: 3px solid var(--occ-fast);
 }
-.next-fast .icon { color: #2a72ad; flex: none; }
+.next-fast .icon { color: var(--occ-fast); flex: none; }
 .next-fast-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .next-fast-when { font-weight: 600; }
 .next-fast-note { font-size: .78rem; line-height: 1.7; color: var(--ink-2); }
@@ -951,12 +1051,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   border-color: var(--accent); background: var(--accent); color: var(--on-accent);
 }
 .journey-name {
-  font-size: .64rem; line-height: 1.5; text-align: center; color: var(--ink-3);
+  font-size: var(--step--2); line-height: 1.5; text-align: center; color: var(--ink-3);
   max-width: 100%; overflow-wrap: anywhere;
 }
 .journey-stop.is-here .journey-name { color: var(--ink); font-weight: 600; }
 
-.journey-kicker { margin: 0; font-size: .7rem; color: var(--ink-3); }
+.journey-kicker { margin: 0; font-size: var(--step--2); color: var(--ink-3); }
 .journey-title { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; }
 .journey-next {
   margin: var(--s3) 0 0; padding: var(--s3);
@@ -964,7 +1064,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
   font-size: .85rem; line-height: 1.85;
 }
 .journey-next-kicker {
-  display: block; font-size: .66rem; color: var(--ink-3); margin-bottom: 2px;
+  display: block; font-size: var(--step--2); color: var(--ink-3); margin-bottom: 2px;
 }
 .journey-calm {
   margin: var(--s3) 0 0; font-size: .8rem; line-height: 1.9; color: var(--ink-2);
@@ -999,7 +1099,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 }
 .now-azkar-glyph .icon { width: 26px; height: 26px; }
 .now-azkar-body { flex: 1; display: grid; gap: 2px; }
-.now-azkar-kicker { font-size: .62rem; font-weight: 600; opacity: .85; letter-spacing: .02em; }
+.now-azkar-kicker { font-size: var(--step--2); font-weight: 600; opacity: .85; letter-spacing: .02em; }
 .now-azkar-title { font-size: var(--step-1); font-weight: 700; }
 .now-azkar-note { font-size: var(--step--1); opacity: .9; }
 .now-azkar-ring { width: 48px; height: 48px; flex: none; }
@@ -1210,7 +1310,7 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .tile:active { transform: scale(.96); }
 .tile .icon { width: 24px; height: 24px; color: var(--accent); }
 .tile-name { font-size: var(--step-0); font-weight: 600; }
-.tile-note { font-size: .6rem; color: var(--ink-3); }
+.tile-note { font-size: var(--step--2); color: var(--ink-3); }
 /* The glyph on a tile, drawn from the sprite in the colour of the section. */
 .tile-glyph {
   display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px;
@@ -1262,6 +1362,30 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
   color: var(--accent-ink); display: grid; place-items: center; font-size: var(--step--1);
   font-weight: 700; flex: none;
 }
+/* A long list is one card with hairlines between its rows, as a phone draws
+   its own lists, where each surah and each entry of المزيد was a card of its
+   own with the pattern showing between every two and nine surahs to a screen. */
+.row-group {
+  background: var(--raised); border-radius: var(--r); box-shadow: var(--shadow);
+  overflow: hidden; margin-bottom: var(--s3);
+}
+.row-group > .row {
+  position: relative; margin: 0; border-radius: 0; box-shadow: none; background: none;
+  transition: background-color .12s;
+}
+.row-group > .row:active { transform: none; background: var(--sunken); }
+/* the hairline starts where the words start, past the mark */
+.row-group > .row + .row::before {
+  content: ''; position: absolute; top: 0; inset-inline-start: calc(var(--s3) * 2 + 34px); inset-inline-end: 0;
+  height: 1px; background: var(--line-soft);
+}
+/* an entry that opens a screen says so at its end, as on the phone */
+#more-list .row::after {
+  content: ''; flex: none; width: 8px; height: 8px; margin-inline: 2px 6px;
+  border-left: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  color: var(--ink-3); opacity: .7; transform: rotate(45deg);
+}
+#more-list > .section-title:first-child { margin-top: 0; }
 
 /* ---------- checkable ---------- */
 
@@ -1288,7 +1412,9 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 /* ---------- progress ---------- */
 
 .meter { height: 6px; border-radius: 4px; background: var(--sunken); overflow: hidden; }
-.meter span { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .35s ease; }
+/* the download of a surah fills a .meter-fill rather than a span, and with no
+   rule of its own its bar stayed empty from the first verse to the last */
+.meter span, .meter .meter-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .35s ease; }
 .meter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s2); font-size: var(--step--1); }
 .meter-head b { font-size: var(--step-1); font-weight: 700; }
 
@@ -1383,7 +1509,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 /* the play on a station's row reads as a control, not a stray hairline */
 .row-play { flex: none; width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center;
   background: var(--accent-solid); color: var(--on-accent); }
-.row-play .icon { width: 18px; height: 18px; stroke: none; fill: currentColor; margin-inline-start: -1px; }
+.row-play .icon { width: 18px; height: 18px; stroke: none; fill: currentColor; }
 
 .salawat-text { margin: 0 0 var(--s3); padding: var(--s3); border-radius: var(--r-sm); background: var(--sunken); border-inline-start: 3px solid var(--gold); font-size: .95rem; line-height: 2.1; color: var(--ink); }
 .verse-note { margin: var(--s2) 0 0; padding: var(--s2) var(--s3); border-inline-start: 3px solid var(--gold); background: var(--sunken); border-radius: var(--r-sm); font-size: var(--step--1); color: var(--ink-2); line-height: 1.7; white-space: pre-wrap; }
@@ -1397,7 +1523,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 .marks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: var(--s3); }
 .mark {
   display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 10px 4px 8px; border-radius: var(--r-sm);
-  background: var(--sunken); color: var(--ink-2); font-size: .74rem; font-weight: 600; border: 2px solid transparent;
+  background: var(--sunken); color: var(--ink-2); font-size: var(--step--2); font-weight: 600; border: 2px solid transparent;
 }
 .mark .icon { width: 24px; height: 24px; }
 .mark-read .icon { color: #2f5fb3; } .mark-review .icon { color: #b3261e; } .mark-memo .icon { color: #2a8a4a; } .mark-ponder .icon { color: #c7911c; }
@@ -1418,24 +1544,41 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 .source { font-size: var(--step--1); color: var(--ink-3); margin-top: var(--s2); }
 
 /* surah header */
+/* The reader's head wears the cartouche's class as well, and the cartouche is
+   a row of two rosettes with the name between them, so the name and the line
+   under it were laid side by side with the details squeezed into a block of
+   two lines, and here they stand in a column instead, the name over its
+   details and both in the middle. */
 .surah-head {
   text-align: center; padding: var(--s4); border-radius: var(--r);
   background: var(--raised); border: 1px solid var(--line-soft); margin-bottom: var(--s3);
+  flex-direction: column; justify-content: center; gap: 2px;
 }
-.surah-head h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; }
+.surah-head h2 { font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; line-height: 1.4; transform: none; }
 .surah-head p { font-size: var(--step--1); color: var(--ink-3); margin-top: 2px; }
 
 /* The bar of the mushaf: it holds while the page scrolls, so its ground is
    solid and the words never show through it. Every control on it is the same
    square; only the one that reads aloud takes the room that is left. */
 .reader-bar {
-  display: flex; align-items: center; gap: var(--s2); margin-bottom: var(--s2);
+  display: flex; align-items: center; gap: var(--bar-gap, var(--s2)); margin-bottom: var(--s2);
   /* pinned to the very top, not three pixels below it, so the bar meets the
      screen edge and no line of the page shows in the gap above it as it
      scrolls behind. the shadow marks where it ends. */
-  position: sticky; top: 0; z-index: 30; padding: var(--s3) 0 var(--s2); background: var(--paper);
+  /* On an iPhone the page runs under the clock and the island, so the very top
+     is the inset's foot, or the clock and the island sat on the buttons of the
+     bar once the page scrolled */
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; padding: var(--s3) 0 var(--s2); background: var(--paper);
   box-shadow: 0 8px 12px -8px rgba(0, 0, 0, .16);
 }
+/* and once it holds there the strip of the inset above it is paper too, so no
+   line of the page is seen passing under the clock, while at the top of the
+   page the pattern shows there as it does everywhere else */
+.reader-bar::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 100%;
+  height: env(safe-area-inset-top, 0px); background: var(--paper); display: none;
+}
+html.is-scrolled .reader-bar::before { display: block; }
 
 /* ---------- search ---------- */
 
@@ -1453,6 +1596,11 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 }
 .search-hit-ref { display: block; font-size: var(--step--1); color: var(--accent-ink); font-weight: 600; margin-bottom: var(--s1); }
 .search-hit mark { background: color-mix(in srgb, var(--gold) 30%, transparent); color: inherit; border-radius: 3px; }
+/* the words a search can start from, each marked as a search so they are not
+   read as more scopes beside those above the field */
+.search-words { margin-top: var(--s2); }
+.search-words .chip { gap: 6px; }
+.search-words .chip .icon { width: 16px; height: 16px; color: var(--ink-3); }
 
 [hidden] { display: none !important; }
 
@@ -1460,7 +1608,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 
 /* the thread of progress rides above the bar, both held at the top together */
 .read-progress {
-  position: sticky; top: 0; z-index: 31; height: 3px;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 31; height: 3px;
   background: var(--line); border-radius: 999px; margin: 0;
 }
 .read-progress span {
@@ -1482,7 +1630,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 
 .banner {
   position: fixed; left: calc(var(--s3) + var(--sal)); right: calc(var(--s3) + var(--sar));
-  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--s3));
+  bottom: calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--player-room, 0px) + var(--s3));
   z-index: 60; display: flex; align-items: center; gap: var(--s2);
   padding: var(--s2) var(--s3); border-radius: var(--r-sm);
   background: var(--ink); color: var(--raised); box-shadow: var(--shadow-lift);
@@ -1490,10 +1638,16 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 }
 .banner-text { flex: 1; font-size: var(--step--1); line-height: 1.5; }
 .banner-act {
-  flex: none; padding: 6px 14px; border-radius: 999px;
+  flex: none; min-height: 44px; padding: 0 16px; border-radius: 999px;
   background: var(--accent-solid); color: var(--on-accent); font-weight: 600; font-size: var(--step--1);
 }
-.banner-close { flex: none; color: inherit; opacity: .6; display: grid; place-items: center; }
+/* the close and the action are each a thumb wide, the close reaching into the
+   banner's own edge so the mark stays where it was: they were eighteen and
+   thirty */
+.banner-close {
+  flex: none; color: inherit; opacity: .6; display: grid; place-items: center;
+  width: 44px; height: 44px; margin-block: -6px; margin-inline-end: -10px;
+}
 .banner-close .icon { width: 18px; height: 18px; }
 @keyframes banner-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .banner { animation: none } }
@@ -1581,7 +1735,9 @@ input, textarea, [contenteditable] {
 .note { background: var(--accent-wash); border-radius: var(--r-sm); padding: var(--s3); font-size: var(--step--1); color: var(--ink-2); line-height: 1.7; }
 
 .toast {
-  position: fixed; inset: auto calc(var(--s4) + var(--sar)) calc(var(--tab-h) + 20px) calc(var(--s4) + var(--sal)); z-index: 200;
+  /* above the tab bar with its inset under it, and above the player while it
+     is open: on an iPhone with a home indicator the word lay over the tabs */
+  position: fixed; inset: auto calc(var(--s4) + var(--sar)) calc(var(--tab-h) + env(safe-area-inset-bottom) + var(--player-room, 0px) + 12px) calc(var(--s4) + var(--sal)); z-index: 200;
   background: var(--ink); color: var(--paper); padding: var(--s3) var(--s4);
   border-radius: var(--r-sm); font-size: var(--step-0); text-align: center;
   box-shadow: var(--shadow-lift); opacity: 0; transform: translateY(10px);
@@ -1658,22 +1814,51 @@ html.touring { overflow: hidden; }
   background: var(--raised); width: 100%; max-width: var(--shell);
   border-radius: var(--r-lg) var(--r-lg) 0 0; padding: var(--s4);
   padding-bottom: calc(var(--s4) + env(safe-area-inset-bottom));
-  max-height: 82vh; overflow-y: auto; animation: sheet-up .24s ease both;
+  /* backwards and not both: a fill that holds the last frame overrides the
+     transform a finger gives the sheet as it pulls it down */
+  max-height: 82vh; overflow-y: auto; animation: sheet-up .24s cubic-bezier(.32, .72, 0, 1) backwards;
 }
 @keyframes sheet-up { from { transform: translateY(100%); } to { transform: none; } }
-.sheet-grip { width: 38px; height: 4px; border-radius: 3px; background: var(--line); margin: 0 auto var(--s3); }
+/* The grip is the whole band over the title, from edge to edge, and it and the
+   title pull the sheet down, so the page is never asked to scroll from there. */
+.sheet-grip {
+  margin: calc(var(--s4) * -1) calc(var(--s4) * -1) 0; padding: var(--s4) 0 var(--s3);
+  touch-action: none; cursor: grab;
+}
+.sheet-grip::after { content: ''; display: block; width: 38px; height: 4px; border-radius: 3px; background: var(--line); margin: 0 auto; }
+.sheet-panel > .card-head { touch-action: none; }
+/* a thumb wide, reaching into the panel's own edge so the cross stays on the
+   line of the words: it was twenty points across */
+#sheet-close {
+  width: 44px; height: 44px; flex: none; display: grid; place-items: center; border-radius: 50%;
+  margin-block: -8px; margin-inline-end: -12px; color: var(--ink-2);
+}
+#sheet-close:active { background: var(--sunken); }
 
 .player {
   position: fixed; inset: auto var(--sar) calc(var(--tab-h) + env(safe-area-inset-bottom)) var(--sal); z-index: 55;
   max-width: var(--shell); margin: 0 auto; display: none;
-  align-items: center; gap: var(--s3); padding: var(--s2) var(--s4);
+  align-items: center; gap: 4px; padding-block: 4px; padding-inline: var(--s4) 4px;
   background: var(--ink); color: var(--paper);
 }
 .player.is-open { display: flex; }
 .player-body { flex: 1; min-width: 0; text-align: start; color: var(--paper); }
 .player-title { font-size: var(--step-0); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-sub { font-size: .6rem; opacity: .7; }
-.player button { color: var(--paper); display: grid; place-items: center; }
+.player-sub { font-size: var(--step--2); opacity: .7; }
+/* each control a thumb wide, where they were twenty points with twelve
+   between */
+.player button { color: var(--paper); display: grid; place-items: center; width: 44px; height: 44px; flex: none; border-radius: 50%; }
+.player button:active { background: color-mix(in srgb, var(--paper) 14%, transparent); }
+/* Playback reads left to right in every language, as the phone's own player
+   does, so the previous verse stands on the left of the pause and the next on
+   its right while the markup keeps the order a screen reader speaks. */
+#player-next { order: 1; }
+#player-toggle { order: 2; }
+#player-prev { order: 3; }
+#player-stop { order: 4; }
+/* and they show only on a walk through the verses, since a single verse, a
+   whole surah in one recording and the radio have nothing to step to */
+.player:not(.can-step) #player-prev, .player:not(.can-step) #player-next { display: none; }
 /* the words are not an icon: they run from the edge, not from the middle */
 .player .player-body { text-align: start; padding: 0; margin: 0; cursor: pointer; }
 
@@ -1733,6 +1918,10 @@ html.touring { overflow: hidden; }
 .setting-remind > .remind-controls { grid-column: 1 / -1; grid-row: 2; }
 .setting-remind > .picker, .setting-remind > .select { grid-column: 1 / -1; grid-row: 3; justify-self: start; }
 .remind-controls { flex-wrap: wrap; }
+/* A reminder that is off keeps its sound, its ear and its hour out of sight,
+   and they come back with the switch: nine of them off stood a sound list and
+   a listen button each on the page, a fifth of its length. */
+.setting.is-off > .remind-controls, .setting.is-off + .setting-sub { display: none; }
 
 /* The switch keeps the first line beside the title whatever else the row
    carries: it was falling to a line of its own under the controls, so «is this
@@ -1916,8 +2105,16 @@ html.touring { overflow: hidden; }
 }
 .slider:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
 
-.empty { text-align: center; color: var(--ink-3); padding: var(--s6) var(--s4); font-size: var(--step-0); }
-.empty .icon { width: 34px; height: 34px; margin-bottom: var(--s3); color: var(--line); }
+/* An empty screen is a card with a mark, its words and the way on, as every
+   other thing on the page stands on one, since grey words straight on the
+   pattern read as a page that failed to load; inside a card or a sheet it
+   needs no second ground. */
+.empty {
+  text-align: center; color: var(--ink-2); padding: var(--s5) var(--s4); font-size: var(--step-0); line-height: 1.8;
+  background: var(--raised); border-radius: var(--r); box-shadow: var(--shadow);
+}
+.empty .icon { display: block; width: 34px; height: 34px; margin: 0 auto var(--s3); color: var(--accent-ink); }
+.card .empty, .sheet .empty { background: none; box-shadow: none; padding: var(--s4) var(--s2); }
 /* a button here belongs beneath the words, not laid across them */
 .empty .btn { display: block; margin: var(--s3) auto 0; }
 
@@ -1930,7 +2127,7 @@ html.touring { overflow: hidden; }
 .foot { text-align: center; color: var(--ink-3); font-size: var(--step--1); padding: var(--s5) 0 var(--s3); line-height: 1.9; }
 .foot a { color: var(--accent-ink); text-decoration: none; }
 
-.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink); font-size: .62rem; font-weight: 600; }
+.badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; background: var(--accent-wash); color: var(--accent-ink); font-size: var(--step--2); font-weight: 600; }
 
 @media (min-width: 560px) {
   .grid { gap: var(--s3); }
@@ -1973,7 +2170,7 @@ html.book {
    foot keeps room for the floating bars */
 html.book body {
   padding-left: 0; padding-right: 0;
-  padding-bottom: calc(var(--tab-h) + var(--float) + var(--banner-room, 0px));
+  padding-bottom: calc(var(--tab-h) + var(--float) + var(--banner-room, 0px) + var(--player-room, 0px));
 }
 html.book .shell { max-width: none; }
 html.book #views > .view {
@@ -2062,6 +2259,7 @@ html.book #v-page .reader-bar {
   position: static; background: none; box-shadow: none;
   padding: var(--s2) 0; margin-bottom: 0;
 }
+html.book #v-page .reader-bar::before { display: none; }
 html.book #v-page .reader-bar .page-head {
   grid-column: 2; align-self: stretch;
   display: flex; flex-direction: column; justify-content: center;

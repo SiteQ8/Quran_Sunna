@@ -254,6 +254,14 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     case "canNotify":
       break
 
+    /* the theme the page is drawn in, so the clock and the battery over it
+       are drawn to be read on it */
+    case "setTheme":
+      let dark = (args.first as? String) == "dark"
+      guard dark != pageDark else { return }
+      pageDark = dark
+      setNeedsStatusBarAppearanceUpdate()
+
     /* the image the page drew of an ayah or a dua, as a data url */
     case "shareImage", "shareImageWithText":
       guard let dataUrl = args.first as? String else { return }
@@ -507,5 +515,10 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     done(.allow)
   }
 
-  override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
+  /* The page runs under the status bar, so the bar takes the page's theme,
+     since dark letters on the dark theme were black on black and the clock
+     and the battery all but vanished, and the page names its theme through
+     setTheme. */
+  private var pageDark = false
+  override var preferredStatusBarStyle: UIStatusBarStyle { pageDark ? .lightContent : .darkContent }
 }

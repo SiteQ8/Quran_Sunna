@@ -176,12 +176,17 @@
 <g id="i-search"><circle cx="11" cy="11" r="7"/><path d="m16.5 16.5 4 4"/></g>
 <g id="i-bookmark"><path d="M6 3.5h12v17l-6-4-6 4z"/></g>
 <g id="i-share"><path d="M12 3v13"/><path d="m8 7 4-4 4 4"/><path d="M5 13v6.5h14V13"/></g>
-<g id="i-play"><path d="M17 4.5 5 12 17 19.5z"/></g>
+<g id="i-play"><path d="M7 4.5 19 12 7 19.5z"/></g>
 <g id="i-pause"><path d="M8.5 4.5v15M15.5 4.5v15"/></g>
 <g id="i-back"><path d="m9 6 6 6-6 6"/></g>
 <g id="i-next"><path d="m10 5-7 7 7 7"/><path d="M3 12h18"/></g>
 <g id="i-step-next"><path d="m14 5-7 7 7 7"/></g>
 <g id="i-step-prev"><path d="m10 5 7 7-7 7"/></g>
+<g id="i-surah-next"><path d="m18 6-6 6 6 6"/><path d="m12 6-6 6 6 6"/></g>
+<g id="i-surah-prev"><path d="m6 6 6 6-6 6"/><path d="m12 6 6 6-6 6"/></g>
+<g id="i-media-prev"><path d="M18.5 5.5 9 12l9.5 6.5z"/><rect x="5.5" y="5.5" width="2.5" height="13" rx="1"/></g>
+<g id="i-media-next"><path d="M5.5 5.5 15 12l-9.5 6.5z"/><rect x="16" y="5.5" width="2.5" height="13" rx="1"/></g>
+<g id="i-shuffle"><path d="M3 7h2.5c4.5 0 6.5 10 11 10H21"/><path d="M3 17h2.5c1.7 0 3-1.4 4.1-3.3M13.4 10.3C14.5 8.4 15.8 7 17.5 7H21"/><path d="m18 4 3 3-3 3M18 14l3 3-3 3"/></g>
 <g id="i-check"><path d="m5 13 4.5 4.5L19 6.5"/></g>
 <g id="i-compass"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5.5-5.5 2 2-5.5z"/></g>
 <g id="i-radio"><path d="M17 6.5 7.5 10"/><rect x="3" y="9" width="18" height="11.5" rx="2.5"/><circle cx="8" cy="15" r="2.5"/><path d="M14 13h4M14 17h4"/></g>
@@ -349,7 +354,6 @@
     </button>
     <div class="fold-body">
       <div id="now-list"></div>
-      <button class="btn btn-ghost btn-block" data-go="tracker" style="margin-top:12px">كل السنن</button>
     </div>
   </section>
 
@@ -412,8 +416,8 @@
 <div class="read-progress" aria-hidden="true"><span id="read-progress-fill"></span></div>
   <div class="reader-bar">
     <button class="btn btn-ghost btn-icon" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
-    <button class="btn btn-ghost btn-icon" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg></button>
-    <button class="btn btn-ghost btn-icon" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-next"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="reader-prev" aria-label="السورة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-surah-prev"/></svg></button>
+    <button class="btn btn-ghost btn-icon" id="reader-next" aria-label="السورة التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-surah-next"/></svg></button>
     <button class="btn btn-ghost btn-icon" id="reader-autoscroll" aria-label="وضع القراءة، تتحرك الصفحة وحدها"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg></button>
     <button class="btn btn-ghost" id="reader-save" data-surah-audio="1" aria-label="احفظ تلاوة السورة للاستماع بلا إنترنت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-download"/></svg><span class="reader-save-word">حفظ الصوت</span></button>
     <button class="btn btn-primary" id="reader-play">استمع<svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
@@ -455,7 +459,7 @@
   <div class="reader-body page-body" id="page-body"></div>
   <div class="page-nav">
     <button class="btn btn-ghost" id="page-prev" aria-label="الصفحة السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg>السابقة</button>
-    <button class="btn btn-ghost" id="page-random" aria-label="افتح صفحة عشوائية">صفحة عشوائية</button>
+    <button class="btn btn-ghost" id="page-random" aria-label="افتح صفحة عشوائية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-shuffle"/></svg></button>
     <button class="btn btn-ghost" id="page-autoscroll" aria-label="وضع القراءة، تتحرك الصفحة وحدها"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg></button>
     <button class="btn btn-ghost" id="page-next" aria-label="الصفحة التالية"><span class="bar-word">التالية</span><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-next"/></svg></button>
   </div>
@@ -479,7 +483,6 @@
   <input class="field" id="quran-search" type="search" placeholder="مثال: الحمد لله" aria-label="اكتب ما تبحث عنه" style="margin-bottom:12px">
   <p class="setting-note" id="search-count"></p>
   <div id="search-results"></div>
-  <button class="btn btn-primary btn-block" data-go="quran" style="margin-top:16px">افتح المصحف</button>
 </section>
 
 <!-- ══════════ المحفوظات ══════════ -->
@@ -685,15 +688,6 @@
 <!-- ══════════ المسبحة ══════════ -->
 <section class="view" id="v-tasbih" aria-labelledby="tasbih-title">
   <div class="view-head"><h1 id="tasbih-title">المسبحة</h1><p>كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم</p></div>
-  <button class="now-azkar" id="tasbih-azkar" data-go="azkar">
-    <span class="now-azkar-glyph"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></span>
-    <span class="now-azkar-body">
-      <span class="now-azkar-kicker">من هنا</span>
-      <span class="now-azkar-title">الأذكار</span>
-      <span class="now-azkar-note" id="tasbih-azkar-note">أذكار الصباح والمساء وحصن المسلم كاملاً</span>
-    </span>
-    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="width:22px;height:22px"><use href="#i-next"/></svg>
-  </button>
   <div class="counter">
     <div class="counter-value" id="tasbih-value">0</div>
     <div class="counter-target" id="tasbih-target"></div>
@@ -705,6 +699,12 @@
     <div class="khatma-reset"><button class="btn btn-ghost btn-block" id="tasbih-reset">تصفير العدّاد</button></div>
     <p class="setting-note" style="text-align:center;margin-top:10px" id="tasbih-total"></p>
   </div>
+  <button class="row" id="tasbih-azkar" data-go="azkar">
+    <span class="row-mark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-hands"/></svg></span>
+    <span class="row-body"><span class="row-title">الأذكار</span>
+      <span class="row-note" id="tasbih-azkar-note">أذكار الصباح والمساء وحصن المسلم كاملاً</span></span>
+    <svg class="icon" viewBox="0 0 24 24" aria-hidden="true" style="color:var(--ink-3)"><use href="#i-step-next"/></svg>
+  </button>
 </section>
 
 <!-- ══════════ الإذاعة ══════════ -->
@@ -750,7 +750,7 @@
 <!-- ══════════ التقويم ══════════ -->
 <section class="view" id="v-calendar" aria-labelledby="calendar-title">
   <div class="view-head"><h1 id="calendar-title">التقويم الهجري</h1><p>الشهر كاملاً ومواسم العبادة فيه</p></div>
-  <div class="card">
+  <div class="card cal-card">
     <div class="cal-head">
       <button class="cal-step" id="cal-prev" aria-label="الشهر السابق"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg></button>
       <div class="cal-title"><div class="cal-month" id="cal-month">…</div><div class="cal-span" id="cal-span"></div></div>
@@ -1071,8 +1071,8 @@
     <div class="player-sub" id="player-sub"></div>
   </div>
   <button id="player-toggle" aria-label="إيقاف مؤقت"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pause"/></svg></button>
-  <button id="player-prev" aria-label="الآية السابقة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-prev"/></svg></button>
-  <button id="player-next" aria-label="الآية التالية"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-step-next"/></svg></button>
+  <button id="player-prev" aria-label="الآية السابقة"><svg class="icon ic-media-prev" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-media-prev"/></svg></button>
+  <button id="player-next" aria-label="الآية التالية"><svg class="icon ic-media-next" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-media-next"/></svg></button>
   <button id="player-stop" aria-label="إيقاف"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 <nav class="tabs" aria-label="التنقل الرئيسي">
