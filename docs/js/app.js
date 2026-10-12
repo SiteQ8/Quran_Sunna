@@ -582,6 +582,9 @@
     handTimesToApp();
     handQiyamToApp();
     handRemindersToApp();
+    /* the adhan's sound too, so a wrapper hears the reader's voice at every
+       opening and not only once the settings are visited */
+    handAdhanSoundToApp();
     /* the times are worked out from the place, so this is where the place is
        settled and the right moment to hand it over for the next opening */
     tellPlace();
@@ -1537,8 +1540,12 @@
     var body = sunrise ? 'طلعت الشمس' : 'الله أكبر، حيّ على الصلاة';
     if (lead) body += (sunrise ? '، ' : '، ومن سنن الوقت: ') + lead.replace(/،.*$/, '');
     notify('حان وقت ' + name, body, key);
-    soundAdhan(c.prev.key);
-    if (!sunrise) speak('حان وقت صلاة ' + name.replace(/^أذان /, ''), 'adhan');
+    /* The adhan is for the five prayers and not for the sunrise. A recorded
+       adhan is the whole sound of the moment, so nothing is chimed or spoken
+       over it, and «صامت» means nothing at all. */
+    var pick = adhanChoice();
+    var played = !sunrise && soundAdhan(c.prev.key);
+    if (!sunrise && !played && pick !== 'silent') speak('حان وقت صلاة ' + name.replace(/^أذان /, ''), 'adhan');
     maybeSalawat(true);
   }
 
@@ -1621,6 +1628,13 @@
   }
 
   function playRecording(url, button, title) {
+    if (!url) return false;
+    /* One sound at a time. Whatever is sounding stops before this starts, a
+       clip, the phone's speech, a recitation or a station, and it stops
+       quietly, since this one raises the flag again at once. */
+    hushVoice();
+    if (state.audio) leaveRecitation();
+    var from = recordingSource(url);
     try {
       var clip = new window.Audio();
       clip.src = url;
@@ -1636,10 +1650,16 @@
         /* a dhikr that finished on its own leaves nothing to press */
         if (!state.audio) { state.shaded = null; tellAppSounding(false); }
       };
-      clip.play().catch(function () { state.voiceClip = null; markVoiceButton(false); chime(); });
+      /* A clip that gave way to the next one is refused as it stops, and that
+         refusal is no failure: it used to clear the new clip and ring the
+         chime over it. Only the clip still current falls back to the chime. */
+      clip.play().catch(function () {
+        if (state.voiceClip !== clip) return;
+        state.voiceClip = null; markVoiceButton(false); chime();
+      });
       markVoiceButton(true);
       if (title) {
-        showInMediaSession(title);
+        showInMediaSession(title, from);
         /* The wrapper pauses the page when the reader leaves it unless it is
            told something is sounding, so a dhikr used to cut off at the door.
            And what the wrapper is not told about gets no notice in the shade,
@@ -1647,18 +1667,69 @@
         tellAppSounding(true);
         if (state.shaded !== title) {
           state.shaded = title;
-          showInShade(title, '', true);
+          showInShade(title, from, true);
         }
       }
       return true;
     } catch (e) { return chime(); }
   }
 
+  /* The clip or the phone's speech, silenced for a sound that follows at
+     once. The flag stays up and the shade stays where it is, since lowering
+     them and raising them a moment later is the stop overtaking its own start
+     that once crashed the app. */
+  function hushVoice() {
+    var clip = state.voiceClip;
+    state.voiceClip = null;
+    if (clip) {
+      try { clip.pause(); clip.removeAttribute('src'); clip.load(); } catch (e) { /* gone */ }
+    }
+    if (state.speaking && window.speechSynthesis && window.speechSynthesis.cancel) {
+      state.utterance = null;
+      try { window.speechSynthesis.cancel(); } catch (e2) { /* nothing speaking */ }
+    }
+    state.speaking = false;
+    markVoiceButton(false);
+  }
+
+  /* A recitation or a station gives way to a clip the reader asked for: the
+     walk, the repeat and the whole surah all end, quietly, since the clip
+     raises the flag again at once. */
+  function leaveRecitation() {
+    state.recite = null;
+    state.surahAudio = null;
+    if (state.repeat) {
+      state.repeat = null;
+      var body = $('reader-body');
+      if (body) body.classList.remove('is-hidden');
+    }
+    releaseAwake();
+    $$('.ayah').forEach(function (el) { el.classList.remove('is-reciting'); });
+    stopAudio(true);
+  }
+
+  /* Who is heard in a recording, read from where its file sits, so the
+     phone's player names the muadhin, the reciter or the book, and not the
+     one name it used to give every clip. */
+  function recordingSource(url) {
+    var m = /audio\/(adhan|salawat|dua)\/([a-z]+)[a-z-]*\.mp3/.exec(String(url || ''));
+    if (!m) return '';
+    var buhendi = typeof SALAWAT_RECITER !== 'undefined' ? 'بصوت ' + SALAWAT_RECITER.n : '';
+    if (m[1] === 'adhan') {
+      var v = adhanVoice(m[2]);
+      return v ? 'بصوت ' + v.n : '';
+    }
+    if (m[1] === 'dua') return buhendi;
+    var said = (typeof SALAWAT_VOICES !== 'undefined' ? SALAWAT_VOICES : []).filter(function (x) { return x.id === m[2]; })[0];
+    if (said && said.q) return buhendi;
+    return typeof SALAWAT_SOURCE !== 'undefined' ? 'من تسجيلات ' + SALAWAT_SOURCE.n : '';
+  }
+
   /* A clip played from the page is invisible to the phone: nothing appears in
      the notification shade, so the only way to stop it is to find the app
      again. Naming it to the media session puts it there, with pause and stop
      where the reader expects them. */
-  function showInMediaSession(title) {
+  function showInMediaSession(title, artist) {
     try {
       var ms = navigator.mediaSession;
       if (!ms) return;
@@ -1667,7 +1738,7 @@
            artwork, which is why nothing appeared in the shade to stop it with */
         ms.metadata = new window.MediaMetadata({
           title: title,
-          artist: 'بصوت خالد بوهندي',
+          artist: artist || 'سُنّتي',
           album: 'سُنّتي',
           artwork: [
             { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
@@ -1718,6 +1789,7 @@
       state.voiceClip = null;
     }
     if (window.speechSynthesis && window.speechSynthesis.cancel) {
+      state.utterance = null;
       try { window.speechSynthesis.cancel(); } catch (e2) { /* nothing speaking */ }
     }
     state.speaking = false;
@@ -1765,8 +1837,11 @@
   function speak(text, why) {
     var mode = Store.get('voice') || 'recording';
     if (mode === 'none') return false;
-    if (mode === 'tone') return chime();
     if (mode === 'recording') return why === 'adhan' ? chime() : playRecording(salawatUrl(), 'settings-voice-try', salawatName());
+    /* a tone or the phone's speech asked for by the reader stops whatever else
+       is sounding, as a recording does, so two are never heard at once */
+    if (why === 'try') { hushVoice(); if (state.audio) stopRecite(); }
+    if (mode === 'tone') return chime();
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
     try {
       var line = new window.SpeechSynthesisUtterance(text);
@@ -1778,12 +1853,20 @@
       var chosen = pickVoice();
       if (chosen) line.voice = chosen;
       else if ((window.speechSynthesis.getVoices() || []).length) return chime();
-      line.onend = function () { state.speaking = false; markVoiceButton(false); };
+      /* a line that was cancelled for the next sound must not reset that
+         sound's button when its own end arrives late */
+      line.onend = function () {
+        if (state.utterance !== line) return;
+        state.utterance = null; state.speaking = false; markVoiceButton(false);
+      };
       line.onerror = line.onend;
+      state.utterance = line;
       state.speaking = true;
       markVoiceButton(true);
       chime();
-      window.setTimeout(function () { if (state.speaking) window.speechSynthesis.speak(line); }, 700);
+      /* the chime first and the words after it, by which time the chime has
+         fallen away to a whisper, and only if nothing has taken its place */
+      window.setTimeout(function () { if (state.speaking && state.utterance === line) window.speechSynthesis.speak(line); }, 700);
       return true;
     } catch (e) { return chime(); }
   }
@@ -1899,7 +1982,10 @@
     var friday = isFriday(new Date());
     var line = friday ? SALAWAT_LINES[3] : SALAWAT_LINES[Math.floor(Math.random() * 3)];
     notify('صلِّ على النبي ﷺ', line, 'salawat');
-    speak('اللهم صلِّ وسلِّم على نبينا محمد', 'salawat');
+    /* A recitation, a station or an adhan already sounding is not cut off by
+       the reminder: the notice carries it, and the voice waits for the next. */
+    var busy = (state.audio && !state.audio.paused) || isSpeaking();
+    if (!busy) speak('اللهم صلِّ وسلِّم على نبينا محمد', 'salawat');
   }
 
   function askPeriodicWake() {
@@ -2446,6 +2532,11 @@
   };
 
   function cameFrom(kind) {
+    /* A reminder whose sound is the reciter's arrives with the quiet chime,
+       since a recitation cannot be a notification's sound, and the recitation
+       itself is heard once the reader opens it. */
+    var recited = RECITED_SOUND[kind];
+    if (recited && soundFor(kind) === 'buhendi') playRecording('audio/dua/' + recited.f, document.querySelector('.try-sound[data-try="' + kind + '"]') || 'recited-' + kind, recited.n);
     /* the night of jumuah has a sheet of its own, and that is better than a
        screen: it carries al-Kahf, the salawat and the supplication together */
     if (kind === 'jumuahNight' || kind === 'salawat') { showDueSheets(); return; }
@@ -2929,6 +3020,10 @@
 
   function playAudio(url, title, sub) {
     stopAudio(true);
+    /* one sound at a time: a dhikr, an adhan or the phone's speech still
+       going stops here, quietly, and the name it gave the phone's player goes
+       with it so the recitation is not shown under the reciter of a dua */
+    if (isSpeaking()) { hushVoice(); clearMediaSession(); }
     /* if this very clip was fetched ahead while the last one sounded, that is
        the one that plays: fetching it again would put the wait back */
     var audio;
@@ -2989,19 +3084,24 @@
   }
 
   function playAdhanSample() {
-    var id = Store.get('adhanVoice') || 'none';
+    var id = adhanChoice();
     if (id === 'none') { chime(); return; }
-    /* named, or the phone shows no player and the only way to stop it is to
-       find the app again: the reader asked for this twice */
-    playRecording(adhanUrl(id, false), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
+    if (id === 'silent') return;
+    /* Named, or the phone shows no player and the only way to stop it is to
+       find the app again: the reader asked for this twice. And it is the
+       muadhin's own recording, his adhan where he has one and his fajr where
+       that is all he has, never another voice standing in for him. */
+    playRecording(adhanOwnUrl(id), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
   }
 
-  /* at the prayer, with the app open, the adhan is heard in its voice */
+  /* At the prayer, with the app open, the adhan is heard in its voice. The
+     phone's player names the voice actually heard, which at the fajr may be
+     another muadhin's fajr standing in for one who has none, so the title
+     carries the prayer and the recording carries the name. */
   function soundAdhan(key) {
-    var id = Store.get('adhanVoice') || 'none';
-    if (id === 'none') return false;
-    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try',
-      'أذان ' + PRAYER_NAMES[key] + '، ' + adhanName(id));
+    var id = adhanChoice();
+    if (id === 'none' || id === 'silent' || !PRAYER_NAMES[key]) return false;
+    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try', 'أذان ' + PRAYER_NAMES[key]);
   }
 
   /* ---------------- وضع القراءة ---------------- */
@@ -3308,23 +3408,26 @@
      verse by verse files carry their own silence at each end, so a walk
      through them breaks the recitation however early each one is fetched.
      A reciter without such a recording keeps the walk, and the walk is what
-     the repeat and the memorising still use. */
+     the repeat and the memorising still use. The addresses are the ones the
+     source's own list of reciters gives today: the older serverN addresses
+     answered every request with a redirect to these, a hop on every surah
+     and a dependence on servers kept only for old links. */
   var SURAH_AUDIO = {
-    'ar.mahermuaiqly': 'https://server12.mp3quran.net/maher/',
-    'ar.minshawi': 'https://server10.mp3quran.net/minsh/',
-    'ar.husary': 'https://server13.mp3quran.net/husr/',
-    'ar.abdurrahmaansudais': 'https://server11.mp3quran.net/sds/',
-    'ar.ahmedajamy': 'https://server10.mp3quran.net/ajm/',
-    'ar.shaatree': 'https://server11.mp3quran.net/shatri/',
-    'ar.muhammadjibreel': 'https://server8.mp3quran.net/jbrl/',
-    'ar.abdulsamad': 'https://server7.mp3quran.net/basit/',
-    'ar.saoodshuraym': 'https://server7.mp3quran.net/shur/',
-    'ar.hudhaify': 'https://server9.mp3quran.net/hthfi/',
-    'ar.muhammadayyoub': 'https://server8.mp3quran.net/ayyub/',
-    'ar.hanirifai': 'https://server8.mp3quran.net/hani/',
-    'ar.abdullahbasfar': 'https://server6.mp3quran.net/bsfr/',
-    'ar.ibrahimakhbar': 'https://server6.mp3quran.net/akdr/',
-    'ar.husarymujawwad': 'https://server13.mp3quran.net/husr/Almusshaf-Al-Mojawwad/'
+    'ar.mahermuaiqly': 'https://cdn.mp3quran.net/audio/maher-muaiqly/r1/',
+    'ar.minshawi': 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/',
+    'ar.husary': 'https://cdn.mp3quran.net/audio/mahmoud-husary/r1/',
+    'ar.abdurrahmaansudais': 'https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1/',
+    'ar.ahmedajamy': 'https://cdn.mp3quran.net/audio/ahmad-ajmi/r1/',
+    'ar.shaatree': 'https://cdn.mp3quran.net/audio/abubakr-shatri/r1/',
+    'ar.muhammadjibreel': 'https://cdn.mp3quran.net/audio/muhammad-jibreel/r1/',
+    'ar.abdulsamad': 'https://cdn.mp3quran.net/audio/abdulbasit-abdulsamad/r3/',
+    'ar.saoodshuraym': 'https://cdn.mp3quran.net/audio/saud-shuraim/r1/',
+    'ar.hudhaify': 'https://cdn.mp3quran.net/audio/ali-hudhaifi/r1/',
+    'ar.muhammadayyoub': 'https://cdn.mp3quran.net/audio/muhammad-ayyub/r1/',
+    'ar.hanirifai': 'https://cdn.mp3quran.net/audio/hani-rifai/r1/',
+    'ar.abdullahbasfar': 'https://cdn.mp3quran.net/audio/abdullah-basfar/r1/',
+    'ar.ibrahimakhbar': 'https://cdn.mp3quran.net/audio/ibrahim-akhdar/r1/',
+    'ar.husarymujawwad': 'https://cdn.mp3quran.net/audio/mahmoud-husary/r2/'
   };
 
   function surahAudioUrl(n) {
@@ -3341,6 +3444,7 @@
   function playSurah(n) {
     var whole = surahAudioUrl(n);
     if (!whole) { reciteFrom(n, state.ayah || 1); return; }
+    if (walkKeptVerses(n)) { reciteFrom(n, state.ayah || 1); return; }
     var kept = Store.get('listenAs');
     if (kept === 'follow') { reciteFrom(n, state.ayah || 1); return; }
     if (kept === 'whole') { playWholeSurah(n); return; }
@@ -3363,9 +3467,17 @@
     });
   }
 
+  /* A surah kept on the phone, or any surah with no network at all, is heard
+     from its verses one by one: the whole recording is never kept, so it
+     would only fail offline, while the kept verses answer from the phone
+     itself and the network is not asked for what is already there. */
+  function walkKeptVerses(n) {
+    return isSurahSaved(n) || (window.navigator && window.navigator.onLine === false);
+  }
+
   function playWholeSurah(n) {
     var whole = surahAudioUrl(n);
-    if (!whole) { reciteFrom(n, state.ayah || 1); return; }
+    if (!whole || walkKeptVerses(n)) { reciteFrom(n, state.ayah || 1); return; }
     stopRecite();
     var meta = surahMeta(n);
     state.surahAudio = n;
@@ -3917,9 +4029,14 @@
   /* ---------------- a surah kept for listening offline ---------------- */
 
   /* Every verse of the surah, in the current reciter's voice, fetched and put
-     in a store the worker answers from. The store is separate from the app's
-     cache so it survives updates. The files come without cors headers, so they
-     are kept opaque, which an audio element plays as it would from the net. */
+     in a store the worker answers from, under the very address the player
+     asks for. The store is separate from the app's cache so it survives
+     updates. Each verse comes from everyayah, which lets the page read what it
+     sends, so it is kept at its real size and the worker can hand the player
+     the pieces it asks for. The source the app plays from sends no such word,
+     so its copy can only be kept opaque, and an opaque file is charged against
+     the phone's room at many times its size, which is why long surahs ran out
+     of room. It is kept that way only when everyayah does not answer. */
   var AUDIO_STORE = 'sunnati-audio';
   var BYTES_PER_VERSE = 90000;
 
@@ -3944,9 +4061,40 @@
     return verseAudioUrl(reciterId(), Mushaf.globalIndex(s, a));
   }
 
-  /* what a kept verse weighs, which halves with the rate */
+  /* What a kept verse weighs, which halves with the rate. The rate is the
+     one of the folder a verse is kept from, which for some reciters differs
+     from the rate the app plays him at. */
   function bytesPerVerse(id) {
-    return Math.round(BYTES_PER_VERSE * rateOf(id) / 128);
+    var folder = /(\d+)kbps/.exec(everyAyahFolder(id));
+    return Math.round(BYTES_PER_VERSE * (folder ? +folder[1] : rateOf(id)) / 128);
+  }
+
+  /* everyayah keeps every reciter in a folder of his own, named beside him in
+     the list, and each verse as surah and ayah in three figures each */
+  var EVERY_AYAH = 'https://everyayah.com/data/';
+
+  function everyAyahFolder(id) {
+    var list = typeof RECITERS !== 'undefined' ? RECITERS : [];
+    var pick = list.filter(function (r) { return r.id === id; })[0];
+    return (pick && pick.ea) || '';
+  }
+
+  function everyAyahUrl(id, s, a) {
+    var folder = everyAyahFolder(id);
+    if (!folder) return '';
+    var three = function (x) { return x < 10 ? '00' + x : (x < 100 ? '0' + x : String(x)); };
+    return EVERY_AYAH + folder + '/' + three(s) + three(a) + '.mp3';
+  }
+
+  /* A verse to keep: from everyayah, readable and at its real size, and from
+     the app's own source kept opaque only when everyayah does not answer. */
+  function fetchVerse(id, s, a, url) {
+    var opaque = function () { return window.fetch(url, { mode: 'no-cors' }); };
+    var from = everyAyahUrl(id, s, a);
+    if (!from) return opaque();
+    return window.fetch(from, { mode: 'cors' }).then(function (res) {
+      return res && res.ok ? res : opaque();
+    }, opaque);
   }
 
   function savedAudio() { return Store.get('audioSaved') || {}; }
@@ -3985,24 +4133,35 @@
       '<button class="btn btn-ghost btn-block" data-act="download-stop">أوقف</button>');
     var urls = [];
     for (var a = 1; a <= verses; a++) urls.push(verseUrl(n, a));
+    var id = reciterId();
+    var job = state.downloading;
+    /* what this run wrote, so a surah that does not fit leaves nothing of
+       itself behind, and the first thing that went wrong, which stops the
+       other two workers before the store is touched again */
+    var wrote = [];
+    var failure = null;
     return window.caches.open(AUDIO_STORE).then(function (store) {
       var next = 0;
       function worker() {
-        if (state.downloading.stop || next >= urls.length) return Promise.resolve();
-        var url = urls[next++];
+        if (job.stop || failure || next >= urls.length) return Promise.resolve();
+        var i = next++;
+        var url = urls[i];
         return store.match(url).then(function (hit) {
           if (hit) return null;
-          return window.fetch(url, { mode: 'no-cors' }).then(function (res) { return store.put(url, res); });
+          return fetchVerse(id, n, i + 1, url).then(function (res) {
+            return store.put(url, res).then(function () { wrote.push(url); });
+          });
         }).then(function () {
-          state.downloading.done++;
-          if ($('dl-meter')) $('dl-meter').style.width = Math.round(state.downloading.done / verses * 100) + '%';
-          if ($('dl-count')) $('dl-count').textContent = ar(state.downloading.done) + ' من ' + ar(verses);
+          job.done++;
+          if ($('dl-meter')) $('dl-meter').style.width = Math.round(job.done / verses * 100) + '%';
+          if ($('dl-count')) $('dl-count').textContent = ar(job.done) + ' من ' + ar(verses);
           return worker();
-        });
+        }, function (err) { failure = failure || err || new Error('fetch'); });
       }
       return Promise.all([worker(), worker(), worker()]);
     }).then(function () {
-      var finished = !state.downloading.stop && state.downloading.done >= verses;
+      if (failure) throw failure;
+      var finished = !job.stop && job.done >= verses;
       state.downloading = null;
       closeSheet();
       if (finished) {
@@ -4013,11 +4172,23 @@
       }
       renderReader();
       return finished;
-    }).catch(function () {
+    }).catch(function (err) {
       state.downloading = null;
       closeSheet();
-      toast('تعذّر الحفظ، فتأكد من الاتصال');
-      return false;
+      var full = err && (err.name === 'QuotaExceededError' || err.code === 22);
+      if (!full) {
+        toast('تعذّر الحفظ، فتأكد من الاتصال');
+        return false;
+      }
+      /* The phone ran out of room, which no connection would mend, so it is
+         said as it is, and what this run kept is taken back. */
+      return window.caches.open(AUDIO_STORE).then(function (store) {
+        return Promise.all(wrote.map(function (u) { return store.delete(u); }));
+      }).catch(function () { return null; }).then(function () {
+        toast('لا تتسع مساحة الحفظ في جهازك لهذه السورة، فاحذف سورة محفوظة أو أفرغ شيئاً من مساحة الهاتف ثم أعد المحاولة');
+        renderReader();
+        return false;
+      });
     });
   }
 
@@ -4061,25 +4232,55 @@
   /* Inside the android package the app rings by itself, so the row about the
      browser's permission goes and the app's own switch takes its place. */
   /* The adhan's own voice. The fajr has its own recordings, which carry
-     الصلاة خير من النوم, so a fajr voice is used at fajr and the ordinary one
-     at the rest; when the reader picks a fajr voice, the first ordinary voice
-     stands in for the other prayers. */
+     الصلاة خير من النوم, so a fajr recording is used at fajr alone and an
+     ordinary one at the rest. A voice may have both, and then it is heard in
+     both. One with only a fajr has the first ordinary voice stand in for the
+     other prayers, and one with no fajr has the first fajr in the list stand
+     in at fajr. */
   function adhanVoice(id) {
     if (typeof ADHAN_VOICES === 'undefined') return null;
     return ADHAN_VOICES.filter(function (v) { return v.id === id; })[0] || null;
+  }
+
+  /* a voice has an ordinary adhan unless its only recording is a fajr */
+  function hasPlainAdhan(v) {
+    return !!v && (!!v.plain || !v.fajr);
+  }
+
+  function adhanFile(v, fajr) {
+    return 'audio/adhan/' + v.id + (fajr ? '-fajr' : '') + '.mp3';
   }
 
   function adhanUrl(id, forFajr) {
     var v = adhanVoice(id);
     if (!v) return '';
     if (forFajr) {
+      if (v.fajr) return adhanFile(v, true);
       var fajr = ADHAN_VOICES.filter(function (x) { return x.fajr; })[0];
-      if (!v.fajr && fajr) v = fajr;
-    } else if (v.fajr) {
-      var plain = ADHAN_VOICES.filter(function (x) { return !x.fajr; })[0];
-      if (plain) v = plain;
+      return fajr ? adhanFile(fajr, true) : adhanFile(v, false);
     }
-    return 'audio/adhan/' + v.id + (v.fajr ? '-fajr' : '') + '.mp3';
+    if (hasPlainAdhan(v)) return adhanFile(v, false);
+    var plain = ADHAN_VOICES.filter(hasPlainAdhan)[0];
+    return plain ? adhanFile(plain, false) : adhanFile(v, true);
+  }
+
+  /* the muadhin's own recording for hearing him in the settings: his adhan,
+     or his fajr when that is all he has */
+  function adhanOwnUrl(id) {
+    var v = adhanVoice(id);
+    return v ? adhanFile(v, !hasPlainAdhan(v)) : '';
+  }
+
+  /* The reader's choice of voice. The one listed as حاج سليمان مختار was a
+     recording of al-Mujallad all along, so it went, and a reader who had
+     chosen it is carried to al-Mujallad rather than left with nothing. */
+  function adhanChoice() {
+    var id = Store.get('adhanVoice') || 'none';
+    if (id === 'mukhtar') {
+      id = 'mujallad';
+      Store.set('adhanVoice', id);
+    }
+    return id;
   }
 
   function fillAdhanVoices() {
@@ -4089,11 +4290,11 @@
        notification tone, one of the muadhins, or nothing at all */
     fillSelect(sel, [{ value: 'none', label: 'نغمة الجهاز' }, { value: 'silent', label: 'صامت' }]
       .concat(ADHAN_VOICES.map(function (v) {
-        return { value: v.id, label: v.n + (v.fajr ? '، أذان الفجر' : '') };
-      })), Store.get('adhanVoice') || 'none');
+        return { value: v.id, label: v.n + (hasPlainAdhan(v) ? '' : '، أذان الفجر') };
+      })), adhanChoice());
     var note = $('settings-adhan-note');
     if (note) {
-      var pick = Store.get('adhanVoice') || 'none';
+      var pick = adhanChoice();
       note.textContent = pick === 'silent' ? 'يصل التنبيه بلا صوت'
         : pick === 'none' ? 'نغمة التنبيه المعتادة في هاتفك'
         : 'يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم';
@@ -4316,12 +4517,13 @@
 
   /* The wrapper knows «chime» and «silent» and nothing else; anything else
      falls through to the ringing channel. A recitation cannot be a
-     notification sound, so the notification arrives quiet and the reader hears
-     the recitation in the app. Without this the phone would ring with its own
-     tone for a reader who asked for a reciter. */
+     notification sound, so the notification rings the quiet chime and the
+     recitation is heard when the reader opens it. It used to arrive silent,
+     and since nothing played the recitation either, the reader who chose the
+     reciter heard nothing at all. */
   function channelFor(key) {
     var pick = soundFor(key);
-    return RECITED_SOUND[key] && pick === 'buhendi' ? 'silent' : pick;
+    return RECITED_SOUND[key] && pick === 'buhendi' ? 'chime' : pick;
   }
 
   /* The three that used to be switched off from inside their own list. Each
@@ -4710,18 +4912,21 @@
 
   function handAdhanSoundToApp() {
     var app = bridge();
-    if (!app || !app.setAdhanSound) return;
-    var id = Store.get('adhanVoice') || 'none';
-    var recorded = id !== 'none' && id !== 'silent';
-    try {
-      app.setAdhanSound(recorded ? location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, false) : '',
-        recorded ? location.origin + location.pathname.replace(/[^/]*$/, '') + adhanUrl(id, true) : '');
-    } catch (e) { /* an older package without the call */ }
+    if (!app) return;
+    var id = adhanChoice();
     /* «صامت» is neither a recording nor the phone's tone: the notification
        must arrive with no sound at all, which only the wrapper can do, so it
-       is told separately. An older package without the call simply keeps the
-       phone's tone, which is what it did before this choice existed. */
+       is told separately. It is told first: the iPhone package fetches no
+       recording, and returning before this left its adhan ringing for a
+       reader who had asked for silence. An older package without the call
+       simply keeps the phone's tone. */
     try { if (app.setAdhanSilent) app.setAdhanSilent(id === 'silent'); } catch (e) { /* older package */ }
+    if (!app.setAdhanSound) return;
+    var recorded = id !== 'none' && id !== 'silent';
+    var here = location.origin + location.pathname.replace(/[^/]*$/, '');
+    try {
+      app.setAdhanSound(recorded ? here + adhanUrl(id, false) : '', recorded ? here + adhanUrl(id, true) : '');
+    } catch (e) { /* an older package without the call */ }
   }
 
   function renderAdhanRow() {
@@ -7515,8 +7720,8 @@
       if (state.voiceClip) { stopSpeaking(); return; }
       /* the button itself, so it can show a pause while it plays */
       var hisn = HISN.filter(function (c) { return c.id === +ref; })[0];
+      /* the player in the shade names it, so no notification rings beside it */
       playRecording('audio/dua/' + heard.f, el, hisn.t);
-      notify('استمع ' + hisn.t, 'بصوت ' + heard.n, 'audio');
       toast('بصوت ' + heard.n);
     },
     'after-prayer-off': function () {
@@ -7763,8 +7968,8 @@
       if (state.voiceClip) { stopSpeaking(); return; }
       /* the name shown in the phone's own player comes from the button's label */
       var label = (hear.getAttribute('aria-label') || '').replace(/^استمع\s*(لـ|ل)?/, '').replace(/\s*بصوت.*$/, '') || 'سُنّتي';
+      /* the player in the shade names it, so no notification rings beside it */
       playRecording('audio/dua/' + hear.getAttribute('data-hear'), hear, label);
-      notify('استمع ' + label, label, 'audio');
       return;
     }
     var pick = target.closest('[data-pick]');
@@ -7985,11 +8190,11 @@
       if (isSpeaking()) { stopSpeaking(); return; }
       /* silence is a choice; hearing it plays nothing and says so, rather than
          sounding a muadhin the reader has turned off */
-      var pick = Store.get('adhanVoice') || 'none';
+      var pick = adhanChoice();
       if (pick === 'silent') { toast('يصل التنبيه بلا صوت'); return; }
       if (pick === 'none') { toast('يصل بنغمة التنبيه في هاتفك'); return; }
-      var adhanName_ = adhanName(pick);
-      notify('استمع الأذان', 'بصوت ' + adhanName_, 'audio');
+      /* No notification beside it: inside the package one rang the phone's
+         tone over the adhan, and the player in the shade already names it. */
       playAdhanSample();
     });
 

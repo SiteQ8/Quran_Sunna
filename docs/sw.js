@@ -220,6 +220,35 @@ function keep(request, response) {
   return response;
 }
 
+/* A cache holds whole files while the audio element asks for pieces of one,
+   so the piece it asks for is cut from the kept copy and answered as a part,
+   the way the network answers it. An opaque copy cannot be read, so that one
+   goes back as it is, and so does any request that asks for the whole. */
+function answerRange(request, response) {
+  var range = request.headers.get('range');
+  if (!range || !response || response.status !== 200 || response.type === 'opaque') return response;
+  var m = /^bytes=(\d*)-(\d*)$/.exec(range.replace(/\s+/g, ''));
+  if (!m || (m[1] === '' && m[2] === '')) return response;
+  return response.arrayBuffer().then(function (body) {
+    var size = body.byteLength;
+    var start = m[1] === '' ? Math.max(0, size - Number(m[2])) : Number(m[1]);
+    var end = m[1] === '' || m[2] === '' ? size - 1 : Math.min(Number(m[2]), size - 1);
+    if (start >= size || start > end) {
+      return new Response('', { status: 416, statusText: 'Range Not Satisfiable', headers: { 'Content-Range': 'bytes */' + size } });
+    }
+    return new Response(body.slice(start, end + 1), {
+      status: 206,
+      statusText: 'Partial Content',
+      headers: {
+        'Content-Type': response.headers.get('content-type') || 'audio/mpeg',
+        'Content-Range': 'bytes ' + start + '-' + end + '/' + size,
+        'Content-Length': String(end - start + 1),
+        'Accept-Ranges': 'bytes'
+      }
+    });
+  });
+}
+
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return;
@@ -228,16 +257,21 @@ self.addEventListener('fetch', function (event) {
 
   /* A verse the reader chose to keep is answered from the audio store, which
      lives outside the versioned cache so an update of the app does not throw
-     the recitations away. Anything not kept stays on the network. */
+     the recitations away, and it is answered in the pieces the player asks
+     for. Anything not kept stays on the network. */
   if (url.hostname === 'cdn.islamic.network' && url.pathname.indexOf('/quran/audio/') === 0) {
     event.respondWith(
       caches.open(AUDIO_STORE).then(function (store) { return store.match(request.url); }).then(function (hit) {
-        return hit || fetch(request);
+        return hit ? answerRange(request, hit) : fetch(request);
       })
     );
     return;
   }
-  if (url.pathname.indexOf('.mp3') !== -1 || url.hostname.indexOf('Qurango') !== -1) return;
+  /* A whole surah and a live station from another site are played as they
+     come and never kept, so the worker stays out of their way. This used to
+     catch every file ending in .mp3, the app's own recordings among them, so
+     the adhan and the salawat it had put by were never answered offline. */
+  if (url.origin !== location.origin && (/\.mp3$/i.test(url.pathname) || /(^|\.)qurango\.net$/.test(url.hostname))) return;
 
   /* The mosques map draws OpenStreetMap tiles. A tile once seen is kept in its
      own store and served from it, so the map a reader has opened before comes
@@ -263,12 +297,15 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* The adhan and the recorded salawat: kept once heard, they never change. */
+  /* The adhan, the salawat and the duas that come with the app. The whole file
+     is fetched once and kept, never the piece the player happened to ask for,
+     since a cache cannot keep a piece, and the player is answered from the
+     kept copy, whole or in pieces, with the network or without it. */
   if (url.origin === location.origin && url.pathname.indexOf('/audio/') !== -1) {
     event.respondWith(
-      caches.match(request).then(function (hit) {
-        if (hit) return hit;
-        return fetch(request).then(function (response) { return keep(request, response); });
+      caches.match(request.url).then(function (hit) {
+        if (hit) return answerRange(request, hit);
+        return fetch(request.url).then(function (whole) { return answerRange(request, keep(request.url, whole)); });
       })
     );
     return;
@@ -276,17 +313,6 @@ self.addEventListener('fetch', function (event) {
 
   /* The tafsir: two and a half megabytes fetched once, on first use, and kept. */
   if (url.origin === location.origin && /\/data\/tafsir-[a-z]+\.json$/.test(url.pathname)) {
-    event.respondWith(
-      caches.match(request).then(function (hit) {
-        if (hit) return hit;
-        return fetch(request).then(function (response) { return keep(request, response); });
-      })
-    );
-    return;
-  }
-
-  /* The recorded salawat: kept once it has been heard, since it never changes. */
-  if (url.hostname === 'www.hisnmuslim.com' && /\.mp3$/.test(url.pathname)) {
     event.respondWith(
       caches.match(request).then(function (hit) {
         if (hit) return hit;

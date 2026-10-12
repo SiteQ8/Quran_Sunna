@@ -5132,15 +5132,19 @@ test('a surah is fetched verse by verse into a store of its own and marked kept'
   const { win, doc } = boot();
   const stores = fakeCaches(win);
   const asked = [];
-  win.fetch = function (url, opts) { asked.push({ url: String(url), mode: opts && opts.mode }); return Promise.resolve({ type: 'opaque' }); };
+  win.fetch = function (url, opts) { asked.push({ url: String(url), mode: opts && opts.mode }); return Promise.resolve({ ok: true, status: 200, type: 'cors' }); };
   win.App.state.surah = 112; win.App.go('reader');
   assert.strictEqual(doc.getElementById('reader-save').textContent.trim(), 'حفظ الصوت');
   return win.App.helpers.downloadSurah(112).then(function (ok) {
     assert.strictEqual(ok, true);
     assert.strictEqual(asked.length, 4, 'the four verses of al ikhlas');
-    assert.ok(asked.every((a) => a.mode === 'no-cors'), 'kept opaque, since the cdn sends no cors headers');
-    assert.ok(asked[0].url.indexOf('cdn.islamic.network/quran/audio/128/') !== -1);
+    /* from everyayah, which lets the page read what it sends, so each verse is
+       kept at its real size: an opaque copy from the cdn was charged at many
+       times its size and long surahs ran out of room */
+    assert.ok(asked.every((a) => a.mode === 'cors'), 'kept readable');
+    assert.ok(asked[0].url.indexOf('everyayah.com/data/') !== -1);
     assert.strictEqual(stores['sunnati-audio'].size, 4, 'in a store apart from the app cache');
+    assert.ok(stores['sunnati-audio'].has(win.App.helpers.verseUrl(112, 1)), 'under the address the player asks for');
     assert.ok(win.App.helpers.isSurahSaved(112));
     assert.strictEqual(doc.getElementById('reader-save').textContent.trim(), 'محفوظة');
     assert.ok(doc.getElementById('reader-save').classList.contains('is-kept'));
@@ -5893,10 +5897,11 @@ test('the chosen adhan is handed to the app so it sounds with the app closed', (
   const { win } = boot();
   const given = [];
   win.SunnatiApp = { setAdhanSound: function (a, b) { given.push([a, b]); } };
-  win.Store.set('adhanVoice', 'bilal');
+  /* bilal's only recording is a fajr, so a voice with both is the one asked here */
+  win.Store.set('adhanVoice', 'jazi');
   win.App.go('settings');
   assert.ok(given.length >= 1);
-  assert.ok(/audio\/adhan\/bilal\.mp3$/.test(given[given.length - 1][0]), 'the ordinary one');
+  assert.ok(/audio\/adhan\/jazi\.mp3$/.test(given[given.length - 1][0]), 'the ordinary one');
   assert.ok(/-fajr\.mp3$/.test(given[given.length - 1][1]), 'and the fajr one beside it');
   const sound = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanSound.java'), 'utf8');
   assert.ok(sound.indexOf('USAGE_ALARM') !== -1, 'sounded on the alarm stream, so it is heard while the phone rests');
@@ -6874,7 +6879,9 @@ test('a reminder may be sounded by the reciter, and the wrapper is told a channe
   assert.strictEqual((win.Store.get('remindSound') || {}).sleepKursi, 'buhendi');
   const row = win.App.helpers.reminderList().filter(function (r) { return r.t.indexOf('الكرسي') !== -1; })[0];
   assert.ok(row, 'the reminder is in the list');
-  assert.strictEqual(row.s, 'silent', 'and the wrapper is handed a channel it understands');
+  /* the quiet chime, since silence here meant nothing heard at all: the
+     recitation plays when the reader opens the reminder */
+  assert.strictEqual(row.s, 'chime', 'and the wrapper is handed a channel it understands');
 
   /* :has() is missing on older android browsers, where the whole rule is
      dropped: the play triangle stayed hollow and the rows lost their layout */
@@ -9272,10 +9279,10 @@ test('a whole surah is recited from one recording, so nothing breaks between ver
   /* the verse by verse files carry silence at each end, so a walk through them
      breaks the recitation however early each one is fetched */
   win.Store.set('reciter', 'ar.minshawi');
-  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://server10.mp3quran.net/minsh/020.mp3');
-  assert.strictEqual(win.App.helpers.surahAudioUrl(1), 'https://server10.mp3quran.net/minsh/001.mp3',
+  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/020.mp3');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(1), 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/001.mp3',
     'the number is padded to three, as the source keeps them');
-  assert.strictEqual(win.App.helpers.surahAudioUrl(114), 'https://server10.mp3quran.net/minsh/114.mp3');
+  assert.strictEqual(win.App.helpers.surahAudioUrl(114), 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/114.mp3');
   /* a reciter with no such recording keeps the walk rather than failing */
   win.Store.set('reciter', 'ar.aymanswoaid');
   assert.strictEqual(win.App.helpers.surahAudioUrl(20), null);
@@ -9296,7 +9303,9 @@ test('a whole surah is recited from one recording, so nothing breaks between ver
     assert.ok(offered.indexOf(id) !== -1, id + ' is not a reciter the app offers');
   });
   assert.strictEqual(new Set(named).size, named.length, 'no reciter is named twice');
-  urls.forEach(function (u) { assert.match(u, /^https:\/\/server\d+\.mp3quran\.net\/[A-Za-z_\-\/]+\/$/, u); });
+  /* the addresses the source's own list gives today: the old serverN ones
+     answered every surah with a redirect to these */
+  urls.forEach(function (u) { assert.match(u, /^https:\/\/cdn\.mp3quran\.net\/audio\/[a-z\-]+\/r\d\/$/, u); });
 });
 
 test('what is sounding is put in the shade, with something to press', () => {
@@ -9331,7 +9340,7 @@ test('the two recitations stay apart: a verse from its own file, a surah from on
     'https://cdn.islamic.network/quran/audio/128/ar.minshawi/6236.mp3', 'and the last');
   assert.strictEqual(win.App.helpers.verseUrl(20, 6),
     'https://cdn.islamic.network/quran/audio/128/ar.minshawi/2354.mp3');
-  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://server10.mp3quran.net/minsh/020.mp3',
+  assert.strictEqual(win.App.helpers.surahAudioUrl(20), 'https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/020.mp3',
     'while the whole surah comes from one recording');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
@@ -9401,9 +9410,12 @@ test('a surah kept from the address that refused is let go, so it can be kept ag
     return win.App.helpers.downloadSurah(112);
   }).then(function (ok) {
     assert.strictEqual(ok, true);
-    assert.deepStrictEqual(asked, [6222, 6223, 6224, 6225].map(function (i) {
-      return 'https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/' + i + '.mp3';
-    }));
+    /* everyayah is asked first and gives nothing readable here, so each verse
+       falls back to the app's own source, asked at his own rate */
+    assert.deepStrictEqual(asked.filter(function (u) { return u.indexOf('cdn.islamic.network') !== -1; }).sort(),
+      [6222, 6223, 6224, 6225].map(function (i) {
+        return 'https://cdn.islamic.network/quran/audio/64/ar.abdulsamad/' + i + '.mp3';
+      }));
     assert.strictEqual(win.Store.get('audioSaved')['ar.abdulsamad'][112].k, 64, 'the rate is kept with it');
     /* and a second pass leaves it be */
     return win.App.helpers.dropSilentSaves();

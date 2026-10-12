@@ -1,36 +1,40 @@
 /* بيانات مساعدة للتطبيق: القرّاء والإذاعات والمدن والورد والمسبحة */
 
 /* معرّفات القرّاء مأخوذة من فهرس alquran.cloud الصوتي، ومصدر الآيات يحفظ كل قارئ بالجودة التي سُجّل بها
-   ويرفض ما سواها، فمن لم يُحفظ عنده بجودة 128 ذُكرت جودته بجانبه (kbps)، ومن لم تُذكر جودته فهو على 128 */
+   ويرفض ما سواها، فمن لم يُحفظ عنده بجودة 128 ذُكرت جودته بجانبه (kbps)، ومن لم تُذكر جودته فهو على 128،
+   وea مجلّد القارئ نفسه بأسلوبه نفسه في everyayah.com، ومنه تُحفظ السورة للاستماع بلا إنترنت لأنه يأذن للتطبيق
+   بقراءة ما يرسله، فيُحفظ كل ملف بحجمه الحقيقي ويُجزّأ للمشغّل كما يطلب */
 var RECITERS = [
-  { id: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', country: 'مصر', kbps: 64 },
-  { id: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', country: 'السعودية', kbps: 64 },
-  { id: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', country: 'السعودية' },
-  { id: 'ar.saoodshuraym', name: 'سعود الشريم', country: 'السعودية', kbps: 64 },
-  { id: 'ar.husary', name: 'محمود خليل الحصري', country: 'مصر' },
-  { id: 'ar.husarymujawwad', name: 'محمود خليل الحصري بالمجوّد', country: 'مصر' },
-  { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', country: 'مصر' },
-  { id: 'ar.shaatree', name: 'أبو بكر الشاطري', country: 'السعودية' },
-  { id: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', country: 'السعودية' },
-  { id: 'ar.hudhaify', name: 'علي الحذيفي', country: 'السعودية' },
-  { id: 'ar.hanirifai', name: 'هاني الرفاعي', country: 'السعودية', kbps: 64 },
-  { id: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', country: 'السعودية', kbps: 32 },
-  { id: 'ar.muhammadayyoub', name: 'محمد أيوب', country: 'السعودية' },
-  { id: 'ar.muhammadjibreel', name: 'محمد جبريل', country: 'مصر' },
-  { id: 'ar.abdullahbasfar', name: 'عبدالله بصفر', country: 'السعودية', kbps: 64 },
-  { id: 'ar.aymanswoaid', name: 'أيمن سويد', country: 'سوريا', kbps: 64 }
+  { id: 'ar.abdulsamad', name: 'عبدالباسط عبدالصمد', country: 'مصر', kbps: 64, ea: 'AbdulSamad_64kbps_QuranExplorer.Com' },
+  { id: 'ar.abdurrahmaansudais', name: 'عبدالرحمن السديس', country: 'السعودية', kbps: 64, ea: 'Abdurrahmaan_As-Sudais_64kbps' },
+  { id: 'ar.mahermuaiqly', name: 'ماهر المعيقلي', country: 'السعودية', ea: 'Maher_AlMuaiqly_64kbps' },
+  { id: 'ar.saoodshuraym', name: 'سعود الشريم', country: 'السعودية', kbps: 64, ea: 'Saood_ash-Shuraym_128kbps' },
+  { id: 'ar.husary', name: 'محمود خليل الحصري', country: 'مصر', ea: 'Husary_128kbps' },
+  { id: 'ar.husarymujawwad', name: 'محمود خليل الحصري بالمجوّد', country: 'مصر', ea: 'Husary_128kbps_Mujawwad' },
+  { id: 'ar.minshawi', name: 'محمد صديق المنشاوي', country: 'مصر', ea: 'Minshawy_Murattal_128kbps' },
+  { id: 'ar.shaatree', name: 'أبو بكر الشاطري', country: 'السعودية', ea: 'Abu_Bakr_Ash-Shaatree_128kbps' },
+  { id: 'ar.ahmedajamy', name: 'أحمد بن علي العجمي', country: 'السعودية', ea: 'Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net' },
+  { id: 'ar.hudhaify', name: 'علي الحذيفي', country: 'السعودية', ea: 'Hudhaify_128kbps' },
+  { id: 'ar.hanirifai', name: 'هاني الرفاعي', country: 'السعودية', kbps: 64, ea: 'Hani_Rifai_64kbps' },
+  { id: 'ar.ibrahimakhbar', name: 'إبراهيم الأخضر', country: 'السعودية', kbps: 32, ea: 'Ibrahim_Akhdar_32kbps' },
+  { id: 'ar.muhammadayyoub', name: 'محمد أيوب', country: 'السعودية', ea: 'Muhammad_Ayyoub_64kbps' },
+  { id: 'ar.muhammadjibreel', name: 'محمد جبريل', country: 'مصر', ea: 'Muhammad_Jibreel_64kbps' },
+  { id: 'ar.abdullahbasfar', name: 'عبدالله بصفر', country: 'السعودية', kbps: 64, ea: 'Abdullah_Basfar_64kbps' },
+  { id: 'ar.aymanswoaid', name: 'أيمن سويد', country: 'سوريا', kbps: 64, ea: 'Ayman_Sowaid_64kbps' }
 ];
 
+/* عناوين البث كما يذكرها فهرس الإذاعات في mp3quran.net/api/v3/radios، وقد تغيّرت
+   أسماء ست منها فصارت القديمة تردّ بلا صوت، لذلك تُكتب كلها من الفهرس نفسه */
 var RADIO_STATIONS = [
-  { name: 'إذاعة القرآن الكريم', url: 'https://Qurango.net/radio/tarateel', note: 'تلاوات متنوعة' },
-  { name: 'عبدالرحمن السديس', url: 'https://Qurango.net/radio/sudais', note: 'إمام الحرم المكي' },
-  { name: 'عبدالباسط عبدالصمد', url: 'https://Qurango.net/radio/abdulbasit', note: 'مرتل ومجوّد' },
-  { name: 'ماهر المعيقلي', url: 'https://Qurango.net/radio/maher', note: 'إمام الحرم المكي' },
-  { name: 'مشاري العفاسي', url: 'https://Qurango.net/radio/afasy', note: 'الكويت' },
-  { name: 'سعود الشريم', url: 'https://Qurango.net/radio/shuraim', note: 'إمام الحرم المكي' },
-  { name: 'أحمد العجمي', url: 'https://Qurango.net/radio/ajamy', note: 'تلاوة مؤثرة' },
-  { name: 'ياسر الدوسري', url: 'https://Qurango.net/radio/yasser', note: 'إمام الحرم المكي' },
-  { name: 'هزاع البلوشي', url: 'https://Qurango.net/radio/hazza', note: 'تلاوة هادئة' }
+  { name: 'إذاعة القرآن الكريم', url: 'https://backup.qurango.net/radio/tarateel', note: 'تلاوات متنوعة' },
+  { name: 'عبدالرحمن السديس', url: 'https://backup.qurango.net/radio/abdulrahman_alsudaes', note: 'إمام الحرم المكي' },
+  { name: 'عبدالباسط عبدالصمد', url: 'https://backup.qurango.net/radio/abdulbasit_abdulsamad', note: 'مرتل ومجوّد' },
+  { name: 'ماهر المعيقلي', url: 'https://backup.qurango.net/radio/maher', note: 'إمام الحرم المكي' },
+  { name: 'مشاري العفاسي', url: 'https://backup.qurango.net/radio/mishary_alafasi', note: 'الكويت' },
+  { name: 'سعود الشريم', url: 'https://backup.qurango.net/radio/saud_alshuraim', note: 'إمام الحرم المكي' },
+  { name: 'أحمد العجمي', url: 'https://backup.qurango.net/radio/ahmad_alajmy', note: 'تلاوة مؤثرة' },
+  { name: 'ياسر الدوسري', url: 'https://backup.qurango.net/radio/yasser_aldosari', note: 'إمام الحرم المكي' },
+  { name: 'هزاع البلوشي', url: 'https://backup.qurango.net/radio/hazza', note: 'تلاوة هادئة' }
 ];
 
 /* المدن مع إحداثياتها وفارق التوقيت، ليعمل حساب المواقيت دون إنترنت */
