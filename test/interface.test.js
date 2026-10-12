@@ -696,6 +696,9 @@ test('restarting the khatma clears the count', () => {
   win.App.go('khatma');
   click(win, doc.querySelector('[data-act="khatma-plus"]'));
   click(win, doc.querySelector('[data-act="khatma-restart"]'));
+  /* it is asked first, and only the red button starts over */
+  assert.strictEqual(win.Store.progress().pagesRead, 1);
+  click(win, doc.querySelector('[data-act="khatma-restart-now"]'));
   assert.strictEqual(win.Store.progress().pagesRead, 0);
   assert.ok(win.Store.get('khatmaStart'));
 });
@@ -732,6 +735,8 @@ test('the radio lists stations and the sleep timer can be cancelled', () => {
   const { win, doc } = boot();
   win.App.go('radio');
   assert.ok(doc.querySelectorAll('#radio-list [data-station]').length >= 8);
+  /* the timer stops what is playing, so a station plays first */
+  click(win, doc.querySelector('[data-station="0"]'));
   click(win, doc.querySelector('[data-sleep="30"]'));
   assert.ok(doc.getElementById('sleep-note').textContent.indexOf('يتوقف') !== -1);
   click(win, doc.querySelector('[data-sleep="0"]'));
@@ -3103,7 +3108,8 @@ test('the table can be copied as plain text to send on', () => {
   const lines = copied.split('\n').filter(Boolean);
   const days = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
   assert.strictEqual(lines.length, days + 2, 'a heading, the method, then a line a day');
-  assert.ok(lines[0].indexOf(win.App.state.place.n) !== -1);
+  /* the place with its lam joined to it, للكويت and not لـالكويت */
+  assert.ok(lines[0].indexOf(win.App.helpers.withLam(win.App.state.place.n)) !== -1, 'got ' + lines[0]);
   assert.ok(/\d{1,2}:\d{2} [صم]/.test(lines[2]), 'got ' + lines[2]);
 });
 

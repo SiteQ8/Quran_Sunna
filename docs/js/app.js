@@ -79,7 +79,8 @@
     qibla: null,
     recite: null,
     scope: 'quran',
-    page: 1,
+    /* none until a page is turned to: the page view opens where it was left */
+    page: null,
     hisn: 27,
     dailyAyah: null
   };
@@ -119,21 +120,37 @@
   function pad(n) { return (n < 10 ? '0' : '') + n; }
 
   /* Arabic counts one, two, a few and many differently, so 3 يوماً reads as a
-     mistake where 3 أيام is right. */
-  function daysOf(n) { return count(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً'); }
-  function ayat(n) { return count(n, 'آية واحدة', 'آيتان', 'آيات', 'آية'); }
-  function pages(n) { return count(n, 'صفحة واحدة', 'صفحتان', 'صفحات', 'صفحة'); }
-  function minutesOf(n) { return count(n, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة'); }
-  function entries(n) { return count(n, 'مدخلة واحدة', 'مدخلتان', 'مدخلات', 'مدخلة'); }
-  function tasbihat(n) { return count(n, 'تسبيحة واحدة', 'تسبيحتان', 'تسبيحات', 'تسبيحة'); }
-  function rounds(n) { return count(n, 'جولة واحدة', 'جولتان', 'جولات', 'جولة'); }
+     mistake where 3 أيام is right. The last argument says the count stands
+     after a preposition or as an object, where the dual is يومين and not
+     يومان: «بعد يومان» was on the home screen twice a week. */
+  function daysOf(n, oblique) { return count(n, 'يوم واحد', 'يومان', 'أيام', 'يوماً', oblique); }
+  function ayat(n, oblique) { return count(n, 'آية واحدة', 'آيتان', 'آيات', 'آية', oblique); }
+  function pages(n, oblique) { return count(n, 'صفحة واحدة', 'صفحتان', 'صفحات', 'صفحة', oblique); }
+  function minutesOf(n, oblique) { return count(n, 'دقيقة واحدة', 'دقيقتان', 'دقائق', 'دقيقة', oblique); }
+  function entries(n, oblique) { return count(n, 'مدخلة واحدة', 'مدخلتان', 'مدخلات', 'مدخلة', oblique); }
+  function tasbihat(n, oblique) { return count(n, 'تسبيحة واحدة', 'تسبيحتان', 'تسبيحات', 'تسبيحة', oblique); }
+  function rounds(n, oblique) { return count(n, 'جولة واحدة', 'جولتان', 'جولات', 'جولة', oblique); }
 
-  /* The four forms arabic counts by: one, two, three to ten, and above. */
-  function count(n, one, two, few, many) {
+  /* The four forms arabic counts by: one, two, three to ten, and above. Past
+     a hundred the last two figures decide, so 503 آيات and 286 آية, and a
+     round hundred takes its noun without the tanween, 200 يوم. */
+  function count(n, one, two, few, many, oblique) {
     if (n === 1) return one;
-    if (n === 2) return two;
-    if (n >= 3 && n <= 10) return ar(n) + ' ' + few;
+    if (n === 2) return oblique ? two.replace(/ان$/, 'ين') : two;
+    var tail = n % 100;
+    if ((n >= 3 && n <= 10) || (n > 100 && tail >= 3 && tail <= 10)) return ar(n) + ' ' + few;
+    if (n >= 100 && tail <= 2) return ar(n) + ' ' + many.replace(/اً$/, '');
     return ar(n) + ' ' + many;
+  }
+
+  /* Days in a row, with the word agreeing with the count: يومان متتابعان,
+     3 أيام متتابعة, 11 يوماً متتابعاً, and a single day is just a day. */
+  function inARow(n) {
+    if (n === 1) return 'يوم واحد';
+    if (n === 2) return 'يومان متتابعان';
+    var tail = n % 100;
+    if ((n >= 3 && n <= 10) || (n > 100 && tail >= 3 && tail <= 10)) return ar(n) + ' أيام متتابعة';
+    return ar(n) + ' يوماً متتابعاً';
   }
 
 
@@ -157,6 +174,9 @@
 
   /* the reader chooses whether the hours run to twelve or to twenty four */
   function clockText(minutes) {
+    /* a time the sun never reaches, an isha far north in summer with no rule
+       chosen for it, is dashes alone: the ص after them made it a morning time */
+    if (!isFinite(minutes)) return '--:--';
     return ar(PrayerEngine.format(minutes, Store.get('clock') === '24' ? '24' : null));
   }
 
@@ -175,20 +195,64 @@
     toastTimer = window.setTimeout(function () { el.classList.remove('is-open'); }, 2600);
   }
 
+  /* A sheet takes a step of its own in the history, as the sky and the
+     walkthrough do, so the back button of a phone closes the sheet and goes
+     nowhere else. Without it the back button closed the sheet and took the
+     screen's own step as well: the address named the screen before while
+     this one stayed, the next back skipped a screen, and a reload opened the
+     wrong one. */
+  var sheetStep = { pushed: false, spent: false, skipPop: false };
+
   function openSheet(title, html) {
     var sheet = $('sheet');
     if (!sheet) return;
     /* a sheet the app raises on its own, at a night of jumuah or after a
        prayer, is not left hidden under the sky */
     if (skyview.open) closeSkyview();
+    var fresh = !sheet.classList.contains('is-open');
     $('sheet-title').textContent = title;
     $('sheet-body').innerHTML = html;
     sheet.classList.add('is-open');
+    if (!fresh || sheetStep.pushed) return;
+    /* shut and opened again in one breath: the step already taken serves */
+    if (sheetStep.spent) { sheetStep.spent = false; sheetStep.pushed = true; return; }
+    try {
+      if (window.history && window.history.pushState) {
+        window.history.pushState({ view: state.view, sheet: true }, '');
+        sheetStep.pushed = true;
+      }
+    } catch (e) { /* file:// refuses */ }
   }
 
-  function closeSheet() {
+  /* popped: the back button has already taken the sheet's step */
+  function closeSheet(popped) {
     var sheet = $('sheet');
     if (sheet) sheet.classList.remove('is-open');
+    if (!sheetStep.pushed) return;
+    sheetStep.pushed = false;
+    if (popped === true) return;
+    /* The step is handed back once this turn is over, unless the screen moves
+       on in the meantime: go() then writes the new address over it, and the
+       back button returns to the screen the sheet was over. Handed back at
+       once, it raced the new address and took it instead. */
+    sheetStep.spent = true;
+    window.setTimeout(function () {
+      if (!sheetStep.spent) return;
+      sheetStep.spent = false;
+      /* someone else's step stands on it, the walkthrough's: it is left */
+      if (!(window.history.state && window.history.state.sheet)) return;
+      sheetStep.skipPop = true;
+      try { window.history.back(); } catch (e) { sheetStep.skipPop = false; }
+    }, 0);
+  }
+
+  /* What cannot be taken back is asked about first: the sheet says what goes,
+     and the button that does it is the red one. */
+  function confirmSheet(title, note, label, act) {
+    openSheet(title,
+      '<p class="setting-note">' + esc(note) + '</p>' +
+      '<button class="btn btn-danger btn-block" data-act="' + esc(act) + '" style="margin-top:14px">' + esc(label) + '</button>' +
+      '<button class="btn btn-ghost btn-block" data-act="sheet-cancel" style="margin-top:8px">تراجع</button>');
   }
 
   function empty(message, actionLabel, actionNav) {
@@ -473,6 +537,9 @@
   function addressOf(name) {
     if (name === 'reader') return '#reader/' + state.surah;
     if (name === 'azkar-list') return '#azkar/' + (state.azkarKey || 'morning');
+    /* a chapter of the book names itself too: a reload in دعاء الكرب used to
+       open أذكار الصباح والمساء, the chapter the app starts on */
+    if (name === 'hisn') return '#hisn/' + state.hisn;
     return '#' + name;
   }
 
@@ -485,6 +552,11 @@
       return { name: 'reader', surah: Math.max(1, Math.min(114, parseInt(parts[1], 10) || 1)) };
     }
     if (name === 'azkar' && parts[1]) return { name: 'azkar-list', azkar: parts[1] };
+    if (name === 'hisn' && parts[1]) {
+      var chapter = parseInt(parts[1], 10);
+      var known = typeof HISN !== 'undefined' && HISN.some(function (c) { return c.id === chapter; });
+      return known ? { name: 'hisn', hisn: chapter } : { name: 'hisn' };
+    }
     return $('v-' + name) ? { name: name } : null;
   }
 
@@ -524,7 +596,16 @@
     if (!window.history || !window.history.pushState) return;
     var next = addressOf(name);
     if (window.location.hash === next) return;
-    try { window.history.pushState({ view: name }, '', next); } catch (e) { /* file:// refuses */ }
+    try {
+      /* a sheet shut on the way here left its step behind, and the new screen
+         is written over it, so back returns to the screen the sheet was over */
+      if (sheetStep.spent && window.history.state && window.history.state.sheet) {
+        sheetStep.spent = false;
+        window.history.replaceState({ view: name }, '', next);
+      } else {
+        window.history.pushState({ view: name }, '', next);
+      }
+    } catch (e) { /* file:// refuses */ }
   }
 
   function followAddress() {
@@ -532,6 +613,7 @@
     if (!route) { go('home', true); return; }
     if (route.surah) state.surah = route.surah;
     if (route.azkar && AZKAR_DB[route.azkar]) state.azkarKey = route.azkar;
+    if (route.hisn) state.hisn = route.hisn;
     go(route.name, true);
   }
 
@@ -764,8 +846,11 @@
   function clockState(date) {
     var t = state.times || refreshTimes();
     var now = nowMinutes(date);
+    /* the marks are this day's prayers, so they are named for this day: named
+       for the night of jumuah, a thursday evening called its own noon الجمعة */
+    var day = date || new Date();
     var marks = PRAYERS.map(function (p) {
-      return { key: p.key, ar: prayerName(p.key, date), at: t[p.key] };
+      return { key: p.key, ar: prayerName(p.key, day), at: t[p.key] };
     });
 
     var nextIndex = -1;
@@ -1222,7 +1307,9 @@
     var c = clockState();
     applyAccent(c.windowKey);
 
-    var total = Math.max(0, Math.round(c.remaining * 60));
+    /* and the wait for such a time is not counted: it read NaN:NaN:NaN */
+    var known = isFinite(c.remaining);
+    var total = known ? Math.max(0, Math.round(c.remaining * 60)) : 0;
     var hrs = Math.floor(total / 3600);
     var mins = Math.floor((total % 3600) / 60);
     var secs = total % 60;
@@ -1241,7 +1328,7 @@
       $('arc-name').textContent = 'أذان ' + c.prev.ar;
       $('arc-at').textContent = clockText(c.prev.at);
     } else {
-      $('arc-count').textContent = ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs));
+      $('arc-count').textContent = known ? ar(pad(hrs) + ':' + pad(mins) + ':' + pad(secs)) : '--:--:--';
       $('arc-name').textContent = c.next.key === 'sunrise' ? c.next.ar
         : (fasting && c.next.key === 'maghrib') ? 'الإفطار' : 'أذان ' + c.next.ar;
       $('arc-at').textContent = clockText(c.next.at);
@@ -1286,6 +1373,7 @@
     state.shownSunnah = { day: shownDay, hour: c.windowKey };
     maybeNotify(c);
     maybeSalawat(false);
+    remindInPage();
     if (state.scheduledFor !== Store.dayKey()) { state.scheduledFor = Store.dayKey(); scheduleForWorker(); tellSun(computeTimes(new Date())); }
     if (!state.askedPlace) {
       state.askedPlace = true;
@@ -1436,7 +1524,7 @@
 
     var stats = Store.prayerStats(30);
     if ($('prayers-streak')) {
-      $('prayers-streak').textContent = stats.streak ? daysOf(stats.streak) + ' متتابعة بالخمس' : 'لا تتابع بعد';
+      $('prayers-streak').textContent = stats.streak ? inARow(stats.streak) + ' بالخمس' : 'لا تتابع بعد';
     }
     if ($('prayers-stats')) {
       var total = stats.prayed + stats.missed;
@@ -1489,7 +1577,9 @@
      new Notification and the old code swallowed the error, so nothing ever
      appeared. The worker can, so it is asked to, and the direct call is kept
      for a desktop browser without one. */
-  function notify(title, body, tag) {
+  /* quiet: raised without the phone's sound, for a reminder the reader set
+     to silence or to the app's own bells, which the page sounds itself */
+  function notify(title, body, tag, quiet) {
     var app = bridge();
     if (app && app.notify) {
       try { app.notify(title, body, tag || 'page'); return Promise.resolve(true); } catch (e) { /* fall through */ }
@@ -1502,6 +1592,7 @@
       data: { url: './' },
       requireInteraction: false
     };
+    if (quiet) { options.silent = true; options.vibrate = undefined; }
     function direct() {
       try { new window.Notification(title, options); return true; } catch (e) { return false; }
     }
@@ -2152,7 +2243,7 @@
     renderDate();
     renderCalendar();
     renderHome();
-    toast(next === 0 ? 'التاريخ على الحساب الأصلي' : 'التاريخ معدّل ' + daysOf(Math.abs(next)) + (next > 0 ? ' للأمام' : ' للخلف'));
+    toast(next === 0 ? 'التاريخ على الحساب الأصلي' : 'التاريخ معدّل ' + daysOf(Math.abs(next), true) + (next > 0 ? ' للأمام' : ' للخلف'));
   }
 
   function currentWindowKey() { return clockState().windowKey; }
@@ -2389,6 +2480,33 @@
     return written;
   }
 
+  /* آية الكرسي and the three quls head the morning and the evening lists, as
+     they head باب ٢٧ of the book, two entries in each. A dhikr is counted by
+     its place in its list, so a day counted against the shorter lists, which
+     carries no mark of the order, has its counts moved along by two, once, and
+     every tap stays on the dhikr it was made on. A backup from before brings
+     such days with it, so this runs after a restore as well as at the start. */
+  var AZKAR_HEAD = { morning: 2, evening: 2 };
+
+  function settleAzkar() {
+    return Store.eachDay(function (rec) {
+      if (+rec.azkarOrder >= Store.AZKAR_ORDER) return false;
+      var changed = false;
+      Object.keys(AZKAR_HEAD).forEach(function (list) {
+        var counts = rec.azkar && rec.azkar[list];
+        if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return;
+        var moved = {};
+        Object.keys(counts).forEach(function (i) {
+          moved[/^\d+$/.test(i) ? +i + AZKAR_HEAD[list] : i] = counts[i];
+        });
+        rec.azkar[list] = moved;
+        changed = true;
+      });
+      if (changed) rec.azkarOrder = Store.AZKAR_ORDER;
+      return changed;
+    });
+  }
+
   function renderHeat(host, days) {
     if (!host) return;
     var day = sunnahDay();
@@ -2414,7 +2532,7 @@
     if ($('streak-line')) {
       var s = Store.streak(day);
       $('streak-line').textContent = s.current > 0
-        ? daysOf(s.current) + ' متتابعة'
+        ? inARow(s.current)
         : 'لم تبدأ اليوم بعد';
     }
     renderHeat($('home-heat'), 30);
@@ -2488,7 +2606,7 @@
     var mark = 'eid:' + eid.name + ':' + new Date().toDateString();
     if (Store.get('eidShown') === mark) return false;
     Store.set('eidShown', mark);
-    var when = eid.days === 0 ? 'اليوم' : eid.days === 1 ? 'غداً' : 'بعد ' + daysOf(eid.days);
+    var when = eid.days === 0 ? 'اليوم' : eid.days === 1 ? 'غداً' : 'بعد ' + daysOf(eid.days, true);
     openSheet(eid.name,
       /* the card wears the reader's own pattern and accent, not a look of its
          own: it is the app greeting them, in the app's clothes */
@@ -2565,7 +2683,7 @@
         date: day,
         days: d,
         names: why.map(function (w) { return w.name; }).join(' و'),
-        when: d === 0 ? 'اليوم' : d === 1 ? 'غداً' : 'بعد ' + daysOf(d)
+        when: d === 0 ? 'اليوم' : d === 1 ? 'غداً' : 'بعد ' + daysOf(d, true)
       };
     }
     return null;
@@ -2595,7 +2713,7 @@
     host.innerHTML = head + list.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days, true)) +
         '، ' + whenItFalls(o.date) + '</span></span>' +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
@@ -2862,7 +2980,7 @@
     if (!r) return;
     if (r.at < r.to) { r.at++; reciteCurrent(); return; }
     if (r.round < r.times) { r.round++; r.at = r.from; reciteCurrent(); return; }
-    toast('أتممت ' + rounds(r.times) + ' على ' + ayat(r.to - r.from + 1));
+    toast('أتممت ' + rounds(r.times, true) + ' على ' + ayat(r.to - r.from + 1, true));
     stopRepeat();
   }
 
@@ -3502,6 +3620,12 @@
     state.page = Math.max(1, Math.min(PAGES_IN_MUSHAF, n || 1));
     Store.set('lastPage', state.page);
     go('page');
+    /* The page turned to is the place, so تابع القراءة finds it. Only a page
+       turned to: the view opened as it was left moves nothing, since the
+       reader may have read a surah since, and drawing page one at every
+       opening put تابع القراءة back to الفاتحة. */
+    var start = Mushaf.ready() ? Mushaf.pageStart(isBook() ? spreadOf(state.page).right : state.page) : null;
+    if (start) rememberPlace(start.s, start.a);
   }
 
   /* One page of the mushaf as markup: the flowing text, or the printed page
@@ -3547,6 +3671,10 @@
     if (!Mushaf.ready()) { body.innerHTML = empty('نص المصحف لم يكتمل تحميله بعد'); return; }
     var n = state.page || +Store.get('lastPage') || 1;
     state.page = n;
+    /* the printed lines arrive with the first page that wants them */
+    if (Store.get('pageLayout') === 'madinah' && !MADINAH_LINES) {
+      loadMadinahLines().then(function (lines) { if (lines && state.view === 'page') renderPage(); });
+    }
     /* the book shows the spread the page belongs to; the phone, the page */
     var book = isBook();
     var leaves = book ? spreadOf(n) : { right: n, left: n };
@@ -3586,8 +3714,6 @@
 
     if ($('page-prev')) $('page-prev').disabled = leaves.right <= 1;
     if ($('page-next')) $('page-next').disabled = leaves.left >= PAGES_IN_MUSHAF;
-    /* the place is remembered as a verse too, so تابع القراءة finds it */
-    rememberPlace(first.s, first.a);
     if (window.scrollTo) window.scrollTo(0, 0);
   }
 
@@ -4700,12 +4826,98 @@
   }
 
   function handRemindersToApp() {
+    /* a browser rings from its own plan, which is drawn again with the change */
+    webPlan.made = 0;
     var app = bridge();
     if (!app || !app.setReminders) return false;
     try { app.setReminders(JSON.stringify(reminderList())); return true; } catch (e) { return false; }
   }
 
+  /* ---------------- reminders in a browser ---------------- */
+
+  /* Inside the app the wrapper rings each reminder at its minute, from the list
+     handed to it. A browser has no wrapper and the list was never read there,
+     so every reminder switched on promised a notice that never came. The page
+     rings them itself while it is open or behind another app: the list holds
+     only what is still to come, so a plan of it is drawn each minute and read
+     for what fell due before it is drawn again. What was raised is kept on
+     disk by its key and minute, so a reload never raises it twice. */
+  var webPlan = { made: 0, list: [] };
+
+  function remindsInPage() {
+    var app = bridge();
+    if (app && app.setReminders) return false;
+    return !!(window.Notification && window.Notification.permission === 'granted');
+  }
+
+  /* the reminder list, with the qiyam the wrapper keeps on a list of its own */
+  function planReminders() {
+    var list = reminderList();
+    if (Store.get('qiyam')) {
+      var now = new Date();
+      for (var d = 0; d < 2; d++) {
+        var at = qiyamAt(new Date(now.getFullYear(), now.getMonth(), now.getDate() + d));
+        if (at && at.getTime() > Date.now()) {
+          list.push({ at: at.getTime(), t: 'قيام الليل', b: 'هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى',
+            s: channelFor('qiyam'), k: 'qiyam' });
+        }
+      }
+    }
+    return list;
+  }
+
+  function remindInPage() {
+    if (!remindsInPage()) { webPlan.list = []; webPlan.made = 0; return 0; }
+    var now = Date.now();
+    var raised = Store.get('reminded') || {};
+    var rung = 0;
+    webPlan.list.forEach(function (r) {
+      /* a slow background clock is given twenty minutes, as the prayers are */
+      if (r.at > now || now - r.at > 20 * 60000) return;
+      var key = r.k + ':' + r.at;
+      if (raised[key]) return;
+      raised[key] = now;
+      rung++;
+      ringReminder(r);
+    });
+    if (rung) {
+      Object.keys(raised).forEach(function (k) { if (now - raised[k] > 2 * 86400000) delete raised[k]; });
+      Store.set('reminded', raised);
+    }
+    if (now - webPlan.made >= 60000) {
+      webPlan.list = planReminders();
+      webPlan.made = now;
+    }
+    return rung;
+  }
+
+  /* raised with the sound the reader chose for it: the phone's own, the soft
+     bells, the reciter, or none */
+  function ringReminder(r) {
+    var recited = soundFor(r.k) === 'buhendi' && RECITED_SOUND[r.k];
+    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime');
+    if (r.s === 'chime') playChime();
+    else if (recited) playRecording('audio/dua/' + recited.f, document.querySelector('.try-sound[data-try="' + r.k + '"]'), recited.n);
+  }
+
+  /* A browser raises nothing until it is allowed to, and only the prayer switch
+     ever asked: the salawat and every other reminder switched on in a browser
+     promised what could never arrive. Turning one on asks the browser, and
+     says so when the answer is no. Inside the app the wrapper holds that
+     permission, so nothing is asked here. */
+  function askToRemind() {
+    if (bridge()) return;
+    var N = window.Notification;
+    if (!N || !N.requestPermission) { toast('تعذّرت الإشعارات على هذا الجهاز، فلن يصلك التذكير'); return; }
+    if (N.permission === 'granted') return;
+    if (N.permission === 'denied') { toast('الإشعارات مغلقة لسُنّتي، فاسمح بها من الإعدادات ليصلك التذكير'); return; }
+    Promise.resolve(N.requestPermission()).then(function (answer) {
+      if (answer !== 'granted') toast('لم يُسمح بالإشعارات، فلن يصلك التذكير');
+    }).catch(function () { /* the browser would not ask */ });
+  }
+
   function handQiyamToApp() {
+    webPlan.made = 0;
     var app = bridge();
     if (!app || !app.setQiyamTimes) return false;
     if (!Store.get('qiyam')) { try { app.setQiyamTimes('[]'); } catch (e) { /* older package */ } return true; }
@@ -5007,7 +5219,8 @@
     var every = scope === 'all';
     if ((every || scope === 'hisn') && typeof HISN !== 'undefined') {
       HISN.forEach(function (c) {
-        c.i.forEach(function (it) { take(it.t, 'حصن المسلم، ' + c.title, 'hisn:' + c.id); });
+        /* a chapter's name is c.t: c.title is nothing, and every hit read «حصن المسلم، undefined» */
+        c.i.forEach(function (it) { take(it.t, 'حصن المسلم، ' + c.t, 'hisn:' + c.id); });
       });
     }
     if ((every || scope === 'dua') && typeof DUA_BOOK !== 'undefined') {
@@ -5074,12 +5287,16 @@
   function surahsNamed(needle) {
     var out = [];
     if (!needle) return out;
-    var asNumber = parseInt(needle, 10);
+    /* what was typed is folded as the name is: a folded name was compared with
+       the words as typed, so الأنعام and إبراهيم and الإسراء were never offered */
+    var plain = Mushaf.normalize(needle);
+    var digits = String(needle).trim().replace(/[\u0660-\u0669]/g, function (d) { return String(d.charCodeAt(0) - 0x0660); });
+    var asNumber = parseInt(digits, 10);
     for (var i = 1; i <= 114; i++) {
       var meta = surahMeta(i);
       if (!meta) continue;
       var name = Mushaf.normalize(meta.ar);
-      if (name.indexOf(needle) !== -1 || (asNumber === i && String(asNumber) === needle.trim())) {
+      if ((plain && name.indexOf(plain) !== -1) || (asNumber === i && String(asNumber) === digits)) {
         out.push(meta);
       }
       if (out.length >= 4) break;
@@ -5130,9 +5347,11 @@
     var hits = Mushaf.search(needle, { limit: 60 });
     var total = Mushaf.countMatches(needle);
     if ($('search-count')) {
+      /* a surah found by its name or its number is a result, so the line does
+         not say «لا نتيجة» above it */
       $('search-count').textContent = total
-        ? 'وردت في ' + ayat(total) + '، وهذه أول ' + ar(hits.length)
-        : 'لا نتيجة';
+        ? 'وردت في ' + ayat(total, true) + '، وهذه أول ' + ar(hits.length)
+        : (named.length ? 'وجدنا ' + count(named.length, 'سورة واحدة', 'سورتين', 'سور', 'سورة') : 'لا نتيجة');
     }
     var surahRows = named.map(function (m) {
       var note = Mushaf.ready() ? ayat(m.ay) + '، تبدأ في صفحة ' + ar(Mushaf.pageOf(m.n, 1)) : ayat(m.ay);
@@ -5203,8 +5422,8 @@
     var plan = Mushaf.khatmaPlan(days, 1);
     var perDay = Math.ceil(TOTAL_PAGES / days);
     if ($('khatma-rate')) {
-      $('khatma-rate').textContent = 'نحو ' + pages(perDay) + ' كل يوم، أي قرابة ' +
-        minutesOf(Math.max(1, Math.round(perDay * 1.6))) + ' من التلاوة';
+      $('khatma-rate').textContent = 'نحو ' + pages(perDay, true) + ' كل يوم، أي قرابة ' +
+        minutesOf(Math.max(1, Math.round(perDay * 1.6)), true) + ' من التلاوة';
     }
 
     var status = Mushaf.khatmaStatus(plan, khatmaElapsedDays(), Store.progress().pagesRead);
@@ -5213,7 +5432,7 @@
 
     var aheadLine;
     if (status.finished) aheadLine = 'أتممت الختمة، فتقبل الله منك';
-    else if (status.ahead > 0) aheadLine = 'أنت متقدم ' + pages(status.ahead);
+    else if (status.ahead > 0) aheadLine = 'أنت متقدم ' + pages(status.ahead, true);
     else if (status.ahead < 0) aheadLine = 'عليك ' + pages(Math.abs(status.ahead)) + ' لتلحق بخطتك';
     else aheadLine = 'أنت في الموعد';
 
@@ -5527,7 +5746,7 @@
     var marks = Store.prayersOf(new Date());
     var done = Store.PRAYER_KEYS.filter(function (k) { return marks[k] && marks[k] !== 'missed'; }).length;
     var st = Store.prayerStats(30);
-    note.textContent = (done ? 'اليوم ' + ar(done) + ' من 5' : 'لم تُعلَّم صلاة اليوم') + (st.streak ? '، و' + daysOf(st.streak) + ' متتابعة بالخمس' : '');
+    note.textContent = (done ? 'اليوم ' + ar(done) + ' من 5' : 'لم تُعلَّم صلاة اليوم') + (st.streak ? '، و' + inARow(st.streak) + ' بالخمس' : '');
   }
 
   function renderTracker() {
@@ -6410,8 +6629,10 @@
     if ($('qada-prayers-tally')) {
       $('qada-prayers-tally').textContent = total ? ar(total) + ' عليك' : 'لا شيء عليك';
     }
+    /* the count between − and + is what is still owed, as the badge says, so
+       a day struck off by mistake is put back with + */
     var owedDays = Store.fastOwed();
-    if ($('qada-fast-owed')) $('qada-fast-owed').textContent = ar(+Store.get('fastOwed') || 0) + ' يوماً عليك';
+    if ($('qada-fast-owed')) $('qada-fast-owed').textContent = owedDays ? daysOf(owedDays) + ' عليك' : 'لا شيء عليك';
     if ($('qada-fast-tally')) {
       $('qada-fast-tally').textContent = owedDays ? 'بقي ' + daysOf(owedDays) : 'لا شيء عليك';
     }
@@ -6549,10 +6770,26 @@
     }
   }
 
+  /* The count and its phrase are kept with the day they were counted on, so a
+     reload, or the phone closing the app behind the reader's back, does not
+     lose a count halfway to its hundred. A new day starts the count afresh on
+     the phrase last used. */
+  function keepTasbih() {
+    Store.set('tasbihNow', { i: state.tasbih.index, c: state.tasbih.count, d: Store.dayKey() });
+  }
+
+  function restoreTasbih() {
+    var kept = Store.get('tasbihNow');
+    var list = phraseList();
+    if (!kept || typeof kept !== 'object' || !list[+kept.i]) { state.tasbih = { index: 0, count: 0 }; return; }
+    state.tasbih = { index: +kept.i, count: kept.d === Store.dayKey() ? Math.max(0, +kept.c || 0) : 0 };
+  }
+
   function countTasbih() {
     var list = phraseList();
     var current = list[state.tasbih.index] || list[0];
     state.tasbih.count++;
+    keepTasbih();
     Store.updateDay(function (rec) { rec.tasbih = (rec.tasbih || 0) + 1; });
     buzz(state.tasbih.count === current.target ? 30 : 8);
     if (state.tasbih.count === current.target) toast('بلغت ' + ar(current.target) + ' في ' + current.t);
@@ -6586,16 +6823,26 @@
   }
 
   function renderSleepNote() {
+    /* the duration running is lit, as a choice is lit everywhere else in the app */
+    $$('#sleep-timer [data-sleep]').forEach(function (chip) {
+      var on = !!state.sleepTimer && +chip.getAttribute('data-sleep') === state.sleepFor;
+      chip.classList.toggle('is-on', on);
+      chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
     var note = $('sleep-note');
     if (!note) return;
     if (!state.sleepTimer) { note.textContent = 'المؤقت متوقف'; return; }
     var left = Math.max(0, Math.round((state.sleepEndsAt - Date.now()) / 60000));
-    note.textContent = 'سيتوقف البث بعد ' + minutesOf(left);
+    note.textContent = 'سيتوقف البث بعد ' + minutesOf(left, true);
   }
 
   function setSleep(minutes) {
+    /* with nothing playing there is nothing to stop: the timer used to start
+       anyway and promise to stop a stream that was not there */
+    if (minutes && !state.playing) { toast('شغّل إذاعة أولاً ثم اختر متى يتوقف البث'); return; }
     if (state.sleepTimer) { window.clearTimeout(state.sleepTimer); state.sleepTimer = null; }
     if (!minutes) { renderSleepNote(); toast('أُلغي المؤقت'); return; }
+    state.sleepFor = minutes;
     state.sleepEndsAt = Date.now() + minutes * 60000;
     state.sleepTimer = window.setTimeout(function () {
       stopAudio();
@@ -6604,7 +6851,7 @@
       toast('توقف البث');
     }, minutes * 60000);
     renderSleepNote();
-    toast('سيتوقف البث بعد ' + minutesOf(minutes));
+    toast('سيتوقف البث بعد ' + minutesOf(minutes, true));
   }
 
   /* ---------------- reference lists ---------------- */
@@ -6614,7 +6861,7 @@
     if (!host || typeof HADITHS === 'undefined') return;
     host.innerHTML = HADITHS.map(function (h) {
       return '<div class="card"><div class="card-head"><h2>الحديث ' + ar(h.n) + '</h2></div>' +
-        '<p class="naskh" style="font-size:1.02rem;line-height:2.1">' + esc(h.t) + '</p>' +
+        '<p class="naskh">' + esc(h.t) + '</p>' +
         '<p class="source">' + esc(h.s) + '، ' + esc(h.r) + '</p></div>';
     }).join('');
   }
@@ -6644,7 +6891,7 @@
     host.innerHTML = DUAS.map(function (group, gi) {
       return '<h2 class="section-title">' + esc(group.cat) + '</h2>' +
         group.items.map(function (d, di) {
-          return '<div class="card"><p class="naskh" style="font-size:1.02rem;line-height:2.1">' +
+          return '<div class="card"><p class="naskh">' +
             esc(d.t) + '</p><div class="dhikr-foot"><p class="source">' + esc(d.r) + '</p>' +
             '<button class="dhikr-share" data-picture="dua:' + gi + ':' + di + '" aria-label="صورة للمشاركة">' + icon('share') + '</button></div></div>';
         }).join('');
@@ -6655,7 +6902,7 @@
     var host = $('ruqyah-list');
     if (!host || typeof RUQYAH === 'undefined') return;
     host.innerHTML = RUQYAH.map(function (r) {
-      return '<div class="card"><p class="naskh" style="font-size:1.02rem;line-height:2.1">' +
+      return '<div class="card"><p class="naskh">' +
         esc(r.t) + '</p><p class="source">' + esc(r.r) + '</p></div>';
     }).join('');
   }
@@ -6857,7 +7104,7 @@
     list.innerHTML = upcoming.map(function (o) {
       return '<div class="row" style="cursor:default"><span class="row-mark">' + icon(o.icon) + '</span>' +
         '<span class="row-body"><span class="row-title">' + esc(o.name) + '</span>' +
-        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days)) +
+        '<span class="row-note">' + (o.days === 0 ? 'اليوم' : 'بعد ' + daysOf(o.days, true)) +
         '<br>' + whenItFalls(o.date) + '</span></span>' +
         '<button class="btn btn-ghost btn-icon" data-act="to-calendar" data-ref="' + esc(o.name) + '|' + o.date.getTime() +
         '" aria-label="أضف ' + esc(o.name) + ' إلى تقويمك">' + icon('calendar') + '</button></div>';
@@ -6997,9 +7244,11 @@
     /* Through ramadan the table carries the imsak, ten minutes before the
        fajr as the calendars print it, so a fasting reader has it in one place. */
     var ramadan = rows.some(function (r) { return r.hijri.m === 9; });
+    /* a column heads every day of the month, so the noon one is الظهر: named
+       after the first day, a month that began on a friday headed it الجمعة */
     var head = '<thead><tr><th>اليوم</th>' +
       (ramadan ? '<th>الإمساك</th>' : '') +
-      TABLE_KEYS.map(function (k) { return '<th>' + esc(prayerName(k, rows[0].date)) + '</th>'; }).join('') +
+      TABLE_KEYS.map(function (k) { return '<th>' + esc(k === 'dhuhr' ? PRAYER_NAMES.dhuhr : prayerName(k)) + '</th>'; }).join('') +
       '</tr></thead>';
 
     /* A gregorian month straddles two hijri ones, so the name is written where
@@ -7037,7 +7286,10 @@
      the family or pin up in the mosque. */
   function timetableText() {
     var at = timetableAt();
-    var lines = ['مواقيت ' + GREG_MONTHS[at.m] + ' ' + ar(at.y) + ' لـ' + place().n,
+    /* the lam joins a name written in letters, للكويت, and stands apart only
+       before the figures of a place known by its coordinates */
+    var where = /^[\u0621-\u064A]/.test(place().n) ? withLam(place().n) : 'لـ' + place().n;
+    var lines = ['مواقيت ' + GREG_MONTHS[at.m] + ' ' + ar(at.y) + ' ' + where,
       'حساب ' + methodName(Store.get('method')), ''];
     timetableRows().forEach(function (row) {
       lines.push(ar(row.date.getDate()) + '/' + ar(at.m + 1) + '  ' +
@@ -7371,7 +7623,6 @@
     if ($('settings-page-layout')) $('settings-page-layout').value = Store.get('pageLayout') || 'flow';
     if ($('settings-listen')) $('settings-listen').value = Store.get('listenAs') || '';
     if ($('settings-clock')) $('settings-clock').value = Store.get('clock') === '24' ? '24' : '12';
-    syncPickers();
     if ($('settings-wird')) $('settings-wird').value = Store.get('wirdAt') || '';
     if ($('settings-jumuah-before')) $('settings-jumuah-before').value = String(+Store.get('jumuahBefore') || 0);
     setSwitch($('settings-qiyam'), !!Store.get('qiyam'));
@@ -7458,6 +7709,10 @@
     setSwitch($('settings-notify'), !!s.notify);
     setSwitch($('settings-vibrate'), !!s.vibrate);
     applyFont();
+    /* the buttons are told what the lists hold once every list is set: told
+       halfway, the tafsir and the bedtime and the sounds kept showing what
+       they held before a delete or a restore */
+    syncPickers();
 
     /* the App Store card is for readers in a browser; inside the app it would point at itself */
     if ($('about-store')) $('about-store').hidden = !!bridge();
@@ -7535,6 +7790,10 @@
       if (!result.ok) { toast('الملف غير صالح'); return; }
       /* a backup made before one sunnah had one tick brings its old names back */
       settleTicks();
+      /* and one made before آية الكرسي and the quls headed the morning and
+         evening lists brings its days counted in the older order */
+      settleAzkar();
+      restoreTasbih();
       state.place = null;
       applyTheme();
       applyFont();
@@ -7546,10 +7805,27 @@
     reader.readAsText(file);
   }
 
+  /* One press used to wipe everything, with nothing asked and nothing to
+     take back, from a button that sits under the backup buttons. */
+  function askClearEverything() {
+    confirmSheet('حذف كل البيانات',
+      'يُحذف من هذا الجهاز كل ما سجّلته فيه: إعداداتك وموقعك، والآيات التي علّمتها وملاحظاتك عليها، ' +
+      'وسجل صلواتك وسننك وأذكارك، وخطة الختمة وخطوات العمرة، والتلاوات المحفوظة للاستماع بلا إنترنت، ' +
+      'ولا يعود شيء منه إلا من نسخة احتياطية، فخذ نسختك قبل الحذف إن أردت الاحتفاظ به',
+      'احذف كل شيء', 'clear-everything');
+  }
+
   function clearEverything() {
+    closeSheet();
     var removed = Store.clearAll();
     state.place = null;
     state.tasbih = { index: 0, count: 0 };
+    /* The recitations kept for listening offline go with the rest. Their
+       flags went with the settings, and audio the app no longer knows it
+       holds could never be found again to be removed. */
+    try {
+      if (window.caches && window.caches.delete) window.caches.delete(AUDIO_STORE).catch(function () { /* nothing kept */ });
+    } catch (e) { /* no store on this device */ }
     applyTheme();
     applyFont();
     refreshTimes();
@@ -7642,6 +7918,11 @@
       verseSheet(s, a);
       if (state.view === 'reader') renderReader();
       if (state.view === 'bookmarks') renderBookmarks();
+      /* the page shows its marks as well, and is marked in place: drawing it
+         again would throw the reader back to the top of the page */
+      $$('#page-body .ayah[data-ayah="' + s + ':' + a + '"]').forEach(function (el) {
+        el.classList.toggle('is-marked', !!Store.bookmarkKind(s, a));
+      });
     },
     share: function (ref) {
       var parts = ref.split(':');
@@ -7682,16 +7963,30 @@
     /* the tap on the line is the reader asking on purpose, so it is the loud one */
     'khatma-plus': function () { stepKhatma(1); },
     'khatma-minus': function () { stepKhatma(-1); },
+    /* starting over wipes the count of pages read, so it is asked first */
     'khatma-restart': function () {
+      confirmSheet('ختمة جديدة',
+        'يرجع عدّاد الختمة إلى أول المصحف وتبدأ أيام الخطة من اليوم، وكنت قرأت ' +
+        ar(Store.progress().pagesRead || 0) + ' من ' + pages(TOTAL_PAGES),
+        'ابدأ ختمة جديدة', 'khatma-restart-now');
+    },
+    'khatma-restart-now': function () {
+      closeSheet();
       Store.setReadPages(0);
       Store.set('khatmaStart', Date.now());
       renderKhatma();
       toast('بدأت ختمة جديدة');
     },
+    'sheet-cancel': function () { closeSheet(); },
+    'clear-everything': function () { clearEverything(); },
     'share-jumuah-night': function () { shareJumuahNight(); },
     'share-sunan': function () {
       var rows = todaySunanLines();
-      sharePicture(listCard('سنن اليوم', rows, 'من السنن الرواتب'),
+      /* the card is the list of the day, so it carries the day it is for:
+         «من السنن الرواتب» stood over fasts, adhkar and charity */
+      var day = sunnahDay();
+      var h = Hijri.toHijri(day, Store.get('hijriAdjust'));
+      sharePicture(listCard('سنن اليوم', rows, h.weekday + '، ' + Hijri.format(h)),
         'sunan.png', 'سنن اليوم', rows.join('\n') + '\n\nتطبيق سُنّتي · sunnati.3li.info');
     },
     'snooze-jumuah-night': function () {
@@ -7771,7 +8066,8 @@
       Store.markFast(1);
       buzz(8);
       renderQada();
-      toast('تقبّل الله، بقي ' + daysOf(Store.fastOwed()));
+      var left = Store.fastOwed();
+      toast(left ? 'تقبّل الله، بقي ' + daysOf(left) : 'تقبّل الله، وقضيت كل ما عليك');
     },
     'to-calendar': function (ref) {
       var at = ref.lastIndexOf('|');
@@ -7782,7 +8078,20 @@
       closeSheet();
       startAutoScroll();
     },
+    /* the steps marked on the way are the pilgrim's place in the rite, so
+       wiping them is asked first */
     'umrah-reset': function () {
+      var marked = Object.keys(Store.get('umrah') || {}).length;
+      if (!marked) { toast('لم تعلّم خطوة بعد'); return; }
+      var total = 0;
+      UMRAH_STAGES.forEach(function (stage) { total += stage.i.length; });
+      confirmSheet('البدء من جديد',
+        'تُمسح علامات الخطوات التي أدّيتها وهي ' + count(marked, 'خطوة واحدة', 'خطوتان', 'خطوات', 'خطوة') +
+        ' من ' + ar(total) + '، فتبدأ العمرة من أولها',
+        'امسح الخطوات', 'umrah-reset-now');
+    },
+    'umrah-reset-now': function () {
+      closeSheet();
       Store.set('umrah', {});
       renderUmrah();
       toast('بدأت الخطوات من أولها');
@@ -7851,7 +8160,15 @@
       var times = +$('rep-times').value;
       startRepeat(from, to, times, $('rep-hide').checked);
     },
+    /* every mark at once, so it is asked first */
     'clear-bookmarks': function () {
+      var marked = Store.bookmarks().length;
+      confirmSheet('مسح كل العلامات',
+        'تُمسح العلامات التي وضعتها على الآيات كلها، وعددها ' + ar(marked) + '، وتبقى ملاحظاتك عليها كما هي',
+        'امسح العلامات', 'clear-bookmarks-now');
+    },
+    'clear-bookmarks-now': function () {
+      closeSheet();
       Store.clearBookmarks();
       renderBookmarks();
       toast('مُسحت المحفوظات');
@@ -8020,6 +8337,7 @@
     if (phrase) {
       state.tasbih.index = +phrase.getAttribute('data-phrase');
       state.tasbih.count = 0;
+      keepTasbih();
       renderTasbih();
       return;
     }
@@ -8102,6 +8420,15 @@
 
   function wire() {
     document.addEventListener('click', onClick);
+    /* A dimmed list is a disabled button, and a browser hands a disabled button
+       no click, so what onClick says about it was never heard. The lift of the
+       finger still arrives, and says it instead. */
+    ['pointerup', 'touchend'].forEach(function (ev) {
+      document.addEventListener(ev, function (e) {
+        var dimmed = e.target && e.target.closest ? e.target.closest('.picker-btn') : null;
+        if (dimmed && dimmed.disabled) toast('شغّل التذكير أولاً من المفتاح');
+      }, { passive: true });
+    });
 
     window.addEventListener('scroll', updateReadProgress, { passive: true });
 
@@ -8112,9 +8439,18 @@
       /* and the walkthrough the same: its own step undone by its end, and a
          back while it is open ends it */
       if (tour.skipPop) { tour.skipPop = false; return; }
+      /* and a sheet the same */
+      if (sheetStep.skipPop) { sheetStep.skipPop = false; return; }
       if (tour.open) { endTour(true); return; }
       if (skyview.open) { closeSkyview(true); return; }
-      if ($('sheet') && $('sheet').classList.contains('is-open')) { closeSheet(); return; }
+      if ($('sheet') && $('sheet').classList.contains('is-open')) {
+        /* a sheet with a step of its own loses that step and nothing more; one
+           that could not take a step took the screen's, which is put back */
+        var own = sheetStep.pushed;
+        closeSheet(true);
+        if (!own) pushAddress(state.view);
+        return;
+      }
       followAddress();
     });
 
@@ -8170,6 +8506,7 @@
     bind('tasbih-tap', 'click', countTasbih);
     bind('tasbih-reset', 'click', function () {
       state.tasbih.count = 0;
+      keepTasbih();
       renderTasbih();
       toast('صُفّر العدّاد');
     });
@@ -8239,9 +8576,15 @@
       paceSheet();
     });
     bind('to-top', 'click', function () { stopAutoScroll(true); scrollToTop(); });
-    /* a touch anywhere stops the page walking, so the reader is never fought */
+    /* a touch anywhere stops the page walking, so the reader is never fought.
+       A touch on the reading button itself is left to the button: stopped
+       here first, its click found nothing walking and opened the paces again. */
     ['pointerdown', 'wheel', 'keydown'].forEach(function (ev) {
-      window.addEventListener(ev, function () { if (state.autoScroll) stopAutoScroll(); }, { passive: true });
+      window.addEventListener(ev, function (e) {
+        if (!state.autoScroll) return;
+        var on = e.target && e.target.closest ? e.target.closest('#reader-autoscroll, #page-autoscroll') : null;
+        if (!on) stopAutoScroll();
+      }, { passive: true });
     });
     watchScrollPosition();
 
@@ -8327,6 +8670,22 @@
       Store.set('theme', e.target.value);
       applyTheme();
       applyAccent(currentWindowKey());
+    });
+    /* The shape of the page was offered and never kept: nothing heard the
+       choice, so «كما طُبعت» went back to the flowing text at once. */
+    bind('settings-page-layout', 'change', function (e) {
+      var shape = e.target.value === 'madinah' ? 'madinah' : 'flow';
+      Store.set('pageLayout', shape);
+      if (shape === 'flow') {
+        if (state.view === 'page') renderPage();
+        toast('تُعرض الصفحة نصّاً متّصلاً');
+        return;
+      }
+      toast('تُعرض الصفحة كما طُبعت في مصحف المدينة');
+      loadMadinahLines().then(function (lines) {
+        if (!lines) { toast('تعذّر تحميل الصفحات كما طُبعت، فتأكد من الاتصال'); return; }
+        if (state.view === 'page') renderPage();
+      });
     });
     /* The clock runs slow in the background, so the moment the app is back in
        front the check runs and anything that fell due is raised. */
@@ -8418,6 +8777,7 @@
       setSwitch($('settings-jumuah-night'), on);
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير ليلة الجمعة' : 'أُوقف تذكير ليلة الجمعة');
+      if (on) askToRemind();
     });
     bind('settings-jumuah-before', 'change', function (e) {
       Store.set('jumuahBefore', +e.target.value);
@@ -8432,6 +8792,7 @@
       renderNextFast();
       handRemindersToApp();
       toast(on ? 'سيصلك تذكير في ليلة اليوم الذي يُستحب صيامه' : 'أُوقف تذكير الصيام');
+      if (on) askToRemind();
     });
     /* five switches of one shape: flip, keep, hand to the wrapper, say so */
     [['morningAdhkar', 'أذكار الصباح'], ['eveningAdhkar', 'أذكار المساء'],
@@ -8443,6 +8804,7 @@
         setSwitch($('settings-' + pair[0]), on);
         handRemindersToApp();
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
+        if (on) askToRemind();
       });
     });
     /* Bound on the document, not on the element: the bedtime input is replaced
@@ -8497,6 +8859,7 @@
         var on = !whenIsOn(pair[0]);
         setWhenOn(pair[0], on);
         toast(on ? 'سيصلك تذكير: ' + pair[1] : 'أُوقف تذكير ' + pair[1]);
+        if (on) askToRemind();
       });
     });
     [['contrast', 'settings-contrast', 'التباين الأعلى'], ['lessMotion', 'settings-motion', 'تقليل الحركة']].forEach(function (p) {
@@ -8515,6 +8878,7 @@
       handRemindersToApp();
       showDuhaTime();
       toast(on ? 'سيصلك تذكير بصلاة الضحى' : 'أُوقف تذكير الضحى');
+      if (on) askToRemind();
     });
     bind('settings-qiyam', 'click', function () {
       var on = !Store.get('qiyam');
@@ -8523,6 +8887,7 @@
       handQiyamToApp();
       showQiyamTime();
       toast(on ? 'سيصلك تنبيه عند الثلث الأخير' : 'أُوقف تذكير القيام');
+      if (on) askToRemind();
     });
 
     bind('settings-salawat', 'change', function (e) {
@@ -8590,7 +8955,7 @@
     bind('data-export', 'click', exportBackup);
     bind('data-import', 'click', function () { if ($('data-file')) $('data-file').click(); });
     bind('data-file', 'change', function (e) { importBackup(e.target.files && e.target.files[0]); });
-    bind('data-clear', 'click', clearEverything);
+    bind('data-clear', 'click', askClearEverything);
     bind('offline-cache', 'click', cacheEverything);
     bind('offline-refresh', 'click', refetchEverything);
     bind('settings-install', 'click', install);
@@ -8846,7 +9211,14 @@
        it and goes nowhere else */
     try {
       if (window.history && window.history.pushState) {
-        window.history.pushState({ view: state.view, tour: true }, '');
+        /* a sheet shut just now left its step, and the walkthrough takes it
+           over rather than standing on it */
+        if (sheetStep.spent && window.history.state && window.history.state.sheet) {
+          sheetStep.spent = false;
+          window.history.replaceState({ view: state.view, tour: true }, '');
+        } else {
+          window.history.pushState({ view: state.view, tour: true }, '');
+        }
         tour.pushed = true;
       }
     } catch (e) { /* file:// refuses */ }
@@ -9135,7 +9507,9 @@
     if (tour.returning && !Store.get('tour')) Store.set('tour', true);
     countDay();
     settleTicks();
+    settleAzkar();
     Store.prune();
+    restoreTasbih();
     applyTheme();
     applyFont();
     applyAccess();
@@ -9199,6 +9573,8 @@
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone,
+      remindInPage: remindInPage, askToRemind: askToRemind, clockText: clockText, daysOf: daysOf, inARow: inARow,
+      timetableText: timetableText, settleAzkar: settleAzkar, restoreTasbih: restoreTasbih, setSleep: setSleep,
       shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
       feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
       cameBefore: cameBefore, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,

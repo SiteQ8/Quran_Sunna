@@ -99,7 +99,14 @@
        reader has been asked to rate it, which happens once at most */
     usedDays: 0,
     usedOn: '',
-    rateAsked: false
+    rateAsked: false,
+    /* the count on the tasbih and the phrase it is on, kept with the day it
+       was counted on, so a reload or the phone closing the app does not lose
+       a count halfway to its hundred */
+    tasbihNow: null,
+    /* the reminders a browser has already raised, by their key and minute,
+       so a reload never raises the same one twice */
+    reminded: {}
   };
 
   var memory = {};
@@ -159,11 +166,21 @@
 
   var cache = null;
 
+  /* A default that is an object is handed out as a copy of its own. The
+     settings used to hold the very object kept in DEFAULTS, so a caller that
+     added to it in place (a step of the umrah, the sound of a reminder, a
+     surah kept for listening) changed the default itself, and deleting all
+     the data rebuilt the settings from those changed defaults and wrote the
+     deleted record back with the next change of anything. */
+  function fresh(value) {
+    return value !== null && typeof value === 'object' ? JSON.parse(JSON.stringify(value)) : value;
+  }
+
   function settings() {
     if (cache) return cache;
     var saved = readJSON(PREFIX + 'settings', {});
     cache = {};
-    for (var k in DEFAULTS) cache[k] = Object.prototype.hasOwnProperty.call(saved, k) ? saved[k] : DEFAULTS[k];
+    for (var k in DEFAULTS) cache[k] = Object.prototype.hasOwnProperty.call(saved, k) ? saved[k] : fresh(DEFAULTS[k]);
     return cache;
   }
 
@@ -183,7 +200,7 @@
 
   function get(key) {
     var s = settings();
-    return Object.prototype.hasOwnProperty.call(s, key) ? s[key] : DEFAULTS[key];
+    return Object.prototype.hasOwnProperty.call(s, key) ? s[key] : fresh(DEFAULTS[key]);
   }
 
   function resetSettings() {
@@ -200,10 +217,16 @@
     return d.getFullYear() + '-' + (m < 10 ? '0' : '') + m + '-' + (day < 10 ? '0' : '') + day;
   }
 
+  /* The order of the morning and evening lists a day was counted in. A dhikr
+     is counted by its place in its list, and آية الكرسي and the three quls
+     were set at the head of both, so a day without this mark was counted in
+     the older order and the app moves its counts along once. */
+  var AZKAR_ORDER = 1;
+
   /* marked: what a row of the hour card marked by itself, by the row, so a
      second touch can take back only that, even after the app was closed */
   function emptyDay() {
-    return { azkar: {}, hisn: {}, sunnah: {}, marked: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0 };
+    return { azkar: {}, hisn: {}, sunnah: {}, marked: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0, azkarOrder: AZKAR_ORDER };
   }
 
   /* A field of the wrong kind, which a hand-edited backup or an old build can
@@ -322,7 +345,14 @@
     return Math.max(0, (+get('fastOwed') || 0) - (+get('fastDone') || 0));
   }
 
-  function setFastOwed(n) { set('fastOwed', Math.max(0, n | 0)); }
+  /* Lowering the days owed below the days fasted lowers the fasted with them.
+     The fasted days once outran the owed: every day added after was swallowed
+     by them, and the counter read one day owed and nothing owed at once. */
+  function setFastOwed(n) {
+    var owed = Math.max(0, n | 0);
+    set('fastOwed', owed);
+    if ((+get('fastDone') || 0) > owed) set('fastDone', owed);
+  }
 
   function markFast(by) {
     set('fastDone', Math.max(0, (+get('fastDone') || 0) + (by || 1)));
@@ -631,6 +661,7 @@
     toggleSunnah: toggleSunnah,
     setAzkarCount: setAzkarCount,
     azkarProgress: azkarProgress,
+    AZKAR_ORDER: AZKAR_ORDER,
     setPrayer: setPrayer,
     prayersOf: prayersOf,
     prayerStats: prayerStats,

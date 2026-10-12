@@ -155,7 +155,7 @@
     {
       "name": "أذكار الصباح",
       "short_name": "الأذكار",
-      "url": "./#azkar",
+      "url": "./#azkar/morning",
       "icons": [
         {
           "src": "icons/icon-96.png",
