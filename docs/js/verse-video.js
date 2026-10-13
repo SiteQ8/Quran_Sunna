@@ -35,8 +35,30 @@
 
   var CREAM = '#f6eedd', GOLD = '#d6b26a';
   var SHADE = [['rgba(4, 9, 28, 0.6)', 22, 2], ['rgba(4, 9, 28, 0.45)', 3, 1]];
-  /* the scene, fetched only when a video is made and kept by the worker after */
-  var SCENE = { still: 'img/verse/night-sea.webp', loop: 'img/verse/night-sea-loop.mp4', sea: 1440, feather: 60 };
+  /* The scene a verse is set in: the night of the reader's own country,
+     keyed as the opening painting is chosen, and the plain shore by night for
+     any other. Each is a still of the whole frame and a seamless loop of its
+     moving water, laid in from the line where the strip starts (sea), as tall
+     in the frame as the strip is (strip), its top pixels faded into the still
+     (feather). A scene whose landmark rises higher may hold the verse above a
+     line of its own (limit), and set the app over its water at another height
+     (foot). Fetched only when a video is made, and kept by the worker after. */
+  var SCENES = {
+    'default': { still: 'img/verse/night-sea.webp', loop: 'img/verse/night-sea-loop.mp4', sea: 1440, strip: 480, feather: 60 }
+  };
+  var SCENE = SCENES['default'];
+
+  /* the scene of a country, or the plain shore where it has none */
+  function sceneFor(land) {
+    return land && Object.prototype.hasOwnProperty.call(SCENES, land) ? SCENES[land] : SCENE;
+  }
+
+  /* how tall the strip stands in the frame, and how far its edges fade */
+  function stripOf(scene) {
+    var tall = scene.strip || H - scene.sea;
+    var fade = Math.max(0, Math.min(scene.feather || 0, tall / 2));
+    return { tall: tall, fade: fade, low: scene.sea + tall < H ? fade : 0 };
+  }
   var ICON = 'icons/icon-192.png';
   /* The two store badges as their owners publish them, never altered, and
      drawn so their black shapes stand the same height. Apple's shape fills its
@@ -228,7 +250,8 @@
      sky above the mosque, lifting the whole a little for a long one. Phrase
      blocks first; a verse with more phrases than will stand that way runs as
      one block. */
-  function arrange(ctx, words, groups, face) {
+  function arrange(ctx, words, groups, face, limit) {
+    var floor = limit || BOX.limit;
     var all = words.map(function (w, i) { return i; });
     var tries = groups.length > 1 ? [groups, [all]] : [[all]];
     var lay = null;
@@ -236,7 +259,7 @@
       for (var k = 0; k < SIZES.length; k++) {
         lay = layAt(ctx, words, tries[t], face, SIZES[k]);
         var bottom = BOX.top + lay.h + BOX.gap + BOX.rec;
-        lay.lift = Math.max(0, bottom - BOX.limit);
+        lay.lift = Math.max(0, bottom - floor);
         if (lay.lift <= BOX.lift) return lay;
       }
     }
@@ -444,9 +467,9 @@
      in the preview behind the canvas, where it counts as seen, since a phone
      may pause a muted video it thinks nobody can see. If it cannot play, the
      still is the whole scene. */
-  function loadLoop(url, host) {
+  function loadLoop(scene, host) {
     if (!root.fetch || !root.URL || !root.URL.createObjectURL) return Promise.resolve(null);
-    return root.fetch(url).then(function (res) {
+    return root.fetch(scene.loop).then(function (res) {
       if (!res.ok) throw failure('loop');
       return res.blob();
     }).then(function (blob) {
@@ -471,6 +494,17 @@
         v.setAttribute('playsinline', '');
         v.setAttribute('aria-hidden', 'true');
         v.className = 'video-sea';
+        /* where the strip lies in the frame and how its edges fade, as the
+           video itself draws them */
+        var strip = stripOf(scene);
+        var pct = function (n) { return (Math.round(n * 10000) / 100) + '%'; };
+        v.style.top = pct(scene.sea / H);
+        v.style.bottom = 'auto';
+        v.style.height = pct(strip.tall / H);
+        var mask = 'linear-gradient(to bottom, transparent, #000 ' + pct(strip.fade / strip.tall) +
+          (strip.low ? ', #000 ' + pct(1 - strip.low / strip.tall) + ', transparent' : '') + ')';
+        v.style.webkitMaskImage = mask;
+        v.style.maskImage = mask;
         v.addEventListener('playing', function () { finish(true); });
         v.addEventListener('error', function () { finish(false); });
         if (host) host.appendChild(v);
@@ -616,12 +650,14 @@
     var face = "'Amiri Quran', 'Amiri', serif";
     var ui = "'IBM Plex Sans Arabic', sans-serif";
     var scene = o.scene || SCENE;
+    /* the scene stands in the frame while the recitation loads */
+    if (o.host && o.host.style) o.host.style.backgroundImage = 'url("' + scene.still + '")';
     var said = [o.text, o.surah, o.by, o.voice, o.name, o.number].join(' ');
     var loop = null;
     return Promise.all([
       fetchAudio(audio, o.audioUrl),
       loadImage(scene.still),
-      loadLoop(scene.loop, o.host).then(function (l) {
+      loadLoop(scene, o.host).then(function (l) {
         if (l && state.cancelled) { dropLoop(l); return null; }
         loop = state.loop = l;
         return l;
@@ -661,7 +697,8 @@
     var progress = o.onProgress || function () {};
     var probe = canvas(8, 8).getContext('2d');
     var groups = phrasesByMarks(words);
-    var lay = arrange(probe, words, groups, face);
+    var scene = o.scene || SCENE;
+    var lay = arrange(probe, words, groups, face, scene.limit);
     var units = unitSpans(lay, litUnits(words, groups, lay));
     var verseTop = BOX.top - lay.lift;
 
@@ -725,7 +762,8 @@
     /* the app over the water: its icon and name, and under them the two
        badges, all on a quiet darkening so the mosque's light on the sea does
        not run through them */
-    var footTop = FOOT.centre - (FOOT.icon + FOOT.gap + FOOT.badge) / 2;
+    var centre = scene.foot || FOOT.centre;
+    var footTop = centre - (FOOT.icon + FOOT.gap + FOOT.badge) / 2;
     var shade = canvas(W, 360), sc = shade.getContext('2d');
     sc.save();
     sc.translate(W / 2, 180); sc.scale(1, 160 / 330);
@@ -753,15 +791,29 @@
     var badges = canvas(W, 140), gc = badges.getContext('2d');
     drawBadges(gc, W / 2, 30, FOOT.badge, marks);
 
-    /* The sea laid into the still: the loop drawn whole below its top sixty
-       pixels, and those sixty faded into the still on a canvas of their own.
-       destination-in keeps only what its fill covers, so the fill is the
-       band itself, clear at the top and whole at its foot. */
-    var scene = o.scene || SCENE, seaH = H - scene.sea;
-    var band = canvas(W, scene.feather), bandCtx = band.getContext('2d');
-    var feather = bandCtx.createLinearGradient(0, 0, 0, scene.feather);
-    feather.addColorStop(0, 'rgba(0, 0, 0, 0)');
-    feather.addColorStop(1, 'rgba(0, 0, 0, 1)');
+    /* The sea laid into the still: the strip drawn straight from the loop
+       between its faded edges, and each edge faded into the still on a
+       canvas of its own, the top always and the foot where the strip ends
+       above the frame's. destination-in keeps only what its fill covers, so
+       the fill is the band itself, clear at the still's side. */
+    var strip = stripOf(scene);
+    var band = canvas(W, Math.max(1, strip.fade)), bandCtx = band.getContext('2d');
+    function fadeOf(from, to) {
+      var g = bandCtx.createLinearGradient(0, 0, 0, Math.max(1, strip.fade));
+      g.addColorStop(0, 'rgba(0, 0, 0, ' + from + ')');
+      g.addColorStop(1, 'rgba(0, 0, 0, ' + to + ')');
+      return g;
+    }
+    var fadeIn = fadeOf(0, 1), fadeOut = fadeOf(1, 0);
+    function blend(v, vw, k, from, rows, at, fade) {
+      bandCtx.globalCompositeOperation = 'source-over';
+      bandCtx.clearRect(0, 0, W, rows);
+      bandCtx.drawImage(v, 0, from * k, vw, rows * k, 0, 0, W, rows);
+      bandCtx.globalCompositeOperation = 'destination-in';
+      bandCtx.fillStyle = fade;
+      bandCtx.fillRect(0, 0, W, rows);
+      ctx.drawImage(band, 0, 0, W, rows, 0, at, W, rows);
+    }
 
     var timing = segmentTiming(segments, words, units) || pauseTiming(buffer, units);
     var dur = buffer.duration, total = LEAD + dur + TAIL;
@@ -778,18 +830,13 @@
       ctx.globalAlpha = 1;
       ctx.drawImage(still, 0, 0, W, H);
       if (loop && loop.video.readyState >= 2) {
-        var v = loop.video, vw = v.videoWidth || W, vh = v.videoHeight || seaH;
-        var cut = vh * scene.feather / seaH;
-        ctx.drawImage(v, 0, cut, vw, vh - cut, 0, scene.sea + scene.feather, W, seaH - scene.feather);
-        bandCtx.globalCompositeOperation = 'source-over';
-        bandCtx.clearRect(0, 0, W, scene.feather);
-        bandCtx.drawImage(v, 0, 0, vw, cut, 0, 0, W, scene.feather);
-        bandCtx.globalCompositeOperation = 'destination-in';
-        bandCtx.fillStyle = feather;
-        bandCtx.fillRect(0, 0, W, scene.feather);
-        ctx.drawImage(band, 0, scene.sea);
+        var v = loop.video, vw = v.videoWidth || W, k = (v.videoHeight || strip.tall) / strip.tall;
+        var mid = strip.tall - strip.fade - strip.low;
+        if (mid > 0) ctx.drawImage(v, 0, strip.fade * k, vw, mid * k, 0, scene.sea + strip.fade, W, mid);
+        if (strip.fade) blend(v, vw, k, 0, strip.fade, scene.sea, fadeIn);
+        if (strip.low) blend(v, vw, k, strip.tall - strip.low, strip.low, scene.sea + strip.tall - strip.low, fadeOut);
       }
-      ctx.drawImage(shade, 0, FOOT.centre - 180);
+      ctx.drawImage(shade, 0, centre - 180);
       ctx.drawImage(title, 0, titleY - 50);
       var on = lights(events, units.length, t - LEAD, end);
       /* Before the voice the whole verse stands lit, so the first frame reads
@@ -937,7 +984,8 @@
 
   root.VerseVideo = {
     W: W, H: H, FPS: FPS, LEAD: LEAD, TAIL: TAIL, DIM: DIM, MAX_WORDS: MAX_WORDS, MAX_SECONDS: MAX_SECONDS,
-    TYPES: TYPES, PIECE: PIECE, SCENE: SCENE, BADGES: BADGES, AUDIO: AUDIO, TIMED: TIMED,
+    TYPES: TYPES, PIECE: PIECE, SCENE: SCENE, SCENES: SCENES, BADGES: BADGES, AUDIO: AUDIO, TIMED: TIMED,
+    sceneFor: sceneFor, stripOf: stripOf,
     hasVoice: hasVoice, audioUrl: audioUrl, timings: timings,
     pickType: pickType, supported: supported, tokens: tokens, wordCount: wordCount, phrasesByMarks: phrasesByMarks,
     balanced: balanced, arrange: arrange, litUnits: litUnits, unitSpans: unitSpans,
