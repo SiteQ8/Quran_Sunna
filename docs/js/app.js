@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.76';
+  var VERSION = '8.87.77';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -8367,10 +8367,10 @@
       var text = topic.i[+parts[1]];
       if (text) sharePicture(textCard('من أدعية ' + topic.n, text, 'naskh', ''), 'dua.png', topic.n, text + '\n\nsunnati.3li.info');
     },
-    'hear-salawat': function () { 
-      var name = salawatName();
-      playRecording(salawatUrl(), 'settings-voice-try', name);
-      notify('استمع الصلاة على النبي', name, 'audio');
+    /* the preview is heard, not announced: a notice here rang the phone's own
+       tone over the voice being tried */
+    'hear-salawat': function () {
+      playRecording(salawatUrl(), 'settings-voice-try', salawatName());
     },
     'open-kahf': function () { closeSheet(); state.surah = 18; go('reader'); },
     /* the khatma card redraws itself on every change, so a listener put on the

@@ -15,8 +15,9 @@
   'use strict';
 
   var W = 1080, H = 1920, FPS = 24;
-  /* the scene comes up from black, the voice follows a second in, and the
-     scene holds two seconds after it, as in the sample the owner approved */
+  /* the voice comes a second in and the scene holds two seconds after it, as
+     in the sample the owner approved; the first frame is already the whole
+     picture, since it is what a chat shows before anyone presses play */
   var LEAD = 1.0, TAIL = 2.0;
   /* the phrase not being recited */
   var DIM = 0.42;
@@ -55,24 +56,15 @@
      copy opens with. A few verses in a folder are another take by the same
      reciter: of those checked, 2:254, 2:255, 11:36 and 11:88 of Husary
      mujawwad and 33:4 of Maher. */
-  var AUDIO = {
-    'ar.abdulsamad': 'https://everyayah.com/data/AbdulSamad_64kbps_QuranExplorer.Com/',
-    'ar.abdurrahmaansudais': 'https://everyayah.com/data/Abdurrahmaan_As-Sudais_64kbps/',
-    'ar.mahermuaiqly': 'https://everyayah.com/data/Maher_AlMuaiqly_64kbps/',
-    'ar.saoodshuraym': 'https://everyayah.com/data/Saood_ash-Shuraym_128kbps/',
-    'ar.husary': 'https://everyayah.com/data/Husary_128kbps/',
-    'ar.husarymujawwad': 'https://everyayah.com/data/Husary_128kbps_Mujawwad/',
-    'ar.minshawi': 'https://everyayah.com/data/Minshawy_Murattal_128kbps/',
-    'ar.shaatree': 'https://everyayah.com/data/Abu_Bakr_Ash-Shaatree_128kbps/',
-    'ar.ahmedajamy': 'https://everyayah.com/data/Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net/',
-    'ar.hudhaify': 'https://everyayah.com/data/Hudhaify_128kbps/',
-    'ar.hanirifai': 'https://everyayah.com/data/Hani_Rifai_64kbps/',
-    'ar.ibrahimakhbar': 'https://everyayah.com/data/Ibrahim_Akhdar_32kbps/',
-    'ar.muhammadayyoub': 'https://everyayah.com/data/Muhammad_Ayyoub_64kbps/',
-    'ar.muhammadjibreel': 'https://everyayah.com/data/Muhammad_Jibreel_64kbps/',
-    'ar.abdullahbasfar': 'https://everyayah.com/data/Abdullah_Basfar_64kbps/',
-    'ar.aymanswoaid': 'https://everyayah.com/data/Ayman_Sowaid_64kbps/'
-  };
+  var AUDIO = (function () {
+    /* the folder is named beside each reciter in the list (ea), which the
+       app also keeps its offline copies from, so the two never part */
+    var map = {};
+    (root.RECITERS || []).forEach(function (r) {
+      if (r && r.ea) map[r.id] = 'https://everyayah.com/data/' + r.ea + '/';
+    });
+    return map;
+  })();
 
   /* quran.com publishes when every word is said for these three, for files
      byte for byte the same as the folders above, so their phrases are lit
@@ -779,13 +771,11 @@
     var out = canvas(W, H), ctx = out.getContext('2d');
     if (o.host) { out.className = 'video-canvas'; o.host.appendChild(out); }
 
-    function fade(t, from, over) { return Math.max(0, Math.min(1, (t - from) / over)); }
+    /* the first event lights the first phrase as the reciter begins */
+    var first = events.length ? events[0] : null;
 
     function draw(t) {
       ctx.globalAlpha = 1;
-      ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, W, H);
-      ctx.globalAlpha = fade(t, 0, 0.6);
       ctx.drawImage(still, 0, 0, W, H);
       if (loop && loop.video.readyState >= 2) {
         var v = loop.video, vw = v.videoWidth || W, vh = v.videoHeight || seaH;
@@ -800,22 +790,25 @@
         ctx.drawImage(band, 0, scene.sea);
       }
       ctx.drawImage(shade, 0, FOOT.centre - 180);
-      ctx.globalAlpha = fade(t, 0.2, 0.8);
       ctx.drawImage(title, 0, titleY - 50);
-      var verse = fade(t, 0.5, 0.8);
-      if (verse > 0) {
-        var on = lights(events, units.length, t - LEAD, end);
-        units.forEach(function (u, k) {
-          ctx.globalAlpha = verse * (DIM + (1 - DIM) * on[k]);
-          ctx.drawImage(layers[k], 0, verseTop + u.top);
-        });
+      var on = lights(events, units.length, t - LEAD, end);
+      /* Before the voice the whole verse stands lit, so the first frame reads
+         in full, and as the reciter begins the light gathers onto the first
+         phrase, which stays lit throughout and never dips. */
+      if (first) {
+        var x = t - LEAD + 0.5;
+        var whole = Math.max(0, Math.min(1, (first.t - x) / 0.55));
+        if (whole > 0) for (var i = 0; i < on.length; i++) on[i] = Math.max(on[i], whole);
+        if (x < first.t + 0.55) on[first.unit] = 1;
       }
-      ctx.globalAlpha = fade(t, 1.0, 0.8);
+      units.forEach(function (u, k) {
+        ctx.globalAlpha = DIM + (1 - DIM) * on[k];
+        ctx.drawImage(layers[k], 0, verseTop + u.top);
+      });
+      ctx.globalAlpha = 1;
       ctx.drawImage(rec, 0, recTop - 18);
-      ctx.globalAlpha = fade(t, 1.4, 0.8);
       ctx.drawImage(brand, 0, footTop - 30);
       /* the badges are never faded or moved: they stand as published */
-      ctx.globalAlpha = 1;
       ctx.drawImage(badges, 0, badgeTop - 30);
     }
 
