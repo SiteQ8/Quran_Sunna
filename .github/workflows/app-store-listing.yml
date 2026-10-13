@@ -12,15 +12,17 @@
 #   send         the version a build run prepared after TestFlight is sent
 #                for review as it is, with the build of ios/project.yml and
 #                what is new, and nothing is built again
+#   replace      as send, but a version waiting for review is taken back
+#                first and renamed to this one, with this build in it
 name: App Store listing
 
 on:
   workflow_dispatch:
     inputs:
       what:
-        description: 'status, screenshots, withdraw (take back a version waiting for review, place them, send it again), or send (the prepared version sent for review)'
+        description: 'status, screenshots, withdraw (take back a version waiting for review, place them, send it again), send (the prepared version sent for review), or replace (a version waiting for review taken back and this build sent instead)'
         type: choice
-        options: [status, screenshots, withdraw, send]
+        options: [status, screenshots, withdraw, send, replace]
         default: status
 
 jobs:
@@ -43,8 +45,9 @@ jobs:
           case "$WHAT" in
             screenshots) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" ;;
             withdraw) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" --withdraw ;;
-            send) B=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
+            send|replace) B=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
                   python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10 \
-                    --notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store ;;
+                    --notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store \
+                    $([ "$WHAT" = replace ] && echo --replace) ;;
           esac
           [ "$WHAT" = status ] || python3 tools/ios/asc-release.py --status

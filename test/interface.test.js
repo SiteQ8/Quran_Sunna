@@ -5381,13 +5381,16 @@ test('production gets what the testers ran, and the App Store gets the version p
   assert.ok(tool.indexOf('if a.promote_from == a.track:') !== -1);
   /* the App Store version a build run prepared is sent as it is */
   const listing = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-listing.yml'), 'utf8');
-  assert.ok(/options: \[status, screenshots, withdraw, send\]\s*default: status/.test(listing), 'sending is asked for, never the default');
-  assert.ok(/send\) B=\$\(sed -n 's\/\^ \*CURRENT_PROJECT_VERSION: \*"\\\(\.\*\\\)"\/\\1\/p' ios\/project\.yml\)/.test(listing),
+  assert.ok(/options: \[status, screenshots, withdraw, send, replace\]\s*default: status/.test(listing), 'sending is asked for, never the default');
+  assert.ok(/send\|replace\) B=\$\(sed -n 's\/\^ \*CURRENT_PROJECT_VERSION: \*"\\\(\.\*\\\)"\/\\1\/p' ios\/project\.yml\)/.test(listing),
     'the build is the one the repository says');
+  assert.ok(listing.indexOf('$([ "$WHAT" = replace ] && echo --replace) ;;') !== -1, 'and a version is taken back only when replace is asked');
   assert.ok(listing.indexOf('python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10') !== -1);
-  assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store ;;') !== -1);
+  assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store \\') !== -1);
   const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
   assert.ok(/if a\.duo:\s*place_duo\(/.test(release), 'with no iPhone Duo pictures to give, that set is left as it is');
+  /* a version waiting is taken back only once the build to replace it is there */
+  assert.ok(/build_id = wait_for_build\(a\.version, a\.build, a\.wait\)\s*(#[^\n]*\s*)*if a\.replace and not DRY:\s*withdraw\(\)\s*version_id = version_to_send\(a\.version\)/.test(release));
 });
 
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
