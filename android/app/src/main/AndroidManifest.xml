@@ -101,8 +101,9 @@
 
 
 
-        <!-- a video the reader shares is read from the app's cache through
-             this, by the one app the share sheet hands it to, and by no other -->
+        <!-- a video the reader shares, and on Android 8 and 9 a picture too, is
+             read from the app's cache through this, by the one app the share
+             sheet hands it to, and by no other -->
         <provider
             android:name=".SharedFiles"
             android:authorities="${applicationId}.share"
