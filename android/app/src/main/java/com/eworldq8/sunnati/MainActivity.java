@@ -126,6 +126,7 @@ public class MainActivity extends Activity {
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         splash = new SplashView(this);
         splashShownAt = android.os.SystemClock.uptimeMillis();
+        splashHold = firstOpenToday() ? SPLASH_HOLD_MS : SPLASH_BRIEF_MS;
         root.addView(splash, new FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT));
         setContentView(root);
@@ -310,21 +311,40 @@ public class MainActivity extends Activity {
     /* raised to 3200 after 2000 still felt quick on a phone: long enough to
        read «حيّ الله أهل» and the city under it */
     private static final long SPLASH_HOLD_MS = 3200;
+    /* That full hold is for the first opening of the reader's day, by the
+       phone's own calendar, and an opening later that same day goes as soon as
+       the page has painted, held only so long that it never flickers and faded
+       in 250ms rather than 420, since the app is opened many times a day to
+       glance at the next prayer and a greeting already read is only a wait. */
+    private static final long SPLASH_BRIEF_MS = 450;
+    private static final String KEY_GREETED = "greetedOn";
     private long splashShownAt;
+    private long splashHold = SPLASH_HOLD_MS;
+
+    /* The splash shows before the page exists, so the app decides by itself
+       from its own store, and the day is written as it is read so the first
+       opening counts even if the app is closed before its greeting ends. */
+    private boolean firstOpenToday() {
+        String today = java.time.LocalDate.now().toString();
+        android.content.SharedPreferences kept = getSharedPreferences(SplashView.PREFS, Context.MODE_PRIVATE);
+        if (today.equals(kept.getString(KEY_GREETED, ""))) return false;
+        kept.edit().putString(KEY_GREETED, today).apply();
+        return true;
+    }
 
     void dismissSplash() {
         if (splash == null || splashGone) return;
         long shown = android.os.SystemClock.uptimeMillis() - splashShownAt;
-        if (shown < SPLASH_HOLD_MS && root != null) {
+        if (shown < splashHold && root != null) {
             /* asked to go too early: wait out the remainder and ask again, at
                which point the branch above is false and it goes */
             root.postDelayed(new Runnable() {
                 @Override public void run() { dismissSplash(); }
-            }, SPLASH_HOLD_MS - shown);
+            }, splashHold - shown);
             return;
         }
         splashGone = true;
-        splash.animate().alpha(0f).setDuration(420).withEndAction(new Runnable() {
+        splash.animate().alpha(0f).setDuration(splashHold == SPLASH_HOLD_MS ? 420 : 250).withEndAction(new Runnable() {
             @Override
             public void run() {
                 if (root != null && splash != null) root.removeView(splash);

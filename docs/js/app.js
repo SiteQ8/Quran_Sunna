@@ -9881,6 +9881,26 @@
     return !!(app && app.pageReady);
   }
 
+  /* The full greeting is for the first opening of the reader's day, by the
+     phone's own calendar, and an opening later that same day leaves as soon as
+     the home is drawn, since the app is opened many times a day to glance at
+     the next prayer and three seconds of a greeting already read is a wait. */
+  var opening = { full: null };
+
+  /* Read once at the start, before this opening writes anything of its own,
+     and written as it is read, so the first opening counts even if the app is
+     closed before its greeting ends, while a store that cannot be read greets
+     in full and «حذف كل البيانات» clears the day with the rest of the app's
+     keys, so the next opening greets in full again. */
+  function firstOpenToday() {
+    var today = Store.dayKey(new Date());
+    try {
+      var last = window.localStorage.getItem('sunnati.greeted');
+      window.localStorage.setItem('sunnati.greeted', today);
+      return last !== today;
+    } catch (e) { return true; }
+  }
+
   /* The splash written into the page itself: it fades once the first screen
      is drawn, so the reader never sees a bare page waiting to be filled. */
   function dismissBootSplash(atOnce) {
@@ -9899,20 +9919,28 @@
        has passed, and a slow first visit never waits for it at all. */
     /* the same floor as the wrapper, 3200ms measured from when the page began
        loading: 2000 still went too fast to read the greeting */
-    var since = (window.performance && window.performance.now) ? window.performance.now() : 3200;
-    if (since < 3200) {
-      window.setTimeout(function () { dismissBootSplash(false); }, 3200 - since);
+    /* That is the day's first opening, and a later one that day is held 450ms
+       so it never flashes and fades in 250ms rather than 420. */
+    var full = opening.full !== false;
+    var floor = full ? 3200 : 450;
+    var since = (window.performance && window.performance.now) ? window.performance.now() : floor;
+    if (since < floor) {
+      window.setTimeout(function () { dismissBootSplash(false); }, floor - since);
       return;
     }
+    if (!full) splash.style.transition = 'opacity .22s ease';
     splash.style.opacity = '0';
     window.setTimeout(function () {
       if (splash.parentNode) splash.parentNode.removeChild(splash);
-    }, 420);
+    }, full ? 420 : 250);
   }
 
   function boot() {
     /* read before this start writes anything of its own, and only once */
     if (tour.returning === null) tour.returning = cameBefore();
+    /* and whether this is the day's first opening, before countDay or anything
+       else of today is written */
+    if (opening.full === null) opening.full = firstOpenToday();
     if (appDrawsSplash()) dismissBootSplash(true);
     Store.attach();
     Store.migrate();
@@ -9945,7 +9973,9 @@
     window.setTimeout(offerEid, 1200);
     /* The walkthrough waits for the opening to be gone: the page's own goes
        3.6 seconds after the page began loading, and the android package's
-       after as long from when the app started, which is a little earlier. */
+       after as long from when the app started, which is a little earlier, and
+       a later opening of the day goes sooner still, so this is after it in
+       either case. */
     var since = (window.performance && window.performance.now) ? window.performance.now() : 0;
     window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));
     window.setTimeout(maybeAskRating, 9000);
@@ -9989,7 +10019,7 @@
       timetableText: timetableText, settleAzkar: settleAzkar, restoreTasbih: restoreTasbih, setSleep: setSleep,
       shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
       feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
-      cameBefore: cameBefore, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
+      cameBefore: cameBefore, firstOpenToday: firstOpenToday, openingState: opening, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
       tourSteps: TOUR, tourState: tour
     },
     repeat: { start: startRepeat, stop: stopRepeat, next: nextInRepeat },
