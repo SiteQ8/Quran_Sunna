@@ -24,7 +24,9 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.eworldq8.sunnati
       INFOPLIST_FILE: Sunnati/Info.plist
-      TARGETED_DEVICE_FAMILY: "1"
+      # iPhone and iPad. Once a version for iPad is on the store, Apple takes
+      # no update that runs on fewer devices, so this never goes back to "1"
+      TARGETED_DEVICE_FAMILY: "1,2"
       CODE_SIGN_STYLE: Manual
       # Two targets, two profiles: the app and the widget each carry their own
       # bundle id and Apple issues a profile per id. The names come in from the
@@ -52,7 +54,8 @@ targets:
     settings:
       PRODUCT_BUNDLE_IDENTIFIER: com.eworldq8.sunnati.widget
       INFOPLIST_FILE: Widget/Info.plist
-      TARGETED_DEVICE_FAMILY: "1"
+      # the next prayer on an iPad's home screen too
+      TARGETED_DEVICE_FAMILY: "1,2"
       CODE_SIGN_STYLE: Manual
       PROVISIONING_PROFILE_SPECIFIER: $(PROFILE_WIDGET)
       CODE_SIGN_IDENTITY: $(SIGN_IDENTITY)
