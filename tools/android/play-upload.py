@@ -10,6 +10,12 @@
 
 يفتح تحريراً، ويرفع الحزمة، ويضعها في المسار مع ملاحظات الإصدار إن وُجدت،
 ثم يعتمد التحرير. وأيّ خطأ يترك التحرير بلا اعتماد فلا يتغيّر شيء في المتجر.
+
+    PLAY_SERVICE_ACCOUNT='<json>' python3 tools/android/play-upload.py \\
+        --promote-from alpha --track production --notes play/whatsnew
+
+وبـ--promote-from لا يُرفع شيء، بل يُؤخذ الإصدار المكتمل في ذلك المسار برمزه
+كما هو ويوضع في --track، فيصل الجميعَ ما جرّبه المختبرون نفسه بلا بناء جديد.
 """
 
 import argparse
@@ -77,9 +83,22 @@ def release_notes(folder):
     return out
 
 
+def newest_release(track):
+    """الإصدار المكتمل الأحدث في المسار، أي ما عند مختبريه الآن."""
+    best = None
+    for r in track.get('releases', []):
+        codes = [int(c) for c in r.get('versionCodes', [])]
+        if r.get('status') != 'completed' or not codes:
+            continue
+        if best is None or max(codes) > max(int(c) for c in best['versionCodes']):
+            best = r
+    return best
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('--aab', required=True)
+    ap.add_argument('--aab')
+    ap.add_argument('--promote-from', help='مسار يُؤخذ منه إصداره المكتمل إلى --track بلا رفع')
     ap.add_argument('--track', default='internal')
     ap.add_argument('--notes')
     ap.add_argument('--package', default=PACKAGE)
@@ -89,8 +108,12 @@ def main():
     if not raw:
         sys.exit('PLAY_SERVICE_ACCOUNT غير موجود في البيئة')
     sa = json.loads(raw)
-    aab = Path(a.aab)
-    if not aab.exists():
+    if bool(a.aab) == bool(a.promote_from):
+        sys.exit('إما --aab لحزمة جديدة وإما --promote-from لإصدار موجود')
+    if a.promote_from == a.track:
+        sys.exit('المسار الذي يُؤخذ منه هو نفسه المسار الذي يُوضع فيه')
+    aab = Path(a.aab) if a.aab else None
+    if aab and not aab.exists():
         sys.exit('لا حزمة عند ' + str(aab))
 
     tok = token(sa)
@@ -99,14 +122,21 @@ def main():
     edit = call('POST', f'{API}/{a.package}/edits', tok, {})['id']
     print('تحرير', edit)
     try:
-        up = call('POST', f'{UPLOAD}/{a.package}/edits/{edit}/bundles?uploadType=media', tok,
-                  raw=aab.read_bytes(), ctype='application/octet-stream')
-        code = up['versionCode']
-        print('رُفعت الحزمة، رمزها', code, '|', round(aab.stat().st_size / 1048576, 1), 'ميغابايت')
+        if a.promote_from:
+            held_by = newest_release(call('GET', f'{API}/{a.package}/edits/{edit}/tracks/{a.promote_from}', tok))
+            if not held_by:
+                raise RuntimeError('لا إصدار مكتملاً في مسار ' + a.promote_from)
+            codes = [str(c) for c in held_by['versionCodes']]
+            print('الإصدار الذي في', a.promote_from, 'رمزه', ', '.join(codes), '| لا رفع')
+        else:
+            up = call('POST', f'{UPLOAD}/{a.package}/edits/{edit}/bundles?uploadType=media', tok,
+                      raw=aab.read_bytes(), ctype='application/octet-stream')
+            codes = [str(up['versionCode'])]
+            print('رُفعت الحزمة، رمزها', codes[0], '|', round(aab.stat().st_size / 1048576, 1), 'ميغابايت')
 
         notes = release_notes(a.notes)
         call('PATCH', f'{API}/{a.package}/edits/{edit}/tracks/{a.track}', tok,
-             {'track': a.track, 'releases': [{'versionCodes': [str(code)], 'status': 'completed',
+             {'track': a.track, 'releases': [{'versionCodes': codes, 'status': 'completed',
                                               'releaseNotes': notes}]})
         print('وُضعت في مسار', a.track, '|', len(notes), 'لغة من ملاحظات الإصدار')
 

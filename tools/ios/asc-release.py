@@ -635,8 +635,10 @@ def main():
         log('the previews are placed; nothing was sent')
         return
 
-    if not (a.build and a.duo and a.notes):
-        p.error('--build, --duo and --notes are needed to send a build')
+    # a build run hands over the iPhone Duo pictures it took; a send of a
+    # version already prepared has none, and leaves that set as it is
+    if not (a.build and a.notes):
+        p.error('--build and --notes are needed to send a build')
     notes = open(a.notes, encoding='utf-8').read().strip()
     if a.text:
         # read and measured before anything is sent, so a word too many stops it here
@@ -659,7 +661,8 @@ def main():
             place_phone_shots(loc['id'], sets, phone_shots(a.shots))
         else:
             carry_phone_shots(loc['id'], locale, sets)
-        place_duo(loc['id'], sets_of(loc['id']), a.duo)
+        if a.duo:
+            place_duo(loc['id'], sets_of(loc['id']), a.duo)
         if a.previews:
             place_previews(loc['id'], a.previews)
     if a.no_submit or DRY:
