@@ -14,6 +14,7 @@
 -keep class com.eworldq8.sunnati.AdhanToggleActivity { *; }
 -keep class com.eworldq8.sunnati.CrashActivity { *; }
 -keep class com.eworldq8.sunnati.App { *; }
+-keep class com.eworldq8.sunnati.SharedFiles { *; }
 
 # A crash report is worth reading, so the lines survive and the mapping file
 # uploaded to the store turns the names back.
