@@ -1438,7 +1438,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 }
 .ayah-block {
   font-family: var(--quran);
-  font-size: calc(1.32rem * var(--quran-scale));
+  font-size: calc(1.32rem * var(--quran-scale) * var(--wide-read, 1));
   line-height: 2.35;
   text-align: justify;
   /* A centred last line stretches the closing word away from its verse number,
@@ -1479,7 +1479,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
    which is the only one, is centred by name. */
 .basmala {
   font-family: var(--quran); text-align: center; text-align-last: center; color: var(--accent-ink);
-  font-size: calc(1.55rem * var(--quran-scale)); line-height: 2; padding: var(--s3) 0; margin: var(--s2) 0 var(--s3);
+  font-size: calc(1.55rem * var(--quran-scale) * var(--wide-read, 1)); line-height: 2; padding: var(--s3) 0; margin: var(--s2) 0 var(--s3);
   position: relative;
 }
 .basmala::before, .basmala::after {
@@ -1539,7 +1539,7 @@ html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 
 .sajda-mark { color: var(--gold); font-size: .7em; }
 
-.naskh { font-family: var(--naskh); font-size: calc(1.02rem * var(--quran-scale)); line-height: 2.1; }
+.naskh { font-family: var(--naskh); font-size: calc(1.02rem * var(--quran-scale) * var(--wide-read, 1)); line-height: 2.1; }
 
 .source { font-size: var(--step--1); color: var(--ink-3); margin-top: var(--s2); }
 
@@ -1688,7 +1688,7 @@ input, textarea, [contenteditable] {
   border-inline-start: 3px solid transparent; transition: opacity .25s, border-color .25s;
 }
 .dhikr.is-done { opacity: .5; border-inline-start-color: var(--accent); }
-.dhikr-text { font-family: var(--naskh); font-size: calc(1.05rem * var(--quran-scale)); line-height: 2.1; }
+.dhikr-text { font-family: var(--naskh); font-size: calc(1.05rem * var(--quran-scale) * var(--wide-read, 1)); line-height: 2.1; }
 .dhikr-foot { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); margin-top: var(--s3); }
 /* The count sits inside a ring that fills as the dhikr is said. */
 .dhikr-count {
@@ -2310,3 +2310,56 @@ html.book #page-body .leaf .basmala { line-height: 1.8; padding: var(--s1) 0; ma
 html.book #page-body .leaf .page-foot { margin-top: var(--s2); }
 html.book #page-body .leaf:first-child { grid-column: 1; }
 html.book #page-body .leaf:last-child { grid-column: 3; }
+
+/* ---------- the slate: an iPad held upright ----------
+
+   Upright, an iPad is too narrow for the book and far wider than a phone, and
+   the app stood in it as a phone's column, five hundred and twenty points in
+   the middle of the screen, with the tabs stretched along the foot of the
+   whole width under nothing. Held so it is still one column, but a wider one,
+   kept to what reads comfortably, and whatever floats stands in that column
+   as it does in the book: the tabs a bar of their own as wide as the cards,
+   and the player, the word and the banner over them. No phone reaches this,
+   none is seven hundred points wide upright, and a window on a tablet that
+   narrow, beside another app, is a phone's column again. */
+@media (min-width: 700px) and (min-height: 900px) and (max-aspect-ratio: 1/1) {
+  :root {
+    --shell: min(720px, calc(100vw - 2 * var(--s6)));
+    /* the cards' own width: the column less the view's padding either side */
+    --lane: calc(var(--shell) - 2 * var(--s5));
+    --float: calc(env(safe-area-inset-bottom) + var(--s3));
+    /* the words that are read, the mushaf, the duas and the adhkar, grow
+       with the column, so a line holds about as many words as on a phone
+       and the page is filled rather than strung across it; the reader's own
+       size still applies on top */
+    --wide-read: 1.2;
+  }
+  body { padding-bottom: calc(var(--tab-h) + var(--float) + var(--banner-room, 0px) + var(--player-room, 0px)); }
+  .tabs {
+    left: calc(50% - var(--lane) / 2); right: calc(50% - var(--lane) / 2);
+    bottom: var(--float); height: var(--tab-h); padding: 0;
+    border: 1px solid var(--line-soft); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-lift); overflow: hidden;
+  }
+  .player {
+    left: calc(50% - var(--lane) / 2); right: calc(50% - var(--lane) / 2);
+    bottom: calc(var(--tab-h) + var(--float) + var(--s2));
+    max-width: none; margin: 0; border-radius: var(--r-md);
+  }
+  .toast, .banner {
+    left: calc(50% - var(--lane) / 2); right: calc(50% - var(--lane) / 2);
+    bottom: calc(var(--tab-h) + var(--float) + var(--player-room, 0px) + var(--s3));
+    max-width: none; margin: 0;
+  }
+  .to-top {
+    inset-inline-end: calc(50% - var(--lane) / 2 + var(--s2));
+    bottom: calc(var(--tab-h) + var(--float) + var(--player-room, 0px) + var(--s3));
+  }
+  /* what scrolls under the floating bar fades into the paper below it, as in
+     the book, rather than showing through between the bar and the foot */
+  body::after {
+    content: ''; position: fixed; left: 0; right: 0; bottom: 0; z-index: 39; pointer-events: none;
+    height: calc(var(--tab-h) + var(--float) + 40px);
+    background: linear-gradient(to bottom, color-mix(in srgb, var(--paper) 0%, transparent), var(--paper) 40px);
+  }
+}
