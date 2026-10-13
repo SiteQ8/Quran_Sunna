@@ -4800,8 +4800,10 @@ test('a shared picture names where its words come from, and the maker', () => {
   const fn = /function textCard\(heading, text, face, source\) \{([\s\S]*?)\n  \}\n/.exec(app);
   assert.ok(fn, 'the drawer takes a source');
   assert.ok(fn[1].indexOf("ctx.fillText(source, W / 2, footY + 62)") !== -1, 'and writes it under the rosette');
-  assert.ok(fn[1].indexOf("'تطبيق سُنّتي · 3li.info'") !== -1,
-    'the foot carries the maker, by its full name');
+  /* the foot carries the app's mark and the two stores' badges, and no address */
+  assert.ok(fn[1].indexOf("'سُنّتي'") !== -1 && fn[1].indexOf('drawBadges(') !== -1,
+    'the foot carries the app and where to get it');
+  assert.ok(fn[1].indexOf('3li.info') === -1, 'and no address');
   /* each caller says what its source is */
   assert.ok(app.indexOf("'حصن المسلم، الباب ' + ar(chapter.id)") !== -1, 'a dhikr from the book names its chapter');
   assert.ok(app.indexOf("(it.r ? it.r + '، ' : '') + 'حصن المسلم'") !== -1, 'a daily dhikr names its narrator and the book');

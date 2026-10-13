@@ -4135,7 +4135,7 @@
     function ready() {
       return document.fonts && document.fonts.load
         ? Promise.all([document.fonts.load("400 60px 'Amiri Quran'"), document.fonts.load("700 40px 'IBM Plex Sans Arabic'"),
-            document.fonts.load("400 30px 'IBM Plex Sans Arabic'")]).catch(function () {})
+            document.fonts.load("400 30px 'IBM Plex Sans Arabic'"), document.fonts.load("600 28px 'IBM Plex Sans Arabic'", 'سُنّتي')]).catch(function () {})
         : Promise.resolve();
     }
 
@@ -4178,7 +4178,9 @@
         wrap(ctx, part.split(' '), W - PAD * 2 - 40).forEach(function (l) { lines.push(l); });
       });
       var lineHeight = Math.round(size * 2.2);
-      var H = PAD * 2 + 140 + lines.length * lineHeight + (source ? 220 : 160);
+      /* eighty more at the foot than the line of text it once ended with, for
+         the app's mark over the two badges */
+      var H = PAD * 2 + 140 + lines.length * lineHeight + (source ? 220 : 160) + 80;
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
@@ -4207,7 +4209,7 @@
       lines.forEach(function (line, i) { ctx.fillText(line, W / 2, top + i * lineHeight); });
 
       /* the eye of the mark closes it, then where the words come from, then
-         the app and its maker */
+         the app */
       var footY = top + lines.length * lineHeight + 20;
       eyeMark(ctx, W / 2, footY, 22);
       ctx.fillStyle = '#5e6c65';
@@ -4215,11 +4217,29 @@
         ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
         ctx.fillText(source, W / 2, footY + 62);
       }
-      ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD + 10);
 
-      return new Promise(function (resolve) {
-        canvas.toBlob(function (blob) { resolve(blob); }, 'image/png');
+      /* The app as the video signs itself: its icon and name, and under them
+         the two stores' badges as their owners publish them, both black
+         shapes forty pixels tall; Apple's black badge reads on the light
+         paper as it does on the night of the video. No address: the badges
+         say where the app is. Small, and the name in the grey of the source
+         line, so the words stay the card. Drawn by verse-video.js, which
+         draws the same under a video; without it the name stands alone. */
+      var video = typeof VerseVideo !== 'undefined' ? VerseVideo : null;
+      return (video ? video.storeMarks() : Promise.resolve({})).then(function (marks) {
+        var mid = H - 180, mark = 44, gap = 14;
+        ctx.font = "600 28px 'IBM Plex Sans Arabic', sans-serif";
+        ctx.fillStyle = '#5e6c65';
+        var nameW = ctx.measureText('سُنّتي').width;
+        var right = W / 2 + ((marks.icon ? mark + gap : 0) + nameW) / 2;
+        if (marks.icon) video.drawIcon(ctx, marks.icon, right - mark, mid - mark / 2, mark, false);
+        ctx.textAlign = 'right';
+        ctx.fillText('سُنّتي', marks.icon ? right - mark - gap : right, mid);
+        ctx.textAlign = 'center';
+        if (marks.apple || marks.google) video.drawBadges(ctx, W / 2, H - 136, 40, marks);
+        return new Promise(function (resolve) {
+          try { canvas.toBlob(function (blob) { resolve(blob); }, 'image/png'); } catch (e) { resolve(null); }
+        });
       });
     });
   }
