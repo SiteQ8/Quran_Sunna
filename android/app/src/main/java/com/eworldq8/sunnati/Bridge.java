@@ -1,6 +1,7 @@
 package com.eworldq8.sunnati;
 
 import android.app.Activity;
+import android.content.ClipData;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.net.Uri;
@@ -11,6 +12,9 @@ import android.provider.MediaStore;
 import android.util.Base64;
 import android.webkit.JavascriptInterface;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.OutputStream;
 
 /**
@@ -214,6 +218,96 @@ public final class Bridge {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    /* A verse the page recorded as a video. One bridge call carries one
+       string, and a whole video as one string is tens of megabytes held three
+       times over on its way here, so it comes in pieces: a file is opened in
+       the cache, base64 pieces are appended to it, and once it is whole it is
+       made a plain mp4 and offered to share. One at a time; the bridge thread
+       is a single thread, and these hold the file between its calls. */
+    private File videoPart;
+    private OutputStream videoOut;
+    private String videoName;
+
+    /** Opens the file a recorded video is written into. The name is what the
+     *  receiving app shows, kept to plain letters, digits, dots and dashes. */
+    @JavascriptInterface
+    public synchronized boolean videoBegin(String name) {
+        dropVideo();
+        try {
+            File dir = SharedFiles.folder(host);
+            SharedFiles.sweep(dir);
+            videoName = SharedFiles.cleanName(name, ".mp4");
+            videoPart = new File(dir, SharedFiles.PART + videoName);
+            videoOut = new BufferedOutputStream(new FileOutputStream(videoPart), 1 << 16);
+            return true;
+        } catch (Exception e) {
+            dropVideo();
+            return false;
+        }
+    }
+
+    /** One piece of the video, as base64 of a whole number of bytes. */
+    @JavascriptInterface
+    public synchronized boolean videoChunk(String base64) {
+        if (videoOut == null || base64 == null) return false;
+        try {
+            videoOut.write(Base64.decode(base64, Base64.DEFAULT));
+            return true;
+        } catch (Exception e) {
+            dropVideo();
+            return false;
+        }
+    }
+
+    /** The video is whole. It is rewritten as a plain mp4, which is what
+     *  WhatsApp and the gallery read, or kept as recorded if that fails, and
+     *  handed to the share sheet with the words that go with it. */
+    @JavascriptInterface
+    public synchronized boolean videoShare(String text) {
+        if (videoOut == null || videoPart == null) return false;
+        try {
+            videoOut.close();
+            videoOut = null;
+            File done = new File(videoPart.getParentFile(), videoName);
+            if (done.exists() && !done.delete()) return false;
+            if (Mp4Remux.plain(videoPart, done)) {
+                if (!videoPart.delete()) videoPart.deleteOnExit();
+            } else if (!videoPart.renameTo(done)) {
+                dropVideo();
+                return false;
+            }
+            videoPart = null;
+            Uri uri = SharedFiles.uriOf(host, done);
+            Intent share = new Intent(Intent.ACTION_SEND);
+            share.setType("video/mp4");
+            share.putExtra(Intent.EXTRA_STREAM, uri);
+            if (text != null && !text.isEmpty()) share.putExtra(Intent.EXTRA_TEXT, text);
+            /* the grant travels with the clip, and the sheet shows the video */
+            share.setClipData(ClipData.newRawUri("", uri));
+            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            host.startActivity(Intent.createChooser(share, null));
+            return true;
+        } catch (Exception e) {
+            dropVideo();
+            return false;
+        }
+    }
+
+    /** The page gave up part way: the half-written file goes. */
+    @JavascriptInterface
+    public synchronized void videoAbort() {
+        dropVideo();
+    }
+
+    private void dropVideo() {
+        if (videoOut != null) {
+            try { videoOut.close(); } catch (Exception ignored) { /* already closed */ }
+        }
+        videoOut = null;
+        if (videoPart != null && videoPart.exists() && !videoPart.delete()) videoPart.deleteOnExit();
+        videoPart = null;
     }
 
     /** Hands an occasion to whatever calendar the phone keeps, as a day-long

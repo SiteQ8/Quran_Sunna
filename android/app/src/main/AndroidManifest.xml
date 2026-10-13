@@ -101,6 +101,14 @@
 
 
 
+        <!-- a video the reader shares is read from the app's cache through
+             this, by the one app the share sheet hands it to, and by no other -->
+        <provider
+            android:name=".SharedFiles"
+            android:authorities="${applicationId}.share"
+            android:exported="false"
+            android:grantUriPermissions="true"/>
+
         <service
             android:name=".AudioService"
             android:exported="false"
