@@ -44,7 +44,7 @@ const SHOTS = [
   { name: 'mushaf', time: at(17, 40), top: 'المصحف صفحتان متقابلتان', sub: 'برواية حفص بالرسم العثماني، ٦٠٤ صفحات وتفسير بلا شبكة' },
   { name: 'sky', time: at(17, 16), top: 'سماء الوقت', sub: 'تتبدّل مع مواقيت الصلاة في مدينتك من الفجر إلى العشاء' },
   { name: 'azkar', time: at(7, 10), top: 'أذكارك في وقتها', sub: 'الصباح والمساء وأذكار اليوم، بعدّادٍ يحفظ أين وصلت' },
-  { name: 'prayers', time: at(17, 40), top: 'صلاتي', sub: 'علّم كل صلاة كيف صلّيتها، وتابع شهرك كله' }
+  { name: 'prayers', time: at(17, 40), top: 'صلاتي', sub: 'تابع فروضك وكيف أدّيتها' }
 ];
 
 const { chromium } = await playwright();
@@ -152,7 +152,12 @@ async function take(shot) {
   await ctx.close();
 }
 
+/* ONLY=prayers redraws that one alone and leaves the others as they are */
+const ONLY = (process.env.ONLY || '').split(',').filter(Boolean);
+const wanted = (name) => !ONLY.length || ONLY.includes(name);
+
 for (const s of SHOTS) {
+  if (!wanted(s.name)) continue;
   await take(s);
   console.log('took', s.name);
 }
@@ -208,10 +213,11 @@ function frame(shot, png) {
 
 const dir = path.join(ROOT, 'ios', 'screenshots', 'ipad-13');
 fs.mkdirSync(dir, { recursive: true });
-for (const n of fs.readdirSync(dir)) if (n.endsWith('.png')) fs.unlinkSync(path.join(dir, n));
+if (!ONLY.length) for (const n of fs.readdirSync(dir)) if (n.endsWith('.png')) fs.unlinkSync(path.join(dir, n));
 const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
 for (let i = 0; i < SHOTS.length; i++) {
   const shot = SHOTS[i];
+  if (!wanted(shot.name)) continue;
   const png = fs.readFileSync(path.join(raw, shot.name + '.png')).toString('base64');
   const html = path.join(raw, 'frame.html');
   fs.writeFileSync(html, frame(shot, png));

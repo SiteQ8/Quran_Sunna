@@ -43,7 +43,7 @@ const SHOTS = [
   { name: 'sections', time: at(17, 40), top: 'كل ما تحتاجه في يومك', sub: 'القبلة والمساجد والقضاء والعمرة والختمة والأدعية' },
   { name: 'mushaf', time: at(17, 40), top: 'المصحف كاملاً بلا شبكة', sub: 'برواية حفص بالرسم العثماني، ٦٠٤ صفحات وتفسير' },
   { name: 'azkar', time: at(7, 10), top: 'أذكارك في وقتها', sub: 'الصباح والمساء وأذكار اليوم، بعدّادٍ يحفظ أين وصلت' },
-  { name: 'prayers', time: at(17, 40), top: 'صلاتي', sub: 'علّم كل صلاة كيف صلّيتها، وتابع شهرك كله' },
+  { name: 'prayers', time: at(17, 40), top: 'صلاتي', sub: 'تابع فروضك وكيف أدّيتها' },
   { name: 'qibla', time: at(17, 40), top: 'القبلة', sub: 'بوصلة تدور مع جهازك نحو الكعبة' }
 ];
 /* Apple shows the first three in a search, so the six it takes lead with
@@ -191,7 +191,13 @@ async function take(shot) {
   await ctx.close();
 }
 
+/* ONLY=prayers,qibla redraws those alone and leaves every other picture as
+   it is, so a changed line does not churn the whole set */
+const ONLY = (process.env.ONLY || '').split(',').filter(Boolean);
+const wanted = (name) => !ONLY.length || ONLY.includes(name);
+
 for (const s of SHOTS) {
+  if (!wanted(s.name)) continue;
   await take(s);
   console.log('took', s.name);
 }
@@ -250,10 +256,11 @@ function frame(W, H, shot, png) {
 
 async function compose(W, H, names, dir) {
   fs.mkdirSync(dir, { recursive: true });
-  for (const n of fs.readdirSync(dir)) if (n.endsWith('.png')) fs.unlinkSync(path.join(dir, n));
+  if (!ONLY.length) for (const n of fs.readdirSync(dir)) if (n.endsWith('.png')) fs.unlinkSync(path.join(dir, n));
   const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 });
   for (let i = 0; i < names.length; i++) {
     const shot = SHOTS.find((s) => s.name === names[i]);
+    if (!wanted(shot.name)) continue;
     const png = fs.readFileSync(path.join(raw, shot.name + '.png')).toString('base64');
     const html = path.join(raw, 'frame.html');
     fs.writeFileSync(html, frame(W, H, shot, png));
