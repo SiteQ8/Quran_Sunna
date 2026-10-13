@@ -637,6 +637,8 @@ def main():
     p.add_argument('--wait', type=int, default=45, help='minutes to wait for Apple to process the build')
     p.add_argument('--dry-run', action='store_true')
     p.add_argument('--no-submit', action='store_true')
+    p.add_argument('--replace', action='store_true',
+                   help='a version waiting for review is taken back first, and this build sent in its place')
     a = p.parse_args()
     DRY = a.dry_run
 
@@ -695,6 +697,10 @@ def main():
                 store_text(a.text, locale)
 
     build_id = wait_for_build(a.version, a.build, a.wait)
+    # the build is there before anything is taken back, so a version is never
+    # pulled from review for a build Apple has not finished with
+    if a.replace and not DRY:
+        withdraw()
     version_id = version_to_send(a.version)
     attach(version_id, build_id)
     write_notes(version_id, notes)
