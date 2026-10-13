@@ -8016,7 +8016,8 @@ test('the opening is held long enough to be seen, and no longer', () => {
   /* 2000 still felt quick on a phone; raised to 3200, still short of annoying */
   assert.ok(hold >= 2500 && hold <= 4000, 'long enough to read, short enough not to annoy: ' + hold);
   /* a floor and not a length: it still goes as soon as the page is ready */
-  assert.ok(main.indexOf('SPLASH_HOLD_MS - shown') !== -1, 'it waits out the remainder, it does not sleep a fixed time');
+  /* the floor of this opening, the full one on the day's first and a brief one after */
+  assert.ok(main.indexOf('splashHold - shown') !== -1, 'it waits out the remainder, it does not sleep a fixed time');
   assert.ok(main.indexOf('}, 4000);') !== -1, 'and a ceiling, for a page that never says it is ready');
 
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
