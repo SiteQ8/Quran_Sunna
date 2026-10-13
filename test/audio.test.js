@@ -45,6 +45,30 @@ afterEach(function () {
   }
 });
 
+/* The page reads the wall clock, and its tick raises the prayer of the moment
+   once notifications are granted. A run in the twenty minutes after any adhan
+   at the default place heard that adhan raised over what the test played, so
+   two tests failed five times a day and passed the rest. The page keeps
+   today's date and its clock still runs, but its hour is set at ten in the
+   morning, far from every prayer in Kuwait in any season, whether the times
+   are read in the phone's zone or the place's. */
+function steadyClock(win) {
+  const Real = win.Date;
+  const start = Real.now();
+  const ten = new Real(start);
+  ten.setHours(10, 0, 0, 0);
+  const shift = ten.getTime() - start;
+  function Clock(...args) {
+    if (!new.target) return new Real(Real.now() + shift).toString();
+    return args.length ? new Real(...args) : new Real(Real.now() + shift);
+  }
+  Clock.now = function () { return Real.now() + shift; };
+  Clock.parse = Real.parse;
+  Clock.UTC = Real.UTC;
+  Clock.prototype = Real.prototype;
+  win.Date = Clock;
+}
+
 /* Every Audio the page makes is kept in `heard`, and its play() is refused when
    it has no source, as a browser refuses it. Every oscillator the page starts
    is counted in `tones`, which is how a chime shows itself here. */
@@ -102,6 +126,7 @@ function boot(options) {
   win.navigator.vibrate = function () { return true; };
   win.scrollTo = function () {};
   if (opts.bridge) win.SunnatiApp = opts.bridge;
+  steadyClock(win);
   SCRIPTS.forEach(function (rel) {
     vm.runInContext(fs.readFileSync(path.join(DOCS, rel), 'utf8'), dom.getInternalVMContext(), { filename: rel });
   });
