@@ -354,7 +354,7 @@ jobs:
           # The devices are listed first, so a missing name shows in the log
           # rather than as a bare failure. And one size failing does not lose
           # the other: some screenshots are better than none.
-          xcrun simctl list devices available | grep -E "iPhone" | head -20
+          xcrun simctl list devices available | grep -E "iPhone|iPad" | head -30
 
           # The simulators an Xcode ships change with it, so each slot names
           # what it would like in order and takes the first that exists. Both
@@ -369,6 +369,11 @@ jobs:
           SPARE=$(pick "iPhone Air" "iPhone 18 Pro" "iPhone 17" "iPhone 16 Plus" "iPhone 16")
           [ -n "$BIG" ] && { shoot "$BIG" "6.9-inch" || echo "::warning::$BIG failed"; } || echo "::warning::no 6.9 inch device on this image"
           [ -n "$SPARE" ] && [ "$SPARE" != "$BIG" ] && { shoot "$SPARE" "spare" || echo "::warning::$SPARE failed"; } || true
+          # and the app on a 13 inch iPad held upright, the one column wide, to
+          # see the wrapper there as a reader will: the store's iPad pictures
+          # are drawn on their side by tools/store/ipad-shots.mjs
+          PAD=$(pick "iPad Pro 13-inch (M5)" "iPad Pro 13-inch (M4)" "iPad Air 13-inch (M3)" "iPad Air 13-inch (M2)")
+          [ -n "$PAD" ] && { shoot "$PAD" "ipad-13" || echo "::warning::$PAD failed"; } || echo "::warning::no 13 inch iPad on this image"
 
       # iPhone Duo, when the Xcode is one that knows it. Its device type comes
       # with Xcode 27.1 but its iOS runtime is not on the image, so that is
@@ -529,5 +534,5 @@ jobs:
           python3 tools/ios/asc-release.py \
             --version "${{ needs.build.outputs.version }}" --build "${{ needs.build.outputs.number }}" \
             --duo shots/iphone-duo --notes ios/whatsnew/ar-SA.txt --previews ios/previews \
-            --shots ios/screenshots/6.9-inch --text ios/store \
+            --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --text ios/store \
             $([ "$SEND" = send ] || echo --no-submit)

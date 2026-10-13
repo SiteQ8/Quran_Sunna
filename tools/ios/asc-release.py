@@ -501,6 +501,49 @@ def place_phone_shots(loc_id, sets, files):
             upload(set_id, os.path.basename(path), f.read())
 
 
+# ------------------------------------------------------- the iPad's screenshots
+
+# The 13 inch iPad is the one size Apple asks for once an app runs on iPad, and
+# it shrinks the set for every smaller iPad. On its side or upright.
+IPAD = 'APP_IPAD_PRO_3GEN_129'
+IPAD_SIZES = {(2064, 2752), (2752, 2064), (2048, 2732), (2732, 2048)}
+
+
+def ipad_shots(folder):
+    files = []
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        if name.endswith('.png'):
+            size = png_size(path)
+            if size not in IPAD_SIZES:
+                raise SystemExit('%s is %s, not a size the 13 inch iPad set takes' % (name, size))
+            files.append(path)
+    if not files:
+        raise SystemExit('no iPad screenshots in %s' % folder)
+    return files[:10]
+
+
+def place_ipad_shots(loc_id, sets, files):
+    """The set replaced whole, unless it holds these very pictures already: a
+    version prepared and then sent places them once, not twice."""
+    sums = []
+    for path in files:
+        with open(path, 'rb') as f:
+            sums.append(hashlib.md5(f.read()).hexdigest())
+    if IPAD in sets:
+        there = [s['attributes'].get('sourceFileChecksum') for s in sets[IPAD][1]]
+        if there == sums:
+            log('the 13 inch iPad screenshots are there already (%d)' % len(sums))
+            return
+        log('replacing the 13 inch iPad screenshots (%d were there)' % len(sets[IPAD][1]))
+        api('DELETE', '/v1/appScreenshotSets/' + sets[IPAD][0])
+    log('13 inch iPad: %s' % ', '.join(os.path.basename(f) for f in files))
+    set_id = new_set(loc_id, IPAD)
+    for path in files:
+        with open(path, 'rb') as f:
+            upload(set_id, os.path.basename(path), f.read())
+
+
 def status():
     """What is where, read and nothing changed."""
     vs = versions()
@@ -581,6 +624,7 @@ def main():
     p.add_argument('--status', action='store_true', help='read the versions, the review and the sets, change nothing')
     p.add_argument('--shots', help='a folder of 6.9 inch screenshots to replace the set with, in the order of their names')
     p.add_argument('--shots-only', action='store_true', help='place --shots in the version being prepared and nothing else')
+    p.add_argument('--ipad', help='a folder of 13 inch iPad screenshots to replace that set with: ios/screenshots/ipad-13')
     p.add_argument('--withdraw', action='store_true',
                    help='with --shots-only: take a version waiting for review back, place the screenshots, send it again')
     p.add_argument('--build')
@@ -606,6 +650,7 @@ def main():
         if not a.shots:
             p.error('--shots-only needs --shots')
         files = phone_shots(a.shots)
+        pads = ipad_shots(a.ipad) if a.ipad else []
         taken_back = withdraw() if a.withdraw else None
         version_id = taken_back or version_to_prepare(a.version)
         reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
@@ -614,6 +659,8 @@ def main():
             raise SystemExit('the version has no languages yet to place the screenshots in')
         for loc in locs:
             place_phone_shots(loc['id'], sets_of(loc['id']), files)
+            if pads:
+                place_ipad_shots(loc['id'], sets_of(loc['id']), pads)
         if taken_back and not DRY:
             send(taken_back)
             log('the screenshots are placed, and the version is waiting for review again')
@@ -640,6 +687,7 @@ def main():
     if not (a.build and a.notes):
         p.error('--build and --notes are needed to send a build')
     notes = open(a.notes, encoding='utf-8').read().strip()
+    pads = ipad_shots(a.ipad) if a.ipad else []
     if a.text:
         # read and measured before anything is sent, so a word too many stops it here
         for locale in sorted(os.listdir(a.text)):
@@ -663,6 +711,8 @@ def main():
             carry_phone_shots(loc['id'], locale, sets)
         if a.duo:
             place_duo(loc['id'], sets_of(loc['id']), a.duo)
+        if pads:
+            place_ipad_shots(loc['id'], sets_of(loc['id']), pads)
         if a.previews:
             place_previews(loc['id'], a.previews)
     if a.no_submit or DRY:

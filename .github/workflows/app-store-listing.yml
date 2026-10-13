@@ -1,6 +1,7 @@
 # The app's page on the App Store, without building anything: what each
 # version is and where its review stands, and the 6.9 inch screenshots of
-# ios/screenshots/6.9-inch put in place of those there.
+# ios/screenshots/6.9-inch and the 13 inch iPad's of ios/screenshots/ipad-13
+# put in place of those there.
 #
 # Run by hand only, from the Actions tab: «App Store listing», Run workflow.
 #   status       reads, and changes nothing
@@ -40,10 +41,10 @@ jobs:
           python3 tools/ios/asc-release.py --status
           V=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
           case "$WHAT" in
-            screenshots) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version "$V" ;;
-            withdraw) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --version "$V" --withdraw ;;
+            screenshots) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" ;;
+            withdraw) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" --withdraw ;;
             send) B=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
                   python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10 \
-                    --notes ios/whatsnew/ar-SA.txt --previews ios/previews --text ios/store ;;
+                    --notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store ;;
           esac
           [ "$WHAT" = status ] || python3 tools/ios/asc-release.py --status

@@ -5385,7 +5385,7 @@ test('production gets what the testers ran, and the App Store gets the version p
   assert.ok(/send\) B=\$\(sed -n 's\/\^ \*CURRENT_PROJECT_VERSION: \*"\\\(\.\*\\\)"\/\\1\/p' ios\/project\.yml\)/.test(listing),
     'the build is the one the repository says');
   assert.ok(listing.indexOf('python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10') !== -1);
-  assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --text ios/store ;;') !== -1);
+  assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store ;;') !== -1);
   const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
   assert.ok(/if a\.duo:\s*place_duo\(/.test(release), 'with no iPhone Duo pictures to give, that set is left as it is');
 });
@@ -10900,7 +10900,7 @@ test('the App Store screenshots are replaced only by hand, and a version is take
   const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-listing.yml'), 'utf8');
   assert.ok(/on:\s*workflow_dispatch:/.test(flow) && flow.indexOf('push:') === -1 && flow.indexOf('schedule:') === -1, 'only ever by hand');
   assert.ok(/default: status/.test(flow), 'and reading is what it does unless told otherwise');
-  assert.ok(/withdraw\) python3 tools\/ios\/asc-release\.py --shots-only --shots ios\/screenshots\/6\.9-inch --version "\$V" --withdraw ;;/.test(flow));
+  assert.ok(/withdraw\) python3 tools\/ios\/asc-release\.py --shots-only --shots ios\/screenshots\/6\.9-inch --ipad ios\/screenshots\/ipad-13 --version "\$V" --withdraw ;;/.test(flow));
   const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
   const back = /def withdraw\(\):([\s\S]*?)\n\n\n/.exec(release)[1];
   assert.ok(back.indexOf("if state == 'IN_REVIEW':") !== -1 && back.indexOf('raise SystemExit') !== -1, 'what Apple has begun to look at is left');
@@ -10915,6 +10915,79 @@ test('the App Store screenshots are replaced only by hand, and a version is take
     const b = fs.readFileSync(path.join(__dirname, '..', 'ios', 'screenshots', '6.9-inch', n));
     assert.deepStrictEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [1320, 2868], n + ' at the 6.9 inch size');
   });
+});
+
+/* ---------------- iPad ---------------- */
+
+test('the app runs on iPad, every way it is held, and never goes back to iPhone alone', () => {
+  const spec = fs.readFileSync(path.join(__dirname, '..', 'ios', 'project.yml'), 'utf8');
+  /* the app and its widget alike: Apple takes no update that runs on fewer
+     devices than the version on the store */
+  assert.strictEqual((spec.match(/TARGETED_DEVICE_FAMILY: "1,2"/g) || []).length, 2, 'iPhone and iPad, the app and the widget');
+  assert.ok(spec.indexOf('TARGETED_DEVICE_FAMILY: "1"\n') === -1);
+  const plist = fs.readFileSync(path.join(__dirname, '..', 'ios', 'Sunnati', 'Info.plist'), 'utf8');
+  const pad = /<key>UISupportedInterfaceOrientations~ipad<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(plist);
+  assert.ok(pad, 'an iPad has its own orientations');
+  ['Portrait', 'PortraitUpsideDown', 'LandscapeLeft', 'LandscapeRight'].forEach((o) =>
+    assert.ok(pad[1].indexOf('<string>UIInterfaceOrientation' + o + '</string>') !== -1, 'held ' + o));
+  const phone = /<key>UISupportedInterfaceOrientations<\/key>\s*<array>([\s\S]*?)<\/array>/.exec(plist)[1];
+  assert.deepStrictEqual(phone.match(/UIInterfaceOrientation\w+/g), ['UIInterfaceOrientationPortrait'], 'a phone stays upright');
+  assert.ok(plist.indexOf('UIRequiresFullScreen') === -1, 'and the iPad may share its screen with another app');
+
+  const swift = fs.readFileSync(path.join(__dirname, '..', 'ios', 'Sunnati', 'ReaderController.swift'), 'utf8');
+  /* asked for as on a phone or a tablet, never as a Mac's desktop site */
+  assert.ok(swift.indexOf('setup.defaultWebpagePreferences.preferredContentMode = .mobile') !== -1);
+  /* every share sheet stands where an iPad can show it */
+  const sheets = (swift.match(/UIActivityViewController\(/g) || []).length;
+  assert.ok(sheets >= 3);
+  assert.strictEqual((swift.match(/present\(anchored\(sheet\), animated: true\)/g) || []).length, sheets, 'each through the anchor');
+  const anchor = /private func anchored\(_ sheet: UIViewController\) -> UIViewController \{([\s\S]*?)\n  \}/.exec(swift)[1];
+  assert.ok(anchor.indexOf('pop.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)') !== -1, 'in the middle');
+  assert.ok(anchor.indexOf('pop.permittedArrowDirections = []') !== -1, 'with no arrow pointing at nothing');
+});
+
+test('an iPad held upright is one wide column, its bars floating in it', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const start = css.indexOf('@media (min-width: 700px) and (min-height: 900px) and (max-aspect-ratio: 1/1) {');
+  assert.ok(start !== -1, 'upright and wide, never a phone, never the book');
+  const slate = css.slice(start, css.indexOf('\n}\n', start));
+  assert.ok(slate.indexOf('--shell: min(720px, calc(100vw - 2 * var(--s6)));') !== -1, 'a wider column, kept readable');
+  assert.ok(slate.indexOf('--lane: calc(var(--shell) - 2 * var(--s5));') !== -1, 'the cards\' own width');
+  assert.ok(/\.tabs \{\s*left: calc\(50% - var\(--lane\) \/ 2\); right: calc\(50% - var\(--lane\) \/ 2\);\s*bottom: var\(--float\);/.test(slate),
+    'the tabs a bar as wide as the cards, off the foot');
+  ['.player {', '.toast, .banner {', '.to-top {'].forEach((sel) => assert.ok(slate.indexOf(sel) !== -1, sel + ' stands in the column'));
+  assert.ok(slate.indexOf('--wide-read: 1.2;') !== -1, 'the words read grow with the column');
+  /* the book is on its side, six to five at the least, and the slate is
+     upright, so the two never meet */
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(app.indexOf("'(min-width: 860px) and (min-height: 520px) and (min-aspect-ratio: 6/5)'") !== -1);
+  ['.ayah-block {', '.basmala {'].forEach((sel) => {
+    const rule = css.slice(css.indexOf(sel), css.indexOf('}', css.indexOf(sel)));
+    assert.ok(rule.indexOf('* var(--quran-scale) * var(--wide-read, 1))') !== -1, sel + ' grows with the column');
+  });
+  assert.ok(/\.naskh \{[^}]*var\(--quran-scale\) \* var\(--wide-read, 1\)/.test(css));
+  assert.ok(/\.dhikr-text \{[^}]*var\(--quran-scale\) \* var\(--wide-read, 1\)/.test(css));
+});
+
+test('the App Store gets the 13 inch iPad screenshots with every version', () => {
+  const dir = path.join(__dirname, '..', 'ios', 'screenshots', 'ipad-13');
+  const files = fs.readdirSync(dir).filter((n) => n.endsWith('.png')).sort();
+  assert.ok(files.length >= 1 && files.length <= 10, 'one to ten, as Apple takes');
+  files.forEach((n) => {
+    const b = fs.readFileSync(path.join(dir, n));
+    assert.deepStrictEqual([b.readUInt32BE(16), b.readUInt32BE(20)], [2752, 2064], n + ' is the 13 inch iPad on its side');
+  });
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  assert.ok(release.indexOf("IPAD = 'APP_IPAD_PRO_3GEN_129'") !== -1, 'the 13 inch set');
+  assert.ok(release.indexOf('IPAD_SIZES = {(2064, 2752), (2752, 2064), (2048, 2732), (2732, 2048)}') !== -1);
+  /* measured before anything is sent, and placed once though prepared and sent */
+  assert.ok(/notes = open\(a\.notes, encoding='utf-8'\)\.read\(\)\.strip\(\)\s*pads = ipad_shots\(a\.ipad\) if a\.ipad else \[\]/.test(release));
+  assert.ok(release.indexOf("log('the 13 inch iPad screenshots are there already (%d)' % len(sums))") !== -1);
+  const ios = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
+  assert.ok(ios.indexOf('--shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --text ios/store') !== -1, 'every version sent carries them');
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'ipad-shots.mjs'), 'utf8');
+  assert.ok(tool.indexOf('const PAD_W = 1376, PAD_H = 1032, SCALE = 2;') !== -1, 'drawn at the 13 inch iPad\'s own size');
+  assert.ok(tool.indexOf("if (!book) throw new Error") !== -1, 'and only ever of the book');
 });
 
 /* ---------------- sharing, rating, the letter, and the walkthrough ---------------- */
