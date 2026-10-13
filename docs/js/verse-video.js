@@ -44,7 +44,13 @@
      line of its own (limit), and set the app over its water at another height
      (foot). Fetched only when a video is made, and kept by the worker after. */
   var SCENES = {
-    'default': { still: 'img/verse/night-sea.webp', loop: 'img/verse/night-sea-loop.mp4', sea: 1440, strip: 480, feather: 60 }
+    'default': { still: 'img/verse/night-sea.webp', loop: 'img/verse/night-sea-loop.mp4', sea: 1440, strip: 480, feather: 60 },
+    kw: { still: 'img/verse/kw-night.webp', loop: 'img/verse/kw-night-loop.mp4', sea: 1580, strip: 340, feather: 60, limit: 1050 },
+    sa: { still: 'img/verse/sa-night.webp', loop: 'img/verse/sa-night-loop.mp4', sea: 1430, strip: 490, feather: 60, limit: 1220 },
+    ae: { still: 'img/verse/ae-night.webp', loop: 'img/verse/ae-night-loop.mp4', sea: 1540, strip: 380, feather: 60, limit: 1035 },
+    qa: { still: 'img/verse/qa-night.webp', loop: 'img/verse/qa-night-loop.mp4', sea: 1560, strip: 360, feather: 60, limit: 1190 },
+    om: { still: 'img/verse/om-night.webp', loop: 'img/verse/om-night-loop.mp4', sea: 1470, strip: 450, feather: 60, limit: 1140 },
+    bh: { still: 'img/verse/bh-night.webp', loop: 'img/verse/bh-night-loop.mp4', sea: 1500, strip: 420, feather: 60, limit: 1310 }
   };
   var SCENE = SCENES['default'];
 
