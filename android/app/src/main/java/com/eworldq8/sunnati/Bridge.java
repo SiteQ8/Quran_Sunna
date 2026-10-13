@@ -15,6 +15,7 @@ import android.webkit.JavascriptInterface;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 /**
@@ -186,7 +187,8 @@ public final class Bridge {
         AdhanReceiver.post(host, title, body, tag == null ? "page" : tag, AdhanReceiver.CHANNEL_REMINDERS);
     }
 
-    /** A picture the page drew, saved to the gallery and offered to share. */
+    /** A picture the page drew, saved to the gallery and offered to share; on
+     *  Android 8 and 9 offered from the app's cache without being saved. */
     @JavascriptInterface
     public boolean shareImage(String dataUrl, String name) {
         return shareImageWithText(dataUrl, name, "");
@@ -198,6 +200,11 @@ public final class Bridge {
         try {
             int comma = dataUrl.indexOf(',');
             byte[] bytes = Base64.decode(dataUrl.substring(comma + 1), Base64.DEFAULT);
+            /* Android 8 and 9 know no folder of the gallery by name, which came
+               with 10, and writing to the gallery there needs a permission the
+               app never asks for, so the insert failed and nothing was shared.
+               There the picture goes from the app's cache, as a video does. */
+            if (Build.VERSION.SDK_INT < 29) return offer(cachedPicture(bytes, name), "image/png", text);
             ContentValues values = new ContentValues();
             values.put(MediaStore.Images.Media.DISPLAY_NAME, name);
             values.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
@@ -237,7 +244,7 @@ public final class Bridge {
         dropVideo();
         try {
             File dir = SharedFiles.folder(host);
-            SharedFiles.sweep(dir);
+            SharedFiles.sweep(dir, true);
             videoName = SharedFiles.cleanName(name, ".mp4");
             videoPart = new File(dir, SharedFiles.PART + videoName);
             videoOut = new BufferedOutputStream(new FileOutputStream(videoPart), 1 << 16);
@@ -279,20 +286,38 @@ public final class Bridge {
                 return false;
             }
             videoPart = null;
-            Uri uri = SharedFiles.uriOf(host, done);
-            Intent share = new Intent(Intent.ACTION_SEND);
-            share.setType("video/mp4");
-            share.putExtra(Intent.EXTRA_STREAM, uri);
-            if (text != null && !text.isEmpty()) share.putExtra(Intent.EXTRA_TEXT, text);
-            /* the grant travels with the clip, and the sheet shows the video */
-            share.setClipData(ClipData.newRawUri("", uri));
-            share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-            host.startActivity(Intent.createChooser(share, null));
-            return true;
+            return offer(done, "video/mp4", text);
         } catch (Exception e) {
             dropVideo();
             return false;
         }
+    }
+
+    /* A picture written to the same folder of the cache, under its own name.
+       A video still being written there is left alone. */
+    private File cachedPicture(byte[] bytes, String name) throws IOException {
+        File dir = SharedFiles.folder(host);
+        SharedFiles.sweep(dir, false);
+        File f = new File(dir, SharedFiles.cleanName(name, ".png"));
+        try (OutputStream out = new FileOutputStream(f)) {
+            out.write(bytes);
+        }
+        return f;
+    }
+
+    /* A file of that folder handed to the share sheet, readable by the one
+       app the reader sends it to. */
+    private boolean offer(File f, String type, String text) {
+        Uri uri = SharedFiles.uriOf(host, f);
+        Intent share = new Intent(Intent.ACTION_SEND);
+        share.setType(type);
+        share.putExtra(Intent.EXTRA_STREAM, uri);
+        if (text != null && !text.isEmpty()) share.putExtra(Intent.EXTRA_TEXT, text);
+        /* the grant travels with the clip, and the sheet shows what is sent */
+        share.setClipData(ClipData.newRawUri("", uri));
+        share.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        host.startActivity(Intent.createChooser(share, null));
+        return true;
     }
 
     /** The page gave up part way: the half-written file goes. */

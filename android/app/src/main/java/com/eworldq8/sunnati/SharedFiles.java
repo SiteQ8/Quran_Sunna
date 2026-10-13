@@ -18,7 +18,9 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Hands a file the app made to the app the reader chose to share it with.
+ * Hands a file the app made to the app the reader chose to share it with: a
+ * verse as a video, and on Android 8 and 9, which have no gallery folder of
+ * the app's own, a picture too.
  * Android 7 and later refuse a file:// address passed between apps, and the
  * package carries no androidx to bring FileProvider, so this is the small part
  * of FileProvider it needs: one folder in the cache, read only, by name, for
@@ -51,13 +53,15 @@ public final class SharedFiles extends ContentProvider {
             .build();
     }
 
-    /** Lets go of half-written files and of anything shared long ago. */
-    static void sweep(File dir) {
+    /** Lets go of anything shared long ago, and of half-written files when
+     *  parts is true, which only a new video may ask: a picture shared while a
+     *  video is being handed over must not take the video's file away. */
+    static void sweep(File dir, boolean parts) {
         File[] all = dir.listFiles();
         if (all == null) return;
         long now = System.currentTimeMillis();
         for (File f : all) {
-            if (f.getName().startsWith(PART) || now - f.lastModified() > KEEP_MS) {
+            if ((parts && f.getName().startsWith(PART)) || now - f.lastModified() > KEEP_MS) {
                 if (!f.delete()) f.deleteOnExit();
             }
         }
@@ -98,7 +102,10 @@ public final class SharedFiles extends ContentProvider {
     @Override
     public String getType(Uri uri) {
         String name = uri.getLastPathSegment();
-        return name != null && name.toLowerCase(Locale.ROOT).endsWith(".mp4") ? "video/mp4" : "application/octet-stream";
+        String low = name == null ? "" : name.toLowerCase(Locale.ROOT);
+        if (low.endsWith(".mp4")) return "video/mp4";
+        if (low.endsWith(".png")) return "image/png";
+        return "application/octet-stream";
     }
 
     @Override
