@@ -5,22 +5,17 @@
 
 /* The video being recorded, and then the finished one, upright as a phone
    holds it. While the recitation loads, the scene it is made on stands in
-   the frame, the still with the moving sea over its foot, so the frame is
-   never an empty black box; the still is asked for only here and by the
-   recording itself, both once a video is being made. */
+   the frame, its still with the moving sea over it, so the frame is never an
+   empty black box; the module names the still of the reader's own country
+   once a video is being made, so no other is asked for. */
 .video-frame {
   position: relative; display: block; overflow: hidden;
   height: min(52vh, 560px); width: calc(min(52vh, 560px) * 0.5625); aspect-ratio: 9 / 16; max-width: 100%;
   margin: 0 auto; border-radius: var(--r-sm);
-  background: #000 url('../img/verse/night-sea.webp') center / cover no-repeat;
+  background: #000 center / cover no-repeat;
 }
 .video-frame canvas { position: absolute; top: 0; left: 0; z-index: 1; display: block; width: 100%; height: 100%; }
 /* the moving sea plays under the frame drawn from it, where it is in view,
-   since a phone may pause a muted video it thinks nobody can see; its top
-   sixty pixels of four hundred and eighty fade into the still, as they do
-   in the video */
-.video-frame .video-sea {
-  position: absolute; left: 0; bottom: 0; z-index: 0; display: block; width: 100%; height: 25%; object-fit: cover;
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 12.5%);
-  mask-image: linear-gradient(to bottom, transparent, #000 12.5%);
-}
+   since a phone may pause a muted video it thinks nobody can see; the module
+   sets where its strip lies and how its edges fade, as the video draws them */
+.video-frame .video-sea { position: absolute; left: 0; z-index: 0; display: block; width: 100%; object-fit: cover; }

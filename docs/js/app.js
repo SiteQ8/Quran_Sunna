@@ -4399,6 +4399,9 @@
       /* asked for while the recitation loads, and waited for no more than
          three seconds */
       segments: VerseVideo.timings(id, s, a),
+      /* the night of the reader's own country, the country the opening
+         painting is chosen by, or the plain shore where it has no scene */
+      scene: VerseVideo.sceneFor(splashLand()),
       host: $('video-host'),
       /* the last frame stays in the sheet once it is made: a video element
          cannot tell the length of the recorder's file, and showed 0:00 */

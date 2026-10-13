@@ -155,3 +155,86 @@ test('the verse card, the list card and the times card share one foot, drawn as 
   /* the times without their sky, which jsdom cannot paint */
   checkFoot(await footOf((win) => win.App.helpers.timesCard(), { 'sunnati.settings': JSON.stringify({ sky: false }) }), 'times');
 });
+
+/* ---------------- the scene a verse video is made on ---------------- */
+
+const LANDS = ['kw', 'sa', 'ae', 'qa', 'bh', 'om'];
+
+test('the scenes are keyed as the opening painting is chosen, the plain shore by night for any other', () => {
+  const { win } = boot();
+  const V = win.VerseVideo;
+  /* the countries the scenes are kept for are the ones boot.js paints */
+  const opening = read('docs/js/boot.js');
+  const lands = /var LANDS = (\{[\s\S]*?\});/.exec(opening)[1];
+  LANDS.forEach((l) => assert.ok(lands.indexOf("'" + l + "'") !== -1, l + ' is a land the opening knows'));
+  Object.keys(V.SCENES).forEach(function (key) {
+    assert.ok(key === 'default' || LANDS.indexOf(key) !== -1, key + ' is not a land the opening paints');
+  });
+  assert.strictEqual(V.sceneFor('default'), V.SCENE);
+  ['', undefined, 'gb', 'toString', 'hasOwnProperty'].forEach(function (l) {
+    assert.strictEqual(V.sceneFor(l), V.SCENE, 'the plain shore for ' + String(l));
+  });
+  LANDS.forEach(function (l) {
+    const own = Object.prototype.hasOwnProperty.call(V.SCENES, l);
+    assert.strictEqual(V.sceneFor(l), own ? V.SCENES[l] : V.SCENE, l);
+  });
+});
+
+test('every scene is a night still of the whole frame with its strip of moving water, both on disk', () => {
+  const { win } = boot();
+  const V = win.VerseVideo;
+  Object.keys(V.SCENES).forEach(function (key) {
+    const sc = V.SCENES[key];
+    assert.match(sc.still, /^img\/verse\/[a-z-]+\.webp$/, key);
+    assert.match(sc.loop, /^img\/verse\/[a-z-]+\.mp4$/, key);
+    [sc.still, sc.loop].forEach((f) => assert.ok(fs.existsSync(path.join(DOCS, f)), key + ': ' + f + ' is missing'));
+    assert.ok(key === 'default' || /night/.test(sc.still), key + ': always the night');
+    assert.ok(sc.sea > 0 && sc.sea < 1920 && sc.strip > 0 && sc.sea + sc.strip <= 1920, key + ': the strip stands inside the frame');
+    assert.ok(sc.feather >= 0 && sc.feather <= sc.strip / 2, key + ': and fades no further than its middle');
+    if (sc.limit) assert.ok(sc.limit > 900 && sc.limit < sc.sea, key + ': the verse keeps above the water');
+  });
+  /* none is kept with the shell: each is fetched when a video is made, then kept */
+  assert.ok(read('docs/sw.js').indexOf('img/verse/') === -1);
+});
+
+test('the strip is laid where the scene says, its top faded, and its foot too where it ends above the frame\'s', () => {
+  const { win } = boot();
+  const V = win.VerseVideo;
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(V.stripOf(V.SCENE))), { tall: 480, fade: 60, low: 0 });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(V.stripOf({ sea: 1300, strip: 400, feather: 50 }))), { tall: 400, fade: 50, low: 50 });
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(V.stripOf({ sea: 1500, feather: 400 }))), { tall: 420, fade: 210, low: 0 },
+    'a strip with no height given runs to the foot, and fades no further than its middle');
+  const source = read('docs/js/verse-video.js');
+  /* the preview stands the strip where the video draws it, over the scene's own still */
+  assert.ok(source.indexOf("o.host.style.backgroundImage = 'url(\"' + scene.still + '\")'") !== -1);
+  assert.ok(source.indexOf('v.style.top = pct(scene.sea / H);') !== -1 && source.indexOf('v.style.height = pct(strip.tall / H);') !== -1);
+  assert.ok(read('docs/css/verse-video.css').indexOf('night-sea.webp') === -1, 'no scene is asked for by the stylesheet');
+  /* a scene whose landmark rises higher holds the verse above its own line */
+  assert.ok(source.indexOf('var lay = arrange(probe, words, groups, face, scene.limit);') !== -1);
+});
+
+test('the verse video is made on the scene of the reader\'s country', () => {
+  [['Asia/Kuwait', 'kw'], ['Asia/Riyadh', 'sa'], ['Asia/Muscat', 'om'], ['Europe/London', 'default']].forEach(function (pair) {
+    const log = [];
+    const { win, doc } = boot({
+      storage: memoryStorage({ 'sunnati.settings': JSON.stringify({ zone: pair[0] }) }),
+      before: function (w) {
+        w.AudioContext = function () {};
+        w.AudioContext.prototype.createMediaStreamDestination = function () {};
+        w.HTMLCanvasElement.prototype.captureStream = function () {};
+        w.MediaStream = function () {};
+        w.MediaRecorder = { isTypeSupported: (t) => /^video\/mp4;codecs=avc1/.test(t) };
+        w.SunnatiApp = { videoBegin: () => { log.push('begin'); return true; }, videoChunk: () => true, videoShare: () => true, videoAbort: () => true };
+      }
+    });
+    let made = null;
+    win.VerseVideo.make = function (o) { made = o; return { promise: new Promise(function () {}), cancel: function () {} }; };
+    assert.strictEqual(win.App.helpers.splashLand(), pair[1]);
+    win.App.go('quran');
+    doc.querySelector('[data-surah="13"]').dispatchEvent(new win.Event('click', { bubbles: true }));
+    doc.querySelector('[data-ayah="13:28"]').dispatchEvent(new win.Event('click', { bubbles: true }));
+    doc.querySelector('[data-act="share-video"]').dispatchEvent(new win.Event('click', { bubbles: true }));
+    assert.ok(made, pair[0]);
+    assert.strictEqual(made.scene, win.VerseVideo.sceneFor(pair[1]), pair[0] + ' is made on the scene of ' + pair[1]);
+  });
+});
