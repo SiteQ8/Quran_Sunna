@@ -5367,6 +5367,29 @@ test('a commit never sends a release to the testers on its own', () => {
   }
 });
 
+test('production gets what the testers ran, and the App Store gets the version prepared, with nothing built again', () => {
+  /* a release to everyone is the bundle the closed test has been running,
+     moved by its version code, and only ever by hand */
+  const play = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/play-release.yml'), 'utf8');
+  assert.ok(/on:\s*workflow_dispatch:/.test(play) && play.indexOf('push:') === -1 && play.indexOf('schedule:') === -1, 'only ever by hand');
+  assert.ok(play.indexOf('play-upload.py --promote-from "$FROM" --track production --notes play/whatsnew') !== -1);
+  assert.ok(play.indexOf('gradlew') === -1 && play.indexOf('.aab') === -1, 'nothing is built or uploaded');
+  const tool = fs.readFileSync(path.join(__dirname, '..', 'tools', 'android', 'play-upload.py'), 'utf8');
+  const newest = /def newest_release\(track\):([\s\S]*?)\n\n\n/.exec(tool)[1];
+  assert.ok(newest.indexOf("r.get('status') != 'completed'") !== -1, 'a draft or a halted release is never what goes out');
+  assert.ok(tool.indexOf('if bool(a.aab) == bool(a.promote_from):') !== -1, 'a new bundle or a release already there, never both');
+  assert.ok(tool.indexOf('if a.promote_from == a.track:') !== -1);
+  /* the App Store version a build run prepared is sent as it is */
+  const listing = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-listing.yml'), 'utf8');
+  assert.ok(/options: \[status, screenshots, withdraw, send\]\s*default: status/.test(listing), 'sending is asked for, never the default');
+  assert.ok(/send\) B=\$\(sed -n 's\/\^ \*CURRENT_PROJECT_VERSION: \*"\\\(\.\*\\\)"\/\\1\/p' ios\/project\.yml\)/.test(listing),
+    'the build is the one the repository says');
+  assert.ok(listing.indexOf('python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10') !== -1);
+  assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --text ios/store ;;') !== -1);
+  const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
+  assert.ok(/if a\.duo:\s*place_duo\(/.test(release), 'with no iPhone Duo pictures to give, that set is left as it is');
+});
+
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
   const wf = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
   /* GitHub keys its mac images to a major Xcode now, and 27 is not on macos-26 */

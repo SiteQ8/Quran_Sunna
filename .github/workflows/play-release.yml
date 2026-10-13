@@ -1,0 +1,31 @@
+# Takes the release the closed test has now to production: the same bundle
+# the testers have been running, with its own version code, and nothing built
+# or uploaded again. Google reviews it, then it reaches everyone at once.
+#
+# Run by hand only, from the Actions tab: «Play release», Run workflow.
+# Production reaches everyone, so nothing here ever runs on a push.
+name: Play release
+
+on:
+  workflow_dispatch:
+    inputs:
+      from:
+        description: 'the track whose newest completed release goes to production'
+        type: choice
+        options: [alpha]
+        default: alpha
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - name: المكتبة
+        run: python3 -m pip install --quiet --break-system-packages cryptography
+      - name: إلى الإنتاج
+        env:
+          PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          FROM: ${{ inputs.from }}
+        run: |
+          python3 tools/android/play-upload.py --promote-from "$FROM" --track production --notes play/whatsnew
