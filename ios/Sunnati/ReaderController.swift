@@ -80,6 +80,10 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         shareText: call('shareText'),
         shareImage: call('shareImage'),
         shareImageWithText: call('shareImageWithText'),
+        videoBegin: call('videoBegin'),
+        videoChunk: call('videoChunk'),
+        videoShare: call('videoShare'),
+        videoAbort: call('videoAbort'),
         saveFile: call('saveFile'),
         saveAndOpen: call('saveFile'),
         openMap: call('openMap'),
@@ -314,6 +318,21 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       preview?.delegate = self
       preview?.presentPreview(animated: true)
 
+    /* a verse the page recorded as a video, handed over in pieces of base64:
+       one message holding a whole video would be tens of megabytes of text */
+    case "videoBegin":
+      videoBegin(args.first as? String ?? "")
+
+    case "videoChunk":
+      guard let piece = args.first as? String else { return }
+      videoAppend(piece)
+
+    case "videoShare":
+      videoShare(words: args.first as? String ?? "")
+
+    case "videoAbort":
+      videoDrop()
+
     default:
       /* whatever the page may ask that this wrapper does not declare */
       break
@@ -328,6 +347,99 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
   private var qiyamTimes: [Date] = []
   private var qiyamChime: Chime = .device
   private var preview: UIDocumentInteractionController?
+
+  /* The video being handed over: the file it is written into in the
+     temporary folder, and the handle that writes it, between messages. */
+  private var videoPart: URL?
+  private var videoOut: FileHandle?
+  private var videoName = "sunnati.mp4"
+
+  private var shareFolder: URL {
+    FileManager.default.temporaryDirectory.appendingPathComponent("share", isDirectory: true)
+  }
+
+  /* A new video lets go of the last one: by the time a second verse has been
+     recorded, the app that received the first has long since read it. The
+     name is what the receiving app shows, kept to plain letters and digits. */
+  private func videoBegin(_ name: String) {
+    videoDrop()
+    let fm = FileManager.default
+    try? fm.removeItem(at: shareFolder)
+    guard (try? fm.createDirectory(at: shareFolder, withIntermediateDirectories: true)) != nil else { return }
+    var clean = ""
+    for s in name.unicodeScalars where s.isASCII && (CharacterSet.alphanumerics.contains(s) || "-_.".unicodeScalars.contains(s)) {
+      clean.unicodeScalars.append(s)
+    }
+    clean = String(clean.trimmingCharacters(in: CharacterSet(charactersIn: ".")).prefix(60))
+    if clean.isEmpty { clean = "sunnati" }
+    if !clean.lowercased().hasSuffix(".mp4") { clean += ".mp4" }
+    videoName = clean
+    let part = shareFolder.appendingPathComponent("part-" + clean)
+    guard fm.createFile(atPath: part.path, contents: nil),
+          let out = try? FileHandle(forWritingTo: part) else { return }
+    videoPart = part
+    videoOut = out
+  }
+
+  private func videoAppend(_ piece: String) {
+    guard let out = videoOut, let data = Data(base64Encoded: piece) else { videoDrop(); return }
+    do { try out.write(contentsOf: data) } catch { videoDrop() }
+  }
+
+  private func videoDrop() {
+    try? videoOut?.close()
+    videoOut = nil
+    if let part = videoPart { try? FileManager.default.removeItem(at: part) }
+    videoPart = nil
+  }
+
+  /* MediaRecorder in WebKit writes a fragmented mp4 whose header gives no
+     length. Exported as it is, nothing encoded again, it becomes a plain mp4
+     with its index at the front, which every app reads; if that fails the
+     recording goes as it came, under the same name. */
+  private func videoShare(words: String) {
+    guard let out = videoOut, let part = videoPart else { tellVideo(false); return }
+    try? out.close()
+    videoOut = nil
+    videoPart = nil
+    let plain = shareFolder.appendingPathComponent(videoName)
+    try? FileManager.default.removeItem(at: plain)
+    guard let export = AVAssetExportSession(asset: AVURLAsset(url: part), presetName: AVAssetExportPresetPassthrough) else {
+      presentVideo(asIs(part, plain), words: words)
+      return
+    }
+    export.outputURL = plain
+    export.outputFileType = .mp4
+    export.shouldOptimizeForNetworkUse = true
+    export.exportAsynchronously { [weak self] in
+      let done = export.status == .completed
+      DispatchQueue.main.async {
+        guard let self = self else { return }
+        if done { try? FileManager.default.removeItem(at: part) }
+        self.presentVideo(done ? plain : self.asIs(part, plain), words: words)
+      }
+    }
+  }
+
+  /* the recording under the name the page gave it, when it could not be redone */
+  private func asIs(_ part: URL, _ plain: URL) -> URL {
+    try? FileManager.default.removeItem(at: plain)
+    return (try? FileManager.default.moveItem(at: part, to: plain)) != nil ? plain : part
+  }
+
+  private func presentVideo(_ file: URL, words: String) {
+    var items: [Any] = [file]
+    if !words.isEmpty { items.append(words) }
+    let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
+    sheet.popoverPresentationController?.sourceView = view
+    present(sheet, animated: true)
+    tellVideo(true)
+  }
+
+  /* the page is told the sheet is up, or that nothing could be handed over */
+  private func tellVideo(_ ok: Bool) {
+    web.evaluateJavaScript("window.App&&App.helpers&&App.helpers.videoHandedOver&&App.helpers.videoHandedOver(\(ok))")
+  }
 
   func documentInteractionControllerViewControllerForPreview(_ c: UIDocumentInteractionController) -> UIViewController { self }
 
