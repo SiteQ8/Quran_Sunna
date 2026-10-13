@@ -206,6 +206,7 @@
   function openSheet(title, html) {
     var sheet = $('sheet');
     if (!sheet) return;
+    stopVideo();
     /* a sheet the app raises on its own, at a night of jumuah or after a
        prayer, is not left hidden under the sky */
     if (skyview.open) closeSkyview();
@@ -228,6 +229,7 @@
   function closeSheet(popped) {
     var sheet = $('sheet');
     if (sheet) sheet.classList.remove('is-open');
+    stopVideo();
     if (!sheetStep.pushed) return;
     sheetStep.pushed = false;
     if (popped === true) return;
@@ -3137,6 +3139,7 @@
       service('tafsir', 'info', 'تفسير الآية') +
       service('note', 'text', Store.note(s, a) ? 'ملاحظتك' : 'ملاحظة') +
       service('share', 'share', 'مشاركة الآية') +
+      (canMakeVideo(s, a) ? service('share-video', 'play', 'مقطع فيديو') : '') +
       service('copy', 'text', 'نسخ الآية') +
       service('memorise', 'refresh', 'كرّر للحفظ') +
       '<button class="service" data-page="' + Mushaf.pageOf(s, a) + '">' + icon('book') + '<span>أول الصفحة</span></button>' +
@@ -4265,6 +4268,196 @@
       toast('نُزّلت الصورة');
       return true;
     });
+  }
+
+  /* ---------------- a verse as a video ---------------- */
+
+  /* The verse in the reciter's voice as a short upright video, made on the
+     phone by js/verse-video.js, which keeps its own list of the recitations it
+     can read. This part only offers it, shows it being made, and sends it.
+
+     How a finished video leaves the app: through the wrapper's own share
+     sheet, through the browser's, or as a download. The android web view has
+     no navigator.share at all, so a package from before the video methods has
+     no way and is offered no video. */
+  function videoSharePath() {
+    var app = bridge();
+    if (app && app.videoBegin) return 'app';
+    if (app && !inIosApp()) return '';
+    try {
+      var probe = new window.File([new window.Blob(['x'])], 'x.mp4', { type: 'video/mp4' });
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [probe] })) return 'sheet';
+    } catch (e) { /* no File constructor */ }
+    return app ? '' : 'download';
+  }
+
+  var videoSupported = null;
+
+  function canMakeVideo(s, a) {
+    if (typeof VerseVideo === 'undefined' || !VerseVideo.hasVoice(reciterId())) return false;
+    if (videoSupported === null) {
+      try { videoSupported = VerseVideo.supported(); } catch (e) { videoSupported = false; }
+    }
+    if (!videoSupported || !videoSharePath()) return false;
+    return VerseVideo.wordCount(Mushaf.ayah(s, a) || '') <= VerseVideo.MAX_WORDS;
+  }
+
+  function videoClock(sec) {
+    var n = Math.max(0, Math.round(sec));
+    return ar(Math.floor(n / 60) + ':' + pad(n % 60));
+  }
+
+  function holdVideoAwake(on) {
+    try {
+      if (on && navigator.wakeLock && navigator.wakeLock.request) {
+        navigator.wakeLock.request('screen').then(function (lock) {
+          if (state.video && !state.video.done) state.video.lock = lock; else lock.release();
+        }).catch(function () { /* the phone keeps its own rule */ });
+      } else if (!on && state.video && state.video.lock) {
+        state.video.lock.release();
+        state.video.lock = null;
+      }
+    } catch (e) { /* no wake lock here */ }
+  }
+
+  /* A recording in progress belongs to its sheet: closed, or replaced by
+     another sheet, it stops, since nobody is watching what it records. */
+  function stopVideo() {
+    var v = state.video;
+    if (!v) return;
+    if (!v.done && v.job) v.job.cancel();
+    holdVideoAwake(false);
+    if (v.url) { try { window.URL.revokeObjectURL(v.url); } catch (e) { /* gone */ } }
+    state.video = null;
+  }
+
+  /* The video is made while it plays, so a verse of twenty seconds takes
+     twenty seconds and a little over three: the sheet shows the frame being
+     recorded, with the recitation heard, a bar of the time, and a button to
+     stop. */
+  function shareVerseVideo(s, a) {
+    var meta = surahMeta(s);
+    var text = Mushaf.ayah(s, a);
+    var surah = 'سورة ' + (meta ? meta.ar : '');
+    var title = surah + ' آية ' + ar(a);
+    var words = text + '\n\n' + surah + '، آية ' + ar(a) + '\nsunnati.3li.info';
+    var picture = function (why) {
+      if (why) toast(why);
+      sharePicture(verseCard(s, a), 'ayah-' + s + '-' + a + '.png', title, words);
+    };
+    if (!text || !canMakeVideo(s, a)) { picture(''); return; }
+    stopAudio();
+    stopSpeaking();
+    var id = reciterId();
+    openSheet('مقطع الآية',
+      '<div class="video-frame" id="video-host"></div>' +
+      '<div id="video-controls">' +
+      '<div class="meter" style="margin:12px 0"><span id="video-meter" style="width:0%"></span></div>' +
+      '<p class="setting-note" id="video-status">تُجهَّز التلاوة والمشهد</p>' +
+      '<button class="btn btn-ghost btn-block" data-act="video-stop">أوقف</button></div>');
+    /* made inside the tap: the sound may only start from a touch on iOS */
+    var job = VerseVideo.make({
+      text: text,
+      surah: surah,
+      number: mushafDigits(a),
+      by: 'بصوت',
+      voice: reciterName(),
+      name: 'سُنّتي',
+      audioUrl: VerseVideo.audioUrl(id, s, a),
+      /* asked for while the recitation loads, and waited for no more than
+         three seconds */
+      segments: VerseVideo.timings(id, s, a),
+      host: $('video-host'),
+      /* the last frame stays in the sheet once it is made: a video element
+         cannot tell the length of the recorder's file, and showed 0:00 */
+      keepCanvas: true,
+      onStage: function (name) {
+        var line = $('video-status');
+        if (!line) return;
+        if (name === 'recording') line.textContent = 'يُسجَّل المقطع مع التلاوة، فأبقِ التطبيق مفتوحاً حتى يكتمل';
+        else if (name === 'finishing') line.textContent = 'يُجهَّز المقطع';
+      },
+      onProgress: function (done, total) {
+        var bar = $('video-meter'), line = $('video-status');
+        if (bar) bar.style.width = Math.round(done / total * 100) + '%';
+        if (line) line.textContent = 'يُسجَّل المقطع ' + videoClock(done) + ' من ' + videoClock(total) + '، فأبقِ التطبيق مفتوحاً';
+      }
+    });
+    state.video = { s: s, a: a, words: words, title: title, job: job, done: false };
+    holdVideoAwake(true);
+    job.promise.then(function (out) {
+      var v = state.video;
+      if (!v || v.job !== job) return;
+      v.done = true;
+      v.out = out;
+      holdVideoAwake(false);
+      videoReady();
+    }, function (e) {
+      var code = e && e.code;
+      /* stopped by the reader, the sheet has already gone with it; stopped
+         by the phone, as the app went behind another or a call came, it goes now */
+      var mine = state.video && state.video.job === job;
+      if (mine) { holdVideoAwake(false); state.video = null; closeSheet(); }
+      if (code === 'cancelled') {
+        if (mine) toast('توقف التسجيل لأن التطبيق خرج من الشاشة');
+        return;
+      }
+      if (code === 'stalled') { toast('لم يبدأ صوت التلاوة، فأعد المحاولة'); return; }
+      if (code === 'audio') { picture('تعذّر تنزيل التلاوة، فأُرسلت الآية صورة'); return; }
+      if (code === 'long') { picture('الآية أطول مما يتسع له المقطع، فأُرسلت صورة'); return; }
+      picture('تعذّر صنع المقطع على هذا الجهاز، فأُرسلت الآية صورة');
+    });
+  }
+
+  /* The finished video in the sheet, its last frame above, ready to send.
+     Inside the app it goes to the share sheet at once; a browser asks for a
+     tap of its own before it shares, so there the button does it. */
+  function videoReady() {
+    var v = state.video;
+    var path = videoSharePath();
+    if (path === 'download') { try { v.url = window.URL.createObjectURL(v.out.blob); } catch (e) { v.url = ''; } }
+    if ($('video-controls')) {
+      $('video-controls').innerHTML =
+        '<p class="setting-note" id="video-status" style="margin-top:12px">' + (path === 'download' ? 'المقطع جاهز للتنزيل' : 'المقطع جاهز للإرسال') + '</p>' +
+        '<button class="btn btn-primary btn-block" data-act="video-send">' + icon('share') + (path === 'download' ? 'نزّل المقطع' : 'أرسل المقطع') + '</button>' +
+        '<button class="btn btn-ghost btn-block" data-act="share" data-ref="' + v.s + ':' + v.a + '" style="margin-top:8px">أرسل الآية صورة</button>';
+    }
+    if (path === 'app') sendVideo();
+  }
+
+  function sendVideo() {
+    var v = state.video;
+    if (!v || !v.out) return;
+    var name = 'ayah-' + v.s + '-' + v.a + '.mp4';
+    var path = videoSharePath();
+    if (path === 'app') {
+      VerseVideo.handOver(bridge(), v.out.blob, name, v.words).then(function (ok) {
+        if (!ok) toast('تعذّرت المشاركة من التطبيق');
+      });
+      return;
+    }
+    if (path === 'sheet') {
+      /* called straight from the tap, nothing awaited first: the browser
+         shares only while the touch is still fresh */
+      var file = new window.File([v.out.blob], name, { type: 'video/mp4' });
+      navigator.share({ files: [file], title: v.title, text: v.words }).catch(function (e) {
+        if (!e || e.name !== 'AbortError') toast('تعذّرت المشاركة');
+      });
+      return;
+    }
+    if (!v.url) { toast('تعذّر تنزيل المقطع'); return; }
+    var link = document.createElement('a');
+    link.href = v.url;
+    link.download = name;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast('نُزّل المقطع');
+  }
+
+  /* the iPhone wrapper says so once its sheet is up, or that it could not */
+  function videoHandedOver(ok) {
+    if (!ok) toast('تعذّرت المشاركة من التطبيق');
   }
 
   /* ---------------- a surah kept for listening offline ---------------- */
@@ -8130,6 +8323,12 @@
       var words = Mushaf.ayah(s, a) + '\n\nسورة ' + (meta ? meta.ar : '') + '، آية ' + ar(a) + '\nsunnati.3li.info';
       sharePicture(verseCard(s, a), 'ayah-' + s + '-' + a + '.png', 'سورة ' + (meta ? meta.ar : '') + ' آية ' + ar(a), words);
     },
+    'share-video': function (ref) {
+      var parts = ref.split(':');
+      shareVerseVideo(+parts[0], +parts[1]);
+    },
+    'video-stop': function () { closeSheet(); },
+    'video-send': function () { sendVideo(); },
     note: function (ref) {
       var parts = ref.split(':');
       openNote(+parts[0], +parts[1]);
@@ -9775,7 +9974,7 @@
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
