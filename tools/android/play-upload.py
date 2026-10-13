@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""يرفع حزمة aab إلى مسار اختبار في Google Play.
+"""يرفع حزمة aab إلى مسار في Google Play، اختباراً كان أو إنتاجاً.
 
 كُتب هنا ولم يُؤخذ إجراءً جاهزاً من طرف ثالث: الرفع يستلزم تسليم مفتاح حساب
 الخدمة والحزمة الموقَّعة معاً، وذلك أوسع ثقة مما يستحقه إجراء لا نقرأ شفرته
@@ -110,8 +110,22 @@ def main():
                                               'releaseNotes': notes}]})
         print('وُضعت في مسار', a.track, '|', len(notes), 'لغة من ملاحظات الإصدار')
 
-        call('POST', f'{API}/{a.package}/edits/{edit}:commit', tok, {})
-        print('اعتُمد التحرير، والحزمة عند المختبرين')
+        try:
+            call('POST', f'{API}/{a.package}/edits/{edit}:commit', tok, {})
+            held = False
+        except RuntimeError as e:
+            # بعض التغييرات لا يرسلها Google للمراجعة من تلقاء نفسه ويقول ذلك
+            # صراحة، فيُعتمد التحرير كما هو ويُرسل من Play Console
+            if 'changesNotSentForReview' not in str(e):
+                raise
+            call('POST', f'{API}/{a.package}/edits/{edit}:commit?changesNotSentForReview=true', tok, {})
+            held = True
+        if held:
+            print('::warning::اعتُمد التحرير، لكن Google لا يرسله للمراجعة تلقائياً، فأرسله من Play Console في نظرة عامة على النشر')
+        elif a.track == 'production':
+            print('اعتُمد التحرير، والإصدار في مراجعة Google ثم يصل الجميع')
+        else:
+            print('اعتُمد التحرير، والحزمة عند المختبرين')
     except Exception:
         # تحرير بلا اعتماد لا يغيّر شيئا، لكن تركه معلّقا يمنع التحرير التالي
         try:

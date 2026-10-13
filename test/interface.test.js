@@ -5351,8 +5351,20 @@ test('a commit never sends a release to the testers on its own', () => {
      the closed test: seven in one day of work on the page alone */
   const flow = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/android.yml'), 'utf8');
   assert.ok(/- 'android\/\*\*'\s*(#[^\n]*\s*)?- '!android\/app\/build\.gradle'/.test(flow), 'the version line alone does not start a build');
-  assert.ok(/name: ارفع إلى الاختبار المغلق\s*if: steps\.play\.outputs\.ready == 'yes' && github\.event_name == 'workflow_dispatch'/.test(flow),
+  assert.ok(/name: ارفع إلى Play\s*if: steps\.play\.outputs\.ready == 'yes' && github\.event_name == 'workflow_dispatch'/.test(flow),
     'only a run asked for by hand reaches Play');
+  /* and production, which reaches everyone, is picked by hand too: a run left
+     as it is goes to the closed test as it always did */
+  assert.ok(/track:\s*description: [^\n]*\s*type: choice\s*options: \[alpha, production\]\s*default: alpha/.test(flow),
+    'the closed test unless production is chosen');
+  assert.ok(/TRACK: \$\{\{ inputs\.track \|\| 'alpha' \}\}/.test(flow) && flow.indexOf('--track "$TRACK" --notes play/whatsnew') !== -1,
+    'the track reaches the upload as a value, never pasted into the script');
+  /* Play takes 500 characters of notes per language and cuts the rest */
+  const notes = path.join(__dirname, '..', 'play', 'whatsnew');
+  for (const lang of fs.readdirSync(notes)) {
+    const text = fs.readFileSync(path.join(notes, lang), 'utf8').trim();
+    assert.ok(text.length > 0 && text.length <= 500, lang + ' fits in what Play shows: ' + text.length);
+  }
 });
 
 test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is never sent to the store', () => {
