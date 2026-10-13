@@ -4801,8 +4801,7 @@ test('a shared picture names where its words come from, and the maker', () => {
   assert.ok(fn, 'the drawer takes a source');
   assert.ok(fn[1].indexOf("ctx.fillText(source, W / 2, footY + 62)") !== -1, 'and writes it under the rosette');
   /* the foot carries the app's mark and the two stores' badges, and no address */
-  assert.ok(fn[1].indexOf("'سُنّتي'") !== -1 && fn[1].indexOf('drawBadges(') !== -1,
-    'the foot carries the app and where to get it');
+  assert.ok(fn[1].indexOf('cardFoot(ctx, W, H)') !== -1, 'the foot carries the app and where to get it');
   assert.ok(fn[1].indexOf('3li.info') === -1, 'and no address');
   /* each caller says what its source is */
   assert.ok(app.indexOf("'حصن المسلم، الباب ' + ar(chapter.id)") !== -1, 'a dhikr from the book names its chapter');
@@ -10016,9 +10015,9 @@ test('a shared list is drawn in pills, in the app\'s own face, and names the app
   assert.ok(fn.indexOf('Amiri') === -1, 'the mushaf face is for verses, not for a list');
   /* the colour follows the reader's chosen palette */
   assert.ok(fn.indexOf('cardColours()') !== -1);
-  /* and it signs itself with the app's full name */
-  assert.ok(fn.indexOf('تطبيق سُنّتي · 3li.info') !== -1);
-  assert.ok(fn.indexOf('badges()') !== -1, 'the stores are shown as their own badges');
+  /* and it signs itself as every card does, the app's mark over the stores' badges, no address */
+  assert.ok(fn.indexOf('cardFoot(ctx, W, H)') !== -1, 'the stores are shown as their own badges');
+  assert.ok(fn.indexOf('3li.info') === -1);
   /* nowhere does a picture sign itself with the bare name */
   assert.ok(app.indexOf("'سُنّتي، 3li.info'") === -1, 'the app names itself in full');
 });
@@ -10255,20 +10254,20 @@ test('the call of jumuah stops at the fajr, and the day keeps its section instea
 });
 
 test('the shared card carries the store badges as pictures, from their proper sources', () => {
-  ['badge-googleplay.png', 'badge-appstore.png'].forEach(function (f) {
-    assert.ok(fs.existsSync(path.join(DOCS, 'icons', f)), 'missing badge ' + f);
+  ['app-store-ar.svg', 'google-play-ar.png'].forEach(function (f) {
+    assert.ok(fs.existsSync(path.join(DOCS, 'img', 'badges', f)), 'missing badge ' + f);
   });
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const fn = /function badges\(\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf("'icons/badge-googleplay.png', 'icons/badge-appstore.png'") !== -1);
+  const foot = /function cardFoot\(ctx, W, H\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(foot.indexOf('video.storeMarks()') !== -1 && foot.indexOf('video.drawBadges(') !== -1, 'drawn, not described');
   /* a badge that fails to load must not take the card with it */
-  assert.ok(fn.indexOf('img.onerror = function () { resolve(null); };') !== -1);
+  const video = fs.readFileSync(path.join(DOCS, 'js', 'verse-video.js'), 'utf8');
+  assert.ok(video.indexOf('img.onerror = function () { resolve(null); };') !== -1);
   const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(card.indexOf('ctx.drawImage(m,') !== -1, 'drawn, not described');
   assert.ok(card.indexOf('على Google Play، وقريباً App Store') === -1, 'the text line is replaced');
   /* and they are kept for a card made without a network */
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
-  ['badge-googleplay.png', 'badge-appstore.png'].forEach(function (f) {
+  ['img/badges/app-store-ar.svg', 'img/badges/google-play-ar.png'].forEach(function (f) {
     assert.ok(sw.indexOf(f) !== -1, f + ' is not kept for offline');
   });
 });
@@ -10286,14 +10285,14 @@ test('the splash face cannot be overridden by the stylesheet that loads after it
 
 test('the two badges share one box, so neither reads as the larger', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  const card = /function listCard\(heading, items, note\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  /* scaling each by its height alone let the wider badge look the bigger */
-  assert.ok(card.indexOf('var tall = 52, gap = 28;') !== -1, 'one height for both');
-  assert.ok(card.indexOf('Math.round(m.width * tall / m.height)') !== -1, 'width follows from that height');
-  assert.ok(card.indexOf('x += widths[i] + gap;') !== -1, 'set side by side');
-  /* the badges carry no transparent margin of their own, or one would sit small */
-  const png = fs.readFileSync(path.join(DOCS, 'icons', 'badge-googleplay.png'));
-  assert.ok(png.length > 1000, 'the badge is a real file');
+  const foot = /function cardFoot\(ctx, W, H\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  /* one height for both black shapes, set side by side */
+  assert.ok(foot.indexOf('video.drawBadges(ctx, W / 2, H - 136, 40, marks)') !== -1, 'one height for both');
+  /* Google's badge carries a transparent margin of its own, so it is scaled
+     by its black shape and not by its whole picture, or it would sit small */
+  const video = fs.readFileSync(path.join(DOCS, 'js', 'verse-video.js'), 'utf8');
+  assert.ok(video.indexOf("google: { src: 'img/badges/google-play-ar.png', w: 646, h: 250, box: [41, 41, 605, 209] }") !== -1);
+  assert.ok(video.indexOf('var gs = h / (g.box[3] - g.box[1]);') !== -1, 'width follows from that height');
 });
 
 test('the cards of the adhkar are all one height', () => {

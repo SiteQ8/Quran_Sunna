@@ -449,8 +449,10 @@ test('no web address is drawn on the video or on the picture card', () => {
   const app = read('docs/js/app.js');
   const card = /function textCard\(heading, text, face, source\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   assert.ok(card.indexOf('3li.info') === -1, 'the card names no address');
-  assert.ok(card.indexOf('storeMarks()') !== -1 && card.indexOf('drawBadges(') !== -1, 'the badges say where the app is');
-  assert.ok(card.indexOf("'سُنّتي'") !== -1, 'beside the app\'s icon and name');
+  assert.ok(card.indexOf('cardFoot(ctx, W, H)') !== -1, 'it ends with the foot every card ends with');
+  const foot = /function cardFoot\(ctx, W, H\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(foot.indexOf('storeMarks()') !== -1 && foot.indexOf('drawBadges(') !== -1, 'the badges say where the app is');
+  assert.ok(foot.indexOf("'سُنّتي'") !== -1, 'beside the app\'s icon and name');
 });
 
 test('every host the video reaches is named in both privacy pages', () => {

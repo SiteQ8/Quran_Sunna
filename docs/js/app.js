@@ -4121,6 +4121,35 @@
     return { fill: chosen.lightInk, wash: hexToWash(chosen.light, 0.45) };
   }
 
+  /* The foot every shared card ends with, as the verse video signs itself:
+     the app's icon and name, and under them the two stores' badges as their
+     owners publish them, both black shapes forty pixels tall; Apple's black
+     badge reads on the light paper as it does on the night of the video. No
+     address: the badges say where the app is. Small, and the name in the
+     grey of a source line, so the words stay the card. It takes the card's
+     last two hundred pixels above its frame. Drawn by verse-video.js, which
+     draws the same under a video; without it the name stands alone. */
+  function cardFoot(ctx, W, H) {
+    var video = typeof VerseVideo !== 'undefined' ? VerseVideo : null;
+    var face = document.fonts && document.fonts.load
+      ? document.fonts.load("600 28px 'IBM Plex Sans Arabic'", 'سُنّتي').catch(function () {})
+      : null;
+    return Promise.all([video ? video.storeMarks() : {}, face]).then(function (got) {
+      var marks = got[0] || {};
+      var mid = H - 180, mark = 44, gap = 14;
+      ctx.save();
+      ctx.direction = 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+      ctx.font = "600 28px 'IBM Plex Sans Arabic', sans-serif";
+      ctx.fillStyle = '#5e6c65';
+      var nameW = ctx.measureText('سُنّتي').width;
+      var right = W / 2 + ((marks.icon ? mark + gap : 0) + nameW) / 2;
+      if (marks.icon) video.drawIcon(ctx, marks.icon, right - mark, mid - mark / 2, mark, false);
+      ctx.fillText('سُنّتي', marks.icon ? right - mark - gap : right, mid);
+      if (marks.apple || marks.google) video.drawBadges(ctx, W / 2, H - 136, 40, marks);
+      ctx.restore();
+    });
+  }
+
   function textCard(heading, text, face, source) {
     if (!text) return Promise.resolve(null);
 
@@ -4135,7 +4164,7 @@
     function ready() {
       return document.fonts && document.fonts.load
         ? Promise.all([document.fonts.load("400 60px 'Amiri Quran'"), document.fonts.load("700 40px 'IBM Plex Sans Arabic'"),
-            document.fonts.load("400 30px 'IBM Plex Sans Arabic'"), document.fonts.load("600 28px 'IBM Plex Sans Arabic'", 'سُنّتي')]).catch(function () {})
+            document.fonts.load("400 30px 'IBM Plex Sans Arabic'")]).catch(function () {})
         : Promise.resolve();
     }
 
@@ -4218,25 +4247,8 @@
         ctx.fillText(source, W / 2, footY + 62);
       }
 
-      /* The app as the video signs itself: its icon and name, and under them
-         the two stores' badges as their owners publish them, both black
-         shapes forty pixels tall; Apple's black badge reads on the light
-         paper as it does on the night of the video. No address: the badges
-         say where the app is. Small, and the name in the grey of the source
-         line, so the words stay the card. Drawn by verse-video.js, which
-         draws the same under a video; without it the name stands alone. */
-      var video = typeof VerseVideo !== 'undefined' ? VerseVideo : null;
-      return (video ? video.storeMarks() : Promise.resolve({})).then(function (marks) {
-        var mid = H - 180, mark = 44, gap = 14;
-        ctx.font = "600 28px 'IBM Plex Sans Arabic', sans-serif";
-        ctx.fillStyle = '#5e6c65';
-        var nameW = ctx.measureText('سُنّتي').width;
-        var right = W / 2 + ((marks.icon ? mark + gap : 0) + nameW) / 2;
-        if (marks.icon) video.drawIcon(ctx, marks.icon, right - mark, mid - mark / 2, mark, false);
-        ctx.textAlign = 'right';
-        ctx.fillText('سُنّتي', marks.icon ? right - mark - gap : right, mid);
-        ctx.textAlign = 'center';
-        if (marks.apple || marks.google) video.drawBadges(ctx, W / 2, H - 136, 40, marks);
+      /* the app as the video signs itself, the same foot every card ends with */
+      return cardFoot(ctx, W, H).then(function () {
         return new Promise(function (resolve) {
           try { canvas.toBlob(function (blob) { resolve(blob); }, 'image/png'); } catch (e) { resolve(null); }
         });
@@ -5388,45 +5400,15 @@
         y += tall + GAP;
       });
 
+      /* the knot closes the list, then the app signs it as the verse card does */
       cardStar(ctx, W / 2, H - PAD - 186, 13);
-      ctx.fillStyle = '#8b9691';
-      ctx.font = "400 27px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD - 132);
-
-      /* the two store badges, drawn as they are given rather than described */
-      return badges().then(function (marks) {
-        /* one box apiece, of one size, and each badge drawn to fit inside it:
-           scaling by height alone made the wider one look the larger */
-        /* one height for both, their margins already trimmed away, so neither
-           reads as the larger */
-        var tall = 52, gap = 28;
-        var widths = marks.map(function (m) { return m ? Math.round(m.width * tall / m.height) : 0; });
-        var whole = widths.reduce(function (a, b) { return a + b; }, 0) + (marks.length - 1) * gap;
-        var x = Math.round((W - whole) / 2);
-        var y = H - PAD - 92;
-        marks.forEach(function (m, i) {
-          if (m) ctx.drawImage(m, x, y, widths[i], tall);
-          x += widths[i] + gap;
-        });
+      return cardFoot(ctx, W, H).then(function () {
         return new Promise(function (resolve) {
           if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
           else resolve(null);
         });
       });
     });
-  }
-
-  /* the store badges, as their owners publish them */
-  function badges() {
-    var files = ['icons/badge-googleplay.png', 'icons/badge-appstore.png'];
-    return Promise.all(files.map(function (src) {
-      return new Promise(function (resolve) {
-        var img = new window.Image();
-        img.onload = function () { resolve(img); };
-        img.onerror = function () { resolve(null); };
-        img.src = src;
-      });
-    }));
   }
 
   function wrapWords(context, text, maxWidth) {
@@ -6848,7 +6830,9 @@
     return Promise.all([ready, plates]).then(function (got) {
       var painted = got[1] && got[1][0] ? got[1] : null;
       var SKY_H = painted ? 330 : 0;
-      var H = PAD + 190 + rows.length * (ROW + GAP) + 150 + SKY_H;
+      /* a hundred and thirty more at the foot than the line of text it once
+         ended with, for the app's mark over the two badges */
+      var H = PAD + 190 + rows.length * (ROW + GAP) + 150 + SKY_H + 130;
       canvas.width = W; canvas.height = H;
       ctx = canvas.getContext('2d');
 
@@ -6891,15 +6875,14 @@
         ctx.fillText(row.v, PAD + 34, y + ROW / 2);
       });
 
+      /* the knot closes the times, then the app signs them as the verse card does */
       ctx.textAlign = 'center';
-      cardStar(ctx, W / 2, H - PAD - 54, 13);
-      ctx.fillStyle = '#8b9691';
-      ctx.font = "400 28px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText('تطبيق سُنّتي · 3li.info', W / 2, H - PAD + 6);
-
-      return new Promise(function (resolve) {
-        if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
-        else resolve(null);
+      cardStar(ctx, W / 2, H - PAD - 186, 13);
+      return cardFoot(ctx, W, H).then(function () {
+        return new Promise(function (resolve) {
+          if (canvas.toBlob) canvas.toBlob(resolve, 'image/png');
+          else resolve(null);
+        });
       });
     });
   }
