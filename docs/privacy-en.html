@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Privacy Policy · Sunnati</title>
-<meta name="description" content="سياسة خصوصية تطبيق سُنّتي، وما يبقى في جهازك وما يخرج منه ومتى.">
+<meta name="description" content="The privacy policy of Sunnati: what stays on your device, what leaves it, and when.">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="css/fonts.css">
 <style>
@@ -64,59 +64,116 @@
   }
 </style>
 </head>
-<body>
-<main class="wrap">
-<h1>Privacy Policy</h1>
-<p class="lede">Sunnati. Last updated Rabi al-Awwal 1448 AH.</p>
+<body><div class="wrap">
+<header><img src="icons/icon-192.png" alt=""><h1>Privacy Policy</h1>
+<p class="lead">Sunnati. Last updated in Rabi al-Awwal 1448 AH.</p><div class="rule"></div></header>
 
-<h2>In short</h2>
+<section><h2>In short</h2>
 <p>Sunnati collects nothing about you. It asks for no account, no email and no
-phone number. Everything you record stays on your device, and the people who
-wrote the app have no way to see any of it.</p>
-<p>Nothing leaves your device except in one place, which you enter knowingly:
-the <strong>nearby mosques</strong> screen, which by its nature must ask what is
-around you. That is set out under Location below.</p>
+phone number, so everything you record stays on your device alone, and the
+person who wrote the app has no way to see any of it.</p>
 
-<h2>What is kept on your device</h2>
-<p>The app uses your browser's local storage to keep your settings and what you
-have recorded, including:</p>
+<p>Nothing leaves your device except in one place, which you know when you enter
+it: the <b>nearby mosques</b> screen, which asks what is around you and so has to
+send where you are. That is set out under Location below.</p>
+
+</section><section><h2>What is kept on your device</h2>
+<p>The app uses your browser's local storage on your device to keep your settings
+and what you have recorded, including:</p>
 <ul>
   <li>the city or coordinates you chose, the calculation method and the Asr school</li>
-  <li>which adhkar, sunan and daily portion you have marked</li>
-  <li>how you prayed your five prayers, and your daily record</li>
-  <li>the verses you marked and any notes on them, where you stopped in the
-      Mus'haf, and your khatma plan</li>
+  <li>the adhkar, sunan and daily portion you have marked, how you prayed your
+      five prayers, and the record of your days</li>
+  <li>the verses you marked and the notes you wrote on them, where you stopped in
+      the Mus'haf, and your khatma plan</li>
   <li>your choices of appearance, text size and reciter</li>
 </ul>
 <p>None of this leaves your device. You can export it as a single file or delete
 all of it from the settings screen at any time, and clearing the site's browser
 data erases it too.</p>
 
-<h2>Location</h2>
-<p>If you allow the app to know your location, it uses it to compute prayer
-times and the qibla direction <strong>on your device</strong>, and sends it to no
-server. You may instead pick a city from a list, in which case location is never
-requested.</p>
-<p>The one exception is the nearby mosques screen. It sends your location to
-OpenStreetMap and its Overpass service to find which mosques are near you, and
-map tiles are requested from their server, which likewise carries the place you
-are looking at. None of this happens unless you open that screen yourself, and
-your name and device identifier are never sent with it.</p>
+</section><section><h2>Location</h2>
+<p>If you allow the app to know your location, it uses it to compute prayer times
+and the qibla direction on your device, and sends it to no server for that. You
+may instead pick a city from the list, and then your location is never asked for.</p>
 
-<h2>What needs the internet</h2>
-<p>The app works offline after its first opening. The internet is needed only
-for recitation audio, map tiles on the mosques screen, and updates to the app
-itself.</p>
-<p>A verse made into a video is made on your phone. Its recitation comes from
-everyayah.com, and for three of the reciters the timing of each word comes from
-api.quran.com. The video is uploaded nowhere, and leaves your phone only when you
-send it yourself.</p>
-<p>Tapping «rate the app» opens its page in your phone's store, play.google.com
-or apps.apple.com, with nothing about you sent along. Tapping «send feedback»
-opens your mail app with a message addressed to us that carries the app's
-version, and it leaves your phone only if you send it yourself.</p>
+<p>The one exception is the <b>nearby mosques</b> screen. By its nature it asks
+what is around you, so your location is sent to the
+<a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> servers and
+their Overpass service to learn which mosques are near you, and the map tiles are
+requested from its tile server, which likewise carries the place you are looking
+at. None of it is sent unless you open that screen yourself, nothing is sent with
+it of your name, your device identifier or anything else that points to you, and
+the app keeps none of it. If you never open it, your location never leaves your
+device.</p>
 
-<h2>What the app does not have</h2>
+</section><section><h2>The Android app and its permissions</h2>
+<p>The Android app shows this same site inside itself, without passing through
+another browser or sharing anything with one. It asks for these permissions, each
+for what is written beside it and nothing else:</p>
+<ul>
+  <li><b>Notifications</b>, to show that a prayer time has come and the reminder
+      to send blessings on the Prophet ﷺ. Nothing is sent to a server, since the
+      alert is made on your device.</li>
+  <li><b>Exact alarms</b>, so the adhan sounds at its minute while the app is
+      closed. The times are computed on your device and asked of no one.</li>
+  <li><b>Start at boot</b>, to set the alarms again after the phone restarts, or
+      they would be lost.</li>
+  <li><b>Vibration</b>, with an alert and with the counts of the tasbih.</li>
+  <li><b>Running in the background</b> (FOREGROUND_SERVICE and
+      FOREGROUND_SERVICE_MEDIA_PLAYBACK), so a recitation keeps playing when you
+      leave the app, with a notification that carries pause and stop. It runs
+      only while there is sound.</li>
+  <li><b>Location</b>, if you ask for it yourself from the settings screen. It is
+      never asked for on its own.</li>
+</ul>
+<p>You can turn the adhan alert off inside the app, or block its notifications
+from the phone's settings, and everything else keeps working.</p>
+
+</section><section><h2>Files you keep on your device</h2>
+<p>If you save a surah's recitation to listen offline, or download the tafsir, it
+stays in the app's storage on your device, and you delete it from the settings
+screen or by deleting the app. If you send a verse or a dhikr as a picture, the
+share sheet opens for you to choose yourself where it goes, and on Android 10 and
+later the picture is first saved to your phone's gallery. If you make a verse into
+a video, it is handed to the share sheet from the app's temporary storage, and it
+is not saved to the gallery unless you save it yourself. The app sends nothing on
+its own.</p>
+
+</section><section><h2>What needs the internet</h2>
+<p>The whole app works offline after its first visit, and the network is left
+only what you ask for yourself:</p>
+<ul>
+  <li>the recitation of a verse, which comes from cdn.islamic.network</li>
+  <li>if you make a verse into a video, its recitation comes from
+      everyayah.com, and for three of the reciters the timing of its
+      words comes from api.quran.com. The video is made on your
+      device and uploaded to no server unless you send it yourself</li>
+  <li>the recitation of a whole surah, which comes from mp3quran.net</li>
+  <li>the live broadcasts of the Quran radio stations, each from that station's
+      own stream</li>
+  <li>the tafsir of a verse when you ask for it, which comes from
+      api.alquran.cloud</li>
+  <li>if you ask for the way to a mosque, your phone's maps app opens on that
+      place, or google.com/maps if it has none, and nothing about
+      you is sent with it</li>
+  <li>the nearby mosques and their map, the only thing your location is sent
+      with, as above: the map tiles come from tile.openstreetmap.org,
+      and the search for mosques from the first of four servers to answer:
+      overpass-api.de, overpass.kumi.systems,
+      overpass.private.coffee or maps.mail.ru</li>
+  <li>if you tap «rate the app», its page opens in your phone's store,
+      play.google.com or apps.apple.com, with nothing
+      about you sent along</li>
+  <li>if you tap «send feedback», your mail app opens with a message addressed to
+      us that carries the app's version, and it leaves your device only when you
+      send it; if you share the app, the message is one you send yourself to
+      whomever you choose</li>
+</ul>
+<p>These are independent parties with their own policies, and the app sends them
+nothing about you beyond what is needed to fetch the file asked for.</p>
+
+</section><section><h2>What the app does not have</h2>
 <ul>
   <li>no advertising and no ad networks</li>
   <li>no tracking, no analytics and no device identifiers</li>
@@ -124,18 +181,17 @@ version, and it leaves your phone only if you send it yourself.</p>
   <li>no sharing or selling of any data, since there is no data to share</li>
 </ul>
 
-<h2>Children</h2>
-<p>The app is suitable for all ages. It collects data from no one, and so
-collects none from children.</p>
+</section><section><h2>Children</h2>
+<p>The app is suitable for all ages. It collects data from no one, and so collects
+none from children.</p>
 
-<h2>Changes</h2>
+</section><section><h2>Changes</h2>
 <p>Any change to this policy will appear on this page and in the repository's
 release history.</p>
 
-<h2>Contact</h2>
-<p>For questions or remarks: <a href="mailto:Site@hotmail.com">Site@hotmail.com</a></p>
+</section><section><h2>Contact</h2>
+<p>For questions or remarks: <a href="mailto:Site@hotmail.com">Site@hotmail.com</a>.</p>
 
-<p class="back"><a href="/">Back to the app</a> <a href="privacy.html" lang="ar" dir="rtl">بالعربية</a></p>
-</main>
-</body>
+</section>
+<a class="back" href="./">Back to the app</a> <a class="back" href="privacy.html" lang="ar" dir="rtl">بالعربية</a></div></body>
 </html>
