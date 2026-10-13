@@ -23,6 +23,16 @@
   <array>
     <string>UIInterfaceOrientationPortrait</string>
   </array>
+  <!-- an iPad is held every way: on its side the page is the book, the hour
+       on one half and the app on the other, and upright it is one wide
+       column; with all four the app can also share the screen with another -->
+  <key>UISupportedInterfaceOrientations~ipad</key>
+  <array>
+    <string>UIInterfaceOrientationPortrait</string>
+    <string>UIInterfaceOrientationPortraitUpsideDown</string>
+    <string>UIInterfaceOrientationLandscapeLeft</string>
+    <string>UIInterfaceOrientationLandscapeRight</string>
+  </array>
   <!-- the adhan and the recitations keep sounding with the screen off -->
   <key>UIBackgroundModes</key>
   <array><string>audio</string></array>

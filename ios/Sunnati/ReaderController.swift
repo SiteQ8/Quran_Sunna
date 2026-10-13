@@ -25,6 +25,11 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     let setup = WKWebViewConfiguration()
     setup.allowsInlineMediaPlayback = true
     setup.mediaTypesRequiringUserActionForPlayback = []
+    /* An iPad asks for the desktop site by default, calls itself a Mac and
+       lays a narrow window out at a desktop's width, shrunk to fit. The page
+       is made for touch at any width, so it is always asked for as on a
+       phone or a tablet, and its own layouts answer the width it is given. */
+    setup.defaultWebpagePreferences.preferredContentMode = .mobile
 
     /* The page calls SunnatiApp.someMethod(...); each call is posted here as a
        message naming the method and its arguments. Declaring it before the
@@ -252,8 +257,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     case "shareText":
       guard let text = args.first as? String else { return }
       let sheet = UIActivityViewController(activityItems: [text], applicationActivities: nil)
-      sheet.popoverPresentationController?.sourceView = view
-      present(sheet, animated: true)
+      present(anchored(sheet), animated: true)
 
     case "canNotify":
       break
@@ -280,8 +284,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       }
       guard !items.isEmpty else { return }
       let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
-      sheet.popoverPresentationController?.sourceView = view
-      present(sheet, animated: true)
+      present(anchored(sheet), animated: true)
 
     /* the backup: written to a temporary file and handed to Files, so it can
        be kept in iCloud Drive or sent on rather than lost with the phone */
@@ -431,9 +434,22 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     var items: [Any] = [file]
     if !words.isEmpty { items.append(words) }
     let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
-    sheet.popoverPresentationController?.sourceView = view
-    present(sheet, animated: true)
+    present(anchored(sheet), animated: true)
     tellVideo(true)
+  }
+
+  /* On iPad a share sheet is a popover and must be told where it stands.
+     Given only the view it hung off the top corner of the screen; it stands
+     in the middle instead, with no arrow, since the page asked for it and no
+     control of the wrapper's own is there to point at. A phone never reads
+     any of this. */
+  private func anchored(_ sheet: UIViewController) -> UIViewController {
+    if let pop = sheet.popoverPresentationController {
+      pop.sourceView = view
+      pop.sourceRect = CGRect(x: view.bounds.midX, y: view.bounds.midY, width: 0, height: 0)
+      pop.permittedArrowDirections = []
+    }
+    return sheet
   }
 
   /* the page is told the sheet is up, or that nothing could be handed over */
