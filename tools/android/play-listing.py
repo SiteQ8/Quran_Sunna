@@ -95,7 +95,21 @@ def status(base, edit, tok):
     for t in pu.call('GET', f'{base}/edits/{edit}/tracks', tok).get('tracks', []):
         for r in t.get('releases', []) or [{}]:
             print(f"  مسار {t['track']}: {r.get('name', '')} رموز {','.join(r.get('versionCodes', []) or ['لا شيء'])}"
-                  f" | {r.get('status', '')}{' | ' + str(r['userFraction']) if 'userFraction' in r else ''}")
+                  f" | {r.get('status', '')}{' | ' + str(r['userFraction']) if 'userFraction' in r else ''}"
+                  f"{' | ملاحظات ' + str(len(r['releaseNotes'])) if r.get('releaseNotes') else ''}"
+                  f"{' | بلدان الإصدار ' + str(r['countryTargeting']) if r.get('countryTargeting') else ''}")
+    # a release in production reaches only the countries the track is offered
+    # in, and a track offered nowhere reaches no one however complete it reads
+    for track in ('production', 'alpha'):
+        try:
+            ca = pu.call('GET', f'{base}/edits/{edit}/countryAvailability/{track}', tok)
+        except RuntimeError as e:
+            print(f'  بلدان {track}: لا تُقرأ ({str(e)[:160]})')
+            continue
+        codes = [c.get('countryCode', '') for c in ca.get('countries', [])]
+        print(f"  بلدان {track}: {len(codes)} {' '.join(codes[:24])}{'…' if len(codes) > 24 else ''}"
+              f"{' | وسائر العالم' if ca.get('restOfWorld') else ''}"
+              f"{' | كبلدان الإنتاج' if ca.get('syncWithProduction') else ''}")
     for item in pu.call('GET', f'{base}/edits/{edit}/listings', tok).get('listings', []):
         lang = item['language']
         print(f"  الصفحة {lang}: {item.get('title', '')} | فيلم {item.get('video') or 'لا شيء'}")
