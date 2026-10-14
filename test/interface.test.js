@@ -2822,9 +2822,9 @@ test('nothing in the page reaches out to another site for something it needs', (
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* a link the reader may follow is not a thing the page needs; a src is.
      the openstreetmap credit is required by the licence of its map, and the
-     App Store link in About takes a reader in a browser to the iPhone app. */
+     two store links in About take a reader in a browser to the apps. */
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|apps\.apple\.com\/app\/id6814355836/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|apps\.apple\.com\/app\/id6814355836|play\.google\.com\/store\/apps\/details\?id=com\.eworldq8\.sunnati/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });
@@ -11045,6 +11045,66 @@ test('sharing the app sends one invitation with every store in it, by whatever t
   await until(() => copied !== null);
   assert.strictEqual(copied, bare.win.App.helpers.shareWords());
   await until(() => bare.doc.getElementById('toast').textContent.indexOf('نُسخت الدعوة') === 0);
+});
+
+test('Google Play stands beside the App Store, and on an android browser takes the place of the browser\'s install', () => {
+  /* the stores' card in About: both stores, each its own link, for a reader in a browser */
+  const web = boot();
+  web.win.App.go('about');
+  const card = web.doc.getElementById('about-store');
+  assert.ok(!card.hidden, 'a browser shows the stores');
+  assert.deepStrictEqual([...card.querySelectorAll('a')].map((a) => a.getAttribute('href')), [LINK_APPLE, LINK_PLAY],
+    'the App Store first, as on the shared verse card, then Google Play');
+  [...card.querySelectorAll('img')].forEach((img) => {
+    assert.strictEqual(img.getAttribute('height'), '44', 'one height for both badges');
+    assert.ok(/^حمّل سُنّتي من (متجر آبل|Google Play)$/.test(img.getAttribute('alt')), 'each said in words, by the name the card uses');
+  });
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf('.store-card img { display: block; height: 44px; width: auto; }') !== -1);
+  const inApp = boot({ bridge: { pageReady: function () {} } });
+  inApp.win.App.go('about');
+  assert.ok(inApp.doc.getElementById('about-store').hidden, 'inside the app it would point at itself');
+
+  /* an android phone in a browser is offered the store's app, once */
+  const storage = memoryStorage();
+  const phone = boot({ storage: storage });
+  Object.defineProperty(phone.win.navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' });
+  assert.ok(phone.win.App.helpers.onAndroidWeb());
+  assert.strictEqual(phone.win.App.helpers.offerPlay(), true);
+  const banner = phone.doc.getElementById('banner');
+  assert.ok(!banner.hidden && banner.textContent.indexOf('Google\u00a0Play') !== -1, 'the name kept whole on its line');
+  assert.strictEqual(phone.win.App.helpers.offerPlay(), false, 'and never put twice');
+  /* the browser's own offer is held, and not put to the reader over it */
+  click(phone.win, phone.doc.getElementById('banner-close'));
+  const event = new phone.win.Event('beforeinstallprompt');
+  Object.assign(event, { preventDefault() {}, prompt() {}, userChoice: Promise.resolve({}) });
+  phone.win.dispatchEvent(event);
+  assert.ok(phone.win.App.state.installOffer && phone.doc.getElementById('banner').hidden);
+  /* the settings open the store as well */
+  const tabs = [];
+  phone.win.open = function (url) { tabs.push(url); return null; };
+  phone.win.App.go('settings');
+  const install = phone.doc.getElementById('settings-install');
+  assert.ok(!install.hidden && install.textContent === 'ثبّت التطبيق من Google Play');
+  click(phone.win, install);
+  assert.deepStrictEqual(tabs, [LINK_PLAY]);
+  /* and the question stays asked at the next opening: a setting missing from
+     the defaults was dropped when the page loaded again */
+  const again = boot({ storage: storage });
+  Object.defineProperty(again.win.navigator, 'userAgent', { configurable: true, value: 'Mozilla/5.0 (Linux; Android 15; Pixel 9)' });
+  assert.strictEqual(again.win.Store.get('playAsked'), true);
+  assert.strictEqual(again.win.App.helpers.offerPlay(), false);
+
+  /* inside the android app nothing is offered, and a computer keeps the browser's own install */
+  assert.ok(!inApp.win.App.helpers.onAndroidWeb());
+  assert.strictEqual(web.win.App.helpers.offerPlay(), false);
+  const store = fs.readFileSync(path.join(DOCS, 'js', 'store.js'), 'utf8');
+  assert.ok(/installAsked: false,\s*playAsked: false,/.test(store), 'both are among the settings a reload keeps');
+
+  /* the page that explains the app says where to get it, and no longer that android is coming */
+  const intro = fs.readFileSync(path.join(DOCS, 'intro.html'), 'utf8');
+  assert.ok(intro.indexOf('href="' + LINK_PLAY + '"') !== -1 && intro.indexOf('href="' + LINK_APPLE + '"') !== -1);
+  assert.ok(intro.indexOf('قريباً') === -1);
 });
 
 test('rating opens the store of the phone in hand, and the letter is addressed with the version in it', () => {

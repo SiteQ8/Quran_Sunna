@@ -4,11 +4,11 @@
 
 **مصحف ومواقيت وأذكار وسنن في جهازك، المصحف كاملاً وأوقات الصلاة والأذكار والقبلة وتتبع السنن، كله يعمل في جهازك بلا إنترنت**
 
-[![الإصدار](https://img.shields.io/badge/الإصدار-8.87.81-1e6f47?style=flat-square)]()
+[![الإصدار](https://img.shields.io/badge/الإصدار-8.87.82-1e6f47?style=flat-square)]()
 [![الرخصة](https://img.shields.io/badge/الحقوق-محفوظة-b08833?style=flat-square)](LICENSE)
 [![بلا اعتماديات](https://img.shields.io/badge/بلا_اعتماديات-0-1e6f47?style=flat-square)]()
 
-[افتح التطبيق](https://sunnati.3li.info/) · [حمّله من متجر آبل](https://apps.apple.com/app/id6814355836)
+[افتح التطبيق](https://sunnati.3li.info/) · [حمّله من متجر آبل](https://apps.apple.com/app/id6814355836) · [حمّله من Google Play](https://play.google.com/store/apps/details?id=com.eworldq8.sunnati)
 
 </div>
 
