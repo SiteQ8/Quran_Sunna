@@ -81,8 +81,11 @@ jobs:
   build:
     needs: pick
     runs-on: ${{ needs.pick.outputs.runner }}
-    # the iPhone Duo step fetches an iOS runtime of several gigabytes first
-    timeout-minutes: ${{ needs.pick.outputs.runner == 'xcode-27' && 75 || 30 }}
+    # the iPhone Duo step fetches an iOS runtime of several gigabytes first,
+    # and the 13 inch iPad is photographed after the phones: thirty minutes
+    # ran out in its last launches and cancelled the build, with the store step
+    # after it, though the build had already gone up to App Store Connect
+    timeout-minutes: ${{ needs.pick.outputs.runner == 'xcode-27' && 90 || 50 }}
     permissions:
       contents: write   # the watch's mark is taken back when only a beta was there
     outputs:
