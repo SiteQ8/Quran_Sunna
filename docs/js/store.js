@@ -100,6 +100,12 @@
     usedDays: 0,
     usedOn: '',
     rateAsked: false,
+    /* whether the browser's own offer to install, and on an android phone the
+       app on Google Play, have been put to the reader, each once at most. A
+       setting that is not named here is dropped when the page is next loaded,
+       so the browser's offer used to come back at every opening */
+    installAsked: false,
+    playAsked: false,
     /* the count on the tasbih and the phrase it is on, kept with the day it
        was counted on, so a reload or the phone closing the app does not lose
        a count halfway to its hundred */

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.81';
+  var VERSION = '8.87.82';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -8112,11 +8112,14 @@
        they held before a delete or a restore */
     syncPickers();
 
-    /* the App Store card is for readers in a browser; inside the app it would point at itself */
+    /* the stores' card is for readers in a browser; inside the app it would point at itself */
     if ($('about-store')) $('about-store').hidden = !!bridge();
     var installRow = $('settings-install');
     if (installRow) {
-      installRow.hidden = !state.installOffer || standalone();
+      /* on an android phone in a browser the app to install is the store's */
+      var play = onAndroidWeb();
+      installRow.hidden = play ? false : (!state.installOffer || standalone());
+      installRow.textContent = play ? 'ثبّت التطبيق من Google Play' : 'ثبّت التطبيق على جهازك';
     }
     if ($('offline-state')) {
       $('offline-state').textContent = Mushaf.ready()
@@ -9751,14 +9754,40 @@
     window.setTimeout(function () { if (!tour.open) view.hidden = true; }, lessMotion() ? 0 : 280);
   }
 
+  /* An android phone in a browser is offered the app on Google Play rather
+     than the browser's own install: the store's app sounds the adhan and its
+     reminders with the app closed, which a page added to the home screen
+     cannot. Once for each reader, in a page already added to the home screen
+     too, and never inside the app itself. */
+  function onAndroidWeb() {
+    return !bridge() && /Android/i.test(window.navigator.userAgent || '');
+  }
+
+  function openPlay() { return openOutside(LINKS.play); }
+
+  /* asked over nothing the reader is in the middle of, or left for the next
+     opening */
+  function offerPlay() {
+    if (!onAndroidWeb() || Store.get('playAsked')) return false;
+    if (tour.open || skyview.open) return false;
+    if (!$('banner') || !$('banner').hidden) return false;
+    if ($('sheet') && $('sheet').classList.contains('is-open')) return false;
+    Store.set('playAsked', true);
+    /* the name kept whole on its line, and the button short, or a small
+       phone broke the name in two across the lines of the banner */
+    showBanner('سُنّتي على Google\u00a0Play، وفيه يصلك الأذان والتطبيق مغلق', 'ثبّته', openPlay);
+    return true;
+  }
+
   /* The browser offers to install once, and only once, so the offer is kept
-     until the reader is ready for it rather than thrown away. */
+     until the reader is ready for it rather than thrown away. On android the
+     store's app is offered instead, so the browser's is only kept. */
   function watchInstall() {
     window.addEventListener('beforeinstallprompt', function (event) {
       if (event.preventDefault) event.preventDefault();
       state.installOffer = event;
       renderSettings();
-      if (!Store.get('installAsked')) {
+      if (!Store.get('installAsked') && !onAndroidWeb()) {
         Store.set('installAsked', true);
         showBanner('ثبّت سُنّتي على جهازك ليعمل بلا إنترنت', 'تثبيت', install);
       }
@@ -9772,6 +9801,7 @@
   }
 
   function install() {
+    if (onAndroidWeb()) return openPlay();
     var offer = state.installOffer;
     if (!offer) { toast('من قائمة الخيارات اختر: إضافة إلى الشاشة الرئيسية'); return; }
     offer.prompt();
@@ -9979,6 +10009,7 @@
     var since = (window.performance && window.performance.now) ? window.performance.now() : 0;
     window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));
     window.setTimeout(maybeAskRating, 9000);
+    window.setTimeout(offerPlay, 9500);
     /* every select becomes our own menu, once the page is built */
     enhanceSelects();
     watchHeading();
@@ -10019,6 +10050,7 @@
       timetableText: timetableText, settleAzkar: settleAzkar, restoreTasbih: restoreTasbih, setSleep: setSleep,
       shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
       feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
+      offerPlay: offerPlay, onAndroidWeb: onAndroidWeb,
       cameBefore: cameBefore, firstOpenToday: firstOpenToday, openingState: opening, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
       tourSteps: TOUR, tourState: tour
     },
