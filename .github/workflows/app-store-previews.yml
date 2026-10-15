@@ -14,6 +14,9 @@ name: App Store previews
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   previews:
     runs-on: ubuntu-latest

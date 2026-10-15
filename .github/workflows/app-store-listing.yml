@@ -25,6 +25,9 @@ on:
         options: [status, screenshots, withdraw, send, replace]
         default: status
 
+permissions:
+  contents: read
+
 jobs:
   listing:
     runs-on: ubuntu-latest
