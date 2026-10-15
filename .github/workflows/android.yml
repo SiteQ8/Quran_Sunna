@@ -59,6 +59,9 @@ on:
         options: [alpha, production]
         default: alpha
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

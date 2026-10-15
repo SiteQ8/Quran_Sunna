@@ -15,6 +15,9 @@ on:
         options: [alpha]
         default: alpha
 
+permissions:
+  contents: read
+
 jobs:
   promote:
     runs-on: ubuntu-latest
