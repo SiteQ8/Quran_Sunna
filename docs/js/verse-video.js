@@ -74,6 +74,17 @@
     apple: { src: 'img/badges/app-store-ar.svg', w: 119.66408, h: 40.00013, box: [0, 0, 119.66408, 40.00013] },
     google: { src: 'img/badges/google-play-ar.png', w: 646, h: 250, box: [41, 41, 605, 209] }
   };
+  /* A page in another language carries the stores' English badges, the ones
+     the About screen shows, each its black shape alone with no margin. Which
+     is asked when they are drawn: a page whose table did not come opens in
+     Arabic after this file has run. */
+  var BADGES_OTHER = {
+    apple: { src: 'icons/badge-appstore.png', w: 449, h: 150, box: [0, 0, 449, 150] },
+    google: { src: 'icons/badge-googleplay.png', w: 564, h: 168, box: [0, 0, 564, 168] }
+  };
+  function badges() {
+    return root.I18n && root.I18n.lang && root.I18n.lang !== 'ar' ? BADGES_OTHER : BADGES;
+  }
 
   /* The verse files the video is made from. WebAudio can only read a file
      that comes with Access-Control-Allow-Origin, and cdn.islamic.network,
@@ -581,7 +592,7 @@
      cards place it, their black shapes one height h, a gap of a little more
      than the quarter height each asks to keep clear. Returns the width. */
   function drawBadges(ctx, cx, top, h, imgs) {
-    var a = BADGES.apple, g = BADGES.google;
+    var a = badges().apple, g = badges().google;
     var aw = h * (a.box[2] - a.box[0]) / (a.box[3] - a.box[1]);
     var gs = h / (g.box[3] - g.box[1]);
     var gw = (g.box[2] - g.box[0]) * gs;
@@ -603,7 +614,7 @@
     function one(src) {
       return Promise.race([loadImage(src), new Promise(function (r) { root.setTimeout(function () { r(null); }, 3000); })]);
     }
-    return Promise.all([one(ICON), one(BADGES.apple.src), one(BADGES.google.src)])
+    return Promise.all([one(ICON), one(badges().apple.src), one(badges().google.src)])
       .then(function (got) { return { icon: got[0], apple: got[1], google: got[2] }; });
   }
 
@@ -737,7 +748,8 @@
     var titleY = BOX.title - lay.lift;
     var title = canvas(W, 100), hc = title.getContext('2d');
     hc.font = '500 36px ' + ui;
-    hc.direction = 'rtl'; hc.textAlign = 'center'; hc.textBaseline = 'alphabetic';
+    var ltr = o.dir === 'ltr';
+    hc.direction = ltr ? 'ltr' : 'rtl'; hc.textAlign = 'center'; hc.textBaseline = 'alphabetic';
     var tw = hc.measureText(o.surah || '').width;
     hc.fillStyle = GOLD;
     shaded(hc, function () { hc.fillText(o.surah || '', W / 2, 50 + (UI_ASC - UI_DESC) * 18); });
@@ -751,19 +763,22 @@
       hc.fill();
     });
 
-    /* بصوت and the reciter, under the verse */
+    /* بصوت and the reciter, under the verse: the word first in the way the
+       line runs, from the right in Arabic and from the left in a language
+       that reads from the left */
     var recTop = verseTop + lay.h + BOX.gap;
     var rec = canvas(W, 80), rc = rec.getContext('2d');
-    rc.direction = 'rtl'; rc.textAlign = 'right'; rc.textBaseline = 'alphabetic';
+    rc.direction = ltr ? 'ltr' : 'rtl'; rc.textAlign = ltr ? 'left' : 'right'; rc.textBaseline = 'alphabetic';
     rc.font = '400 31px ' + ui;
     var byW = rc.measureText((o.by || '') + ' ').width;
     rc.font = '600 31px ' + ui;
     var nameW = rc.measureText(o.voice || '').width;
     var recRight = W / 2 + (byW + nameW) / 2, recBase = 18 + 32;
+    var recStart = ltr ? W / 2 - (byW + nameW) / 2 : recRight;
     rc.font = '400 31px ' + ui; rc.fillStyle = 'rgba(246, 238, 221, 0.78)';
-    shaded(rc, function () { rc.fillText(o.by || '', recRight, recBase); });
+    shaded(rc, function () { rc.fillText(o.by || '', recStart, recBase); });
     rc.font = '600 31px ' + ui; rc.fillStyle = CREAM;
-    shaded(rc, function () { rc.fillText(o.voice || '', recRight - byW, recBase); });
+    shaded(rc, function () { rc.fillText(o.voice || '', ltr ? recStart + byW : recStart - byW, recBase); });
 
     /* the app over the water: its icon and name, and under them the two
        badges, all on a quiet darkening so the mosque's light on the sea does
@@ -781,16 +796,18 @@
     sc.beginPath(); sc.arc(0, 0, 330, 0, Math.PI * 2); sc.fill();
     sc.restore();
 
+    /* the icon leads the name, on the side the reader's line begins */
     var brand = canvas(W, 140), bc = brand.getContext('2d');
-    bc.direction = 'rtl'; bc.textAlign = 'right'; bc.textBaseline = 'alphabetic';
+    bc.direction = ltr ? 'ltr' : 'rtl'; bc.textAlign = ltr ? 'left' : 'right'; bc.textBaseline = 'alphabetic';
     bc.font = '600 34px ' + ui;
     var appW = bc.measureText(o.name || '').width;
     var groupW = (marks.icon ? FOOT.icon + 18 : 0) + appW;
-    var iconX = W / 2 + groupW / 2 - FOOT.icon;
+    var iconX = ltr ? W / 2 - groupW / 2 : W / 2 + groupW / 2 - FOOT.icon;
     if (marks.icon) drawIcon(bc, marks.icon, iconX, 30, FOOT.icon, true);
     bc.fillStyle = CREAM;
+    var nameX = ltr ? (marks.icon ? iconX + FOOT.icon + 18 : W / 2 - appW / 2) : (marks.icon ? iconX - 18 : W / 2 + appW / 2);
     shaded(bc, function () {
-      bc.fillText(o.name || '', marks.icon ? iconX - 18 : W / 2 + appW / 2, 30 + FOOT.icon / 2 + (UI_ASC - UI_DESC) * 17);
+      bc.fillText(o.name || '', nameX, 30 + FOOT.icon / 2 + (UI_ASC - UI_DESC) * 17);
     });
 
     var badgeTop = footTop + FOOT.icon + FOOT.gap;

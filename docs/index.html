@@ -14,6 +14,7 @@
      sends no headers, so it is not claimed here. -->
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://tile.openstreetmap.org; font-src 'self'; media-src 'self' blob: https:; connect-src 'self' https:; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'">
 <script src="js/boot.js"></script>
+<script src="js/i18n.js"></script>
 <meta name="theme-color" content="#9c2b2b">
 <meta name="description" content="سُنّتي تطبيق إسلامي يعمل بلا إنترنت، فيه المصحف كاملاً وأوقات الصلاة بحساب فلكي على الجهاز والأذكار والقبلة وتتبع السنن اليومية.">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -241,6 +242,7 @@
 <g id="i-chevron"><path d="m6 9 6 6 6-6"/></g>
 <g id="i-up"><path d="m6 15 6-6 6 6"/></g>
 <g id="i-hands"><path d="M9 12V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V12"/><path d="M15 12V7a1.5 1.5 0 0 1 3 0v7.5c0 3.6-2.6 6-6 6s-6-2.4-6-6V11a1.5 1.5 0 0 1 3 0"/></g>
+<g id="i-globe"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9s1.3-6.4 3.8-9z"/></g>
 <g id="i-offline"><path d="m3 3 18 18"/><path d="M9.5 15.5a4 4 0 0 1 5 0M6 12.3a8.5 8.5 0 0 1 3.4-2M18 12.3a8.5 8.5 0 0 0-6.6-2.2M2.8 8.9a13 13 0 0 1 4.4-2.6M21.2 8.9a13 13 0 0 0-8.6-3.3"/><circle cx="12" cy="19" r=".6" fill="currentColor"/></g>
 </defs></svg>
 
@@ -376,6 +378,7 @@
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-quote"/></svg>آية اليوم</h2>
       <button class="card-more" id="ayah-share">مشاركة</button></div>
     <div class="ayah-block" id="daily-ayah" style="font-size:calc(1.15rem * var(--quran-scale));line-height:2.2">…</div>
+    <div id="daily-meaning" hidden></div>
     <p class="source" id="daily-ayah-ref" style="text-align:center"></p>
   </div>
 
@@ -448,7 +451,7 @@
   </div>
 </section>
 
-<section class="view" id="v-page" aria-labelledby="page-title">
+<section class="view" id="v-page" aria-labelledby="page-title" dir="rtl">
   <div class="reader-bar">
     <button class="btn btn-ghost btn-icon" data-go="quran" aria-label="رجوع إلى قائمة السور"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-back"/></svg></button>
     <div class="page-head">
@@ -667,10 +670,10 @@
     <div class="compass-face" id="compass-face"></div>
     <svg class="compass-rose" id="compass-rose" viewBox="0 0 200 200" aria-hidden="true">
       <g stroke="currentColor" opacity=".25">
-        <line x1="100" y1="10" x2="100" y2="24"/><line x1="100" y1="176" x2="100" y2="190"/>
+        <line class="compass-north" x1="100" y1="10" x2="100" y2="24"/><line x1="100" y1="176" x2="100" y2="190"/>
         <line x1="10" y1="100" x2="24" y2="100"/><line x1="176" y1="100" x2="190" y2="100"/>
       </g>
-      <text x="100" y="22" text-anchor="middle" font-size="13" fill="currentColor" opacity=".5">ش</text>
+      <text x="100" y="22" text-anchor="middle" font-size="13" fill="currentColor" opacity=".5" data-tr="compass">ش</text>
       <g id="qibla-needle">
         <line x1="100" y1="100" x2="100" y2="34" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>
         <circle cx="100" cy="30" r="9" fill="var(--accent)"/>
@@ -779,7 +782,7 @@
     <div class="convert-row" style="margin-top:12px">
       <label class="convert-field"><span class="setting-label">هجري</span>
         <span class="convert-hijri">
-          <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم">
+          <input class="field" id="conv-hd" type="number" min="1" max="30" inputmode="numeric" aria-label="اليوم الهجري" placeholder="اليوم" data-tr="date">
           <select class="select" id="conv-hm" aria-label="الشهر الهجري"></select>
           <input class="field" id="conv-hy" type="number" min="1300" max="1600" inputmode="numeric" aria-label="السنة الهجرية" placeholder="السنة">
         </span></label>
@@ -792,7 +795,28 @@
 
 <!-- ══════════ الإعدادات ══════════ -->
 <section class="view" id="v-settings" aria-labelledby="settings-title">
-  <div class="view-head"><h1 id="settings-title">الإعدادات</h1><p>اضبط الحساب والمظهر ونسخة بياناتك</p></div>
+  <div class="view-head"><h1 id="settings-title">الإعدادات</h1><p>اضبط اللغة والحساب والمظهر ونسخة بياناتك</p></div>
+
+  <div class="card" id="settings-language">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-globe"/></svg>اللغة</h2></div>
+    <div class="setting"><span><span class="setting-label">لغة التطبيق</span><br><span class="setting-note">يبقى القرآن والحديث والأذكار بالعربية، وتحتها ترجمة معانيها</span></span>
+      <select class="select" id="settings-lang" aria-label="لغة التطبيق">
+        <option value="auto">لغة الجهاز</option>
+        <option value="ar" lang="ar" dir="rtl" translate="no">العربية</option>
+        <option value="en" lang="en" dir="ltr" translate="no">English</option>
+        <option value="id" lang="id" dir="ltr" translate="no">Bahasa Indonesia</option>
+        <option value="ms" lang="ms" dir="ltr" translate="no">Bahasa Melayu</option>
+        <option value="fr" lang="fr" dir="ltr" translate="no">Français</option>
+        <option value="ha" lang="ha" dir="ltr" translate="no">Hausa</option>
+        <option value="tr" lang="tr" dir="ltr" translate="no">Türkçe</option>
+        <option value="ru" lang="ru" dir="ltr" translate="no">Русский</option>
+        <option value="bn" lang="bn" dir="ltr" translate="no">বাংলা</option>
+        <option value="ur" lang="ur" dir="rtl" translate="no">اردو</option>
+        <option value="fa" lang="fa" dir="rtl" translate="no">فارسی</option>
+      </select></div>
+    <div class="setting" hidden><span><span class="setting-label">معاني الآيات</span><br><span class="setting-note">تحت كل آية ترجمة معناها، فإن أطفأتها جرت السورة كما في المصحف</span></span>
+      <button class="switch" id="settings-meanings" role="switch" aria-checked="true" aria-label="معاني الآيات"></button></div>
+  </div>
 
   <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-pin"/></svg>الموقع والحساب</h2></div>
@@ -1054,6 +1078,7 @@
   <div class="card">
     <div class="card-head"><h2>المصادر</h2></div>
     <p class="setting-note">نص المصحف برواية حفص عن عاصم بالرسم العثماني، والأذكار من حصن المسلم، والأحاديث من الأربعين النووية، ثم التلاوات من شبكة القرآن المفتوحة، وخريطة المساجد وبياناتها من <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>.</p>
+    <p class="setting-note" id="about-meanings" hidden></p>
   </div>
   <div class="card">
     <div class="card-head"><h2>التواصل</h2></div>
@@ -1080,11 +1105,11 @@
   <button id="player-stop" aria-label="إيقاف"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-close"/></svg></button>
 </div>
 <nav class="tabs" aria-label="التنقل الرئيسي">
-  <button class="tab" data-go="home" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
-  <button class="tab" data-go="quran"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
-  <button class="tab" data-go="tasbih"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-beads"/></svg>المسبحة</button>
-  <button class="tab" data-go="tracker"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
-  <button class="tab" data-go="more"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
+  <button class="tab" data-go="home" data-tr="tab" aria-current="page"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-home"/></svg>الرئيسية</button>
+  <button class="tab" data-go="quran" data-tr="tab"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-book"/></svg>المصحف</button>
+  <button class="tab" data-go="tasbih" data-tr="tab"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-beads"/></svg>المسبحة</button>
+  <button class="tab" data-go="tracker" data-tr="tab"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-sun"/></svg>السنن</button>
+  <button class="tab" data-go="more" data-tr="tab"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-grid"/></svg>المزيد</button>
 </nav>
 
 <button class="to-top" id="to-top" hidden aria-label="إلى أعلى الصفحة"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-up"/></svg></button>

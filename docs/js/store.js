@@ -106,6 +106,11 @@
        so the browser's offer used to come back at every opening */
     installAsked: false,
     playAsked: false,
+    /* and the Arabic, to a reader whose phone opened the app in another
+       language */
+    arabicAsked: false,
+    /* the meaning of each verse under it, in a reader's own language */
+    meanings: true,
     /* the count on the tasbih and the phrase it is on, kept with the day it
        was counted on, so a reload or the phone closing the app does not lose
        a count halfway to its hundred */

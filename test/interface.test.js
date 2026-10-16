@@ -20,7 +20,7 @@ const { JSDOM } = (function () {
 
 const DOCS = path.join(__dirname, '..', 'docs');
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
+  'js/i18n.js', 'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
 ];
 
@@ -1788,7 +1788,10 @@ test('the film of a day in the sky is one the App Store takes, and goes up with 
   const ios = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/ios.yml'), 'utf8');
   assert.ok(ios.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews') !== -1, 'every version sent carries them');
   const own = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-previews.yml'), 'utf8');
-  assert.ok(/on:\s*workflow_dispatch:\s*\n\s*\njobs:/.test(own), 'and the run that places them alone is only ever by hand');
+  /* its triggers are the block under on:, up to the next key of the file,
+     which may be the permissions its token is held to */
+  const on = /\non:\n([\s\S]*?)\n(?=\S)/.exec(own);
+  assert.ok(on && on[1].trim() === 'workflow_dispatch:', 'and the run that places them alone is only ever by hand');
   assert.ok(own.indexOf('--previews-only') !== -1);
 });
 
@@ -5279,10 +5282,12 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
 
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.ok(/html\.book \{[\s\S]*?--gap: 56px;[\s\S]*?--inner: calc\(50vw \+ var\(--gap\) \/ 2\);/.test(css), 'a clear middle, a phone wide either side');
-  /* the tabs float as a bar as wide as the right column, and the rest above them */
-  assert.ok(/html\.book \.tabs \{\s*left: calc\(var\(--inner\) \+ var\(--pad\)\); right: calc\(var\(--edge\) \+ var\(--pad\)\);/.test(css), 'the tabs keep to the right column, no tab on the fold');
+  /* the tabs float as a bar as wide as the column the page starts on, the
+     right one in Arabic and the left in a left to right language, and the
+     rest above them; written from the start of a line so it is both */
+  assert.ok(/html\.book \.tabs \{\s*inset-inline-start: calc\(var\(--edge\) \+ var\(--pad\)\); inset-inline-end: calc\(var\(--inner\) \+ var\(--pad\)\);/.test(css), 'the tabs keep to the right column, no tab on the fold');
   for (const sel of ['.player', '.toast', '.banner', '.to-top']) {
-    assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{\\s*left: calc\\(var\\(--inner\\) \\+ var\\(--pad\\)\\)').test(css),
+    assert.ok(new RegExp('html\\.book ' + sel.replace('.', '\\.') + ' \\{[^}]*inset-inline-end: calc\\(var\\(--inner\\) \\+ var\\(--pad\\)\\)').test(css),
       sel + ' floats in the right column');
   }
   /* set in from the screen's edge as the right half's cards are: with the
@@ -5291,13 +5296,13 @@ test('on a screen as wide as iPhone Duo opened, nothing is laid across the fold'
      the line the right column begins on to the line the tabs end on, as far
      in from its side as the right column is from the other. The hour alone
      stood against the edge and then in the upper part of an empty half. */
-  assert.ok(/html\.book \.book-side \{[\s\S]*?position: fixed;[\s\S]*?top: calc\(env\(safe-area-inset-top\) \+ var\(--s5\)\); bottom: var\(--float\);\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); width: calc\(var\(--pane\) - 2 \* var\(--pad\)\);/.test(css), 'the day keeps the left column, top and foot level with the right');
+  assert.ok(/html\.book \.book-side \{[\s\S]*?position: fixed;[\s\S]*?top: calc\(env\(safe-area-inset-top\) \+ var\(--s5\)\); bottom: var\(--float\);\s*inset-inline-end: calc\(var\(--edge\) \+ var\(--pad\)\); width: calc\(var\(--pane\) - 2 \* var\(--pad\)\);/.test(css), 'the day keeps the left column, top and foot level with the right');
   assert.ok(/html\.book \.book-side > \.card \{ margin: 0; flex: 1 0 auto; \}/.test(css), 'the count fills what the hour leaves');
   assert.ok(/html\.book\[data-view="page"\] \.book-side \{ display: none; \}/.test(css), 'and the mushaf has both halves to itself');
   assert.ok(/SIDE = \{ box: document\.createElement\('aside'\), items: \[home\.querySelector\('\.clock'\), \$\('home-progress'\)\]/.test(app), 'the two are moved from the home screen, not drawn twice');
   assert.ok(/m\[0\]\.parentNode\.insertBefore\(m\[1\], m\[0\]\);/.test(app), 'and put back where they were when the screen narrows');
   assert.ok(/placeSide\(isBook\(\)\);/.test(app), 'whenever the book opens or closes');
-  assert.ok(/html\.book #views > \.view \{\s*width: var\(--pane\); margin-left: auto; margin-right: var\(--edge\);\s*padding-inline: var\(--pad\);/.test(css), 'the right column is set in as the left one is');
+  assert.ok(/html\.book #views > \.view \{\s*width: var\(--pane\); margin-inline-start: var\(--edge\); margin-inline-end: auto;\s*padding-inline: var\(--pad\);/.test(css), 'the right column is set in as the left one is');
   /* a transform on an opening view would carry the fixed clock with it */
   assert.ok(/html\.book \.view\.is-open \{ animation-name: view-fade; \}/.test(css), 'views open by fading in the book');
   assert.ok(/html\.book #page-body \.spread \{\s*grid-template-columns: 1fr calc\(var\(--gap\) \+ 2 \* var\(--pad\)\) 1fr;/.test(css), 'the mushaf opens across the fold, each page on its column');
@@ -5435,7 +5440,11 @@ test('in the book a spread stands whole between its bars, and nothing of it lies
   /* the bar has no ground across the fold, and turning the page is a bar of
      its own under the left page, level with the tabs under the right */
   assert.ok(/html\.book #v-page \.reader-bar \{[\s\S]*?position: static; background: none; box-shadow: none;/.test(css), 'no bar across the fold');
-  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60;\s*left: calc\(var\(--edge\) \+ var\(--pad\)\); right: calc\(var\(--inner\) \+ var\(--pad\)\);\s*bottom: var\(--float\); height: var\(--tab-h\);/.test(css), 'the page turns from a bar under the left page, the twin of the tabs');
+  /* the mushaf's screen is right to left in every language, so the bar is
+     placed by its own direction, and taken to the other half when the
+     tabs have moved there in a left to right page */
+  assert.ok(/html\.book #v-page \.page-nav \{\s*position: fixed; z-index: 60;\s*inset-inline-end: calc\(var\(--edge\) \+ var\(--pad\)\); inset-inline-start: calc\(var\(--inner\) \+ var\(--pad\)\);\s*bottom: var\(--float\); height: var\(--tab-h\);/.test(css), 'the page turns from a bar under the left page, the twin of the tabs');
+  assert.ok(/html\.book\[dir='ltr'\] #v-page \.page-nav \{\s*inset-inline-start: calc\(var\(--edge\) \+ var\(--pad\)\); inset-inline-end: calc\(var\(--inner\) \+ var\(--pad\)\);/.test(css), 'and under the right page when the tabs stand under the left');
   assert.ok(css.indexOf('html.book #v-page .page-nav > :nth-child') === -1, 'and no button is placed on the far side of the fold');
   /* a page that cannot fit scrolls in its own leaf, not the two together */
   assert.ok(/html\.book #page-body \.leaf \{[\s\S]*?overflow-x: hidden; overflow-y: auto;/.test(css), 'a leaf scrolls on its own');
@@ -6590,7 +6599,8 @@ test('the app sits below the phone bars rather than under them', () => {
 test('the topics are equal tiles, and the three paces share one row', () => {
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   /* the topics: a grid of two, not a ragged run of pills */
-  assert.match(css, /\.topics \{[^}]*grid-template-columns:\s*1fr 1fr/);
+  assert.match(css, /\.topics \{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/,
+    'two equal columns, which a long name in a translated page cannot widen');
   assert.match(css, /\.topic \{[^}]*min-height:\s*52px/, 'one height for every tile');
   /* the sheet of four marks stretches an odd last one; the three paces must not */
   assert.match(css, /\.mark-choices:not\(\.three\) \.btn:last-child:nth-child\(odd\)/,
@@ -7737,7 +7747,9 @@ test('the picture of the times is a row for each, the night marks among them', (
   const fn = /function timesCard\(\) \{([\s\S]*?)\n  \}\n\n  function roundRect/.exec(app)[1];
   /* a row apiece, the name at one end and the hour at the other, not a paragraph */
   assert.ok(fn.indexOf('roundRect(ctx, PAD, y, W - PAD * 2, ROW, 26)') !== -1, 'each on its own rounded row');
-  assert.ok(fn.indexOf("ctx.textAlign = 'right'") !== -1 && fn.indexOf("ctx.textAlign = 'left'") !== -1,
+  /* at the start of a line of the reader's language and at its end, which in
+     Arabic is the right and the left, and the other way round in English */
+  assert.ok(fn.indexOf("ctx.textAlign = ltr ? 'left' : 'right'") !== -1 && fn.indexOf("ctx.textAlign = ltr ? 'right' : 'left'") !== -1,
     'the name at the start and the hour at the end');
   assert.ok(fn.indexOf("prayerName('dhuhr')") !== -1, 'friday is called by its own name here too');
   ['الفجر', 'الشروق', 'العصر', 'المغرب', 'العشاء', 'منتصف الليل', 'الثلث الأخير'].forEach(function (n) {

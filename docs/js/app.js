@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.82';
+  var VERSION = '8.87.83';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -105,6 +105,19 @@
       .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
   }
+
+  /* What the reader meets off the page, a notification, a spoken line, a
+     picture or words handed to another app, in the language they read the
+     app in. The page itself is put into it by i18n.js as it is drawn. */
+  function tongue(text) {
+    return window.I18n && typeof window.I18n.tx === 'function' ? window.I18n.tx(text) : text;
+  }
+
+  /* The Quran, the hadith, the supplications and the tafsir are said as they
+     were said: marked as Arabic and never translated, by i18n.js or by a
+     browser's own translator. The faces alone do not say it, since the naskh
+     sets the app's own words too here and there. */
+  var SAID = ' translate="no" lang="ar" dir="rtl"';
 
   function icon(name, cls) {
     /* The sprite is drawn in a twenty four unit square. Without saying so, the
@@ -1663,13 +1676,16 @@
   /* quiet: raised without the phone's sound, for a reminder the reader set
      to silence or to the app's own bells, which the page sounds itself */
   function notify(title, body, tag, quiet) {
+    title = tongue(title);
+    body = tongue(body);
     var app = bridge();
     if (app && app.notify) {
       try { app.notify(title, body, tag || 'page'); return Promise.resolve(true); } catch (e) { /* fall through */ }
     }
     if (!window.Notification || window.Notification.permission !== 'granted') return Promise.resolve(false);
     var options = {
-      body: body, tag: tag || 'default', lang: 'ar', dir: 'rtl',
+      body: body, tag: tag || 'default',
+      lang: (window.I18n && window.I18n.lang) || 'ar', dir: (window.I18n && window.I18n.dir) || 'rtl',
       icon: 'icons/icon-192.png', badge: 'icons/icon-96.png',
       vibrate: Store.get('vibrate') ? [200, 100, 200] : undefined,
       data: { url: './' },
@@ -2018,13 +2034,16 @@
     if (mode === 'tone') return chime();
     if (!window.speechSynthesis || !window.SpeechSynthesisUtterance) return chime();
     try {
-      var line = new window.SpeechSynthesisUtterance(text);
-      line.lang = 'ar-SA';
+      /* the call to prayer is the app's own sentence, said in the reader's
+         language by a voice of it; the salawat is said as it is, in Arabic */
+      var own = why === 'adhan' && window.I18n && window.I18n.lang !== 'ar';
+      var line = new window.SpeechSynthesisUtterance(own ? tongue(text) : text);
+      line.lang = own ? window.I18n.speech : 'ar-SA';
       line.rate = 0.85;
       /* pitched low, so that whatever voice the phone offers sits nearer a
          man's register */
       line.pitch = 0.75;
-      var chosen = pickVoice();
+      var chosen = own ? voiceFor(window.I18n.speech) : pickVoice();
       if (chosen) line.voice = chosen;
       else if ((window.speechSynthesis.getVoices() || []).length) return chime();
       /* a line that was cancelled for the next sound must not reset that
@@ -2080,6 +2099,15 @@
   function fillVoiceListSoon() {
     fillVoiceList();
     [300, 1200, 3000].forEach(function (wait) { window.setTimeout(fillVoiceList, wait); });
+  }
+
+  /* a voice of the reader's own language, the phone's first of it */
+  function voiceFor(tag) {
+    if (!window.speechSynthesis) return null;
+    var base = String(tag || '').split('-')[0].toLowerCase();
+    return (window.speechSynthesis.getVoices() || []).filter(function (v) {
+      return String(v.lang || '').toLowerCase().split(/[-_]/)[0] === base;
+    })[0] || null;
   }
 
   function pickVoice() {
@@ -2290,11 +2318,16 @@
     var list = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].map(function (k) {
       var at = new Date(today.getFullYear(), today.getMonth(), today.getDate());
       at.setMinutes(times[k]);
-      return { key: k, name: prayerName(k, today), at: at.getTime() };
+      var name = prayerName(k, today);
+      return { key: k, name: name, at: at.getTime(), title: tongue('حان وقت ' + name), body: tongue('الله أكبر، حيّ على الصلاة') };
     });
     navigator.serviceWorker.controller.postMessage({
       type: 'schedule',
       notify: !!Store.get('notify'),
+      lang: (window.I18n && window.I18n.lang) || 'ar',
+      dir: (window.I18n && window.I18n.dir) || 'rtl',
+      salawatTitle: tongue('صلِّ على النبي ﷺ'),
+      salawatBody: tongue('اللهم صلِّ وسلِّم على نبينا محمد'),
       prayers: list,
       salawatEvery: +Store.get('salawat') || 0,
       salawatAt: +Store.get('salawatAt') || 0
@@ -2654,7 +2687,7 @@
       return '<button class="tile" ' + (t.act ? 'data-act="' + esc(t.act) + '"' : 'data-go="' + esc(t.nav) + '"') + '>' +
         '<img class="tile-art" src="img/sections/' + esc(key) + '.webp" width="384" height="288" alt=""' +
         ' decoding="async" draggable="false">' +
-        '<span class="tile-name">' + esc(t.name) + '</span>' +
+        '<span class="tile-name" data-tr="tile">' + esc(t.name) + '</span>' +
         '<span class="tile-note">' + esc(t.note) + '</span></button>';
     }).join('');
   }
@@ -2670,6 +2703,14 @@
     var meta = surahMeta(pos.s);
     if ($('daily-ayah-ref')) {
       $('daily-ayah-ref').textContent = 'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a);
+    }
+    var said = $('daily-meaning');
+    if (said) {
+      said.hidden = !meaningsOn();
+      if (meaningsOn()) {
+        var put = function () { said.innerHTML = meaningHtml(pos.s, pos.a, false); };
+        if (meanings.book) put(); else loadMeanings().then(put, function () { said.hidden = true; });
+      }
     }
   }
 
@@ -2850,7 +2891,7 @@
       : ayat(meta.ay);
     return '<button class="row" data-surah="' + meta.n + '">' +
       '<span class="row-mark">' + ar(meta.n) + '</span>' +
-      '<span class="row-body"><span class="row-title">' + esc(meta.ar) +
+      '<span class="row-body"><span class="row-title" data-tr="surah">' + esc(meta.ar) +
       (done ? ' ' + icon('check') : '') + '</span>' +
       '<span class="row-note">' + esc(note) + '</span></span>' +
       '<span class="row-meta">' + esc(meta.tp) + '، ' + ayat(meta.ay) + '</span></button>';
@@ -3004,16 +3045,28 @@
     var html = '';
     if (n !== 1 && n !== 9) html += '<p class="basmala">' + esc(Mushaf.basmala()) + '</p>';
 
-    html += verses.map(function (text, i) {
+    var spans = verses.map(function (text, i) {
       var a = i + 1;
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
         esc(text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span></span> ';
-    }).join('');
+    });
 
     body.className = 'reader-body';
-    body.innerHTML = '<div class="ayah-block">' + html + '</div>';
+    /* in another language each verse stands with its meaning under it, once
+       the meanings are in hand; until then, and in Arabic, the surah flows */
+    if (meaningsOn() && !meanings.book) {
+      loadMeanings().then(function () { if (state.view === 'reader' && state.surah === n) renderReader(); }, function () {});
+    }
+    if (meaningsOn() && meanings.book) {
+      body.classList.add('with-meanings');
+      body.innerHTML = (html ? '<div class="ayah-block">' + html + '</div>' : '') + spans.map(function (span, i) {
+        return '<div class="verse-pair"><div class="ayah-block">' + span + '</div>' + meaningHtml(n, i + 1, false) + '</div>';
+      }).join('') + '<p class="source meaning-source">' + esc(meaningSource()) + '</p>';
+    } else {
+      body.innerHTML = '<div class="ayah-block">' + html + spans.join('') + '</div>';
+    }
     if (state.recite && state.recite.s === n) markReciting(state.recite.a);
     var last = Store.get('lastRead');
     rememberPlace(n, last && last.s === n ? last.a : 1);
@@ -3130,6 +3183,7 @@
       return '<button class="service" data-act="' + act + '" data-ref="' + ref + '"' + (extra || '') + '>' + icon(iconName) + '<span>' + label + '</span></button>';
     };
     var html = '<p class="ayah-block sheet-ayah">' + esc(text) + '</p>' +
+      (meaningLang() ? '<div id="meaning-slot">' + meaningHtml(s, a, true) + '</div>' : '') +
       '<p class="source">سورة ' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) +
       '، الجزء ' + ar(Mushaf.juzOf(s, a)) + '، صفحة ' + ar(Mushaf.pageOf(s, a)) + '</p>' +
       (Store.note(s, a) ? '<p class="verse-note">' + esc(Store.note(s, a)) + '</p>' : '') +
@@ -3151,6 +3205,132 @@
       }).join('') + '</div>' +
       '<div id="tafsir-slot" style="margin-top:12px"></div>';
     openSheet('آية ' + ar(a), html);
+    if (meaningLang()) {
+      var fill = function () {
+        var slot = $('meaning-slot');
+        if (slot) slot.innerHTML = meaningHtml(s, a, true);
+      };
+      loadMeanings().then(function () { fill(); return loadNotes(); }).then(fill, function () {});
+    }
+  }
+
+  /* ---------------- the meanings ----------------
+     A reader of another language reads the Quran in Arabic, as it was sent
+     down, with the meaning of each verse under it in their language, from a
+     translation its publisher stands behind (docs/data/meanings, written by
+     tools/i18n/meanings.js, each naming its translator and source). It is
+     fetched whole once, the first time it is needed, and kept by the worker
+     like the tafsir. */
+  var meanings = { lang: null, book: null, loading: null, notes: null, notesLoading: null };
+
+  function meaningLang() {
+    return window.I18n && window.I18n.lang && window.I18n.lang !== 'ar' ? window.I18n.lang : null;
+  }
+
+  function meaningsOn() {
+    return !!meaningLang() && Store.get('meanings') !== false;
+  }
+
+  function loadMeanings() {
+    var lang = meaningLang();
+    if (!lang) return Promise.resolve(null);
+    if (meanings.book && meanings.lang === lang) return Promise.resolve(meanings.book);
+    if (meanings.loading) return meanings.loading;
+    meanings.loading = window.fetch('data/meanings/quran-' + lang + '.json')
+      .then(function (r) { if (!r.ok) throw new Error('meanings ' + r.status); return r.json(); })
+      .then(function (book) { meanings.book = book; meanings.lang = lang; meanings.loading = null; return book; })
+      .catch(function (e) { meanings.loading = null; throw e; });
+    return meanings.loading;
+  }
+
+  /* the translator's notes, kept apart and read only when a verse is opened
+     on its own: some are four times the text */
+  function loadNotes() {
+    if (meanings.notes) return Promise.resolve(meanings.notes);
+    if (!meanings.book || !meanings.book.notes) return Promise.resolve(null);
+    if (meanings.notesLoading) return meanings.notesLoading;
+    meanings.notesLoading = window.fetch('data/meanings/quran-' + meanings.lang + '-notes.json')
+      .then(function (r) { if (!r.ok) throw new Error('notes ' + r.status); return r.json(); })
+      .then(function (notes) { meanings.notes = notes; meanings.notesLoading = null; return notes; })
+      .catch(function (e) { meanings.notesLoading = null; throw e; });
+    return meanings.notesLoading;
+  }
+
+  function meaningOf(s, a) {
+    var book = meanings.book;
+    return book && book.a[s - 1] && book.a[s - 1][a - 1] ? book.a[s - 1][a - 1] : '';
+  }
+
+  /* the meaning as the page shows it: in the reader's language and marked so,
+     never put through the table, which is for the app's own words */
+  function meaningHtml(s, a, withNotes) {
+    var text = meaningOf(s, a);
+    if (!text) return '';
+    var notes = withNotes && meanings.notes ? meanings.notes[s + ':' + a] : '';
+    var said = ' lang="' + esc(meanings.lang) + '" dir="' + esc(window.I18n.dir) + '" translate="no"';
+    return '<p class="meaning"' + said + '>' + noteMarks(text) + '</p>' +
+      (notes ? '<p class="meaning-notes"' + said + '>' + noteMarks(notes) + '</p>' : '');
+  }
+
+  /* the translator's mark for a note, «[2]», written small and raised as a
+     note's mark is, in the verse and before the note it points to */
+  function noteMarks(text) {
+    return esc(text).replace(/\[(\d+)\]/g, '<sup class="meaning-ref">$1</sup>');
+  }
+
+  /* The meanings of Hisn al-Muslim, in the languages the book's own site
+     gives them, and of the forty hadiths, from HadeethEnc, in every language
+     the app speaks (tools/i18n/hisn.js, tools/i18n/hadith.js). Fetched the
+     first time a list of them is opened. */
+  var BOOKS = { hisn: ['en'], hadith: ['en', 'ur', 'id', 'tr', 'fr', 'bn', 'fa', 'ms', 'ru', 'ha'] };
+  var books = {};
+
+  function loadBook(name) {
+    var lang = meaningLang();
+    if (!lang || (BOOKS[name] || []).indexOf(lang) === -1) return Promise.resolve(null);
+    var held = books[name] || (books[name] = {});
+    if (held.book) return Promise.resolve(held.book);
+    if (held.loading) return held.loading;
+    held.loading = window.fetch('data/meanings/' + name + '-' + lang + '.json')
+      .then(function (r) { if (!r.ok) throw new Error(name + ' ' + r.status); return r.json(); })
+      .then(function (book) { held.book = book; held.loading = null; return book; })
+      .catch(function (e) { held.loading = null; throw e; });
+    return held.loading;
+  }
+
+  function bookOf(name) {
+    return meaningsOn() && books[name] ? books[name].book || null : null;
+  }
+
+  /* a book's meanings are fetched once and the list drawn again with them */
+  function withBook(name, redraw) {
+    if (meaningsOn() && !(books[name] && books[name].book)) loadBook(name).then(function (book) { if (book) redraw(); }, function () {});
+  }
+
+  function saidIn(text) {
+    if (!text) return '';
+    return '<p class="meaning" lang="' + esc(meaningLang()) + '" dir="' + esc(window.I18n.dir) + '" translate="no">' + esc(text) + '</p>';
+  }
+
+  /* the dhikr's meaning: a chapter's dhikr carries the book's own number, and
+     the daily lists are matched to it by their Arabic */
+  function dhikrMeaning(item, i, kind) {
+    var hisn = bookOf('hisn');
+    if (!hisn) return '';
+    var id = kind === 'hisn' || kind === 'after' ? item.a
+      : (kind === 'daily' && hisn.daily && hisn.daily[state.azkarKey] ? hisn.daily[state.azkarKey][i] : null);
+    return id && hisn.d[id] ? saidIn(hisn.d[id].t) : '';
+  }
+
+  function bookSource(name) {
+    var book = bookOf(name);
+    return book ? '<p class="source meaning-source">' + esc('ترجمة المعاني: ' + book.source) + '</p>' : '';
+  }
+
+  /* who translated it and where it is read, in the app's words */
+  function meaningSource() {
+    var book = meanings.book;
+    return book ? 'ترجمة المعاني: ' + book.by + '، ' + book.source : '';
   }
 
   /* The whole of التفسير الميسر ships with the app and is fetched once, the
@@ -3178,7 +3358,7 @@
     var edition = Store.get('tafsir');
     var show = function (body, name) {
       slot.innerHTML = body
-        ? '<p class="naskh" style="font-size:.95rem;line-height:2">' + esc(body) + '</p>' +
+        ? '<p class="naskh"' + SAID + ' style="font-size:.95rem;line-height:2">' + esc(body) + '</p>' +
           (name ? '<p class="source">' + esc(name) + '</p>' : '')
         : '<p class="setting-note">لم يصل التفسير</p>';
     };
@@ -3451,7 +3631,7 @@
     var topic = duaTopics().filter(function (t) { return t.id === id; })[0];
     if (!topic) return;
     var prose = topic.i.map(function (t, at) {
-      return '<div class="dua-line"><span class="dua-text">' + esc(t) + '</span>' +
+      return '<div class="dua-line"><span class="dua-text"' + SAID + '>' + esc(t) + '</span>' +
         '<button class="btn btn-ghost dua-share" data-act="share-dua" data-ref="' + esc(id) + ':' + at + '" aria-label="أرسل الدعاء صورة">' + icon('share') + '</button></div>';
     }).join('');
     var verses = topic.v.map(function (r) {
@@ -3461,7 +3641,7 @@
       return '<div class="verse-line">' +
         '<button class="search-hit" data-hit="' + s + ':' + a + '">' +
         '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(a) + '</span>' +
-        esc(Mushaf.ready() ? Mushaf.ayah(s, a) : '') + '</button>' +
+        '<span class="hit-text">' + esc(Mushaf.ready() ? Mushaf.ayah(s, a) : '') + '</span></button>' +
         '<button class="btn btn-ghost dua-share" data-act="share" data-ref="' + s + ':' + a + '" aria-label="أرسل الآية صورة">' + icon('share') + '</button></div>';
     }).join('');
     openSheet('أدعية ' + topic.n,
@@ -3490,7 +3670,7 @@
   function showInShade(title, sub, playing) {
     var app = bridge();
     if (!app || !app.showSounding) return;
-    try { app.showSounding(title || '', sub || '', !!playing); } catch (e) { /* older package */ }
+    try { app.showSounding(tongue(title || ''), tongue(sub || ''), !!playing); } catch (e) { /* older package */ }
   }
 
   function togglePlay() {
@@ -4052,7 +4232,7 @@
       '<input class="field" id="goto-juz" type="number" inputmode="numeric" min="1" max="30" placeholder="1 إلى 30">' +
       '<button class="btn btn-primary" data-act="goto-juz">افتح</button></div>' +
       '<div class="goto-row"><label class="setting-label" for="goto-surah">سورة وآية</label>' +
-      '<select class="select" id="goto-surah">' +
+      '<select class="select" id="goto-surah" data-tr="surah">' +
       SURAHS.map(function (m) { return '<option value="' + m.n + '"' + (m.n === (state.surah || 1) ? ' selected' : '') + '>' + ar(m.n) + '، ' + esc(m.ar) + '</option>'; }).join('') +
       '</select>' +
       '<input class="field" id="goto-ayah" type="number" inputmode="numeric" min="1" max="' + (meta ? meta.ay : 286) + '" placeholder="الآية">' +
@@ -4137,14 +4317,24 @@
     return Promise.all([video ? video.storeMarks() : {}, face]).then(function (got) {
       var marks = got[0] || {};
       var mid = H - 180, mark = 44, gap = 14;
+      /* the icon leads the name, on the side the reader's line begins */
+      var ltr = !!(window.I18n && window.I18n.dir === 'ltr');
       ctx.save();
-      ctx.direction = 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = 'right';
+      ctx.direction = ltr ? 'ltr' : 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = ltr ? 'left' : 'right';
       ctx.font = "600 28px 'IBM Plex Sans Arabic', sans-serif";
       ctx.fillStyle = '#5e6c65';
-      var nameW = ctx.measureText('سُنّتي').width;
-      var right = W / 2 + ((marks.icon ? mark + gap : 0) + nameW) / 2;
-      if (marks.icon) video.drawIcon(ctx, marks.icon, right - mark, mid - mark / 2, mark, false);
-      ctx.fillText('سُنّتي', marks.icon ? right - mark - gap : right, mid);
+      var brand = tongue('سُنّتي');
+      var nameW = ctx.measureText(brand).width;
+      var group = (marks.icon ? mark + gap : 0) + nameW;
+      if (ltr) {
+        var left = W / 2 - group / 2;
+        if (marks.icon) video.drawIcon(ctx, marks.icon, left, mid - mark / 2, mark, false);
+        ctx.fillText(brand, marks.icon ? left + mark + gap : left, mid);
+      } else {
+        var right = W / 2 + group / 2;
+        if (marks.icon) video.drawIcon(ctx, marks.icon, right - mark, mid - mark / 2, mark, false);
+        ctx.fillText(brand, marks.icon ? right - mark - gap : right, mid);
+      }
       if (marks.apple || marks.google) video.drawBadges(ctx, W / 2, H - 136, 40, marks);
       ctx.restore();
     });
@@ -4152,6 +4342,10 @@
 
   function textCard(heading, text, face, source) {
     if (!text) return Promise.resolve(null);
+    /* the heading and the source are the app's words; the text is the
+       verse, the dhikr or the supplication, and stays as it was written */
+    heading = tongue(heading);
+    source = tongue(source);
 
     var W = 1080, PAD = 96;
     var canvas = document.createElement('canvas');
@@ -4225,13 +4419,15 @@
       ctx.strokeRect(52, 52, W - 104, H - 104);
       star(ctx, 52, 52, 14); star(ctx, W - 52, 52, 14); star(ctx, 52, H - 52, 14); star(ctx, W - 52, H - 52, 14);
 
-      /* the surah, up top */
-      ctx.direction = 'rtl'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      /* the surah, up top, in the reader's language and its direction */
+      var dir = (window.I18n && window.I18n.dir) || 'rtl';
+      ctx.direction = dir; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       ctx.fillStyle = fill;
       ctx.font = "700 40px 'IBM Plex Sans Arabic', sans-serif";
       ctx.fillText(heading, W / 2, PAD + 40);
 
-      /* the words, line by line */
+      /* the words, line by line, in Arabic */
+      ctx.direction = 'rtl';
       ctx.fillStyle = '#16241c';
       ctx.font = '400 ' + size + 'px ' + quranFace;
       var top = PAD + 175;
@@ -4242,6 +4438,7 @@
       var footY = top + lines.length * lineHeight + 20;
       eyeMark(ctx, W / 2, footY, 22);
       ctx.fillStyle = '#5e6c65';
+      ctx.direction = dir;
       if (source) {
         ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
         ctx.fillText(source, W / 2, footY + 62);
@@ -4266,6 +4463,8 @@
   }
 
   function sharePicture(drawing, name, title, words) {
+    title = tongue(title);
+    words = tongue(words);
     toast('جاري تجهيز الصورة');
     return drawing.then(function (blob) {
       if (!blob) { toast('تعذّر رسم الصورة'); return false; }
@@ -4390,11 +4589,14 @@
     /* made inside the tap: the sound may only start from a touch on iOS */
     var job = VerseVideo.make({
       text: text,
-      surah: surah,
+      /* the verse is drawn as it was sent down, and the words around it in
+         the reader's language, in the way a line of it runs */
+      surah: tongue(surah),
       number: mushafDigits(a),
-      by: 'بصوت',
-      voice: reciterName(),
-      name: 'سُنّتي',
+      by: tongue('بصوت'),
+      voice: tongue(reciterName()),
+      name: tongue('سُنّتي'),
+      dir: window.I18n && window.I18n.dir === 'ltr' ? 'ltr' : 'rtl',
       audioUrl: VerseVideo.audioUrl(id, s, a),
       /* asked for while the recitation loads, and waited for no more than
          three seconds */
@@ -4418,7 +4620,7 @@
         if (line) line.textContent = 'يُسجَّل المقطع ' + videoClock(done) + ' من ' + videoClock(total) + '، فأبقِ التطبيق مفتوحاً';
       }
     });
-    state.video = { s: s, a: a, words: words, title: title, job: job, done: false };
+    state.video = { s: s, a: a, words: tongue(words), title: tongue(title), job: job, done: false };
     holdVideoAwake(true);
     job.promise.then(function (out) {
       var v = state.video;
@@ -4862,7 +5064,8 @@
 
   function addToCalendar(name, date) {
     var next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    var note = 'من تطبيق سُنّتي';
+    name = tongue(name);
+    var note = tongue('من تطبيق سُنّتي');
     var app = bridge();
     if (app && app.addToCalendar) {
       var ok = false;
@@ -5173,7 +5376,16 @@
     webPlan.made = 0;
     var app = bridge();
     if (!app || !app.setReminders) return false;
-    try { app.setReminders(JSON.stringify(reminderList())); return true; } catch (e) { return false; }
+    /* the list is drawn up in Arabic, which it checks itself against, and
+       put into the reader's language as it is handed over */
+    var list = reminderList().map(function (r) {
+      var copy = {};
+      for (var k in r) if (Object.prototype.hasOwnProperty.call(r, k)) copy[k] = r[k];
+      copy.t = tongue(r.t);
+      copy.b = tongue(r.b);
+      return copy;
+    });
+    try { app.setReminders(JSON.stringify(list)); return true; } catch (e) { return false; }
   }
 
   /* ---------------- reminders in a browser ---------------- */
@@ -5347,6 +5559,9 @@
   /* A card of separate things, each in its own pill, in the app's own face:
      a list run together as a paragraph reads as one long sentence. */
   function listCard(heading, items, note) {
+    heading = tongue(heading);
+    note = tongue(note);
+    items = items.map(tongue);
     var W = 1080, PAD = 96, GAP = 20;
     var canvas = document.createElement('canvas');
     var ctx = canvas.getContext('2d');
@@ -5379,7 +5594,7 @@
       cardStar(ctx, 52, 52, 14); cardStar(ctx, W - 52, 52, 14);
       cardStar(ctx, 52, H - 52, 14); cardStar(ctx, W - 52, H - 52, 14);
 
-      ctx.direction = 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+      ctx.direction = (window.I18n && window.I18n.dir) || 'rtl'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
       ctx.fillStyle = paint.fill;
       ctx.font = "700 46px 'IBM Plex Sans Arabic', sans-serif";
       ctx.fillText(heading, W / 2, PAD + 34);
@@ -5490,7 +5705,7 @@
         var bytes = all[rid][n].v * bytesPerVerse(rid);
         totalBytes += bytes;
         rows.push('<div class="row"><span class="row-mark">' + ar(n) + '</span>' +
-          '<span class="row-body"><span class="row-title">' + esc(meta ? meta.ar : '') + '</span>' +
+          '<span class="row-body"><span class="row-title" data-tr="surah">' + esc(meta ? meta.ar : '') + '</span>' +
           '<span class="row-note">' + esc(who ? who.name : rid) + '، ' + ayat(all[rid][n].v) + '، نحو ' + megabytes(bytes) + '</span></span>' +
           '<button class="btn btn-ghost" data-remove-audio="' + esc(rid) + ':' + n + '" aria-label="احذف">' + icon('close') + '</button></div>');
       });
@@ -5592,7 +5807,7 @@
         : ' data-go="' + esc(hit.key) + '"';
       return '<button class="search-hit"' + target + '>' +
         '<span class="search-hit-ref">' + esc(hit.where) + '</span>' +
-        highlight(hit.text, needle) + '</button>';
+        '<span class="hit-text">' + highlight(hit.text, needle) + '</span></button>';
     }).join('');
   }
 
@@ -5692,7 +5907,7 @@
       var meta = surahMeta(hit.s);
       return '<button class="search-hit" data-hit="' + hit.s + ':' + hit.a + '">' +
         '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(hit.a) + '</span>' +
-        highlight(hit.text, needle) + '</button>';
+        '<span class="hit-text">' + highlight(hit.text, needle) + '</span></button>';
     }).join('');
   }
 
@@ -5720,7 +5935,7 @@
           var text = Mushaf.ready() ? Mushaf.ayah(b.s, b.a) : '';
           return '<button class="search-hit mark-' + k + '" data-hit="' + b.s + ':' + b.a + '">' +
             '<span class="search-hit-ref">' + esc(meta ? meta.ar : '') + '، آية ' + ar(b.a) + '</span>' +
-            esc(text) + '</button>';
+            '<span class="hit-text">' + esc(text) + '</span></button>';
         }).join('');
     }).join('') +
       '<button class="btn btn-ghost btn-block" data-act="clear-bookmarks" style="margin-top:14px">' +
@@ -5909,7 +6124,7 @@
       var left = Object.prototype.hasOwnProperty.call(counts, i) ? counts[i] : target;
       var isDone = left <= 0;
       if (isDone) done++;
-      return dhikrCard({ t: item.t, n: item.n }, i, target, left, isDone, 'hisn');
+      return dhikrCard({ t: item.t, n: item.n, a: item.a }, i, target, left, isDone, 'hisn');
     }).join('');
     if ($('hisn-meta')) {
       $('hisn-meta').textContent = 'الباب ' + ar(chapter.id) + '، ' + ar(done) + ' من ' + ar(chapter.i.length);
@@ -5925,7 +6140,8 @@
         '<button class="btn btn-ghost btn-icon" data-act="hear-hisn" data-ref="' + chapter.id +
         '" aria-label="استمع للدعاء بصوت ' + esc(heard.n) + '">' + icon('play') + '</button></div>' + html;
     }
-    host.innerHTML = html;
+    host.innerHTML = html + bookSource('hisn');
+    withBook('hisn', function () { if (state.view === 'hisn') renderHisnChapter(); });
   }
 
   /* What the app's own reciter has recorded. A chapter whose whole subject is
@@ -5967,6 +6183,7 @@
       (kind ? ' data-kind="' + kind + '"' : '') + ' role="button" tabindex="0">' +
       '<p class="dhikr-text">' + esc(item.t) + '</p>' +
       (item.n ? '<p class="dhikr-note">' + esc(item.n) + '</p>' : '') +
+      dhikrMeaning(item, i, kind) +
       '<div class="dhikr-foot"><span class="source">' + foot + '</span>' +
       /* a dhikr the reciter has recorded can be heard from its own card */
       (function () {
@@ -6011,7 +6228,8 @@
       var left = Object.prototype.hasOwnProperty.call(counts, i) ? counts[i] : target;
       var done = left === 0;
       return dhikrCard({ t: item.t, r: item.r, n: item.n }, i, target, left, done, 'daily');
-    }).join('');
+    }).join('') + bookSource('hisn');
+    withBook('hisn', function () { if (state.view === 'azkar-list') renderAzkarList(); });
 
     var p = Store.azkarProgress(key, def.items.length);
     if ($('azkar-meter')) $('azkar-meter').style.width = p.percent + '%';
@@ -6317,7 +6535,7 @@
     if ($('umrah-tally')) $('umrah-tally').textContent = ar(marked) + ' من ' + ar(total);
     if ($('umrah-source')) {
       $('umrah-source').textContent = UMRAH_SOURCE.b + '، ' + UMRAH_SOURCE.a +
-        (typeof UMRAH_SOURCE_2 !== 'undefined' ? ' — و' + UMRAH_SOURCE_2.b + '، ' + UMRAH_SOURCE_2.a : '');
+        (typeof UMRAH_SOURCE_2 !== 'undefined' ? '، و' + UMRAH_SOURCE_2.b + '، ' + UMRAH_SOURCE_2.a : '');
     }
     renderUmrahRef();
   }
@@ -6390,7 +6608,7 @@
     return items.map(function (it, i) {
       var target = it.r || 1;
       var left = state.afterPrayerLeft[i];
-      return dhikrCard({ t: it.t, n: it.n }, i, target, left, left <= 0, 'after');
+      return dhikrCard({ t: it.t, n: it.n, a: it.a }, i, target, left, left <= 0, 'after');
     }).join('');
   }
 
@@ -6524,7 +6742,7 @@
     var m = (state.mosques || [])[state.mosqueAt];
     if (!m) { line.hidden = true; return; }
     line.hidden = false;
-    line.innerHTML = '<span class="row-title">' + esc(m.n) + '</span>' +
+    line.innerHTML = '<span class="row-title" translate="no">' + esc(m.n) + '</span>' +
       '<span class="row-note mosque-far">' + farLabel(m.far) + '</span>' +
       '<button class="btn btn-ghost" data-act="mosque-go" data-ref="' + m.lat + ',' + m.lng + '|' + esc(m.n) + '">الطريق</button>';
   }
@@ -6663,7 +6881,7 @@
       var at = state.mosques.indexOf(m);
       return '<div class="row' + (state.mosqueAt === at ? ' is-now' : '') + '">' +
         '<button class="row-mark" data-act="mosque-look" data-ref="' + at + '" aria-label="أرِني ' + esc(m.n) + ' على الخريطة">' + icon('mosque') + '</button>' +
-        '<button class="row-body" data-act="mosque-look" data-ref="' + at + '"><span class="row-title">' + esc(m.n) + '</span>' +
+        '<button class="row-body" data-act="mosque-look" data-ref="' + at + '"><span class="row-title" translate="no">' + esc(m.n) + '</span>' +
         '<span class="row-note mosque-far">' + farLabel(m.far) + '</span></button>' +
         '<button class="btn btn-ghost" data-act="mosque-go" data-ref="' + m.lat + ',' + m.lng + '|' + esc(m.n) + '">الطريق</button></div>';
     }).join('');
@@ -6726,7 +6944,12 @@
         var lat = typeof el.lat === 'number' ? el.lat : (el.center || {}).lat;
         var lng = typeof el.lon === 'number' ? el.lon : (el.center || {}).lon;
         if (typeof lat !== 'number' || typeof lng !== 'number') return null;
-        var name = (el.tags || {})['name:ar'] || (el.tags || {}).name || 'مسجد';
+        /* a mosque's own name, in the reader's language where the map has
+           it, else as the map writes it; a name is a name and is not put
+           through the table */
+        var tags = el.tags || {};
+        var own = window.I18n && window.I18n.lang !== 'ar' ? tags['name:' + window.I18n.lang] || tags.name : null;
+        var name = own || tags['name:ar'] || tags.name || tongue('مسجد');
         return { n: name, lat: lat, lng: lng, far: metresBetween(where, { lat: lat, lng: lng }) };
       }).filter(Boolean);
       found.sort(function (a, b) { return a.far - b.far; });
@@ -6814,6 +7037,10 @@
       rows.push({ n: 'منتصف الليل', v: clockText(marks.midnight), night: true });
       rows.push({ n: 'الثلث الأخير', v: clockText(marks.lastThird), night: true });
     }
+    rows.forEach(function (row) { row.n = tongue(row.n); row.v = tongue(row.v); });
+    /* the name stands where a line of the reader's language begins, and the
+       time at the other end */
+    var ltr = !!(window.I18n && window.I18n.dir === 'ltr');
 
     var W = 1080, PAD = 96, ROW = 108, GAP = 16;
     var canvas = document.createElement('canvas');
@@ -6854,14 +7081,14 @@
       cardStar(ctx, 52, H - 52, 14); cardStar(ctx, W - 52, H - 52, 14);
       if (painted) paintSky(ctx, painted, sky, moonAt(now, t), PAD + 24, PAD - 8, W - 2 * (PAD + 24), SKY_H - 24, 'rgba(247,245,239,1)');
 
-      ctx.direction = 'rtl'; ctx.textBaseline = 'middle';
+      ctx.direction = ltr ? 'ltr' : 'rtl'; ctx.textBaseline = 'middle';
       ctx.textAlign = 'center';
       ctx.fillStyle = fill;
       ctx.font = "700 44px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText(Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust'))), W / 2, PAD + 30 + SKY_H);
+      ctx.fillText(tongue(Hijri.format(Hijri.toHijri(new Date(), Store.get('hijriAdjust')))), W / 2, PAD + 30 + SKY_H);
       ctx.fillStyle = '#5e6c65';
       ctx.font = "400 30px 'IBM Plex Sans Arabic', sans-serif";
-      ctx.fillText((where ? where.n + '، ' : '') + gregorianLine(new Date()), W / 2, PAD + 86 + SKY_H);
+      ctx.fillText(tongue((where ? where.n + '، ' : '') + gregorianLine(new Date())), W / 2, PAD + 86 + SKY_H);
 
       var top = PAD + 150 + SKY_H;
       rows.forEach(function (row, i) {
@@ -6871,11 +7098,11 @@
         ctx.fill();
         ctx.fillStyle = row.night ? '#7a5c1e' : '#16241c';
         ctx.font = "600 40px 'IBM Plex Sans Arabic', sans-serif";
-        ctx.textAlign = 'right';
-        ctx.fillText(row.n, W - PAD - 34, y + ROW / 2);
+        ctx.textAlign = ltr ? 'left' : 'right';
+        ctx.fillText(row.n, ltr ? PAD + 34 : W - PAD - 34, y + ROW / 2);
         ctx.fillStyle = row.night ? '#7a5c1e' : fill;
-        ctx.textAlign = 'left';
-        ctx.fillText(row.v, PAD + 34, y + ROW / 2);
+        ctx.textAlign = ltr ? 'right' : 'left';
+        ctx.fillText(row.v, ltr ? W - PAD - 34 : PAD + 34, y + ROW / 2);
       });
 
       /* the knot closes the times, then the app signs them as the verse card does */
@@ -7211,11 +7438,14 @@
   function renderHadith() {
     var host = $('hadith-list');
     if (!host || typeof HADITHS === 'undefined') return;
+    var said = bookOf('hadith');
     host.innerHTML = HADITHS.map(function (h) {
       return '<div class="card"><div class="card-head"><h2>الحديث ' + ar(h.n) + '</h2></div>' +
-        '<p class="naskh">' + esc(h.t) + '</p>' +
+        '<p class="naskh"' + SAID + '>' + esc(h.t) + '</p>' +
+        (said && said.h[h.n] ? saidIn(said.h[h.n].t) : '') +
         '<p class="source">' + esc(h.s) + '، ' + esc(h.r) + '</p></div>';
-    }).join('');
+    }).join('') + bookSource('hadith');
+    withBook('hadith', function () { if (state.view === 'hadith') renderHadith(); });
   }
 
   /* a chapter whose very name is a du'a belongs on the du'a screen */
@@ -7243,7 +7473,7 @@
     host.innerHTML = DUAS.map(function (group, gi) {
       return '<h2 class="section-title">' + esc(group.cat) + '</h2>' +
         group.items.map(function (d, di) {
-          return '<div class="card"><p class="naskh">' +
+          return '<div class="card"><p class="naskh"' + SAID + '>' +
             esc(d.t) + '</p><div class="dhikr-foot"><p class="source">' + esc(d.r) + '</p>' +
             '<button class="dhikr-share" data-picture="dua:' + gi + ':' + di + '" aria-label="صورة للمشاركة">' + icon('share') + '</button></div></div>';
         }).join('');
@@ -7254,7 +7484,7 @@
     var host = $('ruqyah-list');
     if (!host || typeof RUQYAH === 'undefined') return;
     host.innerHTML = RUQYAH.map(function (r) {
-      return '<div class="card"><p class="naskh">' +
+      return '<div class="card"><p class="naskh"' + SAID + '>' +
         esc(r.t) + '</p><p class="source">' + esc(r.r) + '</p></div>';
     }).join('');
   }
@@ -7312,8 +7542,17 @@
       /* One letter each, as an arabic wall calendar writes them, because a three
          letter cut gives الأ for both الأحد and الأربعاء. */
       var initials = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+      /* another language's wall calendar has its own letters, which the phone
+         knows: S M T W T F S, В П В С Ч П С */
+      var other = window.I18n && window.I18n.lang !== 'ar' ? window.I18n.speech : null;
+      if (other) {
+        try {
+          var narrow = new Intl.DateTimeFormat(other, { weekday: 'narrow' });
+          initials = initials.map(function (letter, i) { return narrow.format(new Date(2026, 0, 4 + i)); });
+        } catch (e) { /* the Arabic letters, then */ }
+      }
       week.innerHTML = initials.map(function (letter, i) {
-        return '<span title="' + esc(Hijri.WEEKDAYS[i]) + '">' + letter + '</span>';
+        return '<span title="' + esc(Hijri.WEEKDAYS[i]) + '"' + (other ? ' translate="no"' : '') + '>' + esc(letter) + '</span>';
       }).join('');
     }
 
@@ -7602,7 +7841,7 @@
     var ramadan = rows.some(function (r) { return r.hijri.m === 9; });
     /* a column heads every day of the month, so the noon one is الظهر: named
        after the first day, a month that began on a friday headed it الجمعة */
-    var head = '<thead><tr><th>اليوم</th>' +
+    var head = '<thead><tr><th data-tr="date">اليوم</th>' +
       (ramadan ? '<th>الإمساك</th>' : '') +
       TABLE_KEYS.map(function (k) { return '<th>' + esc(k === 'dhuhr' ? PRAYER_NAMES.dhuhr : prayerName(k)) + '</th>'; }).join('') +
       '</tr></thead>';
@@ -7687,13 +7926,23 @@
   }
 
   /* the button says what the select holds; called after anything refills it */
+  /* An option written in its own language, a language's name in the list of
+     languages, says so, and the picker's copy of it says the same, so it is
+     read in that language and never put into the reader's. */
+  function ownTongue(option) {
+    if (!option || option.getAttribute('translate') !== 'no') return '';
+    var lang = option.getAttribute('lang');
+    var dir = option.getAttribute('dir');
+    return ' translate="no"' + (lang ? ' lang="' + esc(lang) + '"' : '') + (dir ? ' dir="' + esc(dir) + '"' : '');
+  }
+
   function syncPicker(sel) {
     var wrap = sel.parentNode;
     if (!wrap || !wrap.classList.contains('picker')) return;
     var btn = wrap.querySelector('.picker-btn');
     if (!btn) return;
     var chosen = sel.options[sel.selectedIndex];
-    btn.innerHTML = '<span class="picker-label">' + esc(chosen ? chosen.text : '') + '</span>' +
+    btn.innerHTML = '<span class="picker-label"' + ownTongue(chosen) + '>' + esc(chosen ? chosen.text : '') + '</span>' +
       '<svg class="icon picker-caret" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-chevron"/></svg>';
     btn.disabled = sel.disabled;
   }
@@ -7754,6 +8003,8 @@
     var panel = document.createElement('div');
     panel.className = 'picker-panel timepick-panel';
     panel.setAttribute('role', 'dialog');
+    /* its hours, «5 م», are times, which another language writes its own way */
+    panel.setAttribute('data-tr', 'time');
     /* «upTo», not «count»: a local by that name hides the count helper, and
        any call to it inside this scope would fail */
     var twelve = Store.get('clock') !== '24';
@@ -7864,7 +8115,7 @@
     panel.innerHTML = Array.prototype.map.call(sel.options, function (o, i) {
       return '<button type="button" class="picker-item' + (i === sel.selectedIndex ? ' is-on' : '') +
         '" role="option" aria-selected="' + (i === sel.selectedIndex) + '" data-pick="' + i + '">' +
-        '<span>' + esc(o.text) + '</span>' +
+        '<span' + ownTongue(o) + '>' + esc(o.text) + '</span>' +
         (i === sel.selectedIndex ? '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-check"/></svg>' : '') +
         '</button>';
     }).join('');
@@ -7878,8 +8129,18 @@
        than by inset-inline-end: in a right to left page that end is measured
        from the other side, and the panel slid away from the control it
        belongs to. */
-    panel.style.left = Math.round(r.left) + 'px';
-    panel.style.width = Math.round(r.width) + 'px';
+    /* The languages are named each in its own script and the first is the
+       device's, «Device language, English», which a panel the width of a
+       small button broke over three lines: theirs is wider, grown from the
+       end of the button the row ends at. */
+    var left = r.left, w = r.width;
+    if (sel.id === 'settings-lang') {
+      w = Math.max(r.width, Math.min(240, window.innerWidth - 32));
+      left = getComputedStyle(btn).direction === 'ltr' ? r.right - w : r.left;
+      left = Math.max(16, Math.min(left, window.innerWidth - 16 - w));
+    }
+    panel.style.left = Math.round(left) + 'px';
+    panel.style.width = Math.round(w) + 'px';
     /* below the button when there is room, above it when there is not */
     if (room < 220 && r.top > room) {
       panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
@@ -8001,6 +8262,29 @@
       return { value: k, label: PrayerEngine.METHODS[k].name };
     }), s.method);
 
+    var showMeanings = $('settings-meanings');
+    if (showMeanings) {
+      var row = showMeanings.closest('.setting');
+      if (row) row.hidden = !meaningLang();
+      setSwitch(showMeanings, Store.get('meanings') !== false);
+    }
+    var credit = $('about-meanings');
+    if (credit) {
+      credit.hidden = !meaningLang();
+      if (meaningLang()) loadMeanings().then(function () { credit.textContent = meaningSource(); }, function () { credit.hidden = true; });
+    }
+    var langs = $('settings-lang');
+    if (langs && window.I18n) {
+      /* the page names every language the app is being put into; the list
+         offers those whose words have come */
+      Array.prototype.slice.call(langs.options).forEach(function (o) {
+        if (o.value !== 'auto' && !window.I18n.langs.some(function (l) { return l.code === o.value; })) o.remove();
+      });
+      var device = window.I18n.langs.filter(function (l) { return l.code === window.I18n.device(); })[0];
+      if (langs.options[0]) langs.options[0].textContent = 'لغة الجهاز' + (device ? '، ' + device.name : '');
+      langs.value = window.I18n.stored();
+      syncPicker(langs);
+    }
     if ($('settings-asr')) $('settings-asr').value = s.asr;
     if ($('settings-highlat')) $('settings-highlat').value = s.highLat;
     if ($('settings-theme')) $('settings-theme').value = s.theme;
@@ -8554,7 +8838,7 @@
       var parts = ref.split(':');
       var sNum = +parts[0], aNum = +parts[1];
       var meta = surahMeta(sNum);
-      copyText(Mushaf.ayah(sNum, aNum) + '\n\nسورة ' + (meta ? meta.ar : '') + '، آية ' + ar(aNum))
+      copyText(Mushaf.ayah(sNum, aNum) + '\n\n' + tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(aNum)))
         .then(function () { toast('نُسخت الآية'); }, function () { toast('تعذّر النسخ'); });
     },
     memorise: function (ref) {
@@ -9030,7 +9314,7 @@
     bind('tt-next', 'click', function () { stepTimetable(1); });
     bind('tt-today', 'click', function () { timetableMonth = null; renderTimetable(); });
     bind('tt-copy', 'click', function () {
-      copyText(timetableText()).then(
+      copyText(tongue(timetableText())).then(
         function () { toast('نُسخ جدول الشهر'); },
         function () { toast('تعذّر النسخ'); });
     });
@@ -9057,6 +9341,17 @@
     bind('qibla-locate', 'click', locate);
     bind('settings-locate', 'click', locate);
 
+    bind('settings-meanings', 'click', function () {
+      var on = Store.get('meanings') === false;
+      Store.set('meanings', on);
+      setSwitch($('settings-meanings'), on);
+      if (state.view === 'reader') renderReader();
+      renderDailyAyah();
+    });
+    /* a language is chosen once and the app opens again in it */
+    bind('settings-lang', 'change', function (e) {
+      if (window.I18n) window.I18n.choose(e.target.value);
+    });
     bind('settings-city', 'change', function (e) {
       if (e.target.value === '') return;
       chooseCity(+e.target.value);
@@ -9424,9 +9719,17 @@
 
   /* ---------------- the app as an app ---------------- */
 
-  function showBanner(text, actionLabel, action) {
+  /* own: the words are in a language of their own, Arabic offered to a
+     reader the app met in another, and are left as they are written */
+  function showBanner(text, actionLabel, action, own) {
     var banner = $('banner');
     if (!banner) return;
+    ['banner-text', 'banner-act'].forEach(function (id) {
+      var el = $(id);
+      if (!el) return;
+      if (own) { el.setAttribute('translate', 'no'); el.setAttribute('lang', 'ar'); el.setAttribute('dir', 'rtl'); }
+      else { el.removeAttribute('translate'); el.removeAttribute('lang'); el.removeAttribute('dir'); }
+    });
     $('banner-text').textContent = text;
     var act = $('banner-act');
     if (actionLabel) {
@@ -9496,13 +9799,13 @@
   }
 
   function shareApp() {
-    var words = shareWords();
+    var words = tongue(shareWords());
     var app = bridge();
     if (app && app.shareText) {
       try { app.shareText(words); return 'app'; } catch (e) { /* the page's own way, then */ }
     }
     if (window.navigator.share) {
-      window.navigator.share({ title: 'سُنّتي', text: words }).catch(function () { /* closed */ });
+      window.navigator.share({ title: tongue('سُنّتي'), text: words }).catch(function () { /* closed */ });
       return 'sheet';
     }
     copyText(words).then(function () { toast('نُسخت الدعوة بروابطها، فألصقها حيث شئت'); })
@@ -9579,7 +9882,9 @@
       for (var i = 0; i < ls.length; i++) {
         var k = String(ls.key(i) || '');
         if (k.indexOf('sunnati_') === 0) return true;
-        if (k.indexOf('sunnati.') !== 0 || k === 'sunnati.probe') continue;
+        /* the language the page settled on for a phone it met for the
+           first time is not a sign that it met it before */
+        if (k.indexOf('sunnati.') !== 0 || k === 'sunnati.probe' || k === 'sunnati.lang') continue;
         if (k !== 'sunnati.settings') return true;
         var saved = JSON.parse(ls.getItem(k) || '{}') || {};
         if (Object.keys(saved).some(function (n) { return n !== 'placeAsked'; })) return true;
@@ -9752,6 +10057,9 @@
       try { back.focus({ preventScroll: true }); } catch (e) { /* gone */ }
     }
     window.setTimeout(function () { if (!tour.open) view.hidden = true; }, lessMotion() ? 0 : 280);
+    /* the offer to read in Arabic waits for the tour, which a phone in another
+       language opens on first, rather than for the next opening */
+    window.setTimeout(offerArabic, 900);
   }
 
   /* An android phone in a browser is offered the app on Google Play rather
@@ -9776,6 +10084,33 @@
     /* the name kept whole on its line, and the button short, or a small
        phone broke the name in two across the lines of the banner */
     showBanner('سُنّتي على Google\u00a0Play، وفيه يصلك الأذان والتطبيق مغلق', 'ثبّته', openPlay);
+    return true;
+  }
+
+  /* A phone set to another language opens the app in it. Of the readers it
+     meets that way, many read Arabic, the Gulf full of phones set to English
+     among them, so a phone that lists Arabic among its languages, or stands
+     in a zone of the Arab world, is told once, in Arabic, that the app is
+     Arabic too. */
+  var ARAB_ZONES = /^(Asia\/(Kuwait|Riyadh|Dubai|Qatar|Bahrain|Muscat|Aden|Baghdad|Amman|Damascus|Beirut|Gaza|Hebron)|Africa\/(Cairo|Khartoum|Tripoli|Tunis|Algiers|Casablanca|Nouakchott))$/;
+  function readsArabic() {
+    var langs = [];
+    try { langs = Array.prototype.slice.call(window.navigator.languages || [window.navigator.language || '']); } catch (e) { langs = []; }
+    if (langs.some(function (l) { return /^ar\b/i.test(String(l || '')); })) return true;
+    var zone = '';
+    try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { zone = ''; }
+    return ARAB_ZONES.test(zone);
+  }
+
+  function offerArabic() {
+    var i18n = window.I18n;
+    if (!i18n || i18n.lang === 'ar' || i18n.stored() !== 'auto' || Store.get('arabicAsked')) return false;
+    if (tour.open || skyview.open) return false;
+    if (!$('banner') || !$('banner').hidden) return false;
+    if ($('sheet') && $('sheet').classList.contains('is-open')) return false;
+    if (!readsArabic()) return false;
+    Store.set('arabicAsked', true);
+    showBanner('سُنّتي تطبيق عربي، فاقرأه بالعربية إن شئت', 'العربية', function () { i18n.choose('ar'); }, true);
     return true;
   }
 
@@ -10010,6 +10345,7 @@
     window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));
     window.setTimeout(maybeAskRating, 9000);
     window.setTimeout(offerPlay, 9500);
+    window.setTimeout(offerArabic, 6000);
     /* every select becomes our own menu, once the page is built */
     enhanceSelects();
     watchHeading();
@@ -10033,6 +10369,7 @@
     actions: ACTIONS,
     helpers: {
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
+      loadMeanings: loadMeanings, meaningOf: meaningOf, meaningsOn: meaningsOn, meaningSource: meaningSource,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
@@ -10050,7 +10387,7 @@
       timetableText: timetableText, settleAzkar: settleAzkar, restoreTasbih: restoreTasbih, setSleep: setSleep,
       shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
       feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
-      offerPlay: offerPlay, onAndroidWeb: onAndroidWeb,
+      offerPlay: offerPlay, onAndroidWeb: onAndroidWeb, offerArabic: offerArabic,
       cameBefore: cameBefore, firstOpenToday: firstOpenToday, openingState: opening, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
       tourSteps: TOUR, tourState: tour
     },
