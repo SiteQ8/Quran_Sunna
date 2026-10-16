@@ -21,7 +21,7 @@ const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
 /* the page's own scripts, with the video module before the app as the page has it */
 const SCRIPTS = [
-  'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
+  'js/i18n.js', 'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/verse-video.js', 'js/app.js'
 ];
 
