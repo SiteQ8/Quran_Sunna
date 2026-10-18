@@ -62,6 +62,9 @@ public class MainActivity extends Activity {
         /* the same as the iPhone wrapper, so the two feel alike */
         web.setVerticalScrollBarEnabled(false);
         web.setHorizontalScrollBarEnabled(false);
+        /* nor does the page stretch after the finger past its top or its end,
+           which android draws over a web view of its own accord */
+        web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
         s.setDomStorageEnabled(true);
