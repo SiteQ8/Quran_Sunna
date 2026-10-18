@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.87';
+  var VERSION = '8.87.88';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1577,14 +1577,30 @@
   function fitPlaceLine() {
     var line = $('place-line');
     if (!line || !line.firstChild) return;
+    /* while the home is hidden nothing has a size, so it is fitted when shown */
+    if (!line.getClientRects().length) { line.removeAttribute('data-fit'); return; }
     line.classList.remove('is-stacked');
     if (window.I18n && window.I18n.apply) window.I18n.apply(line);
-    line.classList.add('is-measuring');
-    var over = line.scrollWidth > line.clientWidth + 1;
-    line.classList.remove('is-measuring');
-    if (over) line.classList.add('is-stacked');
+    if (placeWraps(line)) line.classList.add('is-stacked');
     var strip = $('windows');
     line.setAttribute('data-fit', (strip ? strip.clientWidth : 0) + '|' + fontSizeOf(line));
+  }
+
+  /* The line is laid out as it is and read back, since the browser breaks it
+     to a fraction of a pixel and a width rounded to whole pixels missed a line
+     one pixel too long: while the button, the place and its calendar share a
+     row, they share its middle too. */
+  function placeWraps(line) {
+    var parts = line.querySelectorAll('.place-locate, .place-where, .place-how');
+    var mid = null;
+    for (var i = 0; i < parts.length; i++) {
+      var box = parts[i].getBoundingClientRect();
+      if (!box.height) continue;
+      var at = (box.top + box.bottom) / 2;
+      if (mid === null) mid = at;
+      else if (Math.abs(at - mid) > 4) return true;
+    }
+    return false;
   }
 
   /* after the faces arrive and whenever the room changes, both are measured
