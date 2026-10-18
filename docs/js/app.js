@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.92';
+  var VERSION = '8.87.93';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -755,8 +755,9 @@
     if (typeof s.lat === 'number' && typeof s.lng === 'number') {
       state.place = {
         n: s.city || 'موقعك', lat: s.lat, lng: s.lng,
-        tz: s.tzOffset, z: s.zone, method: s.method
+        tz: s.tzOffset, z: s.zone, method: s.method, names: s.cityNames || null
       };
+      sayPlace(state.place);
     } else {
       state.place = DEFAULT_PLACE;
     }
@@ -861,11 +862,15 @@
 
   function setPlace(next, remember) {
     state.place = next;
+    sayPlace(next);
     if (remember) {
       Store.setMany({
         lat: next.lat, lng: next.lng, city: next.n,
         tzOffset: typeof next.tz === 'number' ? next.tz : null,
-        zone: next.z || null
+        zone: next.z || null,
+        /* its names in the other scripts, so it is named in the reader's
+           language after a restart too */
+        cityNames: next.names || null
       });
       if (next.method) Store.set('method', next.method);
     }
@@ -876,10 +881,113 @@
     renderQibla();
   }
 
-  /* Naming where a person is, without asking any server. The cities the app
-     already carries are enough to say "الكويت" or "قرب الدوحة", and anything
-     far from all of them falls back to the coordinates themselves. */
-  function nameForPlace(lat, lng) {
+  /* The page writes the place's name in Arabic wherever it puts it into a
+     line, so the engine is told what that name is in the language it draws
+     in, and every such line says it by itself: the card, the timetable, the
+     share, the qibla. Persian and Urdu read the Arabic script with their own
+     yeh and kaf, Russian the Cyrillic name and Bengali the Bengali one where
+     there is one, and every other language the Latin name. A name the
+     language's own table already holds, a city of the list or a word that
+     happens to be a place too, keeps the table's word: a town called المغرب
+     must not rename the prayer. */
+  var placeWords = {};
+  function sayPlace(p) {
+    var engine = window.I18n;
+    if (!engine || !engine.add || engine.lang === 'ar' || !p || !p.n || !p.names) return;
+    var said = localName(p, engine.lang);
+    if (!said || said === p.n) return;
+    if (!placeWords[p.n] && engine.has && engine.has(p.n)) return;
+    placeWords[p.n] = true;
+    var word = {};
+    word[p.n] = said;
+    engine.add(word);
+  }
+
+  function localName(p, lang) {
+    var names = p.names || {};
+    if (lang === 'fa' || lang === 'ur') return p.n.replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    if (lang === 'ru' && names.ru) return names.ru;
+    if (lang === 'bn' && names.bn) return names.bn;
+    return names.la || p.n;
+  }
+
+  /* ---------------- the name of the place ---------------- */
+
+  /* The towns of the world and the Gulf's own areas, each with its names in
+     the scripts the app is read in, built from GeoNames by
+     tools/places/build.js into one file. It is the same file for every
+     reader and is fetched only when a place has to be named, so asking for
+     it says nothing about where the reader is: the nearest place is found
+     here, on the device, as the times are. It is read once, and a fetch that
+     fails is tried again the next time a name is wanted. */
+  var PLACES_URL = 'data/places.json';
+  /* a reader farther than this from every place in it is given their
+     coordinates, as one far from every listed city was before */
+  var NAME_KM = 120;
+  var gazetteer = null;
+  var gazetteerComing = null;
+
+  function loadPlaces() {
+    if (gazetteer) return Promise.resolve(gazetteer);
+    if (gazetteerComing) return gazetteerComing;
+    if (typeof window.fetch !== 'function') return Promise.resolve(null);
+    gazetteerComing = window.fetch(PLACES_URL).then(function (res) {
+      if (!res || !res.ok) throw new Error('no places');
+      return res.json();
+    }).then(function (data) {
+      gazetteer = readPlaces(data);
+      return gazetteer;
+    }).catch(function () {
+      gazetteerComing = null;
+      return null;
+    });
+    return gazetteerComing;
+  }
+
+  /* Written by columns: each latitude and longitude in hundredths of a
+     degree as its step from the place before, and each kind of name as one
+     string, the places parted by «|». */
+  function readPlaces(data) {
+    var n = data.lat.length;
+    var g = { n: n, lat: [], lng: [], ar: data.ar.split('|'), la: data.la.split('|'), ru: data.ru.split('|'), bn: data.bn.split('|') };
+    if (data.lng.length !== n || g.ar.length !== n || g.la.length !== n || g.ru.length !== n || g.bn.length !== n) {
+      throw new Error('the columns of the places do not agree');
+    }
+    for (var i = 0, y = 0, x = 0; i < n; i++) {
+      y += data.lat[i];
+      x += data.lng[i];
+      g.lat.push(y / 100);
+      g.lng.push(x / 100);
+    }
+    return g;
+  }
+
+  /* The nearest place in the gazetteer. They are compared on a flat map
+     drawn to the latitude, which keeps the order of places this near, and
+     only the nearest is measured along the ground. */
+  function nearestPlace(lat, lng) {
+    var g = gazetteer;
+    if (!g) return null;
+    var squeeze = Math.cos(lat * Math.PI / 180);
+    var best = -1;
+    var least = Infinity;
+    for (var i = 0; i < g.n; i++) {
+      var dy = g.lat[i] - lat;
+      if (dy > 2 || dy < -2) continue;
+      var dx = Math.abs(g.lng[i] - lng);
+      if (dx > 180) dx = 360 - dx;
+      dx *= squeeze;
+      var d = dy * dy + dx * dx;
+      if (d < least) { least = d; best = i; }
+    }
+    if (best === -1 || PrayerEngine.between(lat, lng, g.lat[best], g.lng[best]) > NAME_KM) return null;
+    var names = { la: g.la[best] };
+    if (g.ru[best]) names.ru = g.ru[best];
+    if (g.bn[best]) names.bn = g.bn[best];
+    return { n: g.ar[best] || g.la[best], names: names };
+  }
+
+  function nearestCity(lat, lng) {
     if (typeof CITIES === 'undefined') return null;
     var best = null;
     for (var i = 0; i < CITIES.length; i++) {
@@ -887,12 +995,70 @@
       var km = PrayerEngine.between(lat, lng, c.lat, c.lng);
       if (!best || km < best.km) best = { city: c, km: km };
     }
-    if (!best) return null;
-    if (best.km <= 25) return { n: best.city.n, z: best.city.z, method: best.city.method };
-    if (best.km <= 120) {
-      return { n: 'قرب ' + best.city.n, z: best.city.z, method: best.city.method };
-    }
-    return null;
+    return best;
+  }
+
+  /* Naming where a person is, without asking any server: the nearest place
+     in the gazetteer, however far within NAME_KM, and never near anything,
+     since a reader is in a place and not beside one. The zone and the
+     reckoning belong to the country, so they still come from the nearest
+     listed city within 120 km. Until the gazetteer has come, a listed city
+     names a place within 25 km of it and anywhere else is given by its
+     coordinates. names holds the place's other names when the gazetteer gave
+     them, nothing when it was read and had no place so near, and is null
+     when it was not there to be read. */
+  function nameForPlace(lat, lng) {
+    var city = nearestCity(lat, lng);
+    var rule = city && city.km <= 120 ? city.city : null;
+    var spot = nearestPlace(lat, lng);
+    var n = spot ? spot.n : (!gazetteer && city && city.km <= 25) ? city.city.n : coordsLabel(lat, lng);
+    return {
+      n: n,
+      names: spot ? spot.names : gazetteer ? {} : null,
+      z: rule ? rule.z : null,
+      method: rule ? rule.method : null
+    };
+  }
+
+  function sameNames(a, b) {
+    if (!a || !b) return !a && !b;
+    return a.la === b.la && a.ru === b.ru && a.bn === b.bn;
+  }
+
+  /* Names the place again from its coordinates: at once from what is in
+     hand, and again once the gazetteer has come if it gives another name. A
+     name the gazetteer gave is never put back to a lesser one while it is
+     away, and the zone and the reckoning stay as they were set. Answers once
+     the name is settled, or after four seconds, since a fetch on a poor line
+     takes as long as it likes. */
+  function nameAgain(p) {
+    var named = function () {
+      var here = state.place;
+      /* the reader may have moved on, or picked a city, while it came */
+      if (!here || (here !== p && (here.lat !== p.lat || here.lng !== p.lng))) return;
+      if (!gazetteer && here.names) return;
+      var near = nameForPlace(here.lat, here.lng);
+      if (near.n === here.n && sameNames(near.names, here.names)) return;
+      setPlace({ n: near.n, names: near.names, lat: here.lat, lng: here.lng, tz: here.tz, z: here.z }, true);
+    };
+    named();
+    var timer = 0;
+    var waited = new Promise(function (done) { timer = window.setTimeout(done, 4000); });
+    var came = loadPlaces().then(named).catch(function () { /* the place stands, only its name waits */ })
+      .then(function () { window.clearTimeout(timer); });
+    return Promise.race([came, waited]);
+  }
+
+  /* A place the older code named «قرب» a listed city, and one a fix named
+     before the gazetteer could be read, is named again from where it is at
+     the start, whether or not the phone is asked where it is today. */
+  function settlePlaceName() {
+    var s = Store.settings();
+    if (typeof s.lat !== 'number' || typeof s.lng !== 'number') return null;
+    var near = String(s.city || '').indexOf('قرب ') === 0;
+    var unnamed = s.placeFrom === 'fix' && !s.cityNames;
+    if (!near && !unnamed) return null;
+    return nameAgain(place());
   }
 
   function coordsLabel(lat, lng) {
@@ -901,19 +1067,26 @@
     return Math.abs(lat).toFixed(2) + '° ' + ns + '، ' + Math.abs(lng).toFixed(2) + '° ' + ew;
   }
 
-  /* Takes a fix and makes it the place. Returns whether the place moved. */
-  function adoptFix(pos) {
+  /* Takes a fix and makes it the place at once, so the times follow without
+     waiting, then calls back with whether the place moved once its name is
+     settled. Returns whether it moved as far as the name known now can say,
+     for a caller that cannot wait. */
+  function adoptFix(pos, then) {
     var tz = -new Date().getTimezoneOffset() / 60;
     var zone = null;
     try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
     var lat = pos.coords.latitude, lng = pos.coords.longitude;
     var near = nameForPlace(lat, lng);
     var before = place();
-    var moved = !before || before.n !== (near ? near.n : coordsLabel(lat, lng));
-    var next = {
-      n: near ? near.n : coordsLabel(lat, lng),
-      lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
-    };
+    var was = before ? before.n : null;
+    var next = { n: near.n, names: near.names, lat: lat, lng: lng, tz: tz, z: near.z || zone };
+    /* a fix a few steps from where the gazetteer last named keeps that name,
+       and the gazetteer is not read for it */
+    if (!gazetteer && before && before !== DEFAULT_PLACE && before.names &&
+        PrayerEngine.between(lat, lng, before.lat, before.lng) < 1) {
+      next.n = before.n;
+      next.names = before.names;
+    }
     /* The reckoning follows the place: every listed city carries the method
        its own authority uses, and a fix that named the city without taking
        its method left five capitals on the Ojeiri table, which is Kuwait's.
@@ -927,12 +1100,15 @@
        as long as they stayed in their city, since the place had not moved. So
        the method remembers where it came from: only one set by hand is kept. */
     if (Store.get('methodFrom') !== 'hand') {
-      next.method = near ? near.method : 'MWL';
+      next.method = near.method || 'MWL';
       Store.set('methodFrom', 'fix');
     }
     setPlace(next, true);
     Store.set('placeFrom', 'fix');
-    return moved;
+    var settled = function () { if (typeof then === 'function') then(place().n !== was); };
+    if (next.names) settled();
+    else nameAgain(next).then(settled);
+    return next.n !== was;
   }
 
   function locate(then) {
@@ -942,8 +1118,8 @@
     }
     toast('جاري تحديد موقعك');
     window.navigator.geolocation.getCurrentPosition(function (pos) {
-      adoptFix(pos);
-      toast('ضُبطت المواقيت على ' + place().n);
+      /* the place is taken at once, and the word waits for its name */
+      adoptFix(pos, function () { toast('ضُبطت المواقيت على ' + place().n); });
       if (typeof then === 'function') then();
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
@@ -958,9 +1134,10 @@
     if (Store.get('placeFrom') === 'pick') return done(true);
     if (!window.navigator || !window.navigator.geolocation) return done(false);
     window.navigator.geolocation.getCurrentPosition(function (pos) {
-      var moved = adoptFix(pos);
-      if (moved) toast('ضُبطت المواقيت على ' + place().n);
-      done(true);
+      adoptFix(pos, function (moved) {
+        if (moved) toast('ضُبطت المواقيت على ' + place().n);
+        done(true);
+      });
     }, function () {
       done(false);
     }, { enableHighAccuracy: false, maximumAge: 600000, timeout: 8000 });
@@ -10536,6 +10713,7 @@
     wire();
     followAddress();
     renderSettings();
+    settlePlaceName();
     /* the eid greets the reader once, on the days around it */
     window.setTimeout(offerEid, 1200);
     /* The walkthrough waits for the opening to be gone: the page's own goes
@@ -10578,6 +10756,7 @@
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
+      loadPlaces: loadPlaces, nearestPlace: nearestPlace, nameAgain: nameAgain, settlePlaceName: settlePlaceName, adoptFix: adoptFix, localName: localName,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
