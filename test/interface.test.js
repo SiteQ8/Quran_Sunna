@@ -734,7 +734,8 @@ test('the calendar lists today and what is coming', () => {
 test('the radio lists stations and the sleep timer can be cancelled', () => {
   const { win, doc } = boot();
   win.App.go('radio');
-  assert.ok(doc.querySelectorAll('#radio-list [data-station]').length >= 8);
+  assert.strictEqual(doc.querySelectorAll('#radio-list [data-station]').length, win.RADIO_STATIONS.length);
+  assert.ok(win.RADIO_STATIONS.length >= 7);
   /* the timer stops what is playing, so a station plays first */
   click(win, doc.querySelector('[data-station="0"]'));
   click(win, doc.querySelector('[data-sleep="30"]'));

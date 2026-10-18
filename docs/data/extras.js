@@ -24,13 +24,12 @@ var RECITERS = [
 ];
 
 /* عناوين البث كما يذكرها فهرس الإذاعات في mp3quran.net/api/v3/radios، وقد تغيّرت
-   أسماء ست منها فصارت القديمة تردّ بلا صوت، لذلك تُكتب كلها من الفهرس نفسه */
+   أسماء ست منها فصارت القديمة تردّ بلا صوت، لذلك تُكتب كلها من الفهرس نفسه، ولكل
+   محطة قارئ واحد يُعرف بها، فلا تدخلها محطة تجمع قرّاء شتى لا يُعرف من يُسمع فيها */
 var RADIO_STATIONS = [
-  { name: 'إذاعة القرآن الكريم', url: 'https://backup.qurango.net/radio/tarateel', note: 'تلاوات متنوعة' },
   { name: 'عبدالرحمن السديس', url: 'https://backup.qurango.net/radio/abdulrahman_alsudaes', note: 'إمام الحرم المكي' },
   { name: 'عبدالباسط عبدالصمد', url: 'https://backup.qurango.net/radio/abdulbasit_abdulsamad', note: 'مرتل ومجوّد' },
   { name: 'ماهر المعيقلي', url: 'https://backup.qurango.net/radio/maher', note: 'إمام الحرم المكي' },
-  { name: 'مشاري العفاسي', url: 'https://backup.qurango.net/radio/mishary_alafasi', note: 'الكويت' },
   { name: 'سعود الشريم', url: 'https://backup.qurango.net/radio/saud_alshuraim', note: 'إمام الحرم المكي' },
   { name: 'أحمد العجمي', url: 'https://backup.qurango.net/radio/ahmad_alajmy', note: 'تلاوة مؤثرة' },
   { name: 'ياسر الدوسري', url: 'https://backup.qurango.net/radio/yasser_aldosari', note: 'إمام الحرم المكي' },

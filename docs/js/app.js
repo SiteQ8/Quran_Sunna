@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.86';
+  var VERSION = '8.87.87';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1524,7 +1524,7 @@
        is up, so the mark moves to dhuhr rather than staying on sunrise. */
     var sinceAdhan = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
     var marked = (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES) ? c.prev.key : c.next.key;
-    host.innerHTML = c.marks.map(function (m) {
+    var html = c.marks.map(function (m) {
       var cls = 'window';
       if (m.key === marked) cls += ' is-now';
       else if (m.at < c.now) cls += ' is-past';
@@ -1542,7 +1542,61 @@
         (state ? '<div class="window-mark" aria-hidden="true">' + icon(state === 'missed' ? 'close' : 'check') + '</div>' : '') +
         '</' + tag + '>';
     }).join('');
+    host.innerHTML = html;
+    fitWindows(host, html);
+    /* the place line is drawn far less often than this, but the room and the
+       size of the words can change while the screen stays open */
+    var line = $('place-line');
+    if (line && line.getAttribute('data-fit') !== host.clientWidth + '|' + fontSizeOf(line)) fitPlaceLine();
     renderNightLine();
+  }
+
+  /* The six windows share one line while their words fit it. The phone's own
+     text size grows the words and not the card, and another language writes
+     longer ones than the Arabic, so whether they fit is measured, in the
+     reader's language, and when they do not they stand in two rows of three
+     instead of running off the card. The strip is drawn every second, so it
+     is measured again only when what it holds or the room it has changes. */
+  var windowsFit = '';
+  function fitWindows(host, html) {
+    var key = html + '|' + host.clientWidth + '|' + fontSizeOf(host);
+    if (key === windowsFit) return;
+    windowsFit = key;
+    host.classList.remove('is-two-rows');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(host);
+    if (host.scrollWidth > host.clientWidth + 1) host.classList.add('is-two-rows');
+  }
+
+  function fontSizeOf(el) {
+    return window.getComputedStyle ? window.getComputedStyle(el).fontSize : '';
+  }
+
+  /* The place and its calendar share one line while they fit it; when they do
+     not, the calendar stands under the place, and the button that fetches the
+     place stays beside its name. Measured with both held on one line. */
+  function fitPlaceLine() {
+    var line = $('place-line');
+    if (!line || !line.firstChild) return;
+    line.classList.remove('is-stacked');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(line);
+    line.classList.add('is-measuring');
+    var over = line.scrollWidth > line.clientWidth + 1;
+    line.classList.remove('is-measuring');
+    if (over) line.classList.add('is-stacked');
+    var strip = $('windows');
+    line.setAttribute('data-fit', (strip ? strip.clientWidth : 0) + '|' + fontSizeOf(line));
+  }
+
+  /* after the faces arrive and whenever the room changes, both are measured
+     again, since either changes how wide the words are */
+  function refitHome() {
+    var w = $('windows');
+    if (w) { windowsFit = ''; fitWindows(w, w.innerHTML); }
+    fitPlaceLine();
+    var tt = $('tt-table');
+    if (tt && tt.firstChild) fitTimetable(tt);
+    var path = $('umrah-path');
+    if (path && path.firstChild) fitJourney(path);
   }
 
   /* The night's own two marks, which are not prayers and so are not in the
@@ -2876,6 +2930,7 @@
           '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
           ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>' +
         '</button>';
+      fitPlaceLine();
     }
   }
 
@@ -3385,8 +3440,9 @@
 
   /* The reciter is kept by id. A number stored by an older version counted
      into a list that began with a reciter since removed, so it is carried
-     over: the first became the default, the rest moved up one. */
-  var OLD_RECITER_IDS = ['ar.alafasy', 'ar.abdulsamad', 'ar.abdurrahmaansudais', 'ar.mahermuaiqly', 'ar.saoodshuraym',
+     over: the first, the one removed, became the default, the rest moved up
+     one. */
+  var OLD_RECITER_IDS = [null, 'ar.abdulsamad', 'ar.abdurrahmaansudais', 'ar.mahermuaiqly', 'ar.saoodshuraym',
     'ar.husary', 'ar.husarymujawwad', 'ar.minshawi', 'ar.shaatree', 'ar.ahmedajamy', 'ar.hudhaify', 'ar.hanirifai',
     'ar.ibrahimakhbar', 'ar.muhammadayyoub', 'ar.muhammadjibreel', 'ar.abdullahbasfar', 'ar.aymanswoaid'];
 
@@ -4899,7 +4955,8 @@
 
   function megabytes(bytes) {
     var mb = bytes / 1048576;
-    return (mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
+    /* a figure the language's own table can find beside its unit */
+    return ar(mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
   }
 
   /* Inside the android package the app rings by itself, so the row about the
@@ -6469,6 +6526,34 @@
   /* The path across the head of the screen, and a word about where you are.
      A checklist tells you what is left; a journey tells you where you stand,
      and these are not the same thing to someone standing in a crowd. */
+  /* The names of the stops stand whole under their marks, a long word a
+     little past its stop where the card has the room. When the phone's text
+     is so large that two names would touch, or one would pass the card, the
+     names are set a step smaller, and if even then they touch a word may
+     break anywhere, as it always may in the Arabic. */
+  function fitJourney(path) {
+    path.classList.remove('is-small', 'is-tight');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(path);
+    if (!journeyTouches(path)) return;
+    path.classList.add('is-small');
+    if (journeyTouches(path)) path.classList.add('is-tight');
+  }
+
+  function journeyTouches(path) {
+    var card = path.parentNode && path.parentNode.getBoundingClientRect ? path.parentNode.getBoundingClientRect() : path.getBoundingClientRect();
+    if (!card.width) return false;
+    var spans = Array.prototype.map.call(path.querySelectorAll('.journey-name'), function (el) {
+      var r = document.createRange();
+      r.selectNodeContents(el);
+      return r.getBoundingClientRect();
+    }).sort(function (a, b) { return a.left - b.left; });
+    for (var i = 0; i < spans.length; i++) {
+      if (i && spans[i].left < spans[i - 1].right + 4) return true;
+      if (spans[i].left < card.left + 4 || spans[i].right > card.right - 4) return true;
+    }
+    return false;
+  }
+
   function renderUmrahJourney(done) {
     var path = $('umrah-path');
     var now = $('umrah-now');
@@ -6483,6 +6568,7 @@
           icon(i < at ? 'check' : stage.ic) + '</span>' +
           '<span class="journey-name">' + esc(stage.t) + '</span></li>';
       }).join('');
+      fitJourney(path);
     }
 
     if (!now) return;
@@ -7867,9 +7953,22 @@
     }).join('');
 
     table.innerHTML = head + '<tbody>' + body + '</tbody>';
+    fitTimetable(table);
 
     var current = table.querySelector('tr.is-today');
     if (current && current.scrollIntoView) current.scrollIntoView({ block: 'center' });
+  }
+
+  /* Seven columns of times fit a phone, until the phone's own text size or a
+     language's longer marks for the half of the day push the last column off
+     the card; then each column says which half of the day it is in, as it
+     does on the narrowest phones, and the marks are left out. */
+  function fitTimetable(table) {
+    var box = table.parentNode;
+    if (!box) return;
+    table.classList.remove('is-tight');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(table);
+    if (box.scrollWidth > box.clientWidth + 1) table.classList.add('is-tight');
   }
 
   function stepTimetable(by) {
@@ -10347,6 +10446,12 @@
       });
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitSpread);
     }
+    var homeFit = 0;
+    window.addEventListener('resize', function () {
+      window.clearTimeout(homeFit);
+      homeFit = window.setTimeout(refitHome, 120);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitHome);
     computeQibla();
     refreshTimes();
     wire();
