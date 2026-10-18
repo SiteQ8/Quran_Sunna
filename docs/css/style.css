@@ -382,9 +382,9 @@ html:not([lang='ar']) #hijri-date, html:not([lang='ar']) #greg-date { display: i
 /* When the place and its calendar do not fit one line, the calendar stands
    under the place it belongs to, and the button that fetches the place stays
    beside its name instead of on a line of its own. */
-.place-line.is-stacked { flex-wrap: nowrap; align-items: flex-start; }
-.place-line.is-stacked .place-tap { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--s1); }
-.place-line.is-stacked .place-where { min-height: 44px; }
+html:not([lang='ar']) .place-line.is-stacked { flex-wrap: nowrap; align-items: flex-start; }
+html:not([lang='ar']) .place-line.is-stacked .place-tap { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--s1); }
+html:not([lang='ar']) .place-line.is-stacked .place-where { min-height: 44px; }
 
 /* The reading under the compass, on its own ground. */
 .compass-panel {
@@ -911,7 +911,7 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
 html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
 @media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
 /* and whenever the table is measured not to fit, whatever the width */
-.tt.is-tight td .ampm { display: none; }
+html:not([lang='ar']) .tt.is-tight td .ampm { display: none; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
@@ -1744,6 +1744,12 @@ body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none
 input, textarea, [contenteditable] {
   -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
 }
+/* Nor is a picture or a card lifted out of the page by a long press and
+   dragged under the finger, and the page does not stretch after the finger
+   when it is pulled past its top or its end: both are a website's tells on a
+   phone, and an app does neither. */
+img, a, button { -webkit-user-drag: none; }
+html, body { overscroll-behavior: none; }
 
 .dhikr {
   background: var(--raised); border-radius: var(--r); padding: var(--s4);
