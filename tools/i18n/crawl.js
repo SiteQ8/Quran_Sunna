@@ -108,7 +108,8 @@ if (OWN_SCRIPT && fs.existsSync(path.join(DOCS, 'i18n', lang + '.js'))) {
   });
 }
 function arabicLeft(key) {
-  if (!AR.test(key)) return false;
+  /* ﷺ is written as ﷺ in every language */
+  if (!AR.test(key.replace(/\uFDFA/g, ''))) return false;
   if (!OWN_SCRIPT) return true;
   if (OWN_LINES.has(key)) return false;
   return /[\u0629\u0643\u0649\u064A]/.test(key.replace(/\uFDFA/g, '')) || KEYS.has(key);
