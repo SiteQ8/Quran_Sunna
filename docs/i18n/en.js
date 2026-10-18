@@ -1376,7 +1376,7 @@ window.I18n && window.I18n.add({
  "النجمة الثمانية": "Eight-pointed star",
  "السدو الكويتي": "Kuwaiti Sadu",
  "بلا زخرفة": "No pattern",
- "قرب {0}": "Near {0}",
+ "قرب {0}": "{0} area",
  "شمالاً": "N",
  "جنوباً": "S",
  "شرقاً": "E",

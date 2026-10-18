@@ -10452,6 +10452,14 @@
       homeFit = window.setTimeout(refitHome, 120);
     });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitHome);
+    /* a face is fetched only when a page first writes in its script, after
+       the first faces are ready, and it changes how wide the words are too */
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        window.clearTimeout(homeFit);
+        homeFit = window.setTimeout(refitHome, 60);
+      });
+    }
     computeQibla();
     refreshTimes();
     wire();
