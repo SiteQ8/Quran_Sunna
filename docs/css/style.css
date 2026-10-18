@@ -284,6 +284,11 @@ button { background: none; border: none; cursor: pointer; }
   align-items: center; justify-content: center; gap: var(--s2);
 }
 .clock-date b { font-weight: 600; color: var(--ink); }
+/* In another language the two dates are longer than the Arabic and may not
+   share a line: each then holds together, and the Gregorian takes the line
+   under the Hijri, both centred like the rest of the card. */
+html:not([lang='ar']) .clock-date > span { text-align: center; }
+html:not([lang='ar']) #hijri-date, html:not([lang='ar']) #greg-date { display: inline-block; }
 /* A date that has been nudged says so, in the colour of a warning, and a tap
    on it puts the reckoning back. Silent shifting is how a day gets lost. */
 .date-adjusted {
@@ -336,6 +341,11 @@ button { background: none; border: none; cursor: pointer; }
   .windows { flex-wrap: wrap; row-gap: 4px; }
   .windows > .window { flex: 1 0 calc((100% - 4px) / 3); }
 }
+/* The same two rows when the words are measured not to fit: the phone's own
+   text size grows the words and not the card, and a container query cannot
+   see it, nor the longer words of another language. */
+.windows.is-two-rows { flex-wrap: wrap; row-gap: 4px; }
+.windows.is-two-rows > .window { flex: 1 0 calc((100% - 4px) / 3); }
 .window.is-now { background: var(--accent-wash); border-color: var(--accent); }
 .window.is-now .window-name { color: var(--accent-ink); }
 /* A prayer already passed is quieter, but a person still reads it to check the
@@ -369,6 +379,12 @@ button { background: none; border: none; cursor: pointer; }
   padding: 3px 10px; border-radius: 999px;
   background: var(--sunken); color: var(--ink-3);
 }
+/* When the place and its calendar do not fit one line, the calendar stands
+   under the place it belongs to, and the button that fetches the place stays
+   beside its name instead of on a line of its own. */
+html:not([lang='ar']) .place-line.is-stacked { flex-wrap: nowrap; align-items: flex-start; }
+html:not([lang='ar']) .place-line.is-stacked .place-tap { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--s1); }
+html:not([lang='ar']) .place-line.is-stacked .place-where { min-height: 44px; }
 
 /* The reading under the compass, on its own ground. */
 .compass-panel {
@@ -714,6 +730,9 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .night-line { display: flex; justify-content: center; gap: var(--s4); margin: var(--s2) 0 0;
   font-size: var(--step--1); color: var(--ink-3); }
 .night-name { color: var(--ink-2); font-weight: 600; }
+/* longer in another language, the two marks no longer share a line: each
+   keeps its name and its time together, and the second goes under the first */
+html:not([lang='ar']) .night-line { flex-wrap: wrap; row-gap: var(--s1); }
 
 /* the two tools of the prayer card: the adhkar at the start, the picture at the end */
 /* below the date row, so the two never sit on it */
@@ -891,6 +910,8 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
    says which half of the day each time is in */
 html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
 @media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
+/* and whenever the table is measured not to fit, whatever the width */
+html:not([lang='ar']) .tt.is-tight td .ampm { display: none; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
@@ -1072,6 +1093,13 @@ html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
   max-width: 100%; overflow-wrap: anywhere;
 }
 .journey-stop.is-here .journey-name { color: var(--ink); font-weight: 600; }
+/* a long word of another language in a narrow stop is broken where the
+   language breaks it, «shorten-ing», and where the phone has no rule for
+   that it stands whole a little past its stop, never a letter short of its
+   end with the letter on a line of its own */
+html:not([lang='ar']) .journey-name { overflow-wrap: normal; -webkit-hyphens: auto; hyphens: auto; }
+html:not([lang='ar']) .journey-path.is-small .journey-name { font-size: calc(var(--step--2) * .85); }
+html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anywhere; }
 
 .journey-kicker { margin: 0; font-size: var(--step--2); color: var(--ink-3); }
 .journey-title { margin: 2px 0 0; font-size: 1.15rem; font-weight: 700; }
@@ -1445,6 +1473,8 @@ html[dir='ltr'] #more-list .row::after { transform: rotate(-135deg); }
    rule of its own its bar stayed empty from the first verse to the last */
 .meter span, .meter .meter-fill { display: block; height: 100%; background: var(--accent); border-radius: 4px; transition: width .35s ease; }
 .meter-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: var(--s2); font-size: var(--step--1); }
+/* and its two halves, each whole, one under the other when they do not fit */
+html:not([lang='ar']) .meter-head { flex-wrap: wrap; column-gap: var(--s3); row-gap: var(--s1); }
 .meter-head b { font-size: var(--step-1); font-weight: 700; }
 
 /* thirty day activity grid */
@@ -1714,6 +1744,12 @@ body { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none
 input, textarea, [contenteditable] {
   -webkit-user-select: text; user-select: text; -webkit-touch-callout: default;
 }
+/* Nor is a picture or a card lifted out of the page by a long press and
+   dragged under the finger, and the page does not stretch after the finger
+   when it is pulled past its top or its end: both are a website's tells on a
+   phone, and an app does neither. */
+img, a, button { -webkit-user-drag: none; }
+html, body { overscroll-behavior: none; }
 
 .dhikr {
   background: var(--raised); border-radius: var(--r); padding: var(--s4);
@@ -1762,8 +1798,12 @@ input, textarea, [contenteditable] {
 .compass-rose { transition: transform .18s ease-out;
    position: absolute; inset: 0; transition: transform .2s linear; }
 /* the north tick runs through the letter that names north, which a Latin N
-   shows as a stroke across it: in a translated page the letter is the mark */
-html:not([lang='ar']) .compass-north { display: none; }
+   shows as a stroke across it: in a translated page the letter is the mark,
+   except in Urdu and Persian, whose north is the same «ش» as the Arabic */
+html:not([lang='ar']):not([lang='ur']):not([lang='fa']) .compass-north { display: none; }
+/* a month over its days is a heading, and a heading starts with a capital in
+   the languages that have them, though their tables write the month small */
+html:not([lang='ar']) .cal-month::first-letter { text-transform: uppercase; }
 .compass-read { text-align: center; font-size: var(--step-3); font-weight: 300; direction: ltr; font-variant-numeric: tabular-nums; }
 
 /* ---------- misc ---------- */

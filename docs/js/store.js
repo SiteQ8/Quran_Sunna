@@ -25,6 +25,9 @@
     lat: null,
     lng: null,
     city: '',
+    /* the place's name in the Latin, Cyrillic and Bengali scripts, from the
+       gazetteer, beside the Arabic one in city: { la, ru, bn } */
+    cityNames: null,
     tzOffset: null,
     zone: null,
     notify: false,
@@ -32,7 +35,8 @@
     salawatAt: 0,
     umrah: {},
     readPace: 'mid',
-    clock: '12',
+    /* twelve hours unless the reader's language tells the time by twenty four */
+    clock: (root.I18n && root.I18n.clock) || '12',
     listenAs: '',
     pageLayout: 'flow',
     qiyam: false,

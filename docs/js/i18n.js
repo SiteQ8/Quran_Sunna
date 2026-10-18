@@ -24,19 +24,23 @@
   if (window.I18n) return;
 
   /* Each language in its own name, the way its script runs, the voice the
-     phone reads it in, and the figures it counts in where they are its own. */
+     phone reads it in, the figures it counts in where they are its own, and
+     the clock it tells the time by. Persian and Bengali write their own
+     figures on a phone, Urdu the ones Arabic and English share, as the phones
+     themselves do; and where the day runs to twenty four hours, a new reader
+     is shown it so until they choose the twelve in the settings. */
   var LANGS = [
     { code: 'ar', name: 'العربية', dir: 'rtl', speech: 'ar-SA' },
     { code: 'en', name: 'English', dir: 'ltr', speech: 'en-US' },
-    { code: 'id', name: 'Bahasa Indonesia', dir: 'ltr', speech: 'id-ID' },
+    { code: 'id', name: 'Bahasa Indonesia', dir: 'ltr', speech: 'id-ID', clock: '24' },
     { code: 'ms', name: 'Bahasa Melayu', dir: 'ltr', speech: 'ms-MY' },
-    { code: 'fr', name: 'Français', dir: 'ltr', speech: 'fr-FR' },
+    { code: 'fr', name: 'Français', dir: 'ltr', speech: 'fr-FR', clock: '24' },
     { code: 'ha', name: 'Hausa', dir: 'ltr', speech: 'ha-NG' },
-    { code: 'tr', name: 'Türkçe', dir: 'ltr', speech: 'tr-TR' },
-    { code: 'ru', name: 'Русский', dir: 'ltr', speech: 'ru-RU' },
+    { code: 'tr', name: 'Türkçe', dir: 'ltr', speech: 'tr-TR', clock: '24' },
+    { code: 'ru', name: 'Русский', dir: 'ltr', speech: 'ru-RU', clock: '24' },
     { code: 'bn', name: 'বাংলা', dir: 'ltr', speech: 'bn-BD', digits: '০১২৩৪৫৬৭৮৯' },
-    { code: 'ur', name: 'اردو', dir: 'rtl', speech: 'ur-PK', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ' },
-    { code: 'fa', name: 'فارسی', dir: 'rtl', speech: 'fa-IR', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ' }
+    { code: 'ur', name: 'اردو', dir: 'rtl', speech: 'ur-PK', comma: '، ' },
+    { code: 'fa', name: 'فارسی', dir: 'rtl', speech: 'fa-IR', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ', clock: '24' }
   ];
   var BY_CODE = {};
   LANGS.forEach(function (l) { BY_CODE[l.code] = l; });
@@ -45,7 +49,7 @@
      how they run and how they count, and join the list in the settings and
      the phone's own choice as their tables come: a phone set to one of them
      meanwhile is met in English, never with a page that falls back half way. */
-  var READY = ['ar', 'en'];
+  var READY = ['ar', 'en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn', 'ur', 'fa'];
   function ready(code) { return !!BY_CODE[code] && READY.indexOf(code) !== -1; }
 
   var KEY = 'sunnati.lang';
@@ -133,6 +137,9 @@
 
   var exact = Object.create(null);
   var entries = 0;
+  /* the keys written in no Arabic: the name of a place GeoNames gives in
+     Latin letters only, told to the engine with its name in the language */
+  var latinKeys = 0;
   /* the composed lines, filed under the longest word they always carry, so a
      line is tried only against the few that could be it */
   var byWord = Object.create(null);
@@ -204,6 +211,7 @@
       var k = norm(key);
       if (PLACE.test(k)) addPattern(k, value);
       else exact[k] = value;
+      if (!AR.test(k)) latinKeys++;
       entries++;
     }
     memo = Object.create(null);
@@ -232,7 +240,18 @@
      says in the language's own way. An hour alone, «5 م», is a time only in
      the time picker, which says so; elsewhere it is five metres. */
   var TIME = /^(\d{1,2}:\d{2})[\s\u2060]*(ص|م)$/;
+  /* a time and its mark are one thing to read and never part at the end of
+     a line, as the strip of the six prayers holds them with a joiner */
+  var KEEP_TOGETHER = '\u00A0';
   var HOUR = /^(\d{1,2})[\s\u2060]*(ص|م)$/;
+  /* In a right-to-left page a time with a Latin mark, «10:54 PM», is a phrase
+     read left to right, and unless it is set apart the order of the two
+     directions puts its mark before its figures: «PM 10:54». */
+  function clockOf(t, half, depth) {
+    var mark = lookup(half, depth) || half;
+    var said = t + KEEP_TOGETHER + mark;
+    return info.dir === 'rtl' && /[A-Za-z]/.test(mark) ? '\u2066' + said + '\u2069' : said;
+  }
 
   /* the kind of name the line being read holds, while it is read: a place
      of a composed line says it, or the page around the words does with
@@ -248,7 +267,7 @@
     if (hit0 !== null) return form(exact[hit0], null);
     if (!AR.test(text)) return text;
     var time = TIME.exec(text) || (kind === 'time' ? HOUR.exec(text) : null);
-    if (time) return time[1] + ' ' + (lookup(time[2], depth + 1) || time[2]);
+    if (time) return clockOf(time[1], time[2], depth + 1);
     if (depth > 3) return null;
     /* a piece the page joined to the one before it with a comma carries
        the comma with it */
@@ -320,7 +339,14 @@
       }
       out.push(got);
     }
-    return out.join(' ');
+    /* and a figure keeps the word after it, a day its month and a time its
+       mark, and a month its year, so a line may end after the weekday, never
+       between 19 and October or 4:22 and AM */
+    return out.reduce(function (all, word, i) {
+      if (!i) return word;
+      var bind = /^[\d:.\/]+$/.test(out[i - 1]) || /^\d{4}$/.test(word);
+      return all + (bind ? KEEP_TOGETHER : ' ') + word;
+    }, '');
   }
 
   /* What the page put into a composed line is translated too, when it is
@@ -335,7 +361,7 @@
       try { return part(text, depth); } finally { kind = was; }
     }
     var t = norm(text);
-    if (!AR.test(t)) return t;
+    if (!AR.test(t)) return latinKeys && t in exact ? form(exact[t], null) : t;
     var got = lookup(t, depth + 1);
     if (got !== null) return got;
     if (t.indexOf('لل') === 0) {
@@ -483,9 +509,18 @@
     });
   }
 
+  /* A line in Latin letters alone is left as it is, unless it is a name the
+     engine was told in the language: a place with no name in Arabic. */
+  function latin(text) {
+    var bare = norm(text);
+    if (!bare || !(bare in exact)) return text;
+    var word = form(exact[bare], null);
+    return text.replace(bare, function () { return word; });
+  }
+
   function line(text, of) {
     var raw = plain(String(text));
-    if (!AR.test(raw)) return figures(raw);
+    if (!AR.test(raw)) return figures(latinKeys ? latin(raw) : raw);
     var core = norm(raw);
     if (!core) return raw;
     var got;
@@ -500,7 +535,7 @@
     }
     if (got === null) {
       var times = core.replace(/(\d{1,2}:\d{2})[\s\u2060]+(ص|م)(?=\s|$)/g, function (all, t, half) {
-        return t + ' ' + (lookup(half, 1) || half);
+        return clockOf(t, half, 1);
       });
       if (AR.test(times)) return figures(raw);
       got = times;
@@ -640,10 +675,13 @@
     lang: lang,
     dir: info.dir,
     speech: info.speech,
+    clock: info.clock || '12',
     langs: LANGS.filter(function (l) { return ready(l.code); }).map(function (l) { return { code: l.code, name: l.name, dir: l.dir }; }),
     stored: function () { return read(KEY) || 'auto'; },
     device: fromDevice,
     add: add,
+    /* whether the table holds this line as it is */
+    has: function (text) { return norm(String(text)) in exact; },
     tx: tx,
     apply: apply,
     choose: choose,

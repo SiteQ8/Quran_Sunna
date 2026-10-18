@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.87.85';
+var VERSION = 'sunnati-v8.87.94';
 
 var SHELL = [
   './',
@@ -97,11 +97,11 @@ var SHELL = [
   './fonts/plex-arabic-600-latin.woff2',
   './fonts/plex-arabic-700-arabic.woff2',
   './fonts/plex-arabic-700-latin.woff2',
-  './fonts/plex-arabic-300-latin-ext.woff2',
-  './fonts/plex-arabic-400-latin-ext.woff2',
-  './fonts/plex-arabic-500-latin-ext.woff2',
-  './fonts/plex-arabic-600-latin-ext.woff2',
-  './fonts/plex-arabic-700-latin-ext.woff2'
+  './fonts/plex-sans-300-latin-ext.woff2',
+  './fonts/plex-sans-400-latin-ext.woff2',
+  './fonts/plex-sans-500-latin-ext.woff2',
+  './fonts/plex-sans-600-latin-ext.woff2',
+  './fonts/plex-sans-700-latin-ext.woff2'
 ];
 
 /* Big and unchanging, so reading them from the cache is always right. */
@@ -224,11 +224,18 @@ self.addEventListener('activate', function (event) {
   );
 });
 
+/* The faces of a script only some readers write, Russian, Bengali and the
+   marked vowels of Hausa, are not in the shell: every reader would fetch them and few would read them.
+   A page in that script asks for them, the worker keeps them as it keeps
+   anything it fetches, and an update moves them across as they are. */
+var SCRIPT_FACES = /\/fonts\/(plex-sans-\d+-(cyrillic|vietnamese)|noto-bengali-\d+-bengali)\.woff2$/;
+
 /* What a reader fetched for themselves is not thrown away by an update. The
    table of the language they read the app in is fetched again, since it
    changes with the app, so a reader offline the day after an update still
-   reads it in their language. The tafsir and the meanings never change under
-   the same name, so the copy already kept is moved across as it is. */
+   reads it in their language. The tafsir, the meanings, the names of the
+   places and the faces of a script never change under the same name, so the
+   copy already kept is moved across as it is. */
 function carryOver(cache) {
   return caches.keys().then(function (names) {
     return Promise.all(names.filter(function (n) { return n !== VERSION && n.indexOf('sunnati-v') === 0; }).map(function (n) {
@@ -239,7 +246,7 @@ function carryOver(cache) {
             if (/\/i18n\/[a-z]+\.js$/.test(at)) {
               return cache.add(new Request(r.url, { cache: 'reload' })).catch(function () { return null; });
             }
-            if (/\/data\/(tafsir-[a-z]+|meanings\/[a-z0-9_-]+)\.json$/.test(at)) {
+            if (/\/data\/(tafsir-[a-z]+|meanings\/[a-z0-9_-]+|places)\.json$/.test(at) || SCRIPT_FACES.test(at)) {
               return old.match(r).then(function (hit) { return hit ? cache.put(r, hit) : null; });
             }
             return null;
@@ -348,9 +355,13 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* The tafsir, two and a half megabytes, and the meanings of the Quran in a
-     reader's language, about one: fetched once, on first use, and kept. */
-  if (url.origin === location.origin && (/\/data\/tafsir-[a-z]+\.json$/.test(url.pathname) || /\/data\/meanings\/[a-z0-9_-]+\.json$/.test(url.pathname))) {
+  /* The tafsir, two and a half megabytes, the meanings of the Quran in a
+     reader's language, about one, and the names of the places of the world,
+     about one, which the page reads only to name where a reader is: fetched
+     once, on first use, and kept, and never part of the shell every reader
+     loads. */
+  if (url.origin === location.origin && (/\/data\/tafsir-[a-z]+\.json$/.test(url.pathname) || /\/data\/meanings\/[a-z0-9_-]+\.json$/.test(url.pathname) ||
+      /\/data\/places\.json$/.test(url.pathname))) {
     event.respondWith(
       caches.match(request).then(function (hit) {
         if (hit) return hit;
