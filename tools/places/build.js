@@ -11,6 +11,11 @@
      cities15000.zip       every town of 15000 people or more, the world over
      cities1000.zip        every town of 1000 or more, for KW SA AE QA BH OM
                            only, so the Gulf is named down to its areas
+     KW BH QA .zip         every populated place of Kuwait, Bahrain and
+                           Qatar, the quarters of their towns among them
+     SA AE OM .zip         the quarters of the towns of Saudi Arabia, the
+                           Emirates and Oman, so a reader in north Riyadh is
+                           told the quarter and not the next town
      alternateNamesV2.zip  every name of each, with the language it is in
 
    Each place keeps its latitude and longitude to two decimals, and these:
@@ -18,8 +23,10 @@
          one it marks preferred, else the one it was given first), else the
          one in the Arabic script with no Persian or Urdu letter, else one in
          the Arabic script at all, its vowel marks taken off
-     la  the plain ASCII name GeoNames gives (asciiname) rather than the one
-         with diacritics
+     la  the name GeoNames gives in English (the one it marks preferred, else
+         the first it was given), else the title of the article of the
+         English Wikipedia it links to when that is the same name, else the
+         plain ASCII name (asciiname) rather than the one with diacritics
      ru  the name in Russian, else a Cyrillic one with no letter Russian lacks
      bn  the name in Bengali, else one in the Bengali script
    A place with no name in the Arabic script is dropped only when a place with
@@ -27,9 +34,9 @@
    ever made up. Of places that fall on the same point at two decimals, the
    better named and the bigger is kept.
 
-     node tools/places/build.js               downloads the three into a cache
+     node tools/places/build.js               downloads the nine into a cache
                                               folder and writes the file
-     node tools/places/build.js --from <dir>  reads the three zips from <dir>
+     node tools/places/build.js --from <dir>  reads the nine zips from <dir>
      node tools/places/build.js --cache <dir> downloads into <dir>
 
    The worker keeps the file once a reader has fetched it and carries it
@@ -52,8 +59,16 @@ const ROOT = path.join(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'docs', 'data', 'places.json');
 const BASE = 'https://download.geonames.org/export/dump/';
 const GULF = new Set(['KW', 'SA', 'AE', 'QA', 'BH', 'OM']);
+/* From the whole list of each Gulf country: every populated place of these
+   three, down to the quarters of their towns, and of the other three their
+   quarters alone, since cities1000 already holds their towns. */
+const WHOLE = new Set(['KW', 'BH', 'QA']);
 /* abandoned and destroyed: nobody is in them to be told so */
 const GONE = new Set(['PPLQ', 'PPLW']);
+/* the sectors of Abu Dhabi's grid, U01 and W66, whose Arabic names are a
+   number after a word, غير معرّف 1: a reader is in a quarter with a name, and
+   the quarters with names are kept */
+const SECTOR = /^[A-Za-z]{1,3}_?[0-9]+([_-][0-9]+)?$/;
 /* a nameless place within this of a named one twice its size is left to it */
 const NEIGHBOUR_KM = 10;
 const NEIGHBOUR_TIMES = 2;
@@ -243,38 +258,136 @@ function km(a, b) {
 const KIND = ['PPLC', 'PPLA', 'PPLG', 'PPLA2', 'PPLA3', 'PPLA4', 'PPLA5', 'PPL', 'PPLX', 'PPLL', 'PPLS', 'PPLR', 'PPLF', 'PPLH', 'STLMT'];
 function kindRank(code) { const i = KIND.indexOf(code); return i === -1 ? KIND.length : i; }
 
+/* ---------------- the name in Latin letters ---------------- */
+
+/* Letters of the Latin script, with the marks some names carry, and the few
+   signs a name is written with. A name with a comma or a bracket in it is a
+   title, «Gosnells, Western Australia», and not a name. */
+const LATIN_NAME = /^[A-Za-z\u00C0-\u024F\u1E00-\u1EFF0-9 '\u2018\u2019\u02BB\u02BC.\-]+$/;
+const WIKI = /^https?:\/\/en\.wikipedia\.org\/wiki\/([^#?]+)$/;
+
+/* the title of an article of the English Wikipedia, without the place it is
+   told apart by: «Simmering (Vienna)», «Al Karama, Dubai» */
+function wikiTitle(url) {
+  const m = WIKI.exec(url);
+  if (!m) return '';
+  let title = '';
+  try { title = decodeURIComponent(m[1]); } catch (e) { return ''; }
+  return plainForm(title.replace(/_/g, ' ').replace(/\s*\([^)]*\)\s*$/, '').replace(/,.*$/, ''));
+}
+
+/* What is left of a word written in Latin letters once its vowels and its
+   doubled letters are taken off, which two hands spelling one Arabic name
+   differently still share: Salmiya leaves slm, the start of slmh, which is
+   what Salimiyah leaves. */
+function skeleton(word) {
+  return word.replace(/[aeiouwy]/g, '').replace(/(.)\1+/g, '$1');
+}
+
+/* the words of a name in plain letters, its articles left out */
+const ARTICLES = new Set(['al', 'el', 'as', 'ash', 'ad', 'adh', 'ar', 'at', 'ath', 'az', 'an', 'ud', 'ul']);
+function words(text) {
+  return text.normalize('NFD').replace(/[\u0300-\u036F]/g, '').toLowerCase().split(/[\s-]+/)
+    .map(function (w) { return w.replace(/[^a-z]/g, ''); })
+    .filter(function (w) { return w && !ARTICLES.has(w); });
+}
+
+function dice(a, b) {
+  const pairs = function (s) { const out = []; for (let i = 0; i < s.length - 1; i++) out.push(s.slice(i, i + 2)); return out; };
+  const x = pairs(a);
+  const pool = pairs(b);
+  if (!x.length || !pool.length) return 0;
+  const size = x.length + pool.length;
+  let same = 0;
+  x.forEach(function (p) { const at = pool.indexOf(p); if (at !== -1) { same++; pool.splice(at, 1); } });
+  return 2 * same / size;
+}
+
+function sameWord(a, b) {
+  const x = skeleton(a);
+  const y = skeleton(b);
+  if (!x || !y) return a === b;
+  if (x === y) return true;
+  if (Math.min(x.length, y.length) < 2) return false;
+  return x.indexOf(y) === 0 || y.indexOf(x) === 0 || dice(x, y) >= 0.6;
+}
+
+/* whether a title says the same name as the one GeoNames writes: each of its
+   words is one of the name's, so «Shuwaikh Port» is not Ash Shuwaykh */
+function alike(title, name) {
+  const theirs = words(name);
+  const mine = words(title);
+  return mine.length > 0 && mine.every(function (w) { return theirs.some(function (v) { return sameWord(w, v); }); });
+}
+
+/* Some quarters of the Gulf came to GeoNames with their words run together,
+   HayyarRashidiyah and AsSafaTis'ah, and are parted where a word plainly
+   begins: Hayy ar Rashidiyah, As Safa Tis'ah. */
+function unjoin(name) {
+  return name.replace(/([a-z])([A-Z])/g, '$1 $2').replace(/([a-z])'([A-Z])/g, '$1 \'$2')
+    .replace(/\b(Hayy|Jabal|Wadi|Ras|Bab|Dar|Bayt|Bir|Shib|Ayn)(al|an|ar|as|ash|at|ath|ad|adh|az)\b/g, '$1 $2');
+}
+
+/* The name in Latin letters, which every language that writes them shows:
+   the one GeoNames gives in English, the one it marks preferred and else the
+   first it was given, so Kuwait City is Kuwait City and Mecca is Mecca. A
+   place with no English name is called by the title of its article in the
+   English Wikipedia, which GeoNames links it to, when the title is the same
+   name written as the country writes it in English, Salmiya for As
+   Salimiyah: a link to another place, a suburb to the town around it, is
+   told apart because its letters are not the same. Failing both, the plain
+   ASCII name, its backticks written as apostrophes. */
+function latinName(p) {
+  const english = p.rows.filter(function (r) { return r.lang === 'en' && LATIN_NAME.test(plainForm(r.name)); })
+    .sort(function (a, b) { return (b.preferred - a.preferred) || (a.seq - b.seq); })[0];
+  if (english) return { text: plainForm(english.name), how: 'en' };
+  let ascii = plainForm(/^[\x20-\x7E]+$/.test(p.ascii) && p.ascii.trim() ? p.ascii : p.name).replace(/`/g, '\'');
+  if (GULF.has(p.cc)) ascii = unjoin(ascii);
+  for (const url of p.links) {
+    const title = wikiTitle(url);
+    if (title && LATIN_NAME.test(title) && alike(title, ascii)) return { text: title, how: 'wiki' };
+  }
+  return { text: ascii, how: 'ascii' };
+}
+
 async function main() {
   const from = arg('--from');
   const dir = from || arg('--cache') || path.join(os.tmpdir(), 'sunnati-geonames');
   const files = {};
-  for (const name of ['cities15000.zip', 'cities1000.zip', 'alternateNamesV2.zip']) {
+  const zips = ['cities15000.zip', 'cities1000.zip', 'alternateNamesV2.zip'].concat(Array.from(GULF).map(function (c) { return c + '.zip'; }));
+  for (const name of zips) {
     files[name] = from ? path.join(from, name) : await download(name, dir);
     if (!fs.existsSync(files[name])) throw new Error('missing ' + files[name]);
   }
 
   /* the places */
   const places = new Map();
-  const take = function (gulfOnly) {
+  const take = function (wanted) {
     return function (line) {
       if (!line) return;
       const f = line.split('\t');
-      if (gulfOnly && !GULF.has(f[8])) return;
-      if (f[6] !== 'P' || GONE.has(f[7])) return;
+      if (f[6] !== 'P' || GONE.has(f[7]) || SECTOR.test(f[2]) || !wanted(f)) return;
       places.set(f[0], {
         id: f[0], name: f[1], ascii: f[2], alts: f[3] ? f[3].split(',') : [],
-        lat: +f[4], lng: +f[5], code: f[7], cc: f[8], pop: +f[14] || 0, rows: []
+        lat: +f[4], lng: +f[5], code: f[7], cc: f[8], pop: +f[14] || 0, rows: [], links: []
       });
     };
   };
-  await eachLine(entry(files['cities15000.zip'], 'cities15000.txt'), take(false));
-  await eachLine(entry(files['cities1000.zip'], 'cities1000.txt'), take(true));
+  await eachLine(entry(files['cities15000.zip'], 'cities15000.txt'), take(function () { return true; }));
+  await eachLine(entry(files['cities1000.zip'], 'cities1000.txt'), take(function (f) { return GULF.has(f[8]); }));
+  for (const c of GULF) {
+    await eachLine(entry(files[c + '.zip'], c + '.txt'), take(function (f) { return WHOLE.has(c) || f[7] === 'PPLX'; }));
+  }
 
-  /* their names in the three scripts, with the language each is written in */
+  /* their names in the three scripts and in English, with the language each
+     is written in, and the article of the English Wikipedia each links to */
   const SCRIPTS = /[\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF\u0400-\u04FF\u0980-\u09FF]/;
   await eachLine(entry(files['alternateNamesV2.zip'], 'alternateNamesV2.txt'), function (line) {
     const f = line.split('\t');
     const place = places.get(f[1]);
-    if (!place || NOT_A_LANGUAGE.has(f[2]) || !SCRIPTS.test(f[3])) return;
+    if (!place) return;
+    if (f[2] === 'link') { if (WIKI.test(f[3])) place.links.push(f[3]); return; }
+    if (NOT_A_LANGUAGE.has(f[2]) || (f[2] !== 'en' && !SCRIPTS.test(f[3]))) return;
     /* a name used only until a date is a name of the past */
     if (f[6] === '1' || f[7] === '1' || (f[9] && f[9].trim())) return;
     place.rows.push({ seq: +f[0], lang: f[2], name: f[3], preferred: f[4] === '1', short: f[5] === '1' });
@@ -288,8 +401,8 @@ async function main() {
     const rows = p.rows.slice();
     const seen = new Set(rows.map(function (r) { return r.name; }));
     p.alts.forEach(function (a, i) { if (!seen.has(a) && SCRIPTS.test(a)) rows.push({ seq: 1e12 + i, lang: '', name: a, preferred: false, short: false }); });
-    const la = plainForm(/^[\x20-\x7E]+$/.test(p.ascii) && p.ascii.trim() ? p.ascii : p.name);
-    if (!la) return;
+    const la = latinName(p);
+    if (!la.text) return;
     const ar = best(rows.map(arabicCandidate));
     if (APP_WORDS.has(ar.text)) ar.text += UNSEEN;
     const ru = best(rows.map(cyrillicCandidate));
@@ -297,9 +410,9 @@ async function main() {
     list.push({
       id: p.id, cc: p.cc, code: p.code, pop: p.pop, lat: p.lat, lng: p.lng,
       y: Math.round(p.lat * 100), x: Math.round(p.lng * 100),
-      ar: ar.text, la: la, ru: ru.text, bn: bn.text,
+      ar: ar.text, la: la.text, ru: ru.text, bn: bn.text,
       /* how each was found, for the count at the end */
-      how: { ar: ar.rank.slice(0, 2).join(''), ru: String(ru.rank[0]), bn: String(bn.rank[0]) }
+      how: { ar: ar.rank.slice(0, 2).join(''), la: la.how, ru: String(ru.rank[0]), bn: String(bn.rank[0]) }
     });
   });
 
@@ -377,8 +490,9 @@ async function main() {
     (list.length - atPoint.size) + ' sharing a point with a better one');
   /* ar: the letters (0 Arabic alone, 1 with others) then the language (0 Arabic,
      1 a form of Arabic or none given, 2 Persian and the like, 3 Urdu and the
-     like); ru and bn: 0 that language, 1 none given, 2 another */
-  console.log('found by: ar ' + ways('ar') + ', ru ' + ways('ru') + ', bn ' + ways('bn'));
+     like); la: en, wiki or ascii; ru and bn: 0 that language, 1 none given,
+     2 another */
+  console.log('found by: ar ' + ways('ar') + ', la ' + ways('la') + ', ru ' + ways('ru') + ', bn ' + ways('bn'));
   console.log(text.length + ' characters, ' + Buffer.byteLength(text) + ' bytes, ' + zlib.gzipSync(text, { level: 9 }).length + ' gzipped');
 }
 

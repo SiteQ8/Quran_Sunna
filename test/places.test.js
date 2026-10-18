@@ -62,6 +62,10 @@ function nearestCityKm(lat, lng) {
 }
 
 const QURB = 'قرب';
+/* Latin letters with the marks of their own, and the signs a name is written
+   with: the English names carry their marks, Évreux, and the plain ASCII names
+   whatever GeoNames wrote in them */
+const LATIN = /^(?=.*[A-Za-z])[\x20-\x7E\u00C0-\u024F\u1E00-\u1EFF\u2018\u2019\u02BB\u02BC]+$/;
 
 function memoryStorage(seed) {
   const map = Object.assign({}, seed || {});
@@ -169,7 +173,7 @@ test('the gazetteer is one file of columns that agree, credited to GeoNames, and
   GAZ.forEach(function (p) {
     assert.ok(Number.isInteger(Math.round(p.lat * 100)) && p.lat >= -90 && p.lat <= 90, 'a latitude: ' + p.lat);
     assert.ok(p.lng >= -180 && p.lng <= 180, 'a longitude: ' + p.lng);
-    assert.ok(/^[\x20-\x7E]+$/.test(p.la), 'every place has a plain Latin name: ' + JSON.stringify(p.la));
+    assert.ok(LATIN.test(p.la), 'every place has a name in Latin letters: ' + JSON.stringify(p.la));
     if (p.ar) {
       assert.ok(/[ء-ي]/.test(p.ar) && !/[A-Za-z]/.test(p.ar), 'the Arabic name is in the Arabic script: ' + p.ar);
       assert.ok(!marks.test(p.ar), 'and written without its vowel marks: ' + p.ar);
@@ -186,20 +190,25 @@ test('the gazetteer is one file of columns that agree, credited to GeoNames, and
 
   /* the Gulf down to its areas */
   const arabic = new Set(GAZ.map(function (p) { return p.ar; }));
-  ['السالمية', 'حولي', 'الجهراء', 'الفروانية', 'الفحيحيل', 'صباح السالم', 'الأحمدي', 'مدينة الكويت', 'الرياض', 'المحرق', 'الشارقة']
+  ['السالمية', 'حولي', 'الجهراء', 'الفروانية', 'الفحيحيل', 'صباح السالم', 'الأحمدي', 'مدينة الكويت', 'الرياض', 'المحرق', 'الشارقة',
+    'كيفان', 'الشويخ', 'الصباحية', 'الجابرية', 'الربيع', 'المدينة المنورة']
     .forEach(function (name) { assert.ok(arabic.has(name), name + ' is in it'); });
+  /* and the grid of Abu Dhabi, whose sectors are numbers, is not */
+  assert.ok(!GAZ.some(function (p) { return /^[A-Za-z]{1,3}_?[0-9]+$/.test(p.la) || p.ar.indexOf('غير معرّف') !== -1; }));
 
   const raw = fs.statSync(PLACES_FILE).size;
   const packed = zlib.gzipSync(PLACES_TEXT, { level: 9 }).length;
-  assert.ok(raw <= 1250000, 'the file stays near a megabyte, got ' + raw);
-  assert.ok(packed <= 450000, 'and travels compressed in under 450 kB, got ' + packed);
+  assert.ok(raw <= 1600000, 'the file stays under 1.6 MB, got ' + raw);
+  assert.ok(packed <= 500000, 'and travels compressed in under 500 kB, got ' + packed);
 });
 
 test('the gazetteer is built by a script anyone can run again, from GeoNames alone', () => {
   const build = fs.readFileSync(path.join(__dirname, '..', 'tools', 'places', 'build.js'), 'utf8');
-  ['cities15000.zip', 'cities1000.zip', 'alternateNamesV2.zip', 'https://download.geonames.org/export/dump/']
+  ['cities15000.zip', 'cities1000.zip', 'alternateNamesV2.zip', 'https://download.geonames.org/export/dump/', "c + '.zip'"]
     .forEach(function (part) { assert.ok(build.indexOf(part) !== -1, 'the build names its source: ' + part); });
   assert.ok(build.indexOf("new Set(['KW', 'SA', 'AE', 'QA', 'BH', 'OM'])") !== -1, 'the Gulf to its towns of a thousand');
+  assert.ok(build.indexOf("const WHOLE = new Set(['KW', 'BH', 'QA']);") !== -1, 'and Kuwait, Bahrain and Qatar to every populated place');
+  assert.ok(build.indexOf("WHOLE.has(c) || f[7] === 'PPLX'") !== -1, 'the quarters of the towns of the other three');
   assert.ok(build.indexOf("require('") !== -1 && !/require\('(?!fs|os|path|zlib|readline|stream)/.test(build),
     'node alone, with nothing to install');
 });
@@ -239,7 +248,9 @@ test('inside Kuwait the reader is told the area they are in, not the country', a
     [29.337, 47.658, 'الجهراء'],
     [29.2775, 47.9586, 'الفروانية'],
     [29.0825, 48.13, 'الفحيحيل'],
-    [29.257, 48.057, 'صباح السالم']
+    [29.257, 48.057, 'صباح السالم'],
+    [29.336, 47.957, 'كيفان'],
+    [29.322, 48.024, 'الجابرية']
   ];
   for (const [lat, lng, name] of areas) {
     await fixAt(win, lat, lng);
@@ -255,6 +266,16 @@ test('inside Kuwait the reader is told the area they are in, not the country', a
   await until(function () { return doc.getElementById('toast').textContent.indexOf('ضُبطت المواقيت على السالمية') !== -1; });
 });
 
+test('in Riyadh the reader is told the quarter, and north Riyadh is no longer the next town', async () => {
+  const { win } = boot();
+  await fixAt(win, 24.80, 46.66);
+  assert.strictEqual(win.App.helpers.place().n, 'الربيع', 'Ar Rabi, a quarter of north Riyadh, where الدرعية was said');
+  assert.strictEqual(win.Store.get('method'), 'Makkah', 'and Riyadh\'s reckoning');
+  const en = boot({ languages: ['en-US'], file: 'en' });
+  await fixAt(en.win, 24.80, 46.66);
+  assert.strictEqual(shownPlace(en.doc), "Ar Rabi'");
+});
+
 test('the gazetteer is fetched only to name a place, as one file that says nothing of where the reader is', async () => {
   const { win } = boot();
   await new Promise(function (r) { setTimeout(r, 20); });
@@ -264,13 +285,14 @@ test('the gazetteer is fetched only to name a place, as one file that says nothi
   assert.deepStrictEqual(asked, ['data/places.json'], 'the same address for every reader, with nothing of the fix in it');
   await fixAt(win, 24.7136, 46.6753);
   assert.strictEqual(win.__asked.filter(function (u) { return u.indexOf('places') !== -1; }).length, 1, 'read once, then kept');
-  assert.strictEqual(win.App.helpers.place().n, 'الرياض');
+  const quarter = nearestInFile(24.7136, 46.6753).place.ar;
+  assert.strictEqual(win.App.helpers.place().n, quarter, 'the quarter of Riyadh it is in');
   assert.strictEqual(win.Store.get('method'), 'Makkah', 'Riyadh still reckons by Umm al-Qura');
 
   /* the next opening, a few steps away, keeps the name it has without reading the file */
   const next = boot({ storage: { 'sunnati.settings': win.localStorage.getItem('sunnati.settings') } });
   await fixAt(next.win, 24.7140, 46.6760);
-  assert.strictEqual(next.win.App.helpers.place().n, 'الرياض');
+  assert.strictEqual(next.win.App.helpers.place().n, quarter);
   assert.ok(!next.win.__asked.some(function (u) { return u.indexOf('places') !== -1; }), 'nothing fetched to say the same name again');
 });
 
@@ -292,15 +314,19 @@ test('the name is written in the reader\'s language: Latin in English, Cyrillic 
   const en = boot({ languages: ['en-US'], file: 'en' });
   await fixAt(en.win, 29.334, 48.076);
   assert.strictEqual(en.win.App.helpers.place().n, 'السالمية', 'the place keeps its Arabic name');
-  assert.strictEqual(shownPlace(en.doc), 'As Salimiyah', 'and English shows the Latin one');
-  assert.strictEqual(en.win.I18n.tx('ضُبطت المواقيت على السالمية'), 'Prayer times set for As Salimiyah', 'in every line that names it');
-  assert.deepStrictEqual(plainCopy(en.win.Store.get('cityNames')), { la: 'As Salimiyah', ru: 'Сальмия' }, 'kept with the place');
+  assert.strictEqual(shownPlace(en.doc), 'Salmiya', 'and English shows the name in English');
+  assert.strictEqual(en.win.I18n.tx('ضُبطت المواقيت على السالمية'), 'Prayer times set for Salmiya', 'in every line that names it');
+  assert.deepStrictEqual(plainCopy(en.win.Store.get('cityNames')), { la: 'Salmiya', ru: 'Сальмия' }, 'kept with the place');
+  await fixAt(en.win, 29.337, 47.658);
+  assert.strictEqual(shownPlace(en.doc), 'Al Jahra', 'the English name GeoNames gives, not its letter by letter Al Jahra\'');
+  await fixAt(en.win, 29.336, 47.957);
+  assert.strictEqual(shownPlace(en.doc), 'Kaifan');
 
   const ru = boot({ languages: ['ru-RU'], file: 'ru' });
   await fixAt(ru.win, 29.334, 48.076);
   assert.strictEqual(shownPlace(ru.doc), 'Сальмия');
   await fixAt(ru.win, 29.0825, 48.13);
-  assert.strictEqual(shownPlace(ru.doc), 'Al Fahahil', 'a place with no Cyrillic name is given its Latin one');
+  assert.strictEqual(shownPlace(ru.doc), 'Fahaheel', 'a place with no Cyrillic name is given its Latin one');
 
   const fa = boot({ languages: ['fa-IR'], file: 'fa' });
   await fixAt(fa.win, 29.334, 48.076);
@@ -330,7 +356,7 @@ test('the name keeps its language after a restart, and a name the table holds is
   const again = boot({ storage: { 'sunnati.settings': first.win.localStorage.getItem('sunnati.settings'), 'sunnati.lang': 'en' }, file: 'en' });
   assert.strictEqual(again.win.I18n.lang, 'en');
   await tick();
-  assert.strictEqual(shownPlace(again.doc), "Al Jahra'", 'named in English from the moment the app opens');
+  assert.strictEqual(shownPlace(again.doc), 'Al Jahra', 'named in English from the moment the app opens');
   assert.ok(!again.win.__asked.some(function (u) { return u.indexOf('places') !== -1; }), 'from what was kept, without the file');
 
   /* a town that shares its name with a prayer does not rename the prayer */
@@ -367,7 +393,7 @@ test('a place stored as near a city is named again from its coordinates at the s
   const { win, doc } = boot({ storage: { 'sunnati.settings': JSON.stringify(settings) } });
   await until(function () { return win.App.helpers.place().n === 'الجهراء'; });
   assert.strictEqual(win.Store.get('city'), 'الجهراء');
-  assert.deepStrictEqual(plainCopy(win.Store.get('cityNames')), { la: "Al Jahra'", ru: 'Эль-Джахра', bn: 'আল জাহরা' });
+  assert.deepStrictEqual(plainCopy(win.Store.get('cityNames')), { la: 'Al Jahra', ru: 'Эль-Джахра', bn: 'আল জাহরা' });
   assert.strictEqual(win.Store.get('method'), 'Ojeiri', 'only the name changes, not the reckoning the reader chose');
   assert.strictEqual(win.Store.get('lat'), 29.3375, 'nor where the place is');
   assert.strictEqual(shownPlace(doc), 'الجهراء');
