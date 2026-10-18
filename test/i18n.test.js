@@ -210,6 +210,27 @@ test('the languages with their own figures count in them, and an address keeps i
   assert.strictEqual(p.textContent, '۴ روز بعد', 'and a second pass changes nothing');
 });
 
+test('Urdu counts in the figures its phones write, and Persian in its own', () => {
+  const ur = boot({ languages: ['ur-PK'], table: { 'صفحة {0}': 'صفحہ {0}' } });
+  assert.strictEqual(ur.win.I18n.tx('صفحة 604'), 'صفحہ 604');
+  const fa = boot({ languages: ['fa-IR'], table: { 'صفحة {0}': 'صفحهٔ {0}' } });
+  assert.strictEqual(fa.win.I18n.tx('صفحة 604'), 'صفحهٔ ۶۰۴');
+});
+
+test('a new reader tells the time the way their language does, until they choose', () => {
+  ['fr-FR', 'tr-TR', 'ru-RU', 'id-ID', 'fa-IR'].forEach(function (phone) {
+    const { win } = boot({ languages: [phone], table: { 'الإعدادات': 'x' } });
+    assert.strictEqual(win.Store.get('clock'), '24', phone + ' runs the day to twenty four hours');
+  });
+  ['en-US', 'ms-MY', 'bn-BD', 'ur-PK', 'ha-NG', 'ar-KW'].forEach(function (phone) {
+    const { win } = boot({ languages: [phone], table: { 'الإعدادات': 'x' } });
+    assert.strictEqual(win.Store.get('clock'), '12', phone + ' keeps the twelve hours');
+  });
+  /* a reader who chose keeps their choice, whatever the language */
+  const chose = boot({ languages: ['fr-FR'], storage: { 'sunnati.settings': JSON.stringify({ clock: '12' }) }, table: { 'الإعدادات': 'x' } });
+  assert.strictEqual(chose.win.Store.get('clock'), '12');
+});
+
 test('Russian nouns change with the number, as the table says', () => {
   const { win } = boot({ languages: ['ru-RU'], table: {
     'بعد {0}': 'через {0}',
@@ -275,20 +296,29 @@ test('the language list names each language in its own words, and choosing one o
 });
 
 test('only the languages whose words ship are offered, and a phone set to another is met in English', async () => {
-  const id = boot({ languages: ['id-ID'], shipped: true, file: 'en' });
-  assert.strictEqual(id.win.I18n.device(), 'en', 'Indonesian has no table yet');
-  assert.strictEqual(id.win.I18n.lang, 'en');
-  const both = boot({ languages: ['tr-TR', 'ar-KW'], shipped: true });
-  assert.strictEqual(both.win.I18n.device(), 'ar', 'the next of the phone\'s languages the app speaks');
+  const SRC = fs.readFileSync(path.join(DOCS, 'js', 'i18n.js'), 'utf8');
+  const READY = JSON.parse(/var READY = (\[[^\]]*\]);/.exec(SRC)[1].replace(/'/g, '"'));
+  const KNOWN = [...SRC.matchAll(/\{ code: '([a-z]+)'/g)].map(function (m) { return m[1]; });
+  /* every language offered has its table, complete as the catalog has it */
+  READY.filter(function (c) { return c !== 'ar'; }).forEach(function (code) {
+    assert.ok(fs.existsSync(path.join(DOCS, 'i18n', code + '.js')), code + ' is offered with no table');
+  });
+  const de = boot({ languages: ['de-DE'], shipped: true, file: 'en' });
+  assert.strictEqual(de.win.I18n.device(), 'en', 'a language the app does not speak');
+  assert.strictEqual(de.win.I18n.lang, 'en');
+  const waiting = KNOWN.filter(function (c) { return READY.indexOf(c) === -1; });
+  if (waiting.length) {
+    const early = boot({ languages: [waiting[0] + '-XX', 'ar-KW'], shipped: true });
+    assert.strictEqual(early.win.I18n.device(), 'ar', 'the next of the phone\'s languages the app speaks');
+    const chosen = boot({ languages: ['en-US'], storage: { 'sunnati.lang': waiting[0] }, shipped: true, file: 'en' });
+    assert.strictEqual(chosen.win.I18n.lang, 'en', 'a language chosen before its words came is read as the phone\'s choice');
+  }
   const listed = boot({ languages: ['ar-KW'], shipped: true });
   listed.win.App.go('settings');
   await tick();
   const values = Array.from(listed.doc.getElementById('settings-lang').options, function (o) { return o.value; });
-  assert.deepStrictEqual(values, ['auto', 'ar', 'en']);
-  assert.deepStrictEqual(Array.from(listed.win.I18n.langs, function (l) { return l.code; }), ['ar', 'en']);
-  /* a language chosen before its words came is read as the phone's choice */
-  const early = boot({ languages: ['en-US'], storage: { 'sunnati.lang': 'fr' }, shipped: true, file: 'en' });
-  assert.strictEqual(early.win.I18n.lang, 'en');
+  assert.deepStrictEqual(values, ['auto'].concat(KNOWN.filter(function (c) { return READY.indexOf(c) !== -1; })));
+  assert.deepStrictEqual(Array.from(listed.win.I18n.langs, function (l) { return l.code; }), KNOWN.filter(function (c) { return READY.indexOf(c) !== -1; }));
 });
 
 test('a picker copies an option written in its own language with its language, so it is never translated', async () => {

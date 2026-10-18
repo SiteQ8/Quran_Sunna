@@ -24,19 +24,23 @@
   if (window.I18n) return;
 
   /* Each language in its own name, the way its script runs, the voice the
-     phone reads it in, and the figures it counts in where they are its own. */
+     phone reads it in, the figures it counts in where they are its own, and
+     the clock it tells the time by. Persian and Bengali write their own
+     figures on a phone, Urdu the ones Arabic and English share, as the phones
+     themselves do; and where the day runs to twenty four hours, a new reader
+     is shown it so until they choose the twelve in the settings. */
   var LANGS = [
     { code: 'ar', name: 'العربية', dir: 'rtl', speech: 'ar-SA' },
     { code: 'en', name: 'English', dir: 'ltr', speech: 'en-US' },
-    { code: 'id', name: 'Bahasa Indonesia', dir: 'ltr', speech: 'id-ID' },
+    { code: 'id', name: 'Bahasa Indonesia', dir: 'ltr', speech: 'id-ID', clock: '24' },
     { code: 'ms', name: 'Bahasa Melayu', dir: 'ltr', speech: 'ms-MY' },
-    { code: 'fr', name: 'Français', dir: 'ltr', speech: 'fr-FR' },
+    { code: 'fr', name: 'Français', dir: 'ltr', speech: 'fr-FR', clock: '24' },
     { code: 'ha', name: 'Hausa', dir: 'ltr', speech: 'ha-NG' },
-    { code: 'tr', name: 'Türkçe', dir: 'ltr', speech: 'tr-TR' },
-    { code: 'ru', name: 'Русский', dir: 'ltr', speech: 'ru-RU' },
+    { code: 'tr', name: 'Türkçe', dir: 'ltr', speech: 'tr-TR', clock: '24' },
+    { code: 'ru', name: 'Русский', dir: 'ltr', speech: 'ru-RU', clock: '24' },
     { code: 'bn', name: 'বাংলা', dir: 'ltr', speech: 'bn-BD', digits: '০১২৩৪৫৬৭৮৯' },
-    { code: 'ur', name: 'اردو', dir: 'rtl', speech: 'ur-PK', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ' },
-    { code: 'fa', name: 'فارسی', dir: 'rtl', speech: 'fa-IR', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ' }
+    { code: 'ur', name: 'اردو', dir: 'rtl', speech: 'ur-PK', comma: '، ' },
+    { code: 'fa', name: 'فارسی', dir: 'rtl', speech: 'fa-IR', digits: '۰۱۲۳۴۵۶۷۸۹', comma: '، ', clock: '24' }
   ];
   var BY_CODE = {};
   LANGS.forEach(function (l) { BY_CODE[l.code] = l; });
@@ -640,6 +644,7 @@
     lang: lang,
     dir: info.dir,
     speech: info.speech,
+    clock: info.clock || '12',
     langs: LANGS.filter(function (l) { return ready(l.code); }).map(function (l) { return { code: l.code, name: l.name, dir: l.dir }; }),
     stored: function () { return read(KEY) || 'auto'; },
     device: fromDevice,
