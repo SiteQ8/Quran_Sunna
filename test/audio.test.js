@@ -444,14 +444,36 @@ test('a reminder in the reciter\'s voice rings the quiet chime, and the recitati
 
 /* ---------------- the radio and the whole surahs ---------------- */
 
+/* The owner's word: nothing of Mishary Alafasy, ever, in any form. Not a
+   station, not a reciter, not a recording, not his name, in the app, its
+   packages or its store pages; and no station that mixes reciters, since no
+   one can say who is heard on it. */
+test('nothing of Mishary Alafasy is anywhere in the app', () => {
+  const ROOT = path.join(__dirname, '..');
+  const BANNED = /alafas|afasy|afasi|العفاسي|العفاسى/i;
+  const found = [];
+  (function walk(dir) {
+    if (!fs.existsSync(dir)) return;
+    fs.readdirSync(dir, { withFileTypes: true }).forEach(function (e) {
+      if (['node_modules', '.git', 'build', '.gradle', '.cxx'].indexOf(e.name) !== -1) return;
+      const p = path.join(dir, e.name);
+      if (BANNED.test(e.name)) found.push(path.relative(ROOT, p));
+      if (e.isDirectory()) { walk(p); return; }
+      if (!/\.(js|mjs|json|html|css|txt|xml|swift|java|kt|yml|plist|md|webmanifest|strings|py)$/.test(e.name)) return;
+      if (BANNED.test(fs.readFileSync(p, 'utf8'))) found.push(path.relative(ROOT, p));
+    });
+  })(ROOT);
+  assert.deepStrictEqual(found.filter((f) => !/^test\//.test(f)), []);
+  const { win } = boot();
+  assert.ok(![...win.RADIO_STATIONS].some((s) => /tarateel/.test(s.url)), 'a station of many reciters');
+});
+
 test('the stations are the addresses the radio list gives today', () => {
   const { win } = boot();
   assert.deepStrictEqual([...win.RADIO_STATIONS].map((s) => s.url), [
-    'https://backup.qurango.net/radio/tarateel',
     'https://backup.qurango.net/radio/abdulrahman_alsudaes',
     'https://backup.qurango.net/radio/abdulbasit_abdulsamad',
     'https://backup.qurango.net/radio/maher',
-    'https://backup.qurango.net/radio/mishary_alafasi',
     'https://backup.qurango.net/radio/saud_alshuraim',
     'https://backup.qurango.net/radio/ahmad_alajmy',
     'https://backup.qurango.net/radio/yasser_aldosari',
