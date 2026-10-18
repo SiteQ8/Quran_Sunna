@@ -830,7 +830,7 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
 .topics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .topic {
   display: flex; align-items: center; justify-content: space-between; gap: 8px;
-  min-height: 52px; padding: 0 12px 0 10px; border-radius: var(--r-sm);
+  min-height: 52px; padding-block: 0; padding-inline: 12px 10px; border-radius: var(--r-sm);
   background: var(--sunken); border: 1px solid var(--line); text-align: start;
 }
 .topic-name { font-size: var(--step--1); font-weight: 600; color: var(--ink); line-height: 1.4; min-width: 0; }
@@ -855,10 +855,10 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
    button sends the picture. */
 .verse-line {
   display: flex; align-items: center; gap: var(--s2);
-  padding: var(--s2) var(--s2) var(--s2) 0; margin-bottom: var(--s2);
+  padding-block: var(--s2); padding-inline: var(--s2) 0; margin-bottom: var(--s2);
   background: var(--raised); border-radius: var(--r-sm); border: 1px solid var(--line);
 }
-.verse-line .search-hit { flex: 1 1 auto; min-width: 0; margin: 0; background: transparent; border: 0; padding: 0 var(--s2) 0 0; }
+.verse-line .search-hit { flex: 1 1 auto; min-width: 0; margin: 0; background: transparent; border: 0; padding: 0; padding-inline-start: var(--s2); }
 .verse-line .dua-share { flex: none; }
 
 @media (max-width: 430px) {
@@ -886,12 +886,11 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
 .tt td { direction: ltr; }
 .tt td .ampm { font-size: .8em; margin-inline-start: 2px; }
 /* AM and PM are wider than the Arabic ص and م, and in the seven columns of a
-   phone they ran the last column off the card by a few points */
-html[dir='ltr'] .tt td .ampm { font-size: .68em; margin-inline-start: 1px; }
-@media (max-width: 380px) { html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 1px; } }
-/* and on the narrowest, where even that does not fit, the column says which
-   half of the day each time is in */
-@media (max-width: 340px) { html[dir='ltr'] .tt td .ampm { display: none; } }
+   phone they ran the last column off the card: the cells keep the table's
+   narrow-phone two points, and under the width of a large phone the column
+   says which half of the day each time is in */
+html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
+@media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
@@ -1901,6 +1900,12 @@ html.touring { overflow: hidden; }
 
 .setting { display: flex; flex-wrap: nowrap; align-items: center; justify-content: space-between; gap: var(--s3); padding: var(--s2) 0; border-bottom: 1px solid var(--line-soft); }
 .setting:last-child { border-bottom: none; }
+/* The language card's second row, the verses' meanings, shows only in another
+   language; hidden, it is still the card's last child and the row above it
+   kept its line over nothing. Here the line is the second row's own, drawn
+   above it and only when it shows. */
+#settings-language .setting { border-bottom: none; }
+#settings-language .setting + .setting:not([hidden]) { border-top: 1px solid var(--line-soft); }
 
 /* A setting row is a small grid: the words on the first line with the switch
    beside them, and any list or button on the line below. The switch belongs
@@ -2420,10 +2425,14 @@ html.book #page-body .leaf:last-child { grid-column: 3; }
    twenty four unit square, so it stays in its place. */
 html[dir='ltr'] use[href='#i-back'], html[dir='ltr'] use[href='#i-next'],
 html[dir='ltr'] use[href='#i-step-next'], html[dir='ltr'] use[href='#i-step-prev'],
-html[dir='ltr'] use[href='#i-surah-next'], html[dir='ltr'] use[href='#i-surah-prev'],
-html[dir='ltr'] use[href='#i-media-next'], html[dir='ltr'] use[href='#i-media-prev'] {
+html[dir='ltr'] use[href='#i-surah-next'], html[dir='ltr'] use[href='#i-surah-prev'] {
   transform: matrix(-1, 0, 0, 1, 24, 0);
 }
+/* Playback is the one row that reads left to right in every language, the
+   previous verse left of the pause and the next right of it, so its icons
+   keep their way and a left to right row keeps their places. */
+html[dir='ltr'] #player-prev { order: 1; }
+html[dir='ltr'] #player-next { order: 3; }
 html[dir='ltr'] [dir='rtl'] use { transform: none; }
 /* Arabic sets its running text tall for the marks above and below its line;
    a Latin line at that height reads as spaced apart, so the interface's own
@@ -2452,6 +2461,7 @@ html[dir='ltr']:not(.book) #v-page .reader-bar use[href='#i-back'] { transform: 
 .verse-pair > .ayah-block { text-align: start; }
 .meaning { font-size: calc(var(--step-0) * var(--wide-read, 1)); line-height: 1.75; color: var(--ink-2); margin-top: var(--s2); }
 .meaning-notes { font-size: var(--step--1); line-height: 1.7; color: var(--ink-3); margin-top: var(--s2); white-space: pre-line; }
-.meaning-ref { font-size: .68em; line-height: 0; vertical-align: super; margin-inline-start: 1px; color: var(--ink-3); }
+.meaning-ref { font-size: .75em; line-height: 0; vertical-align: super; margin-inline-start: 2px; color: var(--ink-3); }
+.said-meaning { display: block; margin-top: 2px; }
 .meaning-source { text-align: center; margin-top: var(--s4); }
 #daily-meaning .meaning { text-align: center; }
