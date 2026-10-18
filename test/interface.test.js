@@ -793,15 +793,37 @@ test('the theme switch writes the document attribute', () => {
   assert.strictEqual(doc.documentElement.getAttribute('data-theme'), 'light');
 });
 
-test('the text size slider changes the reading scale', () => {
+test('the text size slider sizes the whole app, and the reading on to the end of the slider', () => {
   const { win, doc } = boot();
   win.App.go('settings');
   const slider = doc.getElementById('settings-font');
+  const html = doc.documentElement;
+  assert.strictEqual(html.style.fontSize, '', 'at 100% the page keeps its own measure');
+  slider.value = '115';
+  fire(win, slider, 'input');
+  assert.strictEqual(html.style.fontSize, '18.4px', 'the interface grows with the setting');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1', 'and the reading with it');
   slider.value = '140';
   fire(win, slider, 'input');
   assert.strictEqual(win.Store.get('fontScale'), 140);
-  assert.strictEqual(doc.documentElement.style.getPropertyValue('--quran-scale'), '1.4');
+  assert.strictEqual(html.style.fontSize, '20.8px', 'the interface stops at 130%');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1.0769', 'the reading goes the rest of the way, 140% in all');
   assert.strictEqual(doc.getElementById('font-value').textContent, '140%');
+  slider.value = '100';
+  fire(win, slider, 'input');
+  assert.strictEqual(html.style.fontSize, '');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1');
+});
+
+test('on android the words are drawn at the app\'s size, not grown by the phone\'s font setting', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'MainActivity.java'), 'utf8');
+  assert.match(main, /s\.setTextZoom\(100\);/, 'the new package asks the web view for no zoom of its own');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'docs', 'js', 'app.js'), 'utf8');
+  /* and the package already installed is answered from the page: the zoom it
+     adds is read off a word of a known size and taken back out */
+  assert.match(app, /function measureTextZoom\(\) \{[\s\S]*?getBoundingClientRect\(\)\.height \/ 100/);
+  assert.match(app, /var root = 16 \* ui \/ textZoom;/);
+  assert.match(app, /textZoom = measureTextZoom\(\);\s*applyFont\(\);/);
 });
 
 test('the vibrate switch toggles and reports its state', () => {
