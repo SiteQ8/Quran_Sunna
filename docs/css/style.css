@@ -385,7 +385,6 @@ html:not([lang='ar']) #hijri-date, html:not([lang='ar']) #greg-date { display: i
 .place-line.is-stacked { flex-wrap: nowrap; align-items: flex-start; }
 .place-line.is-stacked .place-tap { flex-direction: column; flex-wrap: nowrap; align-items: flex-start; gap: var(--s1); }
 .place-line.is-stacked .place-where { min-height: 44px; }
-.place-line.is-measuring, .place-line.is-measuring .place-tap { flex-wrap: nowrap; white-space: nowrap; }
 
 /* The reading under the compass, on its own ground. */
 .compass-panel {
