@@ -89,11 +89,36 @@ function sacredText(text) {
   return bare.length > 1 && SACRED_TEXT.indexOf(bare) !== -1;
 }
 
+/* Urdu and Persian are written in the Arabic script, so in them a line is
+   Arabic left as it was by what only Arabic writes, its ي and ك, its ة and ى,
+   or by being a line of the catalog exactly as the app writes it. */
+const OWN_SCRIPT = !probe && (lang === 'ur' || lang === 'fa');
+const KEYS = new Set(JSON.parse(fs.readFileSync(path.join(__dirname, 'catalog.json'), 'utf8'))
+  .map(function (e) { return e.key.replace(/[ \t\n\r\f]+/g, ' ').trim(); }));
+/* and a line the table itself puts there, a name Urdu writes as Arabic does,
+   is the language's own */
+const OWN_LINES = new Set();
+if (OWN_SCRIPT && fs.existsSync(path.join(DOCS, 'i18n', lang + '.js'))) {
+  const src = fs.readFileSync(path.join(DOCS, 'i18n', lang + '.js'), 'utf8');
+  const own = JSON.parse(src.slice(src.indexOf('I18n.add(') + 'I18n.add('.length, src.lastIndexOf(');')));
+  Object.keys(own).forEach(function (k) {
+    (typeof own[k] === 'string' ? [own[k]] : Object.values(own[k])).forEach(function (v) {
+      OWN_LINES.add(String(v).replace(/[ \t\n\r\f]+/g, ' ').trim());
+    });
+  });
+}
+function arabicLeft(key) {
+  if (!AR.test(key)) return false;
+  if (!OWN_SCRIPT) return true;
+  if (OWN_LINES.has(key)) return false;
+  return /[\u0629\u0643\u0649\u064A]/.test(key.replace(/\uFDFA/g, '')) || KEYS.has(key);
+}
+
 const found = new Map();
 let where = '';
 function seen(text, kind, el) {
   const key = String(text).replace(/[ \t\n\r\f]+/g, ' ').trim();
-  if (!key || !AR.test(key)) return;
+  if (!key || !arabicLeft(key)) return;
   if (kind !== 'text' && kind !== 'attr' && sacredText(key)) return;
   let e = found.get(key);
   if (!e) { e = { text: key, kind: kind, where: [], in: [] }; found.set(key, e); }

@@ -2816,9 +2816,16 @@ test('the app carries its own typefaces rather than fetching them', () => {
 test('the worker keeps the typefaces so they survive going offline', () => {
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf('./css/fonts.css') !== -1, 'the face sheet must be kept');
-  const kept = (sw.match(/\.\/fonts\/[^']+\.woff2/g) || []).length;
-  const onDisk = fs.readdirSync(path.join(DOCS, 'fonts')).filter((f) => /\.woff2$/.test(f)).length;
-  assert.strictEqual(kept, onDisk, 'every face on disk should be kept for offline');
+  const kept = (sw.match(/\.\/fonts\/[^']+\.woff2/g) || []).map((f) => f.slice('./fonts/'.length));
+  /* the faces of a script only some readers write are kept the first time a
+     page in it asks for them, and carried across every update after that */
+  const script = new RegExp(/var SCRIPT_FACES = \/(.+)\/;/.exec(sw)[1]);
+  assert.match(sw, /SCRIPT_FACES\.test\(at\)/, 'an update carries the script faces across');
+  fs.readdirSync(path.join(DOCS, 'fonts')).filter((f) => /\.woff2$/.test(f)).forEach(function (f) {
+    assert.ok(kept.indexOf(f) !== -1 || script.test('/fonts/' + f), f + ' should be kept for offline');
+    assert.ok(!(kept.indexOf(f) !== -1 && script.test('/fonts/' + f)), f + ' is in the shell and among the script faces');
+  });
+  kept.forEach(function (f) { assert.ok(fs.existsSync(path.join(DOCS, 'fonts', f)), 'the shell keeps a face that is not there: ' + f); });
 });
 
 test('nothing in the page reaches out to another site for something it needs', () => {
