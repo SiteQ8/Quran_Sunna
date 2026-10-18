@@ -49,6 +49,11 @@
       else if (code === 0x0621) piece = '';
       else if (code === 0x0626 || code === 0x0649) piece = '\u064A';
       else if (code === 0x0629) piece = '\u0647';
+      /* an Urdu or Persian keyboard writes the yeh, the kaf and the heh with
+         letters of its own, and its reader is looking for the same word */
+      else if (code === 0x06CC || code === 0x06D2) piece = '\u064A';
+      else if (code === 0x06A9) piece = '\u0643';
+      else if (code === 0x06C1 || code === 0x06BE || code === 0x06C0 || code === 0x06C3) piece = '\u0647';
       else if (/\s/.test(src[i])) {
         piece = (out.length && out[out.length - 1] !== ' ') ? ' ' : '';
       } else piece = src[i];
