@@ -8,7 +8,7 @@
    The mushaf and the icons never change under the same name, so those stay
    cache first and cost nothing after the first visit. */
 
-var VERSION = 'sunnati-v8.87.82';
+var VERSION = 'sunnati-v8.87.84';
 
 var SHELL = [
   './',
@@ -22,6 +22,7 @@ var SHELL = [
   './js/mushaf.js',
   './js/verse-video.js',
   './js/boot.js',
+  './js/i18n.js',
   './js/app.js',
   './data/surahs.js',
   './data/azkar.js',
@@ -95,7 +96,12 @@ var SHELL = [
   './fonts/plex-arabic-600-arabic.woff2',
   './fonts/plex-arabic-600-latin.woff2',
   './fonts/plex-arabic-700-arabic.woff2',
-  './fonts/plex-arabic-700-latin.woff2'
+  './fonts/plex-arabic-700-latin.woff2',
+  './fonts/plex-arabic-300-latin-ext.woff2',
+  './fonts/plex-arabic-400-latin-ext.woff2',
+  './fonts/plex-arabic-500-latin-ext.woff2',
+  './fonts/plex-arabic-600-latin-ext.woff2',
+  './fonts/plex-arabic-700-latin-ext.woff2'
 ];
 
 /* Big and unchanging, so reading them from the cache is always right. */
@@ -163,8 +169,9 @@ function dueNotifications() {
         var key = new Date(p.at).toDateString() + ':' + p.key;
         if (p.at <= now && now - p.at < 6 * 3600000 && !seen[key]) {
           seen[key] = true;
-          jobs.push(self.registration.showNotification('حان وقت ' + p.name, {
-            body: 'الله أكبر، حيّ على الصلاة', tag: key, lang: 'ar', dir: 'rtl',
+          /* in the reader's language, as the page hands it over */
+          jobs.push(self.registration.showNotification(p.title || 'حان وقت ' + p.name, {
+            body: p.body || 'الله أكبر، حيّ على الصلاة', tag: key, lang: plan.lang || 'ar', dir: plan.dir || 'rtl',
             icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
           }));
         }
@@ -172,8 +179,8 @@ function dueNotifications() {
     }
     if (plan.salawatEvery && now - (plan.salawatAt || 0) >= plan.salawatEvery * 60000) {
       plan.salawatAt = now;
-      jobs.push(self.registration.showNotification('صلِّ على النبي ﷺ', {
-        body: 'اللهم صلِّ وسلِّم على نبينا محمد', tag: 'salawat', lang: 'ar', dir: 'rtl',
+      jobs.push(self.registration.showNotification(plan.salawatTitle || 'صلِّ على النبي ﷺ', {
+        body: plan.salawatBody || 'اللهم صلِّ وسلِّم على نبينا محمد', tag: 'salawat', lang: plan.lang || 'ar', dir: plan.dir || 'rtl',
         icon: 'icons/icon-192.png', badge: 'icons/icon-96.png', data: { url: './' }
       }));
     }
@@ -195,7 +202,7 @@ self.addEventListener('install', function (event) {
          put together from files of two deployments */
       return Promise.all(SHELL.map(function (url) {
         return cache.add(new Request(url, { cache: 'reload' })).catch(function () { return null; });
-      }));
+      })).then(function () { return carryOver(cache); });
     })
   );
   /* A new worker used to sit and wait for every tab of the site to close before
@@ -216,6 +223,32 @@ self.addEventListener('activate', function (event) {
     }).then(function () { return self.clients.claim(); })
   );
 });
+
+/* What a reader fetched for themselves is not thrown away by an update. The
+   table of the language they read the app in is fetched again, since it
+   changes with the app, so a reader offline the day after an update still
+   reads it in their language. The tafsir and the meanings never change under
+   the same name, so the copy already kept is moved across as it is. */
+function carryOver(cache) {
+  return caches.keys().then(function (names) {
+    return Promise.all(names.filter(function (n) { return n !== VERSION && n.indexOf('sunnati-v') === 0; }).map(function (n) {
+      return caches.open(n).then(function (old) {
+        return old.keys().then(function (requests) {
+          return Promise.all(requests.map(function (r) {
+            var at = new URL(r.url).pathname;
+            if (/\/i18n\/[a-z]+\.js$/.test(at)) {
+              return cache.add(new Request(r.url, { cache: 'reload' })).catch(function () { return null; });
+            }
+            if (/\/data\/(tafsir-[a-z]+|meanings\/[a-z0-9_-]+)\.json$/.test(at)) {
+              return old.match(r).then(function (hit) { return hit ? cache.put(r, hit) : null; });
+            }
+            return null;
+          }));
+        });
+      });
+    }));
+  }).catch(function () { return null; });
+}
 
 function keep(request, response) {
   if (!response || response.status !== 200 || response.type !== 'basic') return response;
@@ -315,8 +348,9 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  /* The tafsir: two and a half megabytes fetched once, on first use, and kept. */
-  if (url.origin === location.origin && /\/data\/tafsir-[a-z]+\.json$/.test(url.pathname)) {
+  /* The tafsir, two and a half megabytes, and the meanings of the Quran in a
+     reader's language, about one: fetched once, on first use, and kept. */
+  if (url.origin === location.origin && (/\/data\/tafsir-[a-z]+\.json$/.test(url.pathname) || /\/data\/meanings\/[a-z0-9_-]+\.json$/.test(url.pathname))) {
     event.respondWith(
       caches.match(request).then(function (hit) {
         if (hit) return hit;
