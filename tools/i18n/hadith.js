@@ -9,8 +9,14 @@
    docs/data/meanings/hadith-<lang>.json, keyed by the hadith's number in the
    app. The text is kept as published, with the id it is read by there.
 
+   A hadith the interface quotes in a line of its own, «مَن دلّ على خيرٍ فله
+   مثلُ أجرِ فاعله» beside the button that shares the app, is kept under q by
+   a name the page gives it: HadeethEnc translates the whole report, and the
+   Prophet's words are its last quotation, taken from it as they stand.
+
      node tools/i18n/hadith.js           read HadeethEnc and write
-     node tools/i18n/hadith.js --tidy    the files already written, tidied again */
+     node tools/i18n/hadith.js --tidy    the files already written, tidied again
+     node tools/i18n/hadith.js --quoted  only the quoted ones, into those files */
 'use strict';
 
 const fs = require('fs');
@@ -21,6 +27,9 @@ const ROOT = path.join(__dirname, '..', '..');
 const OUT = path.join(ROOT, 'docs', 'data', 'meanings');
 const LANGS = ['en', 'ur', 'id', 'tr', 'fr', 'bn', 'fa', 'ms', 'ru', 'ha'];
 const API = 'https://hadeethenc.com/api/v1/';
+
+/* the quoted hadiths, by the name the page gives them, and their HadeethEnc id */
+const QUOTED = { dal: '5354' };
 
 /* The app's typography writes no long dash: the few a translation has become
    the hyphen, where they stand, every word and space as published. */
@@ -46,6 +55,51 @@ function bare(text) {
     .replace(/[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06EDـ]/g, '')
     .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه')
     .replace(/[^\u0621-\u064A]+/g, ' ').trim();
+}
+
+/* The Prophet's words in a translated report are its last quotation: from
+   the last opening mark to the end, whichever marks the language uses, and
+   without them. */
+function lastQuote(text) {
+  const s = String(text || '');
+  const CLOSE = '\u00BB\u201D"'+'\u201C', OPEN = '\u00AB\u201C"'+'\u201E';
+  let end = -1;
+  for (let i = s.length - 1; i >= 0 && end < 0; i--) if (CLOSE.indexOf(s[i]) !== -1) end = i;
+  for (let i = end - 1; i >= 0; i--) if (OPEN.indexOf(s[i]) !== -1) return s.slice(i + 1, end).trim();
+  return '';
+}
+
+async function quoted() {
+  const all = {};
+  for (const name of Object.keys(QUOTED)) {
+    const id = QUOTED[name];
+    const one = await json(API + 'hadeeths/one/?language=ar&id=' + id);
+    for (const lang of LANGS) {
+      if ((one.translations || []).indexOf(lang) === -1) continue;
+      const tr = await json(API + 'hadeeths/one/?language=' + lang + '&id=' + id);
+      const words = lastQuote(tr.hadeeth);
+      if (!words) continue;
+      (all[lang] = all[lang] || {})[name] = { id: id, t: dashes(words), r: dashes(String(tr.attribution || '').trim()) };
+      await wait(80);
+    }
+  }
+  return all;
+}
+
+function writeQuoted(all) {
+  LANGS.forEach(function (lang) {
+    const file = path.join(OUT, 'hadith-' + lang + '.json');
+    if (!fs.existsSync(file)) return;
+    const out = JSON.parse(fs.readFileSync(file, 'utf8'));
+    out.q = all[lang] || {};
+    fs.writeFileSync(file, JSON.stringify(out));
+    console.log(lang + ': ' + Object.keys(out.q).length + ' quoted');
+  });
+}
+
+if (process.argv[2] === '--quoted') {
+  quoted().then(writeQuoted).catch(function (e) { console.error(e.message); process.exit(1); });
+  return;
 }
 
 /* the files already written, with the dashes as this tool now writes them */
@@ -114,4 +168,5 @@ if (process.argv[2] === '--tidy') {
     fs.writeFileSync(path.join(OUT, 'hadith-' + lang + '.json'), JSON.stringify(out));
     console.log(lang + ': ' + Object.keys(out.h).length + ' hadiths');
   }
+  writeQuoted(await quoted());
 })().catch(function (e) { console.error(e.message); process.exit(1); });

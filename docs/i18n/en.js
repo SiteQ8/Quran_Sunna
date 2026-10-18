@@ -1172,7 +1172,7 @@ window.I18n && window.I18n.add({
  "إذا رأيت التطبيق لا يتحدّث، أو ظهر لك شيء قديم، فاضغط هذا الزر، فهو يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة من الموقع، وتبقى بياناتك وأذكارك وعلاماتك كما هي.": "If the app is not updating, or you see something out of date, tap this button: it deletes the copy of the app saved on your device and downloads the latest version from the site, while your data, adhkar and bookmarks stay as they are.",
  "انشر الخير": "Spread the good",
  "شارك التطبيق": "Share the app",
- "«مَن دلّ على خيرٍ فله مثلُ أجرِ فاعله» رواه مسلم": "“One who guides to something good has a reward similar to that of its doer” (Muslim)",
+ "رواه مسلم": "narrated by Muslim",
  "شارك": "Share",
  "قيّم التطبيق": "Rate the app",
  "تقييمك في المتجر يدلّ غيرك عليه": "Your rating in the store guides others to it",

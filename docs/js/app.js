@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.83';
+  var VERSION = '8.87.84';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3298,13 +3298,15 @@
     return held.loading;
   }
 
+  /* the switch in the settings is the verses': it lets a surah run as in the
+     mushaf, and a hadith or a dhikr keeps its meaning under it either way */
   function bookOf(name) {
-    return meaningsOn() && books[name] ? books[name].book || null : null;
+    return meaningLang() && books[name] ? books[name].book || null : null;
   }
 
   /* a book's meanings are fetched once and the list drawn again with them */
   function withBook(name, redraw) {
-    if (meaningsOn() && !(books[name] && books[name].book)) loadBook(name).then(function (book) { if (book) redraw(); }, function () {});
+    if (meaningLang() && !(books[name] && books[name].book)) loadBook(name).then(function (book) { if (book) redraw(); }, function () {});
   }
 
   function saidIn(text) {
@@ -8267,6 +8269,22 @@
       var row = showMeanings.closest('.setting');
       if (row) row.hidden = !meaningLang();
       setSwitch(showMeanings, Store.get('meanings') !== false);
+    }
+    /* the hadith the share row quotes stays as it was said, and in another
+       language its meaning stands under it, from HadeethEnc like the forty */
+    var said = $('share-said');
+    if (said) {
+      var quotes = bookOf('hadith');
+      var quote = quotes && quotes.q ? quotes.q[said.getAttribute('data-said')] : null;
+      said.hidden = !quote;
+      if (quote) {
+        said.textContent = quote.t;
+        said.setAttribute('lang', meaningLang());
+        said.setAttribute('dir', window.I18n.dir);
+        said.setAttribute('translate', 'no');
+      } else {
+        withBook('hadith', function () { if (state.view === 'settings') renderSettings(); });
+      }
     }
     var credit = $('about-meanings');
     if (credit) {
