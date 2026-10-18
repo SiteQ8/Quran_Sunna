@@ -218,6 +218,58 @@ test('Urdu counts in the figures its phones write, and Persian in its own', () =
   assert.strictEqual(fa.win.I18n.tx('صفحة 604'), 'صفحهٔ ۶۰۴');
 });
 
+test('in a right-to-left page a time with a Latin mark is one phrase, its figures before its mark', () => {
+  const table = { 'ص': 'AM', 'م': 'PM', 'منتصف الليل': 'آدھی رات' };
+  const ur = boot({ languages: ['ur-PK'], table: table });
+  assert.strictEqual(ur.win.I18n.tx('10:54 م'), '\u206610:54\u00A0PM\u2069', 'set apart, or the order of the two directions shows PM 10:54');
+  const night = ur.doc.createElement('p');
+  night.innerHTML = '<span class="night-name">منتصف الليل</span> 10:54 م';
+  ur.doc.body.appendChild(night);
+  ur.win.I18n.apply(night);
+  assert.strictEqual(night.textContent, 'آدھی رات \u206610:54\u00A0PM\u2069');
+  /* a left-to-right page needs nothing of it */
+  const en = boot({ languages: ['en-US'], table: table });
+  assert.strictEqual(en.win.I18n.tx('10:54 م'), '10:54\u00A0PM');
+});
+
+test('on a Friday the noon prayer is named as the prayer, and the day keeps its own name', async () => {
+  const friday = new Date(2026, 9, 16, 9, 30);
+  const { win, doc } = boot({ languages: ['en-US'], file: 'en', now: friday });
+  win.App.go('home');
+  await tick();
+  const names = Array.from(doc.querySelectorAll('#windows .window-name')).map(function (n) { return n.textContent; });
+  assert.ok(names.indexOf("Jumu'ah") !== -1, 'the strip names the prayer: ' + names.join(', '));
+  assert.ok(names.indexOf('Friday') === -1);
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('أذان الجمعة'), "Jumu'ah adhan");
+  assert.strictEqual(tx('حان وقت الجمعة'), "It's time for Jumu'ah");
+  assert.strictEqual(tx('الجمعة 16 أكتوبر'), 'Friday 16\u00A0October', 'a date still says the day');
+  /* every table names the prayer, and the places that hold a prayer's name say so */
+  const CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'i18n', 'catalog.json'), 'utf8'));
+  ['أذان {0:prayer}', 'صلاة {0:prayer}، {1}', 'حان وقت {0:prayer}', 'حان وقت صلاة {0:prayer}', 'prayer:الجمعة'].forEach(function (key) {
+    assert.ok(CATALOG.some(function (e) { return e.key === key; }), key + ' is in the catalog');
+  });
+});
+
+test('a month over its timetable is said the way a heading says it', async () => {
+  const { win, doc } = boot({ languages: ['ru-RU'], file: 'ru' });
+  win.App.go('timetable');
+  await tick();
+  assert.strictEqual(doc.getElementById('tt-month').textContent, 'Октябрь\u00A02026', 'alone, the month is not the month of a day');
+  assert.strictEqual(win.I18n.tx('19 أكتوبر 2026'), '19\u00A0октября\u00A02026', 'after a day it is still that day\'s month');
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.cal-month::first-letter \{ text-transform: uppercase; \}/);
+});
+
+test('the compass keeps its north mark where north is still the Arabic letter', () => {
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\):not\(\[lang='ur'\]\):not\(\[lang='fa'\]\) \.compass-north \{ display: none; \}/);
+  ['ur', 'fa'].forEach(function (code) {
+    const src = fs.readFileSync(path.join(DOCS, 'i18n', code + '.js'), 'utf8');
+    assert.ok(src.indexOf('"compass:ش": "ش"') !== -1, code + ' names north with the same letter');
+  });
+});
+
 test('a new reader tells the time the way their language does, until they choose', () => {
   ['fr-FR', 'tr-TR', 'ru-RU', 'id-ID', 'fa-IR'].forEach(function (phone) {
     const { win } = boot({ languages: [phone], table: { 'الإعدادات': 'x' } });
@@ -347,7 +399,10 @@ test('the home card holds its pieces together when the words are longer than the
   /* the six windows fall back to the two rows the large text already had, by
      measuring the words in the reader's language, not by a guess at a width */
   assert.match(CSS, /\.windows\.is-two-rows \{ flex-wrap: wrap; row-gap: 4px; \}/);
-  assert.match(APP, /function fitWindows\(host, html\) \{[\s\S]*?I18n\.apply\(host\)[\s\S]*?scrollWidth > host\.clientWidth \+ 1\) host\.classList\.add\('is-two-rows'\)/);
+  assert.match(APP, /function fitWindows\(host, html\) \{[\s\S]*?I18n\.apply\(host\)[\s\S]*?scrollWidth > host\.clientWidth \+ 1 \|\| namesWrap\(host\)\) host\.classList\.add\('is-two-rows'\)/);
+  /* and a name of two words that wrapped inside its window, which leaves its
+     time lower than the others, counts as not fitting */
+  assert.match(APP, /function namesWrap\(host\) \{[\s\S]*?selectNodeContents\(names\[i\]\)[\s\S]*?getClientRects\(\)/);
   /* the button that fetches the place stays beside the place's name */
   assert.match(CSS, /\.place-line\.is-stacked \.place-tap \{ flex-direction: column;/);
   assert.match(APP, /function fitPlaceLine\(\) \{[\s\S]*?I18n\.apply\(line\)[\s\S]*?classList\.add\('is-stacked'\)/);

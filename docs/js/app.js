@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.88';
+  var VERSION = '8.87.89';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1533,7 +1533,7 @@
       var state = marks[m.key] || '';
       if (state) cls += ' is-marked mark-' + state;
       var tag = prayer && came ? 'button' : 'div';
-      return '<' + tag + ' class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
+      return '<' + tag + ' class="' + cls + '" role="listitem" data-tr="prayer" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
         (m.key === marked ? (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES ? '، الوقت الحالي' : '، الصلاة القادمة') : '') + (state ? '، ' + esc(PRAYER_STATE_NAMES[state]) : '') +
         (prayer && came ? '، اضغط لتعلّمها' : '') + '"' +
         (prayer && came ? ' data-mark-prayer="' + m.key + '"' : '') + '>' +
@@ -1564,7 +1564,25 @@
     windowsFit = key;
     host.classList.remove('is-two-rows');
     if (window.I18n && window.I18n.apply) window.I18n.apply(host);
-    if (host.scrollWidth > host.clientWidth + 1) host.classList.add('is-two-rows');
+    if (host.scrollWidth > host.clientWidth + 1 || namesWrap(host)) host.classList.add('is-two-rows');
+  }
+
+  /* A name of two words, «طلوع آفتاب» or «Fitowar rana», wraps inside its
+     window before the strip runs out of room, and its time then sits lower
+     than the other five: the lines each name was laid out in are counted, and
+     two rows give every name the room for one. */
+  function namesWrap(host) {
+    var range = document.createRange && document.createRange();
+    if (!range || !range.getClientRects) return false;
+    var names = host.querySelectorAll('.window-name');
+    for (var i = 0; i < names.length; i++) {
+      range.selectNodeContents(names[i]);
+      var lines = range.getClientRects();
+      for (var j = 1; j < lines.length; j++) {
+        if (Math.abs(lines[j].top - lines[0].top) > 2) return true;
+      }
+    }
+    return false;
   }
 
   function fontSizeOf(el) {

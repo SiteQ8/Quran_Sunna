@@ -1792,8 +1792,12 @@ input, textarea, [contenteditable] {
 .compass-rose { transition: transform .18s ease-out;
    position: absolute; inset: 0; transition: transform .2s linear; }
 /* the north tick runs through the letter that names north, which a Latin N
-   shows as a stroke across it: in a translated page the letter is the mark */
-html:not([lang='ar']) .compass-north { display: none; }
+   shows as a stroke across it: in a translated page the letter is the mark,
+   except in Urdu and Persian, whose north is the same «ش» as the Arabic */
+html:not([lang='ar']):not([lang='ur']):not([lang='fa']) .compass-north { display: none; }
+/* a month over its days is a heading, and a heading starts with a capital in
+   the languages that have them, though their tables write the month small */
+html:not([lang='ar']) .cal-month::first-letter { text-transform: uppercase; }
 .compass-read { text-align: center; font-size: var(--step-3); font-weight: 300; direction: ltr; font-variant-numeric: tabular-nums; }
 
 /* ---------- misc ---------- */

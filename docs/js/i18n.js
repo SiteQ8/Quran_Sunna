@@ -49,7 +49,7 @@
      how they run and how they count, and join the list in the settings and
      the phone's own choice as their tables come: a phone set to one of them
      meanwhile is met in English, never with a page that falls back half way. */
-  var READY = ['ar', 'en'];
+  var READY = ['ar', 'en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn', 'ur', 'fa'];
   function ready(code) { return !!BY_CODE[code] && READY.indexOf(code) !== -1; }
 
   var KEY = 'sunnati.lang';
@@ -240,6 +240,14 @@
      a line, as the strip of the six prayers holds them with a joiner */
   var KEEP_TOGETHER = '\u00A0';
   var HOUR = /^(\d{1,2})[\s\u2060]*(ص|م)$/;
+  /* In a right-to-left page a time with a Latin mark, «10:54 PM», is a phrase
+     read left to right, and unless it is set apart the order of the two
+     directions puts its mark before its figures: «PM 10:54». */
+  function clockOf(t, half, depth) {
+    var mark = lookup(half, depth) || half;
+    var said = t + KEEP_TOGETHER + mark;
+    return info.dir === 'rtl' && /[A-Za-z]/.test(mark) ? '\u2066' + said + '\u2069' : said;
+  }
 
   /* the kind of name the line being read holds, while it is read: a place
      of a composed line says it, or the page around the words does with
@@ -255,7 +263,7 @@
     if (hit0 !== null) return form(exact[hit0], null);
     if (!AR.test(text)) return text;
     var time = TIME.exec(text) || (kind === 'time' ? HOUR.exec(text) : null);
-    if (time) return time[1] + KEEP_TOGETHER + (lookup(time[2], depth + 1) || time[2]);
+    if (time) return clockOf(time[1], time[2], depth + 1);
     if (depth > 3) return null;
     /* a piece the page joined to the one before it with a comma carries
        the comma with it */
@@ -514,7 +522,7 @@
     }
     if (got === null) {
       var times = core.replace(/(\d{1,2}:\d{2})[\s\u2060]+(ص|م)(?=\s|$)/g, function (all, t, half) {
-        return t + KEEP_TOGETHER + (lookup(half, 1) || half);
+        return clockOf(t, half, 1);
       });
       if (AR.test(times)) return figures(raw);
       got = times;
