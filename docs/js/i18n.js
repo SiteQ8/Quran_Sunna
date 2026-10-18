@@ -236,6 +236,9 @@
      says in the language's own way. An hour alone, «5 م», is a time only in
      the time picker, which says so; elsewhere it is five metres. */
   var TIME = /^(\d{1,2}:\d{2})[\s\u2060]*(ص|م)$/;
+  /* a time and its mark are one thing to read and never part at the end of
+     a line, as the strip of the six prayers holds them with a joiner */
+  var KEEP_TOGETHER = '\u00A0';
   var HOUR = /^(\d{1,2})[\s\u2060]*(ص|م)$/;
 
   /* the kind of name the line being read holds, while it is read: a place
@@ -252,7 +255,7 @@
     if (hit0 !== null) return form(exact[hit0], null);
     if (!AR.test(text)) return text;
     var time = TIME.exec(text) || (kind === 'time' ? HOUR.exec(text) : null);
-    if (time) return time[1] + ' ' + (lookup(time[2], depth + 1) || time[2]);
+    if (time) return time[1] + KEEP_TOGETHER + (lookup(time[2], depth + 1) || time[2]);
     if (depth > 3) return null;
     /* a piece the page joined to the one before it with a comma carries
        the comma with it */
@@ -324,7 +327,14 @@
       }
       out.push(got);
     }
-    return out.join(' ');
+    /* and a figure keeps the word after it, a day its month and a time its
+       mark, and a month its year, so a line may end after the weekday, never
+       between 19 and October or 4:22 and AM */
+    return out.reduce(function (all, word, i) {
+      if (!i) return word;
+      var bind = /^[\d:.\/]+$/.test(out[i - 1]) || /^\d{4}$/.test(word);
+      return all + (bind ? KEEP_TOGETHER : ' ') + word;
+    }, '');
   }
 
   /* What the page put into a composed line is translated too, when it is
@@ -504,7 +514,7 @@
     }
     if (got === null) {
       var times = core.replace(/(\d{1,2}:\d{2})[\s\u2060]+(ص|م)(?=\s|$)/g, function (all, t, half) {
-        return t + ' ' + (lookup(half, 1) || half);
+        return t + KEEP_TOGETHER + (lookup(half, 1) || half);
       });
       if (AR.test(times)) return figures(raw);
       got = times;

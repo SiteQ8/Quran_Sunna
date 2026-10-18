@@ -180,13 +180,14 @@ test('whole lines, composed lines, lists, names among figures and times all find
   const tx = win.I18n.tx;
   assert.strictEqual(tx('سورة البقرة، آية 255'), 'Surah Al-Baqarah, verse 255');
   assert.strictEqual(tx('بعد 3 أيام'), 'in 3 days', 'a count inside a line, never a line inside a count');
-  assert.strictEqual(tx('5:30 ص'), '5:30 AM');
-  assert.strictEqual(tx('الإثنين 19 أكتوبر 2026'), 'Monday 19 October 2026');
+  /* a time keeps its mark and a day its month at the end of a line */
+  assert.strictEqual(tx('5:30 ص'), '5:30\u00A0AM');
+  assert.strictEqual(tx('الإثنين 19 أكتوبر 2026'), 'Monday 19\u00A0October\u00A02026');
   assert.strictEqual(tx('الفجر 15، بلا علامة'), 'Fajr 15, not marked');
   assert.strictEqual(tx('عمر بن الخطاب رضي الله عنه، مسلم، حديث جبريل'),
     'Umar ibn al-Khattab (may Allah be pleased with him), Muslim, the hadith of Jibril');
-  assert.strictEqual(tx('1/10 4:22 ص 5:41 ص 11:38 ص'), '1/10 4:22 AM 5:41 AM 11:38 AM');
-  assert.strictEqual(tx('الفجر 21 و23'), 'Fajr 21 and 23');
+  assert.strictEqual(tx('1/10 4:22 ص 5:41 ص 11:38 ص'), '1/10\u00A04:22\u00A0AM 5:41\u00A0AM 11:38\u00A0AM');
+  assert.strictEqual(tx('الفجر 21 و23'), 'Fajr 21\u00A0and 23');
   /* a line the table does not know stays as it is written */
   assert.strictEqual(tx('سطر لا يعرفه الجدول'), 'سطر لا يعرفه الجدول');
   /* and the words handed to another app are put in a line at a time */
@@ -334,4 +335,37 @@ test('a picker copies an option written in its own language with its language, s
   const items = Array.from(doc.querySelectorAll('.picker-panel .picker-item span'), function (s) { return s.textContent; });
   assert.ok(items.indexOf('العربية') !== -1, 'Arabic is still called العربية, got ' + items.join(' | '));
   assert.ok(items[0].indexOf('Device language') === 0, 'while the app\'s own words are translated: ' + items[0]);
+});
+
+/* ---------------- the home card in a longer language ---------------- */
+
+test('the home card holds its pieces together when the words are longer than the Arabic', () => {
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const APP = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* each date whole, the second under the first when they do not share a line */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) #hijri-date, html:not\(\[lang='ar'\]\) #greg-date \{ display: inline-block; \}/);
+  /* the six windows fall back to the two rows the large text already had, by
+     measuring the words in the reader's language, not by a guess at a width */
+  assert.match(CSS, /\.windows\.is-two-rows \{ flex-wrap: wrap; row-gap: 4px; \}/);
+  assert.match(APP, /function fitWindows\(host, html\) \{[\s\S]*?I18n\.apply\(host\)[\s\S]*?scrollWidth > host\.clientWidth \+ 1\) host\.classList\.add\('is-two-rows'\)/);
+  /* the button that fetches the place stays beside the place's name */
+  assert.match(CSS, /\.place-line\.is-stacked \.place-tap \{ flex-direction: column;/);
+  assert.match(APP, /function fitPlaceLine\(\) \{[\s\S]*?I18n\.apply\(line\)[\s\S]*?classList\.add\('is-stacked'\)/);
+  /* the night's two marks and the day's tally wrap whole */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.night-line \{ flex-wrap: wrap;/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.meter-head \{ flex-wrap: wrap;/);
+  /* and the Arabic page is drawn as it was: nothing measured here changes it
+     while its words fit */
+  const { win, doc } = boot({ languages: ['ar-KW'] });
+  win.App.go('home');
+  assert.ok(!doc.getElementById('windows').classList.contains('is-two-rows'));
+  assert.ok(!doc.getElementById('place-line').classList.contains('is-stacked'));
+});
+
+test('the English table says a recording\'s size and a city\'s timetable once each', () => {
+  const { win } = boot({ languages: ['en-US'], file: 'en' });
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('12.5 م.ب'), '12.5 MB', 'a size beside its unit, which no place of a line used to find');
+  assert.strictEqual(tx('مواقيت أكتوبر 2026 لدبي'), 'October 2026 prayer times for Dubai', 'the lam is the line\'s own «for», said once');
+  assert.strictEqual(tx('الحساب والمظهر والنسخ'), 'Calculation, appearance and backup', 'the reckoning of the times, not an account');
 });
