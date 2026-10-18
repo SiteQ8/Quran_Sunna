@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.84';
+  var VERSION = '8.87.85';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3385,8 +3385,9 @@
 
   /* The reciter is kept by id. A number stored by an older version counted
      into a list that began with a reciter since removed, so it is carried
-     over: the first became the default, the rest moved up one. */
-  var OLD_RECITER_IDS = ['ar.alafasy', 'ar.abdulsamad', 'ar.abdurrahmaansudais', 'ar.mahermuaiqly', 'ar.saoodshuraym',
+     over: the first, the one removed, became the default, the rest moved up
+     one. */
+  var OLD_RECITER_IDS = [null, 'ar.abdulsamad', 'ar.abdurrahmaansudais', 'ar.mahermuaiqly', 'ar.saoodshuraym',
     'ar.husary', 'ar.husarymujawwad', 'ar.minshawi', 'ar.shaatree', 'ar.ahmedajamy', 'ar.hudhaify', 'ar.hanirifai',
     'ar.ibrahimakhbar', 'ar.muhammadayyoub', 'ar.muhammadjibreel', 'ar.abdullahbasfar', 'ar.aymanswoaid'];
 
