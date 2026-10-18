@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.86';
+  var VERSION = '8.87.87';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -10452,6 +10452,14 @@
       homeFit = window.setTimeout(refitHome, 120);
     });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitHome);
+    /* a face is fetched only when a page first writes in its script, after
+       the first faces are ready, and it changes how wide the words are too */
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        window.clearTimeout(homeFit);
+        homeFit = window.setTimeout(refitHome, 60);
+      });
+    }
     computeQibla();
     refreshTimes();
     wire();
