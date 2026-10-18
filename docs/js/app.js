@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.85';
+  var VERSION = '8.87.94';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -479,12 +479,46 @@
     }
   }
 
+  /* The size of the words is the app's own, the one chosen in its settings,
+     and not the phone's: the android web view grows every word by the phone's
+     font setting while the boxes around them keep their size, which is what
+     broke the pages, and the setting said 100% all the while. The interface
+     grows with the chosen size as far as 130%, and the Quran and the adhkar,
+     which are read rather than tapped, go on growing to the slider's end. */
+  var UI_MOST = 1.3;
+  var UI_LEAST = 0.85;
+  var textZoom = 1;
+
+  /* how much larger the android web view draws a word than it was asked to,
+     read off a word of a known size; the new package asks it for none */
+  function measureTextZoom() {
+    if (!bridge() || inIosApp() || !document.body) return 1;
+    var probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;width:100vw;' +
+      'font-size:100px;line-height:1;white-space:nowrap;';
+    probe.textContent = 'H';
+    document.body.appendChild(probe);
+    var drawn = probe.getBoundingClientRect().height / 100;
+    probe.parentNode.removeChild(probe);
+    return drawn > 0.5 && drawn < 3 && Math.abs(drawn - 1) > 0.02 ? drawn : 1;
+  }
+
   function applyFont() {
     var scale = Store.get('fontScale') / 100;
-    document.documentElement.style.setProperty('--quran-scale', String(scale));
+    var ui = Math.min(UI_MOST, Math.max(UI_LEAST, scale));
+    var root = 16 * ui / textZoom;
+    var html = document.documentElement;
+    if (Math.abs(root - 16) < 0.01) html.style.removeProperty('font-size');
+    else html.style.fontSize = root.toFixed(3) + 'px';
+    /* the reading text is written in the page's own measure, which now
+       carries the interface's share, so it takes only the rest */
+    html.style.setProperty('--quran-scale', String(Math.round(scale / ui * 10000) / 10000));
     if ($('font-value')) $('font-value').textContent = ar(Store.get('fontScale')) + '%';
     /* the spread takes the reader's size as a scale on the fitted page */
     refitSpread();
+    /* and what was measured on the home card is measured again in the new size */
+    refitHome();
   }
 
   var ACCENT_TOKEN = {
@@ -721,8 +755,9 @@
     if (typeof s.lat === 'number' && typeof s.lng === 'number') {
       state.place = {
         n: s.city || 'موقعك', lat: s.lat, lng: s.lng,
-        tz: s.tzOffset, z: s.zone, method: s.method
+        tz: s.tzOffset, z: s.zone, method: s.method, names: s.cityNames || null
       };
+      sayPlace(state.place);
     } else {
       state.place = DEFAULT_PLACE;
     }
@@ -827,11 +862,15 @@
 
   function setPlace(next, remember) {
     state.place = next;
+    sayPlace(next);
     if (remember) {
       Store.setMany({
         lat: next.lat, lng: next.lng, city: next.n,
         tzOffset: typeof next.tz === 'number' ? next.tz : null,
-        zone: next.z || null
+        zone: next.z || null,
+        /* its names in the other scripts, so it is named in the reader's
+           language after a restart too */
+        cityNames: next.names || null
       });
       if (next.method) Store.set('method', next.method);
     }
@@ -842,10 +881,113 @@
     renderQibla();
   }
 
-  /* Naming where a person is, without asking any server. The cities the app
-     already carries are enough to say "الكويت" or "قرب الدوحة", and anything
-     far from all of them falls back to the coordinates themselves. */
-  function nameForPlace(lat, lng) {
+  /* The page writes the place's name in Arabic wherever it puts it into a
+     line, so the engine is told what that name is in the language it draws
+     in, and every such line says it by itself: the card, the timetable, the
+     share, the qibla. Persian and Urdu read the Arabic script with their own
+     yeh and kaf, Russian the Cyrillic name and Bengali the Bengali one where
+     there is one, and every other language the Latin name. A name the
+     language's own table already holds, a city of the list or a word that
+     happens to be a place too, keeps the table's word: a town called المغرب
+     must not rename the prayer. */
+  var placeWords = {};
+  function sayPlace(p) {
+    var engine = window.I18n;
+    if (!engine || !engine.add || engine.lang === 'ar' || !p || !p.n || !p.names) return;
+    var said = localName(p, engine.lang);
+    if (!said || said === p.n) return;
+    if (!placeWords[p.n] && engine.has && engine.has(p.n)) return;
+    placeWords[p.n] = true;
+    var word = {};
+    word[p.n] = said;
+    engine.add(word);
+  }
+
+  function localName(p, lang) {
+    var names = p.names || {};
+    if (lang === 'fa' || lang === 'ur') return p.n.replace(/ي/g, 'ی').replace(/ك/g, 'ک');
+    if (lang === 'ru' && names.ru) return names.ru;
+    if (lang === 'bn' && names.bn) return names.bn;
+    return names.la || p.n;
+  }
+
+  /* ---------------- the name of the place ---------------- */
+
+  /* The towns of the world and the Gulf's own areas, each with its names in
+     the scripts the app is read in, built from GeoNames by
+     tools/places/build.js into one file. It is the same file for every
+     reader and is fetched only when a place has to be named, so asking for
+     it says nothing about where the reader is: the nearest place is found
+     here, on the device, as the times are. It is read once, and a fetch that
+     fails is tried again the next time a name is wanted. */
+  var PLACES_URL = 'data/places.json';
+  /* a reader farther than this from every place in it is given their
+     coordinates, as one far from every listed city was before */
+  var NAME_KM = 120;
+  var gazetteer = null;
+  var gazetteerComing = null;
+
+  function loadPlaces() {
+    if (gazetteer) return Promise.resolve(gazetteer);
+    if (gazetteerComing) return gazetteerComing;
+    if (typeof window.fetch !== 'function') return Promise.resolve(null);
+    gazetteerComing = window.fetch(PLACES_URL).then(function (res) {
+      if (!res || !res.ok) throw new Error('no places');
+      return res.json();
+    }).then(function (data) {
+      gazetteer = readPlaces(data);
+      return gazetteer;
+    }).catch(function () {
+      gazetteerComing = null;
+      return null;
+    });
+    return gazetteerComing;
+  }
+
+  /* Written by columns: each latitude and longitude in hundredths of a
+     degree as its step from the place before, and each kind of name as one
+     string, the places parted by «|». */
+  function readPlaces(data) {
+    var n = data.lat.length;
+    var g = { n: n, lat: [], lng: [], ar: data.ar.split('|'), la: data.la.split('|'), ru: data.ru.split('|'), bn: data.bn.split('|') };
+    if (data.lng.length !== n || g.ar.length !== n || g.la.length !== n || g.ru.length !== n || g.bn.length !== n) {
+      throw new Error('the columns of the places do not agree');
+    }
+    for (var i = 0, y = 0, x = 0; i < n; i++) {
+      y += data.lat[i];
+      x += data.lng[i];
+      g.lat.push(y / 100);
+      g.lng.push(x / 100);
+    }
+    return g;
+  }
+
+  /* The nearest place in the gazetteer. They are compared on a flat map
+     drawn to the latitude, which keeps the order of places this near, and
+     only the nearest is measured along the ground. */
+  function nearestPlace(lat, lng) {
+    var g = gazetteer;
+    if (!g) return null;
+    var squeeze = Math.cos(lat * Math.PI / 180);
+    var best = -1;
+    var least = Infinity;
+    for (var i = 0; i < g.n; i++) {
+      var dy = g.lat[i] - lat;
+      if (dy > 2 || dy < -2) continue;
+      var dx = Math.abs(g.lng[i] - lng);
+      if (dx > 180) dx = 360 - dx;
+      dx *= squeeze;
+      var d = dy * dy + dx * dx;
+      if (d < least) { least = d; best = i; }
+    }
+    if (best === -1 || PrayerEngine.between(lat, lng, g.lat[best], g.lng[best]) > NAME_KM) return null;
+    var names = { la: g.la[best] };
+    if (g.ru[best]) names.ru = g.ru[best];
+    if (g.bn[best]) names.bn = g.bn[best];
+    return { n: g.ar[best] || g.la[best], names: names };
+  }
+
+  function nearestCity(lat, lng) {
     if (typeof CITIES === 'undefined') return null;
     var best = null;
     for (var i = 0; i < CITIES.length; i++) {
@@ -853,12 +995,70 @@
       var km = PrayerEngine.between(lat, lng, c.lat, c.lng);
       if (!best || km < best.km) best = { city: c, km: km };
     }
-    if (!best) return null;
-    if (best.km <= 25) return { n: best.city.n, z: best.city.z, method: best.city.method };
-    if (best.km <= 120) {
-      return { n: 'قرب ' + best.city.n, z: best.city.z, method: best.city.method };
-    }
-    return null;
+    return best;
+  }
+
+  /* Naming where a person is, without asking any server: the nearest place
+     in the gazetteer, however far within NAME_KM, and never near anything,
+     since a reader is in a place and not beside one. The zone and the
+     reckoning belong to the country, so they still come from the nearest
+     listed city within 120 km. Until the gazetteer has come, a listed city
+     names a place within 25 km of it and anywhere else is given by its
+     coordinates. names holds the place's other names when the gazetteer gave
+     them, nothing when it was read and had no place so near, and is null
+     when it was not there to be read. */
+  function nameForPlace(lat, lng) {
+    var city = nearestCity(lat, lng);
+    var rule = city && city.km <= 120 ? city.city : null;
+    var spot = nearestPlace(lat, lng);
+    var n = spot ? spot.n : (!gazetteer && city && city.km <= 25) ? city.city.n : coordsLabel(lat, lng);
+    return {
+      n: n,
+      names: spot ? spot.names : gazetteer ? {} : null,
+      z: rule ? rule.z : null,
+      method: rule ? rule.method : null
+    };
+  }
+
+  function sameNames(a, b) {
+    if (!a || !b) return !a && !b;
+    return a.la === b.la && a.ru === b.ru && a.bn === b.bn;
+  }
+
+  /* Names the place again from its coordinates: at once from what is in
+     hand, and again once the gazetteer has come if it gives another name. A
+     name the gazetteer gave is never put back to a lesser one while it is
+     away, and the zone and the reckoning stay as they were set. Answers once
+     the name is settled, or after four seconds, since a fetch on a poor line
+     takes as long as it likes. */
+  function nameAgain(p) {
+    var named = function () {
+      var here = state.place;
+      /* the reader may have moved on, or picked a city, while it came */
+      if (!here || (here !== p && (here.lat !== p.lat || here.lng !== p.lng))) return;
+      if (!gazetteer && here.names) return;
+      var near = nameForPlace(here.lat, here.lng);
+      if (near.n === here.n && sameNames(near.names, here.names)) return;
+      setPlace({ n: near.n, names: near.names, lat: here.lat, lng: here.lng, tz: here.tz, z: here.z }, true);
+    };
+    named();
+    var timer = 0;
+    var waited = new Promise(function (done) { timer = window.setTimeout(done, 4000); });
+    var came = loadPlaces().then(named).catch(function () { /* the place stands, only its name waits */ })
+      .then(function () { window.clearTimeout(timer); });
+    return Promise.race([came, waited]);
+  }
+
+  /* A place the older code named «قرب» a listed city, and one a fix named
+     before the gazetteer could be read, is named again from where it is at
+     the start, whether or not the phone is asked where it is today. */
+  function settlePlaceName() {
+    var s = Store.settings();
+    if (typeof s.lat !== 'number' || typeof s.lng !== 'number') return null;
+    var near = String(s.city || '').indexOf('قرب ') === 0;
+    var unnamed = s.placeFrom === 'fix' && !s.cityNames;
+    if (!near && !unnamed) return null;
+    return nameAgain(place());
   }
 
   function coordsLabel(lat, lng) {
@@ -867,19 +1067,26 @@
     return Math.abs(lat).toFixed(2) + '° ' + ns + '، ' + Math.abs(lng).toFixed(2) + '° ' + ew;
   }
 
-  /* Takes a fix and makes it the place. Returns whether the place moved. */
-  function adoptFix(pos) {
+  /* Takes a fix and makes it the place at once, so the times follow without
+     waiting, then calls back with whether the place moved once its name is
+     settled. Returns whether it moved as far as the name known now can say,
+     for a caller that cannot wait. */
+  function adoptFix(pos, then) {
     var tz = -new Date().getTimezoneOffset() / 60;
     var zone = null;
     try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || null; } catch (e) { zone = null; }
     var lat = pos.coords.latitude, lng = pos.coords.longitude;
     var near = nameForPlace(lat, lng);
     var before = place();
-    var moved = !before || before.n !== (near ? near.n : coordsLabel(lat, lng));
-    var next = {
-      n: near ? near.n : coordsLabel(lat, lng),
-      lat: lat, lng: lng, tz: tz, z: (near && near.z) || zone
-    };
+    var was = before ? before.n : null;
+    var next = { n: near.n, names: near.names, lat: lat, lng: lng, tz: tz, z: near.z || zone };
+    /* a fix a few steps from where the gazetteer last named keeps that name,
+       and the gazetteer is not read for it */
+    if (!gazetteer && before && before !== DEFAULT_PLACE && before.names &&
+        PrayerEngine.between(lat, lng, before.lat, before.lng) < 1) {
+      next.n = before.n;
+      next.names = before.names;
+    }
     /* The reckoning follows the place: every listed city carries the method
        its own authority uses, and a fix that named the city without taking
        its method left five capitals on the Ojeiri table, which is Kuwait's.
@@ -893,12 +1100,15 @@
        as long as they stayed in their city, since the place had not moved. So
        the method remembers where it came from: only one set by hand is kept. */
     if (Store.get('methodFrom') !== 'hand') {
-      next.method = near ? near.method : 'MWL';
+      next.method = near.method || 'MWL';
       Store.set('methodFrom', 'fix');
     }
     setPlace(next, true);
     Store.set('placeFrom', 'fix');
-    return moved;
+    var settled = function () { if (typeof then === 'function') then(place().n !== was); };
+    if (next.names) settled();
+    else nameAgain(next).then(settled);
+    return next.n !== was;
   }
 
   function locate(then) {
@@ -908,8 +1118,8 @@
     }
     toast('جاري تحديد موقعك');
     window.navigator.geolocation.getCurrentPosition(function (pos) {
-      adoptFix(pos);
-      toast('ضُبطت المواقيت على ' + place().n);
+      /* the place is taken at once, and the word waits for its name */
+      adoptFix(pos, function () { toast('ضُبطت المواقيت على ' + place().n); });
       if (typeof then === 'function') then();
     }, function () {
       toast('تعذّر تحديد الموقع، فاختر مدينة من القائمة');
@@ -924,9 +1134,10 @@
     if (Store.get('placeFrom') === 'pick') return done(true);
     if (!window.navigator || !window.navigator.geolocation) return done(false);
     window.navigator.geolocation.getCurrentPosition(function (pos) {
-      var moved = adoptFix(pos);
-      if (moved) toast('ضُبطت المواقيت على ' + place().n);
-      done(true);
+      adoptFix(pos, function (moved) {
+        if (moved) toast('ضُبطت المواقيت على ' + place().n);
+        done(true);
+      });
     }, function () {
       done(false);
     }, { enableHighAccuracy: false, maximumAge: 600000, timeout: 8000 });
@@ -1524,7 +1735,7 @@
        is up, so the mark moves to dhuhr rather than staying on sunrise. */
     var sinceAdhan = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
     var marked = (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES) ? c.prev.key : c.next.key;
-    host.innerHTML = c.marks.map(function (m) {
+    var html = c.marks.map(function (m) {
       var cls = 'window';
       if (m.key === marked) cls += ' is-now';
       else if (m.at < c.now) cls += ' is-past';
@@ -1533,7 +1744,7 @@
       var state = marks[m.key] || '';
       if (state) cls += ' is-marked mark-' + state;
       var tag = prayer && came ? 'button' : 'div';
-      return '<' + tag + ' class="' + cls + '" role="listitem" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
+      return '<' + tag + ' class="' + cls + '" role="listitem" data-tr="prayer" aria-label="' + esc(m.ar + ' ' + clockText(m.at)) +
         (m.key === marked ? (sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES ? '، الوقت الحالي' : '، الصلاة القادمة') : '') + (state ? '، ' + esc(PRAYER_STATE_NAMES[state]) : '') +
         (prayer && came ? '، اضغط لتعلّمها' : '') + '"' +
         (prayer && came ? ' data-mark-prayer="' + m.key + '"' : '') + '>' +
@@ -1542,7 +1753,95 @@
         (state ? '<div class="window-mark" aria-hidden="true">' + icon(state === 'missed' ? 'close' : 'check') + '</div>' : '') +
         '</' + tag + '>';
     }).join('');
+    host.innerHTML = html;
+    fitWindows(host, html);
+    /* the place line is drawn far less often than this, but the room and the
+       size of the words can change while the screen stays open */
+    var line = $('place-line');
+    if (line && line.getAttribute('data-fit') !== host.clientWidth + '|' + fontSizeOf(line)) fitPlaceLine();
     renderNightLine();
+  }
+
+  /* The six windows share one line while their words fit it. The phone's own
+     text size grows the words and not the card, and another language writes
+     longer ones than the Arabic, so whether they fit is measured, in the
+     reader's language, and when they do not they stand in two rows of three
+     instead of running off the card. The strip is drawn every second, so it
+     is measured again only when what it holds or the room it has changes. */
+  var windowsFit = '';
+  function fitWindows(host, html) {
+    var key = html + '|' + host.clientWidth + '|' + fontSizeOf(host);
+    if (key === windowsFit) return;
+    windowsFit = key;
+    host.classList.remove('is-two-rows');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(host);
+    if (host.scrollWidth > host.clientWidth + 1 || namesWrap(host)) host.classList.add('is-two-rows');
+  }
+
+  /* A name of two words, «طلوع آفتاب» or «Fitowar rana», wraps inside its
+     window before the strip runs out of room, and its time then sits lower
+     than the other five: the lines each name was laid out in are counted, and
+     two rows give every name the room for one. */
+  function namesWrap(host) {
+    var range = document.createRange && document.createRange();
+    if (!range || !range.getClientRects) return false;
+    var names = host.querySelectorAll('.window-name');
+    for (var i = 0; i < names.length; i++) {
+      range.selectNodeContents(names[i]);
+      var lines = range.getClientRects();
+      for (var j = 1; j < lines.length; j++) {
+        if (Math.abs(lines[j].top - lines[0].top) > 2) return true;
+      }
+    }
+    return false;
+  }
+
+  function fontSizeOf(el) {
+    return window.getComputedStyle ? window.getComputedStyle(el).fontSize : '';
+  }
+
+  /* The place and its calendar share one line while they fit it; when they do
+     not, the calendar stands under the place, and the button that fetches the
+     place stays beside its name. Measured with both held on one line. */
+  function fitPlaceLine() {
+    var line = $('place-line');
+    if (!line || !line.firstChild) return;
+    /* while the home is hidden nothing has a size, so it is fitted when shown */
+    if (!line.getClientRects().length) { line.removeAttribute('data-fit'); return; }
+    line.classList.remove('is-stacked');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(line);
+    if (placeWraps(line)) line.classList.add('is-stacked');
+    var strip = $('windows');
+    line.setAttribute('data-fit', (strip ? strip.clientWidth : 0) + '|' + fontSizeOf(line));
+  }
+
+  /* The line is laid out as it is and read back, since the browser breaks it
+     to a fraction of a pixel and a width rounded to whole pixels missed a line
+     one pixel too long: while the button, the place and its calendar share a
+     row, they share its middle too. */
+  function placeWraps(line) {
+    var parts = line.querySelectorAll('.place-locate, .place-where, .place-how');
+    var mid = null;
+    for (var i = 0; i < parts.length; i++) {
+      var box = parts[i].getBoundingClientRect();
+      if (!box.height) continue;
+      var at = (box.top + box.bottom) / 2;
+      if (mid === null) mid = at;
+      else if (Math.abs(at - mid) > 4) return true;
+    }
+    return false;
+  }
+
+  /* after the faces arrive and whenever the room changes, both are measured
+     again, since either changes how wide the words are */
+  function refitHome() {
+    var w = $('windows');
+    if (w) { windowsFit = ''; fitWindows(w, w.innerHTML); }
+    fitPlaceLine();
+    var tt = $('tt-table');
+    if (tt && tt.firstChild) fitTimetable(tt);
+    var path = $('umrah-path');
+    if (path && path.firstChild) fitJourney(path);
   }
 
   /* The night's own two marks, which are not prayers and so are not in the
@@ -2876,6 +3175,7 @@
           '<span class="place-where">' + icon('pin') + esc(p.n) + '</span>' +
           ' <span class="place-how">تقويم ' + esc(methodName(Store.get('method'))) + '</span>' +
         '</button>';
+      fitPlaceLine();
     }
   }
 
@@ -4900,7 +5200,8 @@
 
   function megabytes(bytes) {
     var mb = bytes / 1048576;
-    return (mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
+    /* a figure the language's own table can find beside its unit */
+    return ar(mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10) + ' م.ب';
   }
 
   /* Inside the android package the app rings by itself, so the row about the
@@ -6470,6 +6771,36 @@
   /* The path across the head of the screen, and a word about where you are.
      A checklist tells you what is left; a journey tells you where you stand,
      and these are not the same thing to someone standing in a crowd. */
+  /* The names of the stops stand whole under their marks, a long word a
+     little past its stop where the card has the room. When the phone's text
+     is so large that two names would touch, or one would pass the card, the
+     names are set a step smaller, and if even then they touch a word may
+     break anywhere, as it always may in the Arabic. */
+  function fitJourney(path) {
+    path.classList.remove('is-small', 'is-tight');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(path);
+    if (!journeyTouches(path)) return;
+    path.classList.add('is-small');
+    if (journeyTouches(path)) path.classList.add('is-tight');
+  }
+
+  function journeyTouches(path) {
+    var card = path.parentNode && path.parentNode.getBoundingClientRect ? path.parentNode.getBoundingClientRect() : path.getBoundingClientRect();
+    if (!card.width) return false;
+    var spans = Array.prototype.map.call(path.querySelectorAll('.journey-name'), function (el) {
+      var r = document.createRange();
+      r.selectNodeContents(el);
+      return r.getBoundingClientRect();
+    }).sort(function (a, b) { return a.left - b.left; });
+    /* touching is touching: two names 3 pixels apart still read as two, and
+       a name 3 pixels inside the card is still inside it */
+    for (var i = 0; i < spans.length; i++) {
+      if (i && spans[i].left < spans[i - 1].right) return true;
+      if (spans[i].left < card.left || spans[i].right > card.right) return true;
+    }
+    return false;
+  }
+
   function renderUmrahJourney(done) {
     var path = $('umrah-path');
     var now = $('umrah-now');
@@ -6484,6 +6815,7 @@
           icon(i < at ? 'check' : stage.ic) + '</span>' +
           '<span class="journey-name">' + esc(stage.t) + '</span></li>';
       }).join('');
+      fitJourney(path);
     }
 
     if (!now) return;
@@ -7868,9 +8200,22 @@
     }).join('');
 
     table.innerHTML = head + '<tbody>' + body + '</tbody>';
+    fitTimetable(table);
 
     var current = table.querySelector('tr.is-today');
     if (current && current.scrollIntoView) current.scrollIntoView({ block: 'center' });
+  }
+
+  /* Seven columns of times fit a phone, until the phone's own text size or a
+     language's longer marks for the half of the day push the last column off
+     the card; then each column says which half of the day it is in, as it
+     does on the narrowest phones, and the marks are left out. */
+  function fitTimetable(table) {
+    var box = table.parentNode;
+    if (!box) return;
+    table.classList.remove('is-tight');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(table);
+    if (box.scrollWidth > box.clientWidth + 1) table.classList.add('is-tight');
   }
 
   function stepTimetable(by) {
@@ -10335,6 +10680,7 @@
     Store.prune();
     restoreTasbih();
     applyTheme();
+    textZoom = measureTextZoom();
     applyFont();
     applyAccess();
     applyBook();
@@ -10348,11 +10694,26 @@
       });
       if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitSpread);
     }
+    var homeFit = 0;
+    window.addEventListener('resize', function () {
+      window.clearTimeout(homeFit);
+      homeFit = window.setTimeout(refitHome, 120);
+    });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitHome);
+    /* a face is fetched only when a page first writes in its script, after
+       the first faces are ready, and it changes how wide the words are too */
+    if (document.fonts && document.fonts.addEventListener) {
+      document.fonts.addEventListener('loadingdone', function () {
+        window.clearTimeout(homeFit);
+        homeFit = window.setTimeout(refitHome, 60);
+      });
+    }
     computeQibla();
     refreshTimes();
     wire();
     followAddress();
     renderSettings();
+    settlePlaceName();
     /* the eid greets the reader once, on the days around it */
     window.setTimeout(offerEid, 1200);
     /* The walkthrough waits for the opening to be gone: the page's own goes
@@ -10395,6 +10756,7 @@
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
+      loadPlaces: loadPlaces, nearestPlace: nearestPlace, nameAgain: nameAgain, settlePlaceName: settlePlaceName, adoptFix: adoptFix, localName: localName,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,

@@ -79,6 +79,11 @@ function note(key, kind, where, filled) {
 let holes = {};
 /* the code that hands a surah's name to a line */
 const SURAH_HOLE = /\b(meta|firstMeta|lastMeta|sm|done)\.ar\b|surahMeta\([^)]*\)\s*\|\|\s*\{\}\)\.ar|^esc\(m\.ar\)$/;
+/* the code that hands a prayer's name to a line about a prayer: on a Friday
+   the noon prayer is الجمعة, the day's own name, and a table that calls the
+   day one thing and the prayer another needs to know which it is reading */
+const PRAYER_HOLE = /^(c\.(prev|next)\.ar|PRAYER_NAMES\[\w+\]|name(\.replace\(.*\))?)$/;
+const PRAYER_LINE = /أذان|صلاة|وقت/;
 
 function emit(segment, kind, where) {
   let n = 0;
@@ -89,7 +94,8 @@ function emit(segment, kind, where) {
     /* a surah's name is told apart from the same word as a prayer's or a
        day's, الفجر, العصر, الجمعة, and from ص after a time */
     const surah = type !== NUM && SURAH_HOLE.test(hole);
-    return '{' + (type === NUM ? '#' : '') + (n++) + (surah ? ':surah' : '') + '}';
+    const prayer = type !== NUM && !surah && PRAYER_HOLE.test(hole) && PRAYER_LINE.test(segment);
+    return '{' + (type === NUM ? '#' : '') + (n++) + (surah ? ':surah' : prayer ? ':prayer' : '') + '}';
   });
   /* «النسخة {#0}{1}»: what the page adds after the last place is a piece of
      its own, joined with a comma, so the line is listed without it */
@@ -358,6 +364,15 @@ function fromData(rel, paths) {
 }
 
 /* Lines the code makes in a way no reading of it finds. */
+/* the Friday prayer, whose name is the day's, as a place about a prayer
+   reads it */
+note('prayer:الجمعة', 'text', 'js/app.js prayerName');
+/* a month that heads a timetable before its year is said alone, which some
+   languages say otherwise than the month after a day: «октября» after 19,
+   «Октябрь» over the month */
+['يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو', 'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'].forEach(function (month) {
+  note('month:' + month, 'text', 'index.html #tt-month');
+});
 /* the halves of the day the prayer engine writes after a time */
 note('ص', 'text', 'js/prayer-engine.js format');
 note('م', 'text', 'js/prayer-engine.js format');

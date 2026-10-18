@@ -62,8 +62,14 @@ public class MainActivity extends Activity {
         /* the same as the iPhone wrapper, so the two feel alike */
         web.setVerticalScrollBarEnabled(false);
         web.setHorizontalScrollBarEnabled(false);
+        /* nor does the page stretch after the finger past its top or its end,
+           which android draws over a web view of its own accord */
+        web.setOverScrollMode(View.OVER_SCROLL_NEVER);
         WebSettings s = web.getSettings();
         s.setJavaScriptEnabled(true);
+        /* the words are drawn at the size the app's own setting asks for, as
+           on the iPhone, not grown by the phone's font size behind its back */
+        s.setTextZoom(100);
         s.setDomStorageEnabled(true);
         s.setGeolocationEnabled(true);
         s.setMediaPlaybackRequiresUserGesture(false);

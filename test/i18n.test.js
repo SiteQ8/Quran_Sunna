@@ -180,13 +180,14 @@ test('whole lines, composed lines, lists, names among figures and times all find
   const tx = win.I18n.tx;
   assert.strictEqual(tx('سورة البقرة، آية 255'), 'Surah Al-Baqarah, verse 255');
   assert.strictEqual(tx('بعد 3 أيام'), 'in 3 days', 'a count inside a line, never a line inside a count');
-  assert.strictEqual(tx('5:30 ص'), '5:30 AM');
-  assert.strictEqual(tx('الإثنين 19 أكتوبر 2026'), 'Monday 19 October 2026');
+  /* a time keeps its mark and a day its month at the end of a line */
+  assert.strictEqual(tx('5:30 ص'), '5:30\u00A0AM');
+  assert.strictEqual(tx('الإثنين 19 أكتوبر 2026'), 'Monday 19\u00A0October\u00A02026');
   assert.strictEqual(tx('الفجر 15، بلا علامة'), 'Fajr 15, not marked');
   assert.strictEqual(tx('عمر بن الخطاب رضي الله عنه، مسلم، حديث جبريل'),
     'Umar ibn al-Khattab (may Allah be pleased with him), Muslim, the hadith of Jibril');
-  assert.strictEqual(tx('1/10 4:22 ص 5:41 ص 11:38 ص'), '1/10 4:22 AM 5:41 AM 11:38 AM');
-  assert.strictEqual(tx('الفجر 21 و23'), 'Fajr 21 and 23');
+  assert.strictEqual(tx('1/10 4:22 ص 5:41 ص 11:38 ص'), '1/10\u00A04:22\u00A0AM 5:41\u00A0AM 11:38\u00A0AM');
+  assert.strictEqual(tx('الفجر 21 و23'), 'Fajr 21\u00A0and 23');
   /* a line the table does not know stays as it is written */
   assert.strictEqual(tx('سطر لا يعرفه الجدول'), 'سطر لا يعرفه الجدول');
   /* and the words handed to another app are put in a line at a time */
@@ -208,6 +209,79 @@ test('the languages with their own figures count in them, and an address keeps i
   assert.strictEqual(p.textContent, '۴ روز بعد');
   fa.win.I18n.apply(p);
   assert.strictEqual(p.textContent, '۴ روز بعد', 'and a second pass changes nothing');
+});
+
+test('Urdu counts in the figures its phones write, and Persian in its own', () => {
+  const ur = boot({ languages: ['ur-PK'], table: { 'صفحة {0}': 'صفحہ {0}' } });
+  assert.strictEqual(ur.win.I18n.tx('صفحة 604'), 'صفحہ 604');
+  const fa = boot({ languages: ['fa-IR'], table: { 'صفحة {0}': 'صفحهٔ {0}' } });
+  assert.strictEqual(fa.win.I18n.tx('صفحة 604'), 'صفحهٔ ۶۰۴');
+});
+
+test('in a right-to-left page a time with a Latin mark is one phrase, its figures before its mark', () => {
+  const table = { 'ص': 'AM', 'م': 'PM', 'منتصف الليل': 'آدھی رات' };
+  const ur = boot({ languages: ['ur-PK'], table: table });
+  assert.strictEqual(ur.win.I18n.tx('10:54 م'), '\u206610:54\u00A0PM\u2069', 'set apart, or the order of the two directions shows PM 10:54');
+  const night = ur.doc.createElement('p');
+  night.innerHTML = '<span class="night-name">منتصف الليل</span> 10:54 م';
+  ur.doc.body.appendChild(night);
+  ur.win.I18n.apply(night);
+  assert.strictEqual(night.textContent, 'آدھی رات \u206610:54\u00A0PM\u2069');
+  /* a left-to-right page needs nothing of it */
+  const en = boot({ languages: ['en-US'], table: table });
+  assert.strictEqual(en.win.I18n.tx('10:54 م'), '10:54\u00A0PM');
+});
+
+test('on a Friday the noon prayer is named as the prayer, and the day keeps its own name', async () => {
+  const friday = new Date(2026, 9, 16, 9, 30);
+  const { win, doc } = boot({ languages: ['en-US'], file: 'en', now: friday });
+  win.App.go('home');
+  await tick();
+  const names = Array.from(doc.querySelectorAll('#windows .window-name')).map(function (n) { return n.textContent; });
+  assert.ok(names.indexOf("Jumu'ah") !== -1, 'the strip names the prayer: ' + names.join(', '));
+  assert.ok(names.indexOf('Friday') === -1);
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('أذان الجمعة'), "Jumu'ah adhan");
+  assert.strictEqual(tx('حان وقت الجمعة'), "It's time for Jumu'ah");
+  assert.strictEqual(tx('الجمعة 16 أكتوبر'), 'Friday 16\u00A0October', 'a date still says the day');
+  /* every table names the prayer, and the places that hold a prayer's name say so */
+  const CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'i18n', 'catalog.json'), 'utf8'));
+  ['أذان {0:prayer}', 'صلاة {0:prayer}، {1}', 'حان وقت {0:prayer}', 'حان وقت صلاة {0:prayer}', 'prayer:الجمعة'].forEach(function (key) {
+    assert.ok(CATALOG.some(function (e) { return e.key === key; }), key + ' is in the catalog');
+  });
+});
+
+test('a month over its timetable is said the way a heading says it', async () => {
+  const { win, doc } = boot({ languages: ['ru-RU'], file: 'ru' });
+  win.App.go('timetable');
+  await tick();
+  assert.strictEqual(doc.getElementById('tt-month').textContent, 'Октябрь\u00A02026', 'alone, the month is not the month of a day');
+  assert.strictEqual(win.I18n.tx('19 أكتوبر 2026'), '19\u00A0октября\u00A02026', 'after a day it is still that day\'s month');
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.cal-month::first-letter \{ text-transform: uppercase; \}/);
+});
+
+test('the compass keeps its north mark where north is still the Arabic letter', () => {
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\):not\(\[lang='ur'\]\):not\(\[lang='fa'\]\) \.compass-north \{ display: none; \}/);
+  ['ur', 'fa'].forEach(function (code) {
+    const src = fs.readFileSync(path.join(DOCS, 'i18n', code + '.js'), 'utf8');
+    assert.ok(src.indexOf('"compass:ش": "ش"') !== -1, code + ' names north with the same letter');
+  });
+});
+
+test('a new reader tells the time the way their language does, until they choose', () => {
+  ['fr-FR', 'tr-TR', 'ru-RU', 'id-ID', 'fa-IR'].forEach(function (phone) {
+    const { win } = boot({ languages: [phone], table: { 'الإعدادات': 'x' } });
+    assert.strictEqual(win.Store.get('clock'), '24', phone + ' runs the day to twenty four hours');
+  });
+  ['en-US', 'ms-MY', 'bn-BD', 'ur-PK', 'ha-NG', 'ar-KW'].forEach(function (phone) {
+    const { win } = boot({ languages: [phone], table: { 'الإعدادات': 'x' } });
+    assert.strictEqual(win.Store.get('clock'), '12', phone + ' keeps the twelve hours');
+  });
+  /* a reader who chose keeps their choice, whatever the language */
+  const chose = boot({ languages: ['fr-FR'], storage: { 'sunnati.settings': JSON.stringify({ clock: '12' }) }, table: { 'الإعدادات': 'x' } });
+  assert.strictEqual(chose.win.Store.get('clock'), '12');
 });
 
 test('Russian nouns change with the number, as the table says', () => {
@@ -275,20 +349,29 @@ test('the language list names each language in its own words, and choosing one o
 });
 
 test('only the languages whose words ship are offered, and a phone set to another is met in English', async () => {
-  const id = boot({ languages: ['id-ID'], shipped: true, file: 'en' });
-  assert.strictEqual(id.win.I18n.device(), 'en', 'Indonesian has no table yet');
-  assert.strictEqual(id.win.I18n.lang, 'en');
-  const both = boot({ languages: ['tr-TR', 'ar-KW'], shipped: true });
-  assert.strictEqual(both.win.I18n.device(), 'ar', 'the next of the phone\'s languages the app speaks');
+  const SRC = fs.readFileSync(path.join(DOCS, 'js', 'i18n.js'), 'utf8');
+  const READY = JSON.parse(/var READY = (\[[^\]]*\]);/.exec(SRC)[1].replace(/'/g, '"'));
+  const KNOWN = [...SRC.matchAll(/\{ code: '([a-z]+)'/g)].map(function (m) { return m[1]; });
+  /* every language offered has its table, complete as the catalog has it */
+  READY.filter(function (c) { return c !== 'ar'; }).forEach(function (code) {
+    assert.ok(fs.existsSync(path.join(DOCS, 'i18n', code + '.js')), code + ' is offered with no table');
+  });
+  const de = boot({ languages: ['de-DE'], shipped: true, file: 'en' });
+  assert.strictEqual(de.win.I18n.device(), 'en', 'a language the app does not speak');
+  assert.strictEqual(de.win.I18n.lang, 'en');
+  const waiting = KNOWN.filter(function (c) { return READY.indexOf(c) === -1; });
+  if (waiting.length) {
+    const early = boot({ languages: [waiting[0] + '-XX', 'ar-KW'], shipped: true });
+    assert.strictEqual(early.win.I18n.device(), 'ar', 'the next of the phone\'s languages the app speaks');
+    const chosen = boot({ languages: ['en-US'], storage: { 'sunnati.lang': waiting[0] }, shipped: true, file: 'en' });
+    assert.strictEqual(chosen.win.I18n.lang, 'en', 'a language chosen before its words came is read as the phone\'s choice');
+  }
   const listed = boot({ languages: ['ar-KW'], shipped: true });
   listed.win.App.go('settings');
   await tick();
   const values = Array.from(listed.doc.getElementById('settings-lang').options, function (o) { return o.value; });
-  assert.deepStrictEqual(values, ['auto', 'ar', 'en']);
-  assert.deepStrictEqual(Array.from(listed.win.I18n.langs, function (l) { return l.code; }), ['ar', 'en']);
-  /* a language chosen before its words came is read as the phone's choice */
-  const early = boot({ languages: ['en-US'], storage: { 'sunnati.lang': 'fr' }, shipped: true, file: 'en' });
-  assert.strictEqual(early.win.I18n.lang, 'en');
+  assert.deepStrictEqual(values, ['auto'].concat(KNOWN.filter(function (c) { return READY.indexOf(c) !== -1; })));
+  assert.deepStrictEqual(Array.from(listed.win.I18n.langs, function (l) { return l.code; }), KNOWN.filter(function (c) { return READY.indexOf(c) !== -1; }));
 });
 
 test('a picker copies an option written in its own language with its language, so it is never translated', async () => {
@@ -304,4 +387,40 @@ test('a picker copies an option written in its own language with its language, s
   const items = Array.from(doc.querySelectorAll('.picker-panel .picker-item span'), function (s) { return s.textContent; });
   assert.ok(items.indexOf('العربية') !== -1, 'Arabic is still called العربية, got ' + items.join(' | '));
   assert.ok(items[0].indexOf('Device language') === 0, 'while the app\'s own words are translated: ' + items[0]);
+});
+
+/* ---------------- the home card in a longer language ---------------- */
+
+test('the home card holds its pieces together when the words are longer than the Arabic', () => {
+  const CSS = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const APP = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  /* each date whole, the second under the first when they do not share a line */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) #hijri-date, html:not\(\[lang='ar'\]\) #greg-date \{ display: inline-block; \}/);
+  /* the six windows fall back to the two rows the large text already had, by
+     measuring the words in the reader's language, not by a guess at a width */
+  assert.match(CSS, /\.windows\.is-two-rows \{ flex-wrap: wrap; row-gap: 4px; \}/);
+  assert.match(APP, /function fitWindows\(host, html\) \{[\s\S]*?I18n\.apply\(host\)[\s\S]*?scrollWidth > host\.clientWidth \+ 1 \|\| namesWrap\(host\)\) host\.classList\.add\('is-two-rows'\)/);
+  /* and a name of two words that wrapped inside its window, which leaves its
+     time lower than the others, counts as not fitting */
+  assert.match(APP, /function namesWrap\(host\) \{[\s\S]*?selectNodeContents\(names\[i\]\)[\s\S]*?getClientRects\(\)/);
+  /* the button that fetches the place stays beside the place's name */
+  assert.match(CSS, /\.place-line\.is-stacked \.place-tap \{ flex-direction: column;/);
+  assert.match(APP, /function fitPlaceLine\(\) \{[\s\S]*?I18n\.apply\(line\)[\s\S]*?classList\.add\('is-stacked'\)/);
+  /* the night's two marks and the day's tally wrap whole */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.night-line \{ flex-wrap: wrap;/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.meter-head \{ flex-wrap: wrap;/);
+  /* and the Arabic page is drawn as it was: nothing measured here changes it
+     while its words fit */
+  const { win, doc } = boot({ languages: ['ar-KW'] });
+  win.App.go('home');
+  assert.ok(!doc.getElementById('windows').classList.contains('is-two-rows'));
+  assert.ok(!doc.getElementById('place-line').classList.contains('is-stacked'));
+});
+
+test('the English table says a recording\'s size and a city\'s timetable once each', () => {
+  const { win } = boot({ languages: ['en-US'], file: 'en' });
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('12.5 م.ب'), '12.5 MB', 'a size beside its unit, which no place of a line used to find');
+  assert.strictEqual(tx('مواقيت أكتوبر 2026 لدبي'), 'October 2026 prayer times for Dubai', 'the lam is the line\'s own «for», said once');
+  assert.strictEqual(tx('الحساب والمظهر والنسخ'), 'Calculation, appearance and backup', 'the reckoning of the times, not an account');
 });

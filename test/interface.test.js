@@ -793,15 +793,37 @@ test('the theme switch writes the document attribute', () => {
   assert.strictEqual(doc.documentElement.getAttribute('data-theme'), 'light');
 });
 
-test('the text size slider changes the reading scale', () => {
+test('the text size slider sizes the whole app, and the reading on to the end of the slider', () => {
   const { win, doc } = boot();
   win.App.go('settings');
   const slider = doc.getElementById('settings-font');
+  const html = doc.documentElement;
+  assert.strictEqual(html.style.fontSize, '', 'at 100% the page keeps its own measure');
+  slider.value = '115';
+  fire(win, slider, 'input');
+  assert.strictEqual(html.style.fontSize, '18.4px', 'the interface grows with the setting');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1', 'and the reading with it');
   slider.value = '140';
   fire(win, slider, 'input');
   assert.strictEqual(win.Store.get('fontScale'), 140);
-  assert.strictEqual(doc.documentElement.style.getPropertyValue('--quran-scale'), '1.4');
+  assert.strictEqual(html.style.fontSize, '20.8px', 'the interface stops at 130%');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1.0769', 'the reading goes the rest of the way, 140% in all');
   assert.strictEqual(doc.getElementById('font-value').textContent, '140%');
+  slider.value = '100';
+  fire(win, slider, 'input');
+  assert.strictEqual(html.style.fontSize, '');
+  assert.strictEqual(html.style.getPropertyValue('--quran-scale'), '1');
+});
+
+test('on android the words are drawn at the app\'s size, not grown by the phone\'s font setting', () => {
+  const main = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'MainActivity.java'), 'utf8');
+  assert.match(main, /s\.setTextZoom\(100\);/, 'the new package asks the web view for no zoom of its own');
+  const app = fs.readFileSync(path.join(__dirname, '..', 'docs', 'js', 'app.js'), 'utf8');
+  /* and the package already installed is answered from the page: the zoom it
+     adds is read off a word of a known size and taken back out */
+  assert.match(app, /function measureTextZoom\(\) \{[\s\S]*?getBoundingClientRect\(\)\.height \/ 100/);
+  assert.match(app, /var root = 16 \* ui \/ textZoom;/);
+  assert.match(app, /textZoom = measureTextZoom\(\);\s*applyFont\(\);/);
 });
 
 test('the vibrate switch toggles and reports its state', () => {
@@ -2817,18 +2839,26 @@ test('the app carries its own typefaces rather than fetching them', () => {
 test('the worker keeps the typefaces so they survive going offline', () => {
   const sw = fs.readFileSync(path.join(DOCS, 'sw.js'), 'utf8');
   assert.ok(sw.indexOf('./css/fonts.css') !== -1, 'the face sheet must be kept');
-  const kept = (sw.match(/\.\/fonts\/[^']+\.woff2/g) || []).length;
-  const onDisk = fs.readdirSync(path.join(DOCS, 'fonts')).filter((f) => /\.woff2$/.test(f)).length;
-  assert.strictEqual(kept, onDisk, 'every face on disk should be kept for offline');
+  const kept = (sw.match(/\.\/fonts\/[^']+\.woff2/g) || []).map((f) => f.slice('./fonts/'.length));
+  /* the faces of a script only some readers write are kept the first time a
+     page in it asks for them, and carried across every update after that */
+  const script = new RegExp(/var SCRIPT_FACES = \/(.+)\/;/.exec(sw)[1]);
+  assert.match(sw, /SCRIPT_FACES\.test\(at\)/, 'an update carries the script faces across');
+  fs.readdirSync(path.join(DOCS, 'fonts')).filter((f) => /\.woff2$/.test(f)).forEach(function (f) {
+    assert.ok(kept.indexOf(f) !== -1 || script.test('/fonts/' + f), f + ' should be kept for offline');
+    assert.ok(!(kept.indexOf(f) !== -1 && script.test('/fonts/' + f)), f + ' is in the shell and among the script faces');
+  });
+  kept.forEach(function (f) { assert.ok(fs.existsSync(path.join(DOCS, 'fonts', f)), 'the shell keeps a face that is not there: ' + f); });
 });
 
 test('nothing in the page reaches out to another site for something it needs', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* a link the reader may follow is not a thing the page needs; a src is.
      the openstreetmap credit is required by the licence of its map, and the
-     two store links in About take a reader in a browser to the apps. */
+     geonames one by the licence of the names of the places, and the two
+     store links in About take a reader in a browser to the apps. */
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|apps\.apple\.com\/app\/id6814355836|play\.google\.com\/store\/apps\/details\?id=com\.eworldq8\.sunnati/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|www\.geonames\.org\/$|apps\.apple\.com\/app\/id6814355836|play\.google\.com\/store\/apps\/details\?id=com\.eworldq8\.sunnati/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });
@@ -3545,9 +3575,16 @@ test('the pattern takes the colour that was chosen', () => {
 test('the app names where you are instead of saying your current place', () => {
   const { win } = boot();
   const name = win.App.helpers.nameForPlace;
+  const label = win.App.helpers.coordsLabel;
+  /* here nothing can be fetched, so this is the naming before the gazetteer
+     has come: a listed city within 25 km, and anywhere else the coordinates,
+     never near a city, since a reader is in a place and not beside one. The
+     gazetteer itself is tried in places.test.js */
   assert.strictEqual(name(29.3394, 48.0782).n, 'الكويت', 'inside a city it names the city');
-  assert.strictEqual(name(29.3375, 47.6581).n, 'قرب الكويت', 'a little out it says near it');
-  assert.strictEqual(name(-20, -140), null, 'far from everywhere it knows, it says nothing');
+  assert.strictEqual(name(29.3375, 47.6581).n, label(29.3375, 47.6581), 'a little out it gives where it is');
+  assert.strictEqual(name(29.3375, 47.6581).method, 'Ojeiri', 'and the reckoning is still the country\'s');
+  assert.strictEqual(name(-20, -140).n, label(-20, -140), 'far from everywhere it knows, the coordinates');
+  assert.strictEqual(name(-20, -140).method, null, 'and no country to reckon by');
 });
 
 test('somewhere it cannot name is given as coordinates, not as nothing', () => {

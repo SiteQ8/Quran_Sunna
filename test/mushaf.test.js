@@ -47,6 +47,16 @@ test('search finds verses when the query carries no vowel marks', () => {
   assert.strictEqual(withMarks.length, hits.length, 'marks should not change the result count');
 });
 
+test('a reader typing on an Urdu or Persian keyboard finds the same verses', () => {
+  assert.strictEqual(M.normalize('رحیم'), M.normalize('رحيم'), 'the Persian and Urdu yeh');
+  assert.strictEqual(M.normalize('کتاب'), M.normalize('كتاب'), 'the keheh');
+  assert.strictEqual(M.normalize('اللہ'), M.normalize('الله'), 'the Urdu heh');
+  assert.strictEqual(M.normalize('رحمۃ'), M.normalize('رحمة'), 'the Urdu teh marbuta');
+  const arabic = M.search('الرحمن الرحيم', { limit: 400 }).length;
+  assert.ok(arabic > 0);
+  assert.strictEqual(M.search('الرحمن الرحیم', { limit: 400 }).length, arabic);
+});
+
 test('search returns verses in mushaf order and respects the limit', () => {
   const hits = M.search('الله', { limit: 25 });
   assert.strictEqual(hits.length, 25);
