@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.88';
+  var VERSION = '8.87.89';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6563,9 +6563,11 @@
       r.selectNodeContents(el);
       return r.getBoundingClientRect();
     }).sort(function (a, b) { return a.left - b.left; });
+    /* touching is touching: two names 3 pixels apart still read as two, and
+       a name 3 pixels inside the card is still inside it */
     for (var i = 0; i < spans.length; i++) {
-      if (i && spans[i].left < spans[i - 1].right + 4) return true;
-      if (spans[i].left < card.left + 4 || spans[i].right > card.right - 4) return true;
+      if (i && spans[i].left < spans[i - 1].right) return true;
+      if (spans[i].left < card.left || spans[i].right > card.right) return true;
     }
     return false;
   }
