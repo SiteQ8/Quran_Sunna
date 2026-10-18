@@ -481,3 +481,20 @@ test('the page bar gives its room to the two turns of the page', () => {
   assert.match(CSS, /#page-random, #page-autoscroll \{ flex: 0 0 48px;/);
   assert.ok(!/\.bar-word \{ display: none; \}/.test(CSS), '«التالية» keeps its word as «السابقة» does');
 });
+
+test('a long press lifts no picture and no card, and the page does not stretch after the finger', () => {
+  assert.match(CSS, /img, a, button \{ -webkit-user-drag: none; \}/);
+  assert.match(CSS, /html, body \{ overscroll-behavior: none; \}/);
+  const MAIN = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'MainActivity.java'), 'utf8');
+  assert.match(MAIN, /web\.setOverScrollMode\(View\.OVER_SCROLL_NEVER\);/);
+});
+
+test('what was measured for a left-to-right page leaves the Arabic page as it was drawn', () => {
+  /* the half-day marks leave a tight table and the place line stacks only in
+     a translated page; the Arabic one keeps the marks and its own line */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tight td \.ampm \{ display: none; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.place-line\.is-stacked \{/);
+  assert.ok(!/\n\.place-line\.is-stacked/.test(CSS), 'no unscoped stacking rule');
+  const EN = fs.readFileSync(path.join(DOCS, 'i18n', 'en.js'), 'utf8');
+  assert.ok(EN.indexOf('"{0} {1} {2} هـ": "{0}\\u00a0{1} {2}\\u00a0AH"') !== -1 || EN.indexOf('"{0} {1} {2} هـ": "{0} {1} {2} AH"') !== -1, 'a Hijri year keeps its era and a day its month');
+});
