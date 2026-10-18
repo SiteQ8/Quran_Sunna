@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.89';
+  var VERSION = '8.87.90';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -479,12 +479,46 @@
     }
   }
 
+  /* The size of the words is the app's own, the one chosen in its settings,
+     and not the phone's: the android web view grows every word by the phone's
+     font setting while the boxes around them keep their size, which is what
+     broke the pages, and the setting said 100% all the while. The interface
+     grows with the chosen size as far as 130%, and the Quran and the adhkar,
+     which are read rather than tapped, go on growing to the slider's end. */
+  var UI_MOST = 1.3;
+  var UI_LEAST = 0.85;
+  var textZoom = 1;
+
+  /* how much larger the android web view draws a word than it was asked to,
+     read off a word of a known size; the new package asks it for none */
+  function measureTextZoom() {
+    if (!bridge() || inIosApp() || !document.body) return 1;
+    var probe = document.createElement('div');
+    probe.setAttribute('aria-hidden', 'true');
+    probe.style.cssText = 'position:absolute;visibility:hidden;left:0;top:0;width:100vw;' +
+      'font-size:100px;line-height:1;white-space:nowrap;';
+    probe.textContent = 'H';
+    document.body.appendChild(probe);
+    var drawn = probe.getBoundingClientRect().height / 100;
+    probe.parentNode.removeChild(probe);
+    return drawn > 0.5 && drawn < 3 && Math.abs(drawn - 1) > 0.02 ? drawn : 1;
+  }
+
   function applyFont() {
     var scale = Store.get('fontScale') / 100;
-    document.documentElement.style.setProperty('--quran-scale', String(scale));
+    var ui = Math.min(UI_MOST, Math.max(UI_LEAST, scale));
+    var root = 16 * ui / textZoom;
+    var html = document.documentElement;
+    if (Math.abs(root - 16) < 0.01) html.style.removeProperty('font-size');
+    else html.style.fontSize = root.toFixed(3) + 'px';
+    /* the reading text is written in the page's own measure, which now
+       carries the interface's share, so it takes only the rest */
+    html.style.setProperty('--quran-scale', String(Math.round(scale / ui * 10000) / 10000));
     if ($('font-value')) $('font-value').textContent = ar(Store.get('fontScale')) + '%';
     /* the spread takes the reader's size as a scale on the fitted page */
     refitSpread();
+    /* and what was measured on the home card is measured again in the new size */
+    refitHome();
   }
 
   var ACCENT_TOKEN = {
@@ -10451,6 +10485,7 @@
     Store.prune();
     restoreTasbih();
     applyTheme();
+    textZoom = measureTextZoom();
     applyFont();
     applyAccess();
     applyBook();
