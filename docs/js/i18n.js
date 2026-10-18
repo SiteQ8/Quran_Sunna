@@ -137,6 +137,9 @@
 
   var exact = Object.create(null);
   var entries = 0;
+  /* the keys written in no Arabic: the name of a place GeoNames gives in
+     Latin letters only, told to the engine with its name in the language */
+  var latinKeys = 0;
   /* the composed lines, filed under the longest word they always carry, so a
      line is tried only against the few that could be it */
   var byWord = Object.create(null);
@@ -208,6 +211,7 @@
       var k = norm(key);
       if (PLACE.test(k)) addPattern(k, value);
       else exact[k] = value;
+      if (!AR.test(k)) latinKeys++;
       entries++;
     }
     memo = Object.create(null);
@@ -357,7 +361,7 @@
       try { return part(text, depth); } finally { kind = was; }
     }
     var t = norm(text);
-    if (!AR.test(t)) return t;
+    if (!AR.test(t)) return latinKeys && t in exact ? form(exact[t], null) : t;
     var got = lookup(t, depth + 1);
     if (got !== null) return got;
     if (t.indexOf('لل') === 0) {
@@ -505,9 +509,18 @@
     });
   }
 
+  /* A line in Latin letters alone is left as it is, unless it is a name the
+     engine was told in the language: a place with no name in Arabic. */
+  function latin(text) {
+    var bare = norm(text);
+    if (!bare || !(bare in exact)) return text;
+    var word = form(exact[bare], null);
+    return text.replace(bare, function () { return word; });
+  }
+
   function line(text, of) {
     var raw = plain(String(text));
-    if (!AR.test(raw)) return figures(raw);
+    if (!AR.test(raw)) return figures(latinKeys ? latin(raw) : raw);
     var core = norm(raw);
     if (!core) return raw;
     var got;
@@ -667,6 +680,8 @@
     stored: function () { return read(KEY) || 'auto'; },
     device: fromDevice,
     add: add,
+    /* whether the table holds this line as it is */
+    has: function (text) { return norm(String(text)) in exact; },
     tx: tx,
     apply: apply,
     choose: choose,

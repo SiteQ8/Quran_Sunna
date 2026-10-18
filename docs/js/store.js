@@ -25,6 +25,9 @@
     lat: null,
     lng: null,
     city: '',
+    /* the place's name in the Latin, Cyrillic and Bengali scripts, from the
+       gazetteer, beside the Arabic one in city: { la, ru, bn } */
+    cityNames: null,
     tzOffset: null,
     zone: null,
     notify: false,

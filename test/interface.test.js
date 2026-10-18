@@ -2855,9 +2855,10 @@ test('nothing in the page reaches out to another site for something it needs', (
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   /* a link the reader may follow is not a thing the page needs; a src is.
      the openstreetmap credit is required by the licence of its map, and the
-     two store links in About take a reader in a browser to the apps. */
+     geonames one by the licence of the names of the places, and the two
+     store links in About take a reader in a browser to the apps. */
   const outside = [...html.matchAll(/(?:src|href)="(https?:\/\/[^"]+)"/g)].map((m) => m[1])
-    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|apps\.apple\.com\/app\/id6814355836|play\.google\.com\/store\/apps\/details\?id=com\.eworldq8\.sunnati/.test(u));
+    .filter((u) => !/github\.com|3li\.info|hisnmuslim\.com|alojeiri\.com|openstreetmap\.org\/copyright|www\.geonames\.org\/$|apps\.apple\.com\/app\/id6814355836|play\.google\.com\/store\/apps\/details\?id=com\.eworldq8\.sunnati/.test(u));
   assert.deepStrictEqual(outside, [],
     'the shell should stand on its own, found: ' + outside.join(', '));
 });
@@ -3574,9 +3575,16 @@ test('the pattern takes the colour that was chosen', () => {
 test('the app names where you are instead of saying your current place', () => {
   const { win } = boot();
   const name = win.App.helpers.nameForPlace;
+  const label = win.App.helpers.coordsLabel;
+  /* here nothing can be fetched, so this is the naming before the gazetteer
+     has come: a listed city within 25 km, and anywhere else the coordinates,
+     never near a city, since a reader is in a place and not beside one. The
+     gazetteer itself is tried in places.test.js */
   assert.strictEqual(name(29.3394, 48.0782).n, 'الكويت', 'inside a city it names the city');
-  assert.strictEqual(name(29.3375, 47.6581).n, 'قرب الكويت', 'a little out it says near it');
-  assert.strictEqual(name(-20, -140), null, 'far from everywhere it knows, it says nothing');
+  assert.strictEqual(name(29.3375, 47.6581).n, label(29.3375, 47.6581), 'a little out it gives where it is');
+  assert.strictEqual(name(29.3375, 47.6581).method, 'Ojeiri', 'and the reckoning is still the country\'s');
+  assert.strictEqual(name(-20, -140).n, label(-20, -140), 'far from everywhere it knows, the coordinates');
+  assert.strictEqual(name(-20, -140).method, null, 'and no country to reckon by');
 });
 
 test('somewhere it cannot name is given as coordinates, not as nothing', () => {
