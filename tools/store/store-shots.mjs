@@ -6,10 +6,16 @@
    under a line in gold, as the film shows them.
 
      python3 -m http.server 8765 --directory docs &
-     node tools/store/store-shots.mjs
+     node tools/store/store-shots.mjs [language]
 
    → ios/screenshots/6.9-inch/*.png   six, 1320 × 2868, for the 6.9 inch set
    → play/listing/phone/*.png         eight, 1080 × 1920, for Google Play
+
+   That is Arabic, with no language given. Any other the app speaks is drawn
+   in the same scenes from the app opened in it, under its own words from
+   captions.mjs, into the folders of the store code of that language beside
+   the Arabic: ios/screenshots/en-US/6.9-inch and play/listing/en-US/phone for
+   en. A language one store does not take is drawn for the other alone.
 
    The App Store listing workflow places the first, the Play listing workflow
    the second. Needs Playwright's Chromium. */
@@ -17,9 +23,15 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { target } from './captions.mjs';
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..', '..');
 const SITE = process.env.SITE || 'http://127.0.0.1:8765/';
+const T = target(process.argv[2] || 'ar');
+if (!T.phone && !T.play) {
+  console.log(T.lang + ': no store takes a page in this language, so there is nothing to draw');
+  process.exit(0);
+}
 
 async function playwright() {
   for (const where of ['playwright', '/opt/npm-tools/node_modules/playwright/index.js', '/tmp/node_modules/playwright-core/index.mjs']) {
@@ -35,17 +47,18 @@ async function playwright() {
 const DAY = new Date('2026-10-25T00:00:00+03:00').getTime();
 const at = (h, m) => DAY + (h * 60 + m) * 60000;
 
-/* what each screen says over it: what it is, and what is worth knowing */
+/* what each screen says over it: what it is, and what is worth knowing, in
+   the words of captions.mjs for the language drawn */
 const SHOTS = [
-  { name: 'splash', time: at(20, 40), top: 'شاشة بدء من بلدك', sub: 'لوحة من تراث بلدك بليله ونهاره، وترحيبٌ بأهله' },
-  { name: 'home', time: at(17, 40), top: 'أوقات الصلاة والأذان', sub: 'تقويم العجيري للكويت، وحسابٌ في جهازك لكل مكان' },
-  { name: 'sky', time: at(17, 16), top: 'سماء الوقت', sub: 'تتبدّل مع مواقيت الصلاة في مدينتك من الفجر إلى العشاء' },
-  { name: 'sections', time: at(17, 40), top: 'كل ما تحتاجه في يومك', sub: 'القبلة والمساجد والقضاء والعمرة والختمة والأدعية' },
-  { name: 'mushaf', time: at(17, 40), top: 'المصحف كاملاً بلا شبكة', sub: 'برواية حفص بالرسم العثماني، ٦٠٤ صفحات وتفسير' },
-  { name: 'azkar', time: at(7, 10), top: 'أذكارك في وقتها', sub: 'الصباح والمساء وأذكار اليوم، بعدّادٍ يحفظ أين وصلت' },
-  { name: 'prayers', time: at(17, 40), top: 'صلاتي', sub: 'تابع فروضك وكيف أدّيتها' },
-  { name: 'qibla', time: at(17, 40), top: 'القبلة', sub: 'بوصلة تدور مع جهازك نحو الكعبة' }
-];
+  { name: 'splash', time: at(20, 40) },
+  { name: 'home', time: at(17, 40) },
+  { name: 'sky', time: at(17, 16) },
+  { name: 'sections', time: at(17, 40) },
+  { name: 'mushaf', time: at(17, 40) },
+  { name: 'azkar', time: at(7, 10) },
+  { name: 'prayers', time: at(17, 40) },
+  { name: 'qibla', time: at(17, 40) }
+].map((s) => Object.assign(s, T.words[s.name]));
 /* Apple shows the first three in a search, so the six it takes lead with
    the country, the hour and the sky; Play takes all eight */
 const IOS = ['splash', 'home', 'sky', 'mushaf', 'azkar', 'sections'];
@@ -69,16 +82,18 @@ async function take(shot) {
   /* the 6.9 inch phone exactly: 440 by 956 at three to the point */
   const ctx = await browser.newContext({
     viewport: { width: 440, height: 956 }, deviceScaleFactor: 3,
-    locale: 'ar-KW', timezoneId: 'Asia/Kuwait', colorScheme: 'light', reducedMotion: 'no-preference',
+    locale: T.locale, timezoneId: 'Asia/Kuwait', colorScheme: 'light', reducedMotion: 'no-preference',
     serviceWorkers: 'block'
   });
-  await ctx.addInitScript(() => {
+  await ctx.addInitScript((lang) => {
     localStorage.setItem('sunnati.settings', JSON.stringify({
       placeAsked: true, notifyAsked: true, lat: 29.3759, lng: 47.9774, city: 'الكويت'
     }));
     localStorage.setItem('sunnati.greet', 'الكويت');
     localStorage.setItem('sunnati.lastPage', '249');
-  });
+    /* the app opened in the language drawn, as a reader who chose it would */
+    if (lang !== 'ar') localStorage.setItem('sunnati.lang', lang);
+  }, T.lang);
   const page = await ctx.newPage();
   const file = path.join(raw, shot.name + '.png');
 
@@ -99,8 +114,10 @@ async function take(shot) {
       const splash = document.getElementById('boot-splash');
       splash.style.opacity = '1';
       splash.style.display = 'block';
-      document.getElementById('boot-hail').textContent = 'حيّ الله أهل';
-      document.getElementById('boot-city').textContent = 'الكويت';
+      /* the greeting as the app says it in the language drawn */
+      const say = (w) => (window.I18n && window.I18n.lang !== 'ar' ? window.I18n.tx(w) : w);
+      document.getElementById('boot-hail').textContent = say('حيّ الله أهل');
+      document.getElementById('boot-city').textContent = say('الكويت');
       await document.fonts.ready;
       const sky = document.getElementById('boot-sky');
       const m = /url\(["']?([^"')]+)/.exec(getComputedStyle(sky).backgroundImage);
@@ -170,13 +187,25 @@ async function take(shot) {
     await settle(page, 600);
     /* the first card said more than once, counted half way, in the middle */
     const card = await page.evaluate(() => {
-      const digits = (s) => +String(s).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+      /* the count as the language writes its figures: Arabic, Persian, Bengali or plain */
+      const digits = (s) => +String(s).replace(/[٠-٩]/g, (d) => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+        .replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[০-৯]/g, (d) => '০১২৩৪৫৬৭৮৯'.indexOf(d));
       const c = Array.from(document.querySelectorAll('#azkar-items .dhikr'))
         .find((el) => { const n = digits(el.querySelector('.dhikr-left').textContent.trim()); return n >= 3 && n <= 4; });
       if (!c) return null;
       const r = c.getBoundingClientRect();
-      window.scrollTo(0, Math.max(0, Math.round(r.top + window.scrollY - 210)));
+      /* a card the meaning under it makes taller than the screen leaves is
+         brought up until its count stands above the tabs */
+      const tabs = document.querySelector('.tabs');
+      const floor = (tabs ? tabs.getBoundingClientRect().top : window.innerHeight) - 24;
+      const tall = r.height + 210 > floor;
+      window.scrollTo(0, Math.max(0, Math.round(tall ? r.bottom + window.scrollY - floor : r.top + window.scrollY - 210)));
       const t = c.querySelector('.dhikr-text').getBoundingClientRect();
+      if (tall) {
+        const box = c.getBoundingClientRect();
+        /* below the bar the list's title stays in */
+        return { x: box.left + box.width / 2, y: Math.max(box.top, 0) + 160 };
+      }
       return { x: t.left + t.width / 2, y: t.top + Math.min(t.height / 2, 60) };
     });
     if (card) {
@@ -204,9 +233,26 @@ for (const s of SHOTS) {
 
 /* ---- the frame: the night of the paintings, a phone, a line in gold ---- */
 const FONTS = path.join(ROOT, 'docs', 'css', 'fonts.css');
+
+/* Arabic is placed as it always was. Another language's words are longer for
+   the same thought, so once its faces are in, a title that would break onto a
+   second line is set a little smaller, down to four fifths, and only then
+   broken, evenly; the line under it is broken evenly too, so no word is left
+   alone on a line of its own. */
+const FIT = T.lang === 'ar' ? '  place();' : `  window.placed = false;
+  document.fonts.ready.then(() => {
+    const top = document.querySelector('.top'), sub = document.querySelector('.sub');
+    const base = parseFloat(getComputedStyle(top).fontSize);
+    const lines = () => top.getBoundingClientRect().height / parseFloat(getComputedStyle(top).lineHeight);
+    for (let size = base; lines() > 1.5 && size > base * .8; size -= 2) top.style.fontSize = (size - 2) + 'px';
+    if (lines() > 1.5) { top.style.fontSize = base + 'px'; top.style.textWrap = 'balance'; }
+    sub.style.textWrap = 'balance';
+    place();
+    window.placed = true;
+  });`;
 function frame(W, H, shot, png) {
   const big = W > 1200;
-  return `<!doctype html><html dir="rtl" lang="ar"><head><meta charset="utf-8">
+  return `<!doctype html><html dir="${T.dir}" lang="${T.lang}"><head><meta charset="utf-8">
 <link rel="stylesheet" href="file://${FONTS}">
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
@@ -241,16 +287,19 @@ function frame(W, H, shot, png) {
   }
   /* the phone fills what the words leave, its screen in the 6.9 inch shape */
   /* window.top is the page's own, so the phone's is named otherwise */
-  const words = document.getElementById('words').getBoundingClientRect();
-  const phoneTop = Math.ceil(words.bottom + ${big ? 70 : 46});
-  const bottom = ${big ? 120 : 70};
-  const pad = ${big ? 18 : 14};
-  const h = ${H} - phoneTop - bottom;
-  const w = Math.round((h - 2 * pad) * 1320 / 2868) + 2 * pad;
-  const phone = document.getElementById('phone');
-  phone.style.top = phoneTop + 'px'; phone.style.width = w + 'px'; phone.style.marginLeft = (-w / 2) + 'px';
-  const glow = document.getElementById('glow');
-  glow.style.top = (phoneTop + h * .42 - ${Math.round(W * .525)}) + 'px';
+  function place() {
+    const words = document.getElementById('words').getBoundingClientRect();
+    const phoneTop = Math.ceil(words.bottom + ${big ? 70 : 46});
+    const bottom = ${big ? 120 : 70};
+    const pad = ${big ? 18 : 14};
+    const h = ${H} - phoneTop - bottom;
+    const w = Math.round((h - 2 * pad) * 1320 / 2868) + 2 * pad;
+    const phone = document.getElementById('phone');
+    phone.style.top = phoneTop + 'px'; phone.style.width = w + 'px'; phone.style.marginLeft = (-w / 2) + 'px';
+    const glow = document.getElementById('glow');
+    glow.style.top = (phoneTop + h * .42 - ${Math.round(W * .525)}) + 'px';
+  }
+${FIT}
 </script></body></html>`;
 }
 
@@ -266,6 +315,7 @@ async function compose(W, H, names, dir) {
     fs.writeFileSync(html, frame(W, H, shot, png));
     await page.goto('file://' + html);
     await page.evaluate(async () => { await document.fonts.ready; await document.getElementById('screen').decode(); });
+    await page.waitForFunction(() => window.placed !== false);
     await page.waitForTimeout(150);
     const out = path.join(dir, (i + 1) + '-' + shot.name + '.png');
     await page.screenshot({ path: out });
@@ -274,7 +324,7 @@ async function compose(W, H, names, dir) {
   await page.close();
 }
 
-await compose(1320, 2868, IOS, path.join(ROOT, 'ios', 'screenshots', '6.9-inch'));
-await compose(1080, 1920, PLAY, path.join(ROOT, 'play', 'listing', 'phone'));
+if (T.phone) await compose(1320, 2868, IOS, path.join(ROOT, T.phone));
+if (T.play) await compose(1080, 1920, PLAY, path.join(ROOT, T.play));
 await browser.close();
 console.log('raw screens in', raw);
