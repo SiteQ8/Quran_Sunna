@@ -9,11 +9,17 @@ Play لا يأخذ الفيلم ملفاً بل رابطاً من YouTube، في
     PLAY_SERVICE_ACCOUNT='<json>' python3 tools/android/play-listing.py \\
         [--video https://youtu.be/VONcaRYi91M] \\
         [--icon play/listing/icon-512.png] [--feature play/feature-graphic-1024x500.png] \\
-        [--phone play/listing/phone] [--text play/listing/ar] [--status] [--dry-run]
+        [--phone play/listing/phone] [--text play/listing | play/listing/ar] [--status] [--dry-run]
 
 ونص الصفحة من مجلّد باسم لغتها، play/listing/ar، فيه الاسم والوصف القصير
 والكامل في title.txt وshort.txt وfull.txt، وما وُجد منها يُكتب في صفحة تلك اللغة
-وحدها، ويُقاس قبل أن يُرسل شيء.
+وحدها، ويُقاس قبل أن يُرسل شيء. ويُقرأ النص كذلك من مجلّد اللغات كلها، play/listing،
+وفيه مجلّد لكل لغة باسمها كما يسمّيها Play، فتُكتب كل لغة في صفحتها، وتُنشأ صفحة
+اللغة التي لم تكن لها صفحة بعد إن كان في مجلّدها الاسم والوصفان جميعاً.
+
+ولقطات الهاتف لكل لغة من مجلّدها بجانب لقطات الصفحة العربية، play/listing/en-US/phone
+بجانب play/listing/phone، فتأخذ كل لغة لها مجلّد لقطاتِها، وتأخذ الصفحة العربية وكل
+لغة لا مجلّد لها ما أُعطي في --phone كما كانت.
 
 --status يقرأ المسارات وما فيها من إصدارات، وما في الصفحة من فيلم وصور، ولا
 يغيّر شيئاً. وبـ--dry-run يقرأ ما سيتغيّر ولا يغيّره. وأيّ خطأ يترك التحرير بلا
@@ -77,6 +83,7 @@ TEXT_FIELDS = (('title.txt', 'title', 30), ('short.txt', 'shortDescription', 80)
 
 
 def listing_text(folder):
+    """نص لغة واحدة من مجلّدها، مقيساً بما يأخذه Play."""
     words = {}
     for name, field, limit in TEXT_FIELDS:
         path = Path(folder) / name
@@ -89,6 +96,35 @@ def listing_text(folder):
     if not words:
         raise SystemExit(f'لا نص في {folder}: title.txt أو short.txt أو full.txt')
     return words
+
+
+def has_text(folder):
+    return any((Path(folder) / name).is_file() for name, _, _ in TEXT_FIELDS)
+
+
+def texts(folder):
+    """نص كل لغة باسمها: مجلّد لغة واحدة كما كان، play/listing/ar، أو مجلّد فيه
+    مجلّد لكل لغة، play/listing، فيُقرأ كل مجلّد فيه نص ويُترك ما سواه كمجلّد
+    اللقطات phone."""
+    here = Path(folder)
+    if has_text(here):
+        return {here.name: listing_text(here)}
+    found = {sub.name: listing_text(sub) for sub in sorted(here.iterdir()) if sub.is_dir() and has_text(sub)}
+    if not found:
+        raise SystemExit(f'لا نص في {folder} ولا في مجلّد لغة داخله')
+    return found
+
+
+def own(folder, lang):
+    """مجلّد لغة لها لقطاتها بجانب ما أُعطي: play/listing/en-US/phone بجانب
+    play/listing/phone، ولا شيء إن لم يكن لها مجلّد فتأخذ ما أُعطي."""
+    here = Path(folder)
+    mine = here.parent / lang / here.name
+    return mine if mine.is_dir() else None
+
+
+def phone_shots(folder):
+    return checked('phoneScreenshots', sorted(str(p) for p in Path(folder).glob('*.png')))
 
 
 def status(base, edit, tok):
@@ -126,8 +162,8 @@ def main():
     ap.add_argument('--video')
     ap.add_argument('--icon')
     ap.add_argument('--feature')
-    ap.add_argument('--phone', help='مجلّد لقطات الهاتف، تُرفع بترتيب أسمائها')
-    ap.add_argument('--text', help='مجلّد نص الصفحة بلغة واحدة، واسمه اللغة: play/listing/ar')
+    ap.add_argument('--phone', help='مجلّد لقطات الهاتف، تُرفع بترتيب أسمائها، ولكل لغة مجلّدها بجانبه إن كان')
+    ap.add_argument('--text', help='مجلّد نص الصفحة بلغة واحدة، واسمه اللغة: play/listing/ar، أو مجلّد اللغات كلها: play/listing')
     ap.add_argument('--status', action='store_true')
     ap.add_argument('--package', default=pu.PACKAGE)
     ap.add_argument('--dry-run', action='store_true')
@@ -138,12 +174,16 @@ def main():
         images['icon'] = checked('icon', [a.icon])
     if a.feature:
         images['featureGraphic'] = checked('featureGraphic', [a.feature])
+    # لقطات كل لغة لها مجلّدها تُفحص هنا أيضاً، قبل أن يُفتح التحرير
+    mine = {}
     if a.phone:
-        shots = sorted(str(p) for p in Path(a.phone).glob('*.png'))
-        images['phoneScreenshots'] = checked('phoneScreenshots', shots)
+        images['phoneScreenshots'] = phone_shots(a.phone)
+        here = Path(a.phone)
+        for sub in sorted(here.parent.iterdir()):
+            if sub != here and (sub / here.name).is_dir():
+                mine[sub.name] = phone_shots(sub / here.name)
     video = watch_url(a.video) if a.video else None
-    text = listing_text(a.text) if a.text else None
-    text_lang = Path(a.text).name if a.text else None
+    text = texts(a.text) if a.text else {}
     if not (video or images or text or a.status):
         ap.error('لا شيء ليُفعل: --video أو --icon أو --feature أو --phone أو --text أو --status')
 
@@ -168,14 +208,26 @@ def main():
         listings = pu.call('GET', f'{base}/edits/{edit}/listings', tok).get('listings', [])
         if not listings:
             raise RuntimeError('لا صفحة متجر لهذا التطبيق بعد')
-        if text and text_lang not in [i['language'] for i in listings]:
-            raise RuntimeError(f'لا صفحة بلغة {text_lang} يُكتب فيها النص')
+        # لغة لها نصها ولا صفحة لها تُنشأ صفحتها، ولا تُنشأ إلا بالاسم والوصفين جميعاً
+        there = [i['language'] for i in listings]
+        for lang, words in text.items():
+            if lang in there:
+                continue
+            lacking = [f for _, f, _ in TEXT_FIELDS if f not in words]
+            if lacking:
+                raise RuntimeError(f'لا صفحة بلغة {lang} بعد، وصفحة جديدة تحتاج {" و".join(lacking)} أيضاً')
+            if not a.dry_run:
+                pu.call('PUT', f'{base}/edits/{edit}/listings/{lang}', tok, dict(words, language=lang))
+            print(f'  {lang}: صفحة جديدة، {words["title"]}')
+            listings.append(dict(words, language=lang, new=True))
+        for lang in sorted(set(mine) - {i['language'] for i in listings}):
+            print(f'  {lang}: لقطاته في المستودع ولا صفحة له، فتنتظر أن يُكتب نصه')
         for item in listings:
             lang = item['language']
-            if text and lang == text_lang:
+            if lang in text and not item.get('new'):
                 if not a.dry_run:
-                    pu.call('PATCH', f'{base}/edits/{edit}/listings/{lang}', tok, text)
-                for field, words in text.items():
+                    pu.call('PATCH', f'{base}/edits/{edit}/listings/{lang}', tok, text[lang])
+                for field, words in text[lang].items():
                     print(f'  {lang}: {field} {len(item.get(field, ""))} حرفاً، وصار {len(words)}')
             if video:
                 was = item.get('video') or 'لا فيلم'
@@ -183,14 +235,17 @@ def main():
                     pu.call('PATCH', f'{base}/edits/{edit}/listings/{lang}', tok, {'video': video})
                 print(f'  {lang}: الفيلم كان {was}، وصار {video}')
             for kind, paths in images.items():
+                # كل لغة بلقطاتها إن كان لها مجلّد، والعربية وما لا مجلّد له بما أُعطي
+                if kind == 'phoneScreenshots' and lang in mine:
+                    paths = mine[lang]
                 if a.dry_run:
-                    print(f'  {lang}: {kind} يُستبدل بـ{len(paths)}: {", ".join(Path(p).name for p in paths)}')
+                    print(f'  {lang}: {kind} يُستبدل بـ{len(paths)} من {Path(paths[0]).parent}: {", ".join(Path(p).name for p in paths)}')
                     continue
                 pu.call('DELETE', f'{base}/edits/{edit}/listings/{lang}/{kind}', tok)
                 for p in paths:
                     pu.call('POST', f'{up}/edits/{edit}/listings/{lang}/{kind}?uploadType=media', tok,
                             raw=Path(p).read_bytes(), ctype='image/png')
-                print(f'  {lang}: {kind} صار {len(paths)}: {", ".join(Path(p).name for p in paths)}')
+                print(f'  {lang}: {kind} صار {len(paths)} من {Path(paths[0]).parent}: {", ".join(Path(p).name for p in paths)}')
         if a.dry_run:
             pu.call('DELETE', f'{base}/edits/{edit}', tok)
             print('قراءة فقط، ولم يتغيّر شيء')

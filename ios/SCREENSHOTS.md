@@ -26,6 +26,13 @@ python3 -m http.server 8765 --directory docs &
 node tools/store/ipad-shots.mjs
 ```
 
+وبأي لغة أخرى يأخذها المتجر تُرسم المشاهد نفسها من التطبيق مفتوحاً بها وتحت كلامها من `tools/store/captions.mjs`، فتُكتب في مجلّدها بجانب العربية، `ios/screenshots/en-US` للإنجليزية، ولا تُمسّ لقطات العربية:
+
+```
+node tools/store/store-shots.mjs en
+node tools/store/ipad-shots.mjs en
+```
+
 وسير عمل iOS يصوّر أيضاً التطبيق نفسه على محاكي آيباد ١٣ بوصة بالطول تحت `ipad-13` في
 `sunnati-ios-shots`، وهي للمراجعة لا للمتجر.
 

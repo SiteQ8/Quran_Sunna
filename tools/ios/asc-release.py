@@ -48,6 +48,24 @@ back, and is left.
 language with description.txt, keywords.txt and promotional.txt in it, and
 they are written into the version sent, beside what is new. Each is measured
 against what Apple takes before anything is sent.
+
+Every language is written to its own page. A folder of ios/store whose
+language has no page in the version yet is given one, with the support and
+marketing links of the app's own language, and its name.txt and subtitle.txt
+go to the app's information in that language, which Apple keeps apart from
+the version and takes only while one is being prepared; a language new there
+takes the privacy policy link of the app's own language. What is new is read
+for each language from its own file beside --notes, ios/whatsnew/en-US.txt,
+and a language with no file of its own is given --notes, as every language
+was before; a page made by this run must have its own.
+
+The pictures of a language are kept beside the ones given, under its code:
+ios/screenshots/en-US/6.9-inch beside --shots ios/screenshots/6.9-inch, and
+ios/screenshots/en-US/ipad-13 beside --ipad. A language with a folder of its
+own takes it, and any other takes the folder given, as every language did
+before. The preview films of --previews and the iPhone Duo pictures a build
+run took are in the app's own language, so they go to its page alone, and
+another language takes films only from a folder of its own, ios/previews/<code>.
 """
 
 import argparse
@@ -195,11 +213,59 @@ def localizations(version_id):
     return api('GET', '/v1/appStoreVersions/%s/appStoreVersionLocalizations?limit=50' % version_id)['data']
 
 
-def write_notes(version_id, notes):
+def write_notes(version_id, notes_for):
     for loc in localizations(version_id):
-        log('what is new, %s' % loc['attributes']['locale'])
+        locale = loc['attributes']['locale']
+        log('what is new, %s' % locale)
         api('PATCH', '/v1/appStoreVersionLocalizations/' + loc['id'], {'data': {
-            'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': notes}}})
+            'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': {'whatsNew': notes_for(locale)}}})
+
+
+def own_notes(path, notes):
+    """What is new for a language: its own file beside the one given,
+    ios/whatsnew/en-US.txt, or the one given when it has none."""
+    here = os.path.dirname(path) or '.'
+
+    def notes_for(locale):
+        mine = os.path.join(here, locale + '.txt')
+        return open(mine, encoding='utf-8').read().strip() if os.path.isfile(mine) else notes
+    return notes_for
+
+
+def own(folder, locale):
+    """A language's own pictures, kept beside the folder given under its code:
+    ios/screenshots/en-US/6.9-inch beside ios/screenshots/6.9-inch. None when it
+    has none, and it takes the folder given."""
+    if not folder:
+        return None
+    folder = os.path.normpath(folder)
+    mine = os.path.join(os.path.dirname(folder), locale, os.path.basename(folder))
+    return mine if os.path.isdir(mine) else None
+
+
+def own_sets(folder, read):
+    """Every language's own pictures beside the folder given, each read as the
+    folder given is, so a wrong size stops the run before anything is sent."""
+    if not folder:
+        return {}
+    folder = os.path.normpath(folder)
+    root, kind = os.path.dirname(folder), os.path.basename(folder)
+    out = {}
+    for name in sorted(os.listdir(root or '.')):
+        here = os.path.join(root, name, kind)
+        if os.path.isdir(here):
+            out[name] = read(here)
+    return out
+
+
+def films_for(folder, locale, home):
+    """The films of --previews are of the app in its own language, and go to
+    its page alone; another language takes films only from ios/previews/<code>,
+    so no page opens on a film in a language not its own."""
+    mine = os.path.join(folder, locale)
+    if os.path.isdir(mine):
+        return mine
+    return folder if locale == home else None
 
 
 # The words of the page itself, kept in the repository a folder for each
@@ -231,6 +297,112 @@ def store_text(folder, locale):
             raise SystemExit('%s has the sign of the salutation, which Apple refuses: write it out' % path)
         words[field] = text
     return words
+
+
+# The name and the subtitle belong to the app's information, not the version:
+# thirty characters each, and a language new to the store needs its name.
+NAME_FIELDS = (('name.txt', 'name', 30), ('subtitle.txt', 'subtitle', 30))
+APP_INFO_EDITABLE = {'PREPARE_FOR_SUBMISSION', 'READY_FOR_REVIEW', 'DEVELOPER_REJECTED',
+                     'REJECTED', 'METADATA_REJECTED'}
+
+
+def app_info_text(folder, locale):
+    here = os.path.join(folder, locale)
+    words = {}
+    for name, field, limit in NAME_FIELDS:
+        path = os.path.join(here, name)
+        if not os.path.isfile(path):
+            continue
+        text = open(path, encoding='utf-8').read().strip()
+        if len(text) > limit:
+            raise SystemExit('%s is %d characters, and Apple takes %d' % (path, len(text), limit))
+        if 'ﷺ' in text:
+            raise SystemExit('%s has the sign of the salutation, which Apple refuses: write it out' % path)
+        words[field] = text
+    return words
+
+
+def languages_in(folder):
+    """The languages the folder has words for, by the code Apple gives them."""
+    return sorted(n for n in os.listdir(folder) if os.path.isdir(os.path.join(folder, n))
+                  and any(os.path.isfile(os.path.join(folder, n, f))
+                          for f, _, _ in TEXT_FIELDS + NAME_FIELDS))
+
+
+_HOME = []
+
+
+def home_locale():
+    """The app's own language on the store, Arabic: the films and the iPhone
+    Duo pictures are of the app in it."""
+    if not _HOME:
+        _HOME.append(api('GET', '/v1/apps/%s' % APP)['data']['attributes'].get('primaryLocale') or 'ar-SA')
+    return _HOME[0]
+
+
+def add_languages(version_id, folder):
+    """A language with its own words in the repository and no page in this
+    version is given one, with the support and marketing links of the app's
+    own language; its words, what is new and its pictures follow."""
+    reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
+    have = {loc['attributes']['locale']: loc for loc in localizations(reading)}
+    home = have.get(home_locale()) or next(iter(have.values()), None)
+    links = {k: home['attributes'][k] for k in ('supportUrl', 'marketingUrl')
+             if home and home['attributes'].get(k)}
+    for locale in languages_in(folder):
+        if locale in have:
+            continue
+        log('a page in %s is made for this version' % locale)
+        api('POST', '/v1/appStoreVersionLocalizations', {'data': {
+            'type': 'appStoreVersionLocalizations', 'attributes': dict(links, locale=locale),
+            'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': version_id}}}}})
+
+
+def app_info_to_edit():
+    for info in api('GET', '/v1/apps/%s/appInfos' % APP)['data']:
+        at = info['attributes']
+        if (at.get('state') or at.get('appStoreState')) in APP_INFO_EDITABLE:
+            return info['id']
+    return None
+
+
+def write_names(folder):
+    """The name and the subtitle of each language that has them in the
+    repository, written where they differ and made where the language is new;
+    a language without them keeps what the store has."""
+    wanted = {}
+    for locale in languages_in(folder):
+        words = app_info_text(folder, locale)
+        if words:
+            wanted[locale] = words
+    if not wanted:
+        return
+    info = app_info_to_edit()
+    if not info:
+        log('no app information is being prepared, so the names and subtitles wait for the next version')
+        return
+    there = {x['attributes']['locale']: x for x in
+             api('GET', '/v1/appInfos/%s/appInfoLocalizations?limit=50' % info)['data']}
+    home = there.get(home_locale()) or next(iter(there.values()), None)
+    policy = {k: home['attributes'][k] for k in ('privacyPolicyUrl', 'privacyChoicesUrl')
+              if home and home['attributes'].get(k)}
+    for locale, words in sorted(wanted.items()):
+        mine = there.get(locale)
+        if mine:
+            change = {k: v for k, v in words.items() if mine['attributes'].get(k) != v}
+            if not change:
+                log('the name in %s is as it was' % locale)
+                continue
+            log('the name in %s: %s' % (locale, ', '.join('%s %s' % kv for kv in sorted(change.items()))))
+            api('PATCH', '/v1/appInfoLocalizations/' + mine['id'], {'data': {
+                'type': 'appInfoLocalizations', 'id': mine['id'], 'attributes': change}})
+            continue
+        if 'name' not in words:
+            raise SystemExit('%s is new to the store and has no name.txt' % os.path.join(folder, locale))
+        log('the name in %s, new: %s | %s' % (locale, words['name'], words.get('subtitle', '')))
+        api('POST', '/v1/appInfoLocalizations', {'data': {
+            'type': 'appInfoLocalizations', 'attributes': dict(policy, locale=locale, **words),
+            'relationships': {'appInfo': {'data': {'type': 'appInfos', 'id': info}}}}})
 
 
 def write_text(version_id, folder):
@@ -491,10 +663,18 @@ def phone_shots(folder):
 
 
 def place_phone_shots(loc_id, sets, files):
+    """The set replaced whole, unless it holds these very pictures already."""
+    sums = []
+    for path in files:
+        with open(path, 'rb') as f:
+            sums.append(hashlib.md5(f.read()).hexdigest())
     if PHONE in sets:
+        if [s['attributes'].get('sourceFileChecksum') for s in sets[PHONE][1]] == sums:
+            log('the 6.9 inch screenshots are there already (%d)' % len(sums))
+            return
         log('replacing the 6.9 inch screenshots (%d were there)' % len(sets[PHONE][1]))
         api('DELETE', '/v1/appScreenshotSets/' + sets[PHONE][0])
-    log('6.9 inch: %s' % ', '.join(os.path.basename(f) for f in files))
+    log('6.9 inch from %s: %s' % (os.path.dirname(files[0]), ', '.join(os.path.basename(f) for f in files)))
     set_id = new_set(loc_id, PHONE)
     for path in files:
         with open(path, 'rb') as f:
@@ -537,7 +717,7 @@ def place_ipad_shots(loc_id, sets, files):
             return
         log('replacing the 13 inch iPad screenshots (%d were there)' % len(sets[IPAD][1]))
         api('DELETE', '/v1/appScreenshotSets/' + sets[IPAD][0])
-    log('13 inch iPad: %s' % ', '.join(os.path.basename(f) for f in files))
+    log('13 inch iPad from %s: %s' % (os.path.dirname(files[0]), ', '.join(os.path.basename(f) for f in files)))
     set_id = new_set(loc_id, IPAD)
     for path in files:
         with open(path, 'rb') as f:
@@ -653,6 +833,8 @@ def main():
             p.error('--shots-only needs --shots')
         files = phone_shots(a.shots)
         pads = ipad_shots(a.ipad) if a.ipad else []
+        # each language's own, read before anything is taken back or placed
+        mine, my_pads = own_sets(a.shots, phone_shots), own_sets(a.ipad, ipad_shots)
         taken_back = withdraw() if a.withdraw else None
         version_id = taken_back or version_to_prepare(a.version)
         reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
@@ -660,9 +842,14 @@ def main():
         if not locs:
             raise SystemExit('the version has no languages yet to place the screenshots in')
         for loc in locs:
-            place_phone_shots(loc['id'], sets_of(loc['id']), files)
+            locale = loc['attributes']['locale']
+            log('the pictures of %s' % locale)
+            place_phone_shots(loc['id'], sets_of(loc['id']), mine.get(locale, files))
             if pads:
-                place_ipad_shots(loc['id'], sets_of(loc['id']), pads)
+                place_ipad_shots(loc['id'], sets_of(loc['id']), my_pads.get(locale, pads))
+        for locale in sorted(set(mine) - {loc['attributes']['locale'] for loc in locs}):
+            log('%s has pictures in the repository and no page in this version yet; a version sent with --text makes it'
+                % locale)
         if taken_back and not DRY:
             send(taken_back)
             log('the screenshots are placed, and the version is waiting for review again')
@@ -678,9 +865,15 @@ def main():
         locs = localizations(reading)
         if not locs:
             raise SystemExit('the version has no languages yet to place the films in')
+        home = home_locale()
         for loc in locs:
-            carry_phone_shots(loc['id'], loc['attributes']['locale'], sets_of(loc['id']))
-            place_previews(loc['id'], a.previews)
+            locale = loc['attributes']['locale']
+            films = films_for(a.previews, locale, home)
+            if not films:
+                log('%s has no films of its own, and those of %s are not put on its page' % (locale, home))
+                continue
+            carry_phone_shots(loc['id'], locale, sets_of(loc['id']))
+            place_previews(loc['id'], films)
         log('the previews are placed; nothing was sent')
         return
 
@@ -690,11 +883,23 @@ def main():
         p.error('--build and --notes are needed to send a build')
     notes = open(a.notes, encoding='utf-8').read().strip()
     pads = ipad_shots(a.ipad) if a.ipad else []
+    notes_for = own_notes(a.notes, notes)
+    # each language's own pictures, read and measured here with the rest
+    mine = own_sets(a.shots, phone_shots) if a.shots else {}
+    my_pads = own_sets(a.ipad, ipad_shots)
     if a.text:
         # read and measured before anything is sent, so a word too many stops it here
         for locale in sorted(os.listdir(a.text)):
             if os.path.isdir(os.path.join(a.text, locale)):
                 store_text(a.text, locale)
+                app_info_text(a.text, locale)
+                # a page this run may make needs what is new in its own words
+                given = os.path.splitext(os.path.basename(a.notes))[0]
+                if locale != given and not os.path.isfile(os.path.join(os.path.dirname(a.notes), locale + '.txt')):
+                    raise SystemExit('%s has no %s.txt beside %s, and its page would be given the words of another language'
+                                     % (os.path.join(a.text, locale), locale, a.notes))
+                if len(notes_for(locale)) > 4000:
+                    raise SystemExit('what is new in %s is longer than the four thousand Apple takes' % locale)
 
     build_id = wait_for_build(a.version, a.build, a.wait)
     # the build is there before anything is taken back, so a version is never
@@ -703,24 +908,38 @@ def main():
         withdraw()
     version_id = version_to_send(a.version)
     attach(version_id, build_id)
-    write_notes(version_id, notes)
+    if a.text:
+        # the names first, so a name Apple refuses stops the run before the rest
+        write_names(a.text)
+        add_languages(version_id, a.text)
+    write_notes(version_id, notes_for)
     if a.text:
         write_text(version_id, a.text)
     # a dry run that would make the version reads the one on sale instead
     reading = on_sale()['id'] if version_id == 'DRY-RUN' else version_id
+    home = home_locale()
+    placed = set()
     for loc in localizations(reading):
         locale = loc['attributes']['locale']
+        placed.add(locale)
+        log('the pictures of %s' % locale)
         sets = sets_of(loc['id'])
         if a.shots:
-            place_phone_shots(loc['id'], sets, phone_shots(a.shots))
+            place_phone_shots(loc['id'], sets, mine.get(locale) or phone_shots(a.shots))
         else:
             carry_phone_shots(loc['id'], locale, sets)
-        if a.duo:
+        # the pictures a build run took are of the app in its own language
+        if a.duo and locale == home:
             place_duo(loc['id'], sets_of(loc['id']), a.duo)
         if pads:
-            place_ipad_shots(loc['id'], sets_of(loc['id']), pads)
-        if a.previews:
-            place_previews(loc['id'], a.previews)
+            place_ipad_shots(loc['id'], sets_of(loc['id']), my_pads.get(locale, pads))
+        films = films_for(a.previews, locale, home) if a.previews else None
+        if films:
+            place_previews(loc['id'], films)
+    if DRY:
+        for locale in sorted((set(mine) | set(my_pads)) - placed):
+            log('  [dry run] %s: its page would take %d phone and %d iPad pictures of its own'
+                % (locale, len(mine.get(locale, [])), len(my_pads.get(locale, []))))
     if a.no_submit or DRY:
         log('left ready to send, not sent')
         return
