@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>حمّل سُنّتي</title>
+<meta name="description" content="حمّل سُنّتي على هاتفك من متجر آبل أو Google Play، مجاناً بلا إعلانات ويعمل بلا إنترنت.">
+<meta name="theme-color" content="#f6f4ee">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta property="og:title" content="سُنّتي · مصحف ومواقيت وأذكار">
+<meta property="og:description" content="حمّل سُنّتي على هاتفك من متجر آبل أو Google Play، مجاناً بلا إعلانات ويعمل بلا إنترنت.">
+<meta property="og:image" content="https://sunnati.3li.info/icons/play-1024.png">
+<meta property="og:url" content="https://sunnati.3li.info/app">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<script>
+  /* One address to hand anyone, sunnati.3li.info/app: an iPhone or an iPad
+     is sent to the App Store and an android phone to Google Play, before the
+     page is drawn, and replaced rather than followed, so the back button
+     does not land here and bounce to the store again. An iPad asks for the
+     desktop pages and says Macintosh, but a Mac has no touch. Inside the app
+     itself the reader has it already, and android hands the app every
+     address of the site, this one too: it opens the app's front instead. A
+     computer stays here and is shown the two stores and the app in the
+     browser. */
+  (function () {
+    var ua = navigator.userAgent || '';
+    var to = '';
+    if (typeof window.SunnatiApp !== 'undefined' || / SunnatiApp\//.test(ua)) to = './';
+    else if (/iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) {
+      to = 'https://apps.apple.com/app/id6814355836';
+    } else if (/Android/i.test(ua)) {
+      to = 'https://play.google.com/store/apps/details?id=com.eworldq8.sunnati';
+    }
+    if (to) location.replace(to);
+  }());
+</script>
+<link rel="stylesheet" href="css/fonts.css">
+<style>
+  /* the page that explains the app wears its paper, its sadu, its red and its
+     face, and so does this one, and the buttons are that page's own */
+  :root{
+    --paper:#f6f4ee; --ink:#16241c; --ink-2:#55655c; --ink-3:#6b7a72;
+    --accent:#9c2b2b; --accent-deep:#7d2323; --on-accent:#fffdf8;
+    --cushion:url('data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%27%20width%3D%2796%27%20height%3D%27120%27%20viewBox%3D%270%200%2096%20120%27%3E%0A%3Crect%20width%3D%2796%27%20height%3D%27120%27%20fill%3D%27%231a1412%27%2F%3E%0A%3Crect%20y%3D%270%27%20width%3D%2796%27%20height%3D%274%27%20fill%3D%27%23d9a441%27%2F%3E%3Crect%20y%3D%27116%27%20width%3D%2796%27%20height%3D%274%27%20fill%3D%27%23d9a441%27%2F%3E%0A%3Cg%20fill%3D%27%239c2b2b%27%3E%3Cpath%20d%3D%27M0%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M0%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M24%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M24%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M48%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M48%20112%20l12%20-20%20l12%2020z%27%2F%3E%3Cpath%20d%3D%27M72%208%20l12%2020%20l12%20-20z%27%2F%3E%3Cpath%20d%3D%27M72%20112%20l12%20-20%20l12%2020z%27%2F%3E%3C%2Fg%3E%0A%3Cg%20fill%3D%27%23f3e9d2%27%3E%3Cpath%20d%3D%27M12%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M12%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M36%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M36%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M60%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M60%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M84%208%20l12%2020%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3Cpath%20d%3D%27M84%20112%20l12%20-20%20l-12%200z%27%20opacity%3D%27.9%27%2F%3E%3C%2Fg%3E%0A%3Crect%20y%3D%2734%27%20width%3D%2796%27%20height%3D%272%27%20fill%3D%27%23f3e9d2%27%2F%3E%3Crect%20y%3D%2784%27%20width%3D%2796%27%20height%3D%272%27%20fill%3D%27%23f3e9d2%27%2F%3E%0A%3Cpath%20d%3D%27M0%2068%20L12%2044%20L24%2068%20L36%2044%20L48%2068%20L60%2044%20L72%2068%20L84%2044%20L96%2068%27%20fill%3D%27none%27%20stroke%3D%27%23f3e9d2%27%20stroke-width%3D%275%27%2F%3E%0A%3Cpath%20d%3D%27M0%2076%20L12%2052%20L24%2076%20L36%2052%20L48%2076%20L60%2052%20L72%2076%20L84%2052%20L96%2076%27%20fill%3D%27none%27%20stroke%3D%27%239c2b2b%27%20stroke-width%3D%273%27%2F%3E%0A%3C%2Fsvg%3E');
+  }
+  /* in the dark, as the privacy pages beside it are */
+  @media (prefers-color-scheme:dark){
+    :root{
+      --paper:#10161a; --ink:#ede9e1; --ink-2:#c3ccc7; --ink-3:#8f9b95;
+      --accent:#ff6969; --accent-deep:#ff8080; --on-accent:#10161a;
+    }
+  }
+  *,*::before,*::after{box-sizing:border-box}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  body{
+    margin:0; min-height:100vh; background:var(--paper); color:var(--ink);
+    font-family:'IBM Plex Sans Arabic',system-ui,sans-serif; font-weight:400;
+    font-size:clamp(1rem,.96rem + .2vw,1.1rem); line-height:1.75;
+    -webkit-font-smoothing:antialiased;
+  }
+  :focus-visible{outline:2.5px solid var(--accent); outline-offset:3px; border-radius:4px}
+  .band{height:30px; background-image:var(--cushion); background-size:96px 120px}
+  .wrap{max-width:60rem; margin:0 auto; padding:0 clamp(1.1rem,4vw,2.5rem)}
+  header{text-align:center; padding:clamp(3.5rem,11vw,6.5rem) 0 clamp(2.5rem,8vw,4.5rem)}
+  .mark{
+    font-family:'IBM Plex Sans Arabic',sans-serif; font-weight:700;
+    font-size:clamp(3.4rem,13vw,6rem); line-height:1.34; margin:0; color:var(--accent);
+    letter-spacing:-.015em;
+  }
+  .sub{
+    margin:.85rem 0 0; font-size:clamp(1.05rem,3.4vw,1.35rem); font-weight:300;
+    color:var(--ink-2); letter-spacing:.01em;
+  }
+  .get{display:flex; gap:.9rem; justify-content:center; flex-wrap:wrap; margin-top:clamp(2.2rem,7vw,3rem)}
+  .get a{
+    display:inline-flex; align-items:center; gap:.55rem; text-decoration:none;
+    padding:.85rem 1.5rem; border-radius:999px; font-weight:600; font-size:1rem;
+    background:var(--accent); color:var(--on-accent); border:1.5px solid var(--accent);
+    transition:background .16s ease,color .16s ease;
+  }
+  .get a.ghost{background:transparent; color:var(--accent)}
+  .get a:hover{background:var(--accent-deep); border-color:var(--accent-deep); color:var(--on-accent)}
+  .get svg{width:1.15em; height:1.15em; fill:currentColor}
+  .get small{display:block; width:100%; text-align:center; color:var(--ink-3); font-size:.85rem; margin-top:.3rem}
+</style>
+</head>
+<body>
+
+<div class="band" role="presentation"></div>
+
+<div class="wrap">
+  <header>
+    <h1 class="mark">سُنّتي</h1>
+    <p class="sub">مصحف ومواقيت وأذكار وسنن، حمّله على هاتفك</p>
+    <div class="get">
+      <a href="https://apps.apple.com/app/id6814355836">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.05 12.54c-.02-2.4 1.96-3.55 2.05-3.6-1.12-1.63-2.86-1.86-3.48-1.89-1.48-.15-2.89.87-3.64.87-.75 0-1.91-.85-3.14-.83-1.61.02-3.1.94-3.93 2.38-1.68 2.91-.43 7.22 1.2 9.58.8 1.16 1.75 2.46 3 2.41 1.21-.05 1.66-.78 3.12-.78 1.46 0 1.87.78 3.14.76 1.3-.02 2.12-1.18 2.91-2.34.92-1.34 1.3-2.64 1.32-2.71-.03-.01-2.53-.97-2.55-3.85zM14.8 5.1c.66-.81 1.11-1.93.99-3.05-.95.04-2.11.64-2.8 1.44-.61.71-1.15 1.85-1.01 2.94 1.07.08 2.16-.54 2.82-1.33z"/></svg>
+        متجر آبل
+      </a>
+      <a href="https://play.google.com/store/apps/details?id=com.eworldq8.sunnati">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.6v14.8c0 .8.9 1.3 1.6.9l12-7.4c.6-.4.6-1.3 0-1.7l-12-7.4C7.9 3.3 7 3.8 7 4.6z"/></svg>
+        Google Play
+      </a>
+      <a class="ghost" href="./">
+        افتحه في المتصفّح
+      </a>
+      <small>والنسخة في المتصفّح تعمل أيضاً وتُثبَّت على الشاشة الرئيسية</small>
+    </div>
+  </header>
+</div>
+
+</body>
+</html>
