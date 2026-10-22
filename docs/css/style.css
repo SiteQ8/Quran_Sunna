@@ -148,6 +148,16 @@
    pinch and drops only the double-tap zoom. Android never zoomed, since it
    honours the viewport; this makes the two behave alike. */
 html { font-size: 16px; touch-action: manipulation; }
+/* Nothing on a page may make it wider than the phone. A word or a button
+   wider than its box, the offline download in Bengali or Malay at the
+   phone's large text, made the whole page a few points wider: the tab bar
+   ran off the edge and the page slid sideways under a finger, as a website
+   does and an app does not. The body alone was not enough, a phone widens
+   the page to what it holds whatever the body says, so the page itself is
+   cut at its edge. Clip rather than hidden, so neither becomes a box of its
+   own that scrolls and the bars that stay at the top keep doing so; an older
+   browser that lacks it keeps the body's hidden. */
+html { overflow-x: clip; }
 
 body {
   font-family: var(--ui);
@@ -155,6 +165,7 @@ body {
   color: var(--ink);
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.6;
   /* and the player, while it is open, keeps the foot of the page clear of it:
      it lay over the last button of a surah, «أنهيت هذه السورة» */
@@ -635,6 +646,17 @@ html.has-sky .arc-wrap { cursor: pointer; }
    the widest place on the bar */
 #page-random, #page-autoscroll { flex: 0 0 48px; padding: 0; }
 .page-nav .btn:disabled { opacity: .4; }
+/* A translated turn of the page can be one word wider than its half,
+   «Berikutnya» or «Предыдущая», and the bar ran past the edge of the screen:
+   measured so, each turn shows its mark over a smaller word, as the tools of
+   a sheet do, and at the phone's largest text the marks alone, whose names
+   are read out all the same. The book of a tablet has the room. */
+html:not(.book) .page-nav.is-tight #page-prev, html:not(.book) .page-nav.is-tight #page-next {
+  flex-direction: column; gap: 2px; height: auto; min-height: 56px;
+  padding-inline: var(--s1); font-size: var(--step--1); line-height: 1.2;
+}
+html:not(.book) .page-nav.is-tight #page-next .icon { order: -1; }
+html:not(.book) .page-nav.is-tighter .bar-word { display: none; }
 
 .goto-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: var(--s3); }
 .goto-row .btn { justify-self: start; }
@@ -668,6 +690,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .prayer-row[disabled] { opacity: .55; }
 
 .prayer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
+/* a column widens for a long word, «congregation», and the row still fits;
+   but four such words, «Восполнен» and its neighbours at the phone's large
+   text, ran the row past the card and widened the page: measured so, the
+   four stand two and two */
+.prayer-stats.is-tight { grid-template-columns: repeat(2, 1fr); }
 .prayer-stat { text-align: center; padding: 10px 4px; border-radius: var(--r-sm); background: var(--sunken); }
 .prayer-stat b { display: block; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .prayer-stat span { font-size: var(--step--2); color: var(--ink-3); }
@@ -901,7 +928,7 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
 @media (max-width: 340px) { .tt th, .tt td { font-size: .72rem; padding-inline: 2px; } }
 .tt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 /* the table keeps to the least size, so seven columns still fit a phone */
-.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: var(--step--2); white-space: nowrap; }
+.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: calc(var(--step--2) * var(--tt-fit, 1)); white-space: nowrap; }
 .tt td { direction: ltr; }
 .tt td .ampm { font-size: .8em; margin-inline-start: 2px; }
 /* AM and PM are wider than the Arabic ص and م, and in the seven columns of a
@@ -912,17 +939,23 @@ html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
 @media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
 /* and whenever the table is measured not to fit, whatever the width */
 html:not([lang='ar']) .tt.is-tight td .ampm { display: none; }
+/* If it is still too wide without the marks, a prayer named in two words,
+   «Fitowar rana», takes two lines in its head, and a hijri month named in
+   one long word, «Cemaziyelevvel», breaks in the day's column, which it had
+   made as wide as itself, at a hyphen where the language has them. */
+html:not([lang='ar']) .tt.is-tighter thead th { white-space: normal; }
+html:not([lang='ar']) .tt.is-tighter .tt-hijri { overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
   padding-block: 11px;
 }
 .tt tbody th { text-align: center; font-weight: 600; padding-inline-start: var(--s4); white-space: nowrap; }
-.tt-day { display: block; font-size: var(--step-0); }
+.tt-day { display: block; font-size: calc(var(--step-0) * var(--tt-fit, 1)); }
 /* the name of a hijri month may take a second line in its one row, between its
    words and never inside one, so the seven columns still fit a phone of three
    hundred and sixty points, where the last of them ran off the card */
-.tt-hijri { display: block; font-size: var(--step--2); color: var(--ink-3); font-weight: 400; margin-top: 1px; white-space: normal; }
+.tt-hijri { display: block; font-size: calc(var(--step--2) * var(--tt-fit, 1)); color: var(--ink-3); font-weight: 400; margin-top: 1px; white-space: normal; }
 .tt tbody tr { border-bottom: 1px solid var(--line); }
 .tt tbody tr:last-child { border-bottom: 0; }
 .tt tbody tr[data-friday='1'] { background: var(--sunken); }
@@ -1229,6 +1262,25 @@ html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anyw
 }
 .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 .btn-block { width: 100%; }
+/* A translated label can be longer than its button, the offline download in
+   Bengali or «Selesai satu muka surat» in half a row at the phone's large
+   text: it takes a second line inside the button, as the buttons of a grid
+   already do, instead of running out of it over its neighbour and widening
+   the page. The Arabic labels fit and are drawn as they were. */
+html:not([lang='ar']) .btn {
+  white-space: normal; text-align: center; line-height: 1.25; overflow-wrap: break-word;
+  height: auto; padding-block: 4px;
+}
+/* A label a little wider than the middle of a button as wide as its row ran
+   into the button's own margin and still sat inside it: it keeps doing so
+   rather than leaving one word alone on a second line, and wraps only when
+   that margin is used up too. */
+html:not([lang='ar']) .btn-block, html:not([lang='ar']) .btn-row > .btn { padding-inline: var(--s2); }
+/* and a pair whose label is one word wider than half the row, «Восстановить»
+   at the phone's large text, which no wrapping can shorten, stand one under
+   the other, each the width of the row */
+html:not([lang='ar']) .btn-row { flex-wrap: wrap; }
+html:not([lang='ar']) .btn-row > .btn { min-width: auto; }
 .btn-row { display: flex; gap: var(--s2); }
 
 /* Wiping what was counted does not stand shoulder to shoulder with what only
@@ -1338,6 +1390,7 @@ html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anyw
   width: 100%; padding: 6px 8px; height: auto; min-height: 44px;
   white-space: normal; text-align: center; line-height: 1.25;
 }
+
 /* one that is not a peer of the rest: it takes the whole row under them */
 .chip-grid .chip-wide { grid-column: 1 / -1; }
 /* and an odd one left over at the end takes the rest of its row rather than
@@ -1395,6 +1448,11 @@ html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anyw
 }
 /* a translated note runs longer than the Arabic it stands for: a third line */
 html:not([lang='ar']) #home-tiles .tile-note { -webkit-line-clamp: 3; }
+/* Two to a row, the ninth section takes the whole last row, and its
+   painting at the width of the row stood twice as tall as the others: every
+   row grew to its height and each card was half empty. Its painting is cut
+   to the height the others have. */
+#home-tiles.grid-2 > .tile:last-child:nth-child(odd) .tile-art { aspect-ratio: 8 / 3; }
 /* the daylight in them is lowered in the dark, as the sky in the niche is */
 html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 

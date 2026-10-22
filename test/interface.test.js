@@ -623,11 +623,11 @@ test('the city list names a city only where the reader is in it, not one of the 
 test('a list longer than its panel shows the top of the next item, and squeezed words make room', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  /* the panel ends part way into an item, measured by the items' own spacing,
-     and above the tab bar rather than under it */
-  assert.match(app, /function showsMore\(panel\) \{[\s\S]*?items\[1\]\.offsetTop - items\[0\]\.offsetTop[\s\S]*?tall \* 0\.65/);
+  /* the panel ends part way into an item, above the tab bar rather than
+     under it, and the choice is brought into view by the same measure */
   assert.match(app, /var room = window\.innerHeight - r\.bottom - bars;\s*\/\* Under the button/);
-  assert.match(app, /showsMore\(panel\);\s*btn\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.match(app, /showsMore\(panel, panel\.querySelector\('\.is-on'\)\);\s*btn\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.doesNotMatch(app, /on\.scrollIntoView\(\{ block: 'nearest' \}\)/, 'nothing pulls the choice flush to the edge after the cut');
   /* a translated row whose words were squeezed beside a long list takes the
      list under them, and an Arabic row is drawn as it was */
   assert.match(app, /function fitSettings\(\) \{[\s\S]*?said\.width < whole \* 0\.5 && said\.height > held\.height \* 1\.6/);
@@ -635,6 +635,197 @@ test('a list longer than its panel shows the top of the next item, and squeezed 
   const { win, doc } = boot();
   win.App.go('settings');
   assert.strictEqual(doc.querySelectorAll('.setting.is-stacked').length, 0);
+});
+
+test('the cut is measured on each item: a two line first item, a choice far down, the last one', () => {
+  const { win, doc } = boot();
+  const showsMore = win.App.helpers.showsMore;
+  /* the city list in large text: «اختر مدينة» on two lines, 64 high, then
+     cities 44 high, 2 apart, inside 8 of padding */
+  function panelOf(chosen) {
+    const panel = doc.createElement('div');
+    panel.className = 'picker-panel';
+    panel.style.borderTop = '1px solid'; panel.style.borderBottom = '1px solid';
+    panel.style.paddingTop = '8px';
+    panel.style.maxHeight = '320px';
+    doc.body.appendChild(panel);
+    const tops = [];
+    for (let i = 0; i < 12; i++) {
+      const item = doc.createElement('button');
+      item.className = 'picker-item' + (i === chosen ? ' is-on' : '');
+      const top = i === 0 ? 8 : 74 + (i - 1) * 46;
+      const high = i === 0 ? 64 : 44;
+      Object.defineProperty(item, 'offsetTop', { value: top });
+      Object.defineProperty(item, 'offsetHeight', { value: high });
+      tops.push([top, high]);
+      panel.appendChild(item);
+    }
+    Object.defineProperty(panel, 'scrollHeight', { value: 74 + 10 * 46 + 44 + 8 });
+    Object.defineProperty(panel, 'clientHeight', { value: 318 });
+    let scrolled = 0;
+    Object.defineProperty(panel, 'scrollTop', { get: () => scrolled, set: (v) => { scrolled = v; } });
+    const look = win.getComputedStyle(panel);
+    const rims = (parseFloat(look.borderTopWidth) || 0) + (parseFloat(look.borderBottomWidth) || 0);
+    showsMore(panel, panel.querySelector('.is-on'));
+    const shown = parseFloat(panel.style.maxHeight) - rims;
+    const from = panel.scrollTop, to = from + shown;
+    /* how much of each item the reader sees, from 0 to 1 */
+    const seen = tops.map(([top, high]) => Math.max(0, Math.min(to, top + high) - Math.max(from, top)) / high);
+    panel.remove();
+    return { seen, from };
+  }
+  function cut(part) { return part > 0.3 && part < 0.9; }
+  /* nothing chosen: the list opens at its top, the last item in view cut
+     through its words, sized by the cities and not by the long first item */
+  let { seen, from } = panelOf(-1);
+  assert.strictEqual(from, 0);
+  let edge = seen.findIndex((part) => part < 1);
+  assert.ok(edge > 1 && cut(seen[edge]), 'the item at the foot shows ' + seen[edge] + ' of itself');
+  assert.ok(seen.slice(edge + 1).every((part) => part === 0));
+  /* a choice far down opens whole, with half of the item above it and the
+     top of the one under it showing, so the list plainly goes on both ways */
+  ({ seen, from } = panelOf(9));
+  assert.ok(from > 0, 'the list is scrolled to the choice');
+  assert.strictEqual(seen[9], 1, 'the choice is whole');
+  assert.ok(cut(seen[10]), 'the item under the choice shows ' + seen[10] + ' of itself');
+  const above = seen.findIndex((part) => part > 0);
+  assert.ok(above < 9 && cut(seen[above]), 'the first item in view shows ' + seen[above] + ' of itself');
+  /* the last item chosen: the list opens on its end, still cut at the top */
+  ({ seen, from } = panelOf(11));
+  assert.strictEqual(seen[11], 1);
+  const first = seen.findIndex((part) => part > 0);
+  assert.ok(cut(seen[first]), 'the first item in view shows ' + seen[first] + ' of itself');
+  /* a choice already in view leaves the list at its top */
+  ({ seen, from } = panelOf(2));
+  assert.strictEqual(from, 0);
+  assert.strictEqual(seen[2], 1);
+});
+
+test('a grid of choices gives up columns, to a count they fill evenly, while a word is wider than its cell', () => {
+  const { win, doc } = boot();
+  const grid = doc.createElement('div');
+  grid.className = 'chip-grid';
+  grid.style.setProperty('--cols', '4');
+  for (let i = 0; i < 8; i++) {
+    const chip = doc.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = 'خيار';
+    grid.appendChild(chip);
+  }
+  doc.body.appendChild(grid);
+  let word = 100;
+  const colsNow = () => parseInt(grid.style.getPropertyValue('--cols'), 10);
+  Object.defineProperty(grid, 'offsetWidth', { get: () => 320 });
+  grid.querySelectorAll('.chip').forEach(function (chip) {
+    Object.defineProperty(chip, 'clientWidth', { get: () => Math.floor(320 / colsNow()) });
+    Object.defineProperty(chip, 'scrollWidth', { get: () => Math.max(word, Math.floor(320 / colsNow())) });
+  });
+  win.App.helpers.fitChips(doc);
+  assert.strictEqual(colsNow(), 2, 'eight across three would leave a hole, so four become two');
+  assert.strictEqual(grid.getAttribute('data-cols'), '4', 'the count the page asked for is kept');
+  word = 60;
+  win.App.helpers.fitChips(doc);
+  assert.strictEqual(colsNow(), 4, 'the words fit again and the grid is as it was asked');
+  grid.remove();
+});
+
+test('the counts stand two and two when their row runs past the card, and the home sections two to a row when a word is wider than its card', () => {
+  const { win, doc } = boot();
+  win.App.go('prayers');
+  const stats = doc.getElementById('prayers-stats');
+  assert.strictEqual(stats.querySelectorAll('.prayer-stat').length, 4);
+  let spill = true;
+  Object.defineProperty(stats, 'clientWidth', { get: () => 296 });
+  Object.defineProperty(stats, 'scrollWidth', { get: () => (spill ? 360 : 296) });
+  win.App.helpers.fitStats();
+  assert.ok(stats.classList.contains('is-tight'), 'four long words that run the row past the card');
+  spill = false;
+  win.App.helpers.fitStats();
+  assert.ok(!stats.classList.contains('is-tight'), 'a row that fits, a column widened or not, stays one row');
+
+  /* jsdom draws nothing, so a word is as wide as nine points a letter */
+  const realRange = doc.createRange;
+  doc.createRange = function () {
+    return {
+      setStart(node, at) { this.from = at; }, setEnd(node, at) { this.to = at; },
+      selectNodeContents(node) { this.from = 0; this.to = (node.textContent || '').length; },
+      getClientRects() { return [{ width: (this.to - this.from) * 9, height: 20 }]; },
+      getBoundingClientRect() { return { width: (this.to - this.from) * 9, height: 20, top: 0, left: 0, right: (this.to - this.from) * 9, bottom: 20 }; }
+    };
+  };
+  win.App.go('home');
+  const tiles = doc.getElementById('home-tiles');
+  const boxes = tiles.querySelectorAll('.tile-name, .tile-note');
+  assert.ok(boxes.length > 2);
+  boxes.forEach(function (box) {
+    Object.defineProperty(box, 'clientWidth', { get: () => 200 });
+    /* a note clamped to three lines says it overflows where its ellipsis falls */
+    Object.defineProperty(box, 'scrollWidth', { get: () => 204 });
+  });
+  const name = tiles.querySelector('.tile-name');
+  name.textContent = 'قضاء';
+  win.App.helpers.fitTiles();
+  assert.ok(!tiles.classList.contains('grid-2'), 'three to a row while every word fits, whatever a clamped note reports');
+  name.textContent = 'Rattrapages-des-prières-oubliées';
+  win.App.helpers.fitTiles();
+  assert.ok(tiles.classList.contains('grid-2'), 'two to a row when one word does not');
+  doc.createRange = realRange;
+});
+
+test('the turns of the mushaf page show their marks over smaller words, then the marks alone, while the bar is wider than the screen', () => {
+  const { win, doc } = boot();
+  win.App.go('page');
+  const nav = doc.querySelector('#v-page .page-nav');
+  assert.ok(nav.querySelector('#page-prev .bar-word') && nav.querySelector('#page-next .bar-word'), 'both words can be left out alike');
+  let over = [true, true];
+  Object.defineProperty(nav, 'offsetWidth', { get: () => 328 });
+  Object.defineProperty(nav, 'clientWidth', { get: () => 328 });
+  Object.defineProperty(nav, 'scrollWidth', {
+    get: () => (nav.classList.contains('is-tighter') ? 328 : nav.classList.contains('is-tight') ? (over[1] ? 340 : 328) : (over[0] ? 380 : 328))
+  });
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(nav.classList.contains('is-tight') && nav.classList.contains('is-tighter'), 'the marks alone at the largest text');
+  over = [true, false];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'marks over smaller words when those fit');
+  over = [false, false];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(!nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'and the bar as it was when the words fit');
+});
+
+test('a timetable wider than its card is drawn in smaller type, never under the least of the narrowest phones', () => {
+  const { win, doc } = boot();
+  const box = doc.createElement('div');
+  const table = doc.createElement('table');
+  table.innerHTML = '<tbody><tr><td>4:33</td></tr></tbody>';
+  box.appendChild(table);
+  doc.body.appendChild(box);
+  let wants = 340;
+  const fitNow = () => parseFloat(table.style.getPropertyValue('--tt-fit')) || 1;
+  Object.defineProperty(box, 'clientWidth', { get: () => 328 });
+  Object.defineProperty(box, 'scrollWidth', { get: () => Math.round(wants * fitNow()), configurable: true });
+  /* the cell's type as the phone draws it, twelve points */
+  const real = win.getComputedStyle;
+  win.getComputedStyle = function (el) { return el.tagName === 'TD' ? { fontSize: '12px' } : real.apply(win, arguments); };
+  win.App.helpers.fitTimetable(table);
+  assert.ok(table.classList.contains('is-tight') && table.classList.contains('is-tighter'));
+  assert.ok(fitNow() < 1 && box.scrollWidth <= box.clientWidth + 1, 'it fits at ' + fitNow());
+  /* far too wide: it stops at .72rem of the twelve points and the box scrolls the rest */
+  wants = 420;
+  win.App.helpers.fitTimetable(table);
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), (0.72 * 16 / 12).toFixed(3));
+  /* a table that fits once the marks are gone keeps its heads and its type */
+  Object.defineProperty(box, 'scrollWidth', { get: () => (table.classList.contains('is-tight') ? 328 : 345), configurable: true });
+  win.App.helpers.fitTimetable(table);
+  assert.ok(table.classList.contains('is-tight') && !table.classList.contains('is-tighter'));
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), '');
+  /* and a table that fits keeps everything */
+  Object.defineProperty(box, 'scrollWidth', { get: () => 300 });
+  win.App.helpers.fitTimetable(table);
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), '');
+  assert.ok(!table.classList.contains('is-tight'));
+  win.getComputedStyle = real;
+  box.remove();
 });
 
 /* ---------------- khatma ---------------- */
@@ -2777,7 +2968,7 @@ test('the review can actually fail, so a clean run means something', () => {
   ['docs/js', 'docs/data', 'docs/css', 'tools', 'play', 'android'].forEach(function (d) {
     fs.mkdirSync(path.join(dir, d), { recursive: true });
   });
-  ['docs/index.html', 'docs/privacy.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
+  ['docs/index.html', 'docs/privacy.html', 'docs/app.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
    'docs/js/hijri.js', 'docs/js/store.js', 'docs/data/surahs.js', 'docs/data/azkar.js',
    'docs/data/content.js', 'docs/data/extras.js', 'README.md', 'play/README.md', 'android/README.md',
    'tools/review-arabic.js'].forEach(function (f) {
@@ -9068,6 +9259,46 @@ test('the page that explains the app stands on its own and stays reachable', () 
   /* and the app points at it, or nobody finds it */
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(html.indexOf('intro.html') !== -1, 'the app links to it');
+});
+
+test('one address sends an iPhone to the App Store, an android phone to Google Play, and the app to its own front', () => {
+  const page = fs.readFileSync(path.join(DOCS, 'app.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const play = /play: '([^']+)'/.exec(app)[1];
+  const apple = /apple: '([^']+)'/.exec(app)[1];
+  /* the stores it sends to are the app's own, in the script and on its buttons */
+  assert.ok(page.split(apple).length >= 3, 'the App Store address, twice');
+  assert.ok(page.split(play).length >= 3, 'the Google Play address, twice');
+  const script = /<script>([\s\S]*?)<\/script>/.exec(page)[1];
+  assert.ok(page.indexOf('<script>') < page.indexOf('<link rel="stylesheet"'), 'it leaves before anything is drawn');
+  function opened(ua, touch, bridge) {
+    let went = null;
+    const sandbox = { navigator: { userAgent: ua, maxTouchPoints: touch || 0 }, location: { replace: (u) => { went = u; } } };
+    sandbox.window = sandbox;
+    if (bridge) sandbox.SunnatiApp = {};
+    vm.runInNewContext(script, sandbox);
+    return went;
+  }
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+  const IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
+  const ANDROID = 'Mozilla/5.0 (Linux; Android 15; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+  const WINDOWS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  assert.strictEqual(opened(IPHONE), apple);
+  assert.strictEqual(opened(IPAD, 5), apple, 'an iPad that asks for the desktop pages is still an iPad');
+  assert.strictEqual(opened(IPAD, 0), null, 'a Mac stays and is shown both stores');
+  assert.strictEqual(opened(ANDROID), play);
+  assert.strictEqual(opened(WINDOWS), null);
+  /* inside the app the reader has it already: android hands the app every
+     address of the site, and the iPhone's has its bridge from the start */
+  assert.strictEqual(opened(ANDROID.replace('Mobile Safari/537.36', 'Mobile Safari/537.36 SunnatiApp/8.87.97')), './');
+  assert.strictEqual(opened(IPHONE, 0, true), './');
+  /* drawn as the page that explains the app is: its colours, its sadu, its faces */
+  for (const token of ['#f6f4ee', '#16241c', '#9c2b2b']) assert.ok(page.indexOf(token) !== -1, 'it keeps the app colour ' + token);
+  assert.ok(page.indexOf('svg+xml') !== -1, 'the sadu is drawn, not photographed');
+  assert.ok(page.indexOf('css/fonts.css') !== -1 && !/fonts\.googleapis|fonts\.gstatic|cdn\./.test(page), 'the app\'s own faces, and nobody else\'s');
+  /* a shared link shows the app's name and picture */
+  assert.match(page, /<meta property="og:url" content="https:\/\/sunnati\.3li\.info\/app">/);
+  assert.ok(fs.existsSync(path.join(DOCS, 'icons', 'play-1024.png')));
 });
 
 test('every verse quoted in the adhkar matches the mushaf that ships with it', () => {
