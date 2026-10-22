@@ -403,6 +403,10 @@ test('no word is drawn under twelve points', () => {
   assert.deepStrictEqual(small.sort(), [0.72, 0.74], 'smaller than the floor: ' + small.join(', '));
   assert.match(CSS, /--step--2: \.75rem;/);
   assert.match(CSS, /\.tab \{[^}]*font-size: var\(--step--2\)/, 'the names of the tabs among them');
+  /* and the month table, drawn smaller to fit a phone in large type, stops
+     at that same least of the narrowest phones */
+  const APP = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.match(APP, /var TT_LEAST = 0\.72 \* 16;/);
 });
 
 test('the six windows take two rows of three when their words outgrow one', () => {
@@ -479,7 +483,10 @@ test('the page bar gives its room to the two turns of the page', () => {
   assert.ok(random.getAttribute('aria-label'), 'with its name read out');
   assert.strictEqual(random.querySelector('use').getAttribute('href'), '#i-shuffle');
   assert.match(CSS, /#page-random, #page-autoscroll \{ flex: 0 0 48px;/);
-  assert.ok(!/\.bar-word \{ display: none; \}/.test(CSS), '«التالية» keeps its word as «السابقة» does');
+  assert.ok(!/\n\.bar-word \{ display: none; \}/.test(CSS), '«التالية» keeps its word as «السابقة» does');
+  /* a translated bar too wide for the screen leaves both words out alike, and only then */
+  assert.match(CSS, /html:not\(\.book\) \.page-nav\.is-tighter \.bar-word \{ display: none; \}/);
+  assert.ok(doc.querySelector('#page-prev .bar-word') && doc.querySelector('#page-next .bar-word'));
 });
 
 test('a long press lifts no picture and no card, and the page does not stretch after the finger', () => {
@@ -487,6 +494,36 @@ test('a long press lifts no picture and no card, and the page does not stretch a
   assert.match(CSS, /html, body \{ overscroll-behavior: none; \}/);
   const MAIN = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'MainActivity.java'), 'utf8');
   assert.match(MAIN, /web\.setOverScrollMode\(View\.OVER_SCROLL_NEVER\);/);
+});
+
+test('nothing makes the page wider than the phone, and a long label wraps in its button', () => {
+  /* the page itself is cut at its edge, clipped so neither it nor the body
+     becomes a box that scrolls, with the body's hidden kept for an older
+     browser that lacks clip */
+  assert.match(CSS, /\nhtml \{ overflow-x: clip; \}/);
+  assert.match(CSS, /body \{[^}]*overflow-x: hidden;\s*overflow-x: clip;/);
+  assert.ok(!/\n(html, )?body \{[^}]*overflow-x: hidden;\s*overflow-y/.test(CSS), 'nothing turns the body into a box of its own');
+  /* a translated label takes a second line inside its button, and the
+     Arabic buttons are drawn as they were */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn \{\s*white-space: normal; text-align: center; line-height: 1\.25; overflow-wrap: break-word;\s*height: auto; padding-block: 4px;\s*\}/);
+  assert.match(CSS, /\.btn \{[^}]*height: 48px; min-height: 48px;[^}]*white-space: nowrap;/);
+  /* a translated block or pair uses its own margin before it wraps, and a
+     pair stands one under the other when a word is wider than half the row */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-block, html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ padding-inline: var\(--s2\); \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row \{ flex-wrap: wrap; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ min-width: auto; \}/);
+  /* the four counts are drawn as they were, and stand two and two when measured so */
+  assert.match(CSS, /\.prayer-stats \{ display: grid; grid-template-columns: repeat\(4, 1fr\);/);
+  assert.match(CSS, /\.prayer-stats\.is-tight \{ grid-template-columns: repeat\(2, 1fr\); \}/);
+  /* the last section across a row of two keeps the height of the others */
+  assert.match(CSS, /#home-tiles\.grid-2 > \.tile:last-child:nth-child\(odd\) \.tile-art \{ aspect-ratio: 8 \/ 3; \}/);
+  /* the timetable's type follows its fit, and only a table still too wide
+     without its marks lets a two word head and a long month name wrap */
+  assert.match(CSS, /\.tt th, \.tt td \{[^}]*font-size: calc\(var\(--step--2\) \* var\(--tt-fit, 1\)\);/);
+  assert.match(CSS, /\.tt-day \{ display: block; font-size: calc\(var\(--step-0\) \* var\(--tt-fit, 1\)\); \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tighter thead th \{ white-space: normal; \}/);
+  assert.ok(!/\.tt\.is-tight thead th/.test(CSS), 'a table that fits once its marks are gone keeps its heads on one line');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tighter \.tt-hijri \{ overflow-wrap: anywhere;/);
 });
 
 test('what was measured for a left-to-right page leaves the Arabic page as it was drawn', () => {

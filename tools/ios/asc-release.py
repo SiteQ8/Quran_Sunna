@@ -455,14 +455,17 @@ def upload(set_id, name, data):
     api('PATCH', '/v1/appScreenshots/' + shot['id'], {'data': {
         'type': 'appScreenshots', 'id': shot['id'],
         'attributes': {'uploaded': True, 'sourceFileChecksum': hashlib.md5(data).hexdigest()}}})
-    for _ in range(60):
+    # Apple's queue for pictures is sometimes slow: a Russian home screen sat
+    # unread for five minutes on 22 October and the whole send stopped there,
+    # with three languages done and six to go. Fifteen minutes, then.
+    for _ in range(180):
         state = api('GET', '/v1/appScreenshots/' + shot['id'])['data']['attributes'].get('assetDeliveryState') or {}
         if state.get('state') == 'COMPLETE':
             return
         if state.get('state') == 'FAILED':
             raise SystemExit('Apple refused %s: %s' % (name, json.dumps(state.get('errors'), ensure_ascii=False)))
         time.sleep(5)
-    raise SystemExit('%s was not accepted in five minutes' % name)
+    raise SystemExit('%s was not accepted in fifteen minutes' % name)
 
 
 def carry_phone_shots(loc_id, locale, sets):
