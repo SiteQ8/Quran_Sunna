@@ -650,7 +650,10 @@ html.has-sky .arc-wrap { cursor: pointer; }
    «Berikutnya» or «Предыдущая», and the bar ran past the edge of the screen:
    measured so, each turn shows its mark over a smaller word, as the tools of
    a sheet do, and at the phone's largest text the marks alone, whose names
-   are read out all the same. The book of a tablet has the room. */
+   are read out all the same. A bar that only reaches into the margin of the
+   page is drawn as it was, and so is every Arabic bar but the one the
+   largest text pushes past a small phone's edge; the book of a tablet has
+   the room. */
 html:not(.book) .page-nav.is-tight #page-prev, html:not(.book) .page-nav.is-tight #page-next {
   flex-direction: column; gap: 2px; height: auto; min-height: 56px;
   padding-inline: var(--s1); font-size: var(--step--1); line-height: 1.2;
@@ -1275,12 +1278,14 @@ html:not([lang='ar']) .btn {
    into the button's own margin and still sat inside it: it keeps doing so
    rather than leaving one word alone on a second line, and wraps only when
    that margin is used up too. */
-html:not([lang='ar']) .btn-block, html:not([lang='ar']) .btn-row > .btn { padding-inline: var(--s2); }
+html:not([lang='ar']) .btn-block, html:not([lang='ar']) .btn-row:not(.stepper) > .btn { padding-inline: var(--s2); }
 /* and a pair whose label is one word wider than half the row, «Восстановить»
    at the phone's large text, which no wrapping can shorten, stand one under
-   the other, each the width of the row */
-html:not([lang='ar']) .btn-row { flex-wrap: wrap; }
-html:not([lang='ar']) .btn-row > .btn { min-width: auto; }
+   the other, each the width of the row. Not the steppers, a count between a
+   minus and a plus, whose words wrap between the two and keep them on its
+   line: wrapped, the plus fell to a line of its own. */
+html:not([lang='ar']) .btn-row:not(.stepper) { flex-wrap: wrap; }
+html:not([lang='ar']) .btn-row:not(.stepper) > .btn { min-width: auto; }
 .btn-row { display: flex; gap: var(--s2); }
 
 /* Wiping what was counted does not stand shoulder to shoulder with what only

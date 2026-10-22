@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.100';
+  var VERSION = '8.87.101';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1903,7 +1903,9 @@
      bar ran past the edge of the screen. Measured so, each turn shows its
      mark over a smaller word, as the tools of a sheet do, and if even that is
      too wide, at the phone's largest text, the marks alone; their names are
-     read out all the same. */
+     read out all the same. The Arabic bar too, which only the largest text on
+     a small phone pushes past the edge: anywhere else it is on the screen
+     and drawn as it always was. */
   function fitPageNav(root) {
     var navs = (root || document).querySelectorAll('.page-nav');
     for (var i = 0; i < navs.length; i++) {
@@ -1911,9 +1913,21 @@
       nav.classList.remove('is-tight', 'is-tighter');
       if (!nav.offsetWidth) continue;
       if (window.I18n && window.I18n.apply) window.I18n.apply(nav);
-      if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('is-tight');
-      if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('is-tighter');
+      if (offScreen(nav)) nav.classList.add('is-tight');
+      if (offScreen(nav)) nav.classList.add('is-tighter');
     }
+  }
+
+  /* whether any of a bar's buttons stands past an edge of the screen; one
+     that only reaches into the page's margin is still in reach and read */
+  function offScreen(bar) {
+    var wide = document.documentElement.clientWidth || window.innerWidth;
+    for (var b = bar.firstElementChild; b; b = b.nextElementSibling) {
+      var r = b.getBoundingClientRect();
+      if (!r.width) continue;
+      if (r.left < -0.5 || r.right > wide + 0.5) return true;
+    }
+    return false;
   }
 
   /* The night's own two marks, which are not prayers and so are not in the
