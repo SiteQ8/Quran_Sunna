@@ -5681,6 +5681,12 @@ test('a build asking for Xcode 27 runs where GitHub keeps it, and a beta is neve
   assert.ok(/real=\$\(realpath "\$x"\)/.test(wf), 'each Xcode is read for what it is');
   assert.ok(/PlistBuddy -c 'Print :CFBundleShortVersionString'/.test(wf), 'and for its own version');
   assert.ok(/if: steps\.asc\.outputs\.ready == 'yes' && steps\.xcode\.outputs\.beta != 'yes'/.test(wf), 'a beta build is kept, not sent');
+  /* the page GitHub publishes can run ahead of the mac a build lands on: a
+     run that asked for auto and found only a beta of what was picked builds
+     with the newest release or candidate from 27.1 on that the mac has */
+  assert.ok(/ASKED: \$\{\{ github\.event\.inputs\.xcode \|\| 'auto' \}\}/.test(wf), 'the step knows whether the run asked for auto');
+  assert.ok(/echo "\$rank \$key \$real" >> "\$RUNNER_TEMP\/all-xcodes"/.test(wf), 'every Xcode on the mac is listed');
+  assert.ok(/if \[ "\$ASKED" = "auto" \]; then\s*case "\$XCODE" in \*\[Bb\]eta\*\)\s*ALT=\$\(awk '\$1 >= 1 && \$2 >= "027\.001\.000"'/.test(wf), 'and a beta gives way to a release from 27.1 on');
   /* the Duo is photographed closed and open, on both its displays */
   assert.ok(/if: steps\.xcode\.outputs\.duo == 'yes'\s*continue-on-error: true/.test(wf), 'the Duo step never fails the build');
   assert.ok(wf.indexOf('--display=primary-1') !== -1, 'the inner display is photographed too');
