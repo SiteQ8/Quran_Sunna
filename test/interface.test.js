@@ -2968,7 +2968,7 @@ test('the review can actually fail, so a clean run means something', () => {
   ['docs/js', 'docs/data', 'docs/css', 'tools', 'play', 'android'].forEach(function (d) {
     fs.mkdirSync(path.join(dir, d), { recursive: true });
   });
-  ['docs/index.html', 'docs/privacy.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
+  ['docs/index.html', 'docs/privacy.html', 'docs/app.html', 'docs/js/app.js', 'docs/js/prayer-engine.js',
    'docs/js/hijri.js', 'docs/js/store.js', 'docs/data/surahs.js', 'docs/data/azkar.js',
    'docs/data/content.js', 'docs/data/extras.js', 'README.md', 'play/README.md', 'android/README.md',
    'tools/review-arabic.js'].forEach(function (f) {
@@ -9259,6 +9259,46 @@ test('the page that explains the app stands on its own and stays reachable', () 
   /* and the app points at it, or nobody finds it */
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.ok(html.indexOf('intro.html') !== -1, 'the app links to it');
+});
+
+test('one address sends an iPhone to the App Store, an android phone to Google Play, and the app to its own front', () => {
+  const page = fs.readFileSync(path.join(DOCS, 'app.html'), 'utf8');
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const play = /play: '([^']+)'/.exec(app)[1];
+  const apple = /apple: '([^']+)'/.exec(app)[1];
+  /* the stores it sends to are the app's own, in the script and on its buttons */
+  assert.ok(page.split(apple).length >= 3, 'the App Store address, twice');
+  assert.ok(page.split(play).length >= 3, 'the Google Play address, twice');
+  const script = /<script>([\s\S]*?)<\/script>/.exec(page)[1];
+  assert.ok(page.indexOf('<script>') < page.indexOf('<link rel="stylesheet"'), 'it leaves before anything is drawn');
+  function opened(ua, touch, bridge) {
+    let went = null;
+    const sandbox = { navigator: { userAgent: ua, maxTouchPoints: touch || 0 }, location: { replace: (u) => { went = u; } } };
+    sandbox.window = sandbox;
+    if (bridge) sandbox.SunnatiApp = {};
+    vm.runInNewContext(script, sandbox);
+    return went;
+  }
+  const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1';
+  const IPAD = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Safari/605.1.15';
+  const ANDROID = 'Mozilla/5.0 (Linux; Android 15; SM-S921B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Mobile Safari/537.36';
+  const WINDOWS = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36';
+  assert.strictEqual(opened(IPHONE), apple);
+  assert.strictEqual(opened(IPAD, 5), apple, 'an iPad that asks for the desktop pages is still an iPad');
+  assert.strictEqual(opened(IPAD, 0), null, 'a Mac stays and is shown both stores');
+  assert.strictEqual(opened(ANDROID), play);
+  assert.strictEqual(opened(WINDOWS), null);
+  /* inside the app the reader has it already: android hands the app every
+     address of the site, and the iPhone's has its bridge from the start */
+  assert.strictEqual(opened(ANDROID.replace('Mobile Safari/537.36', 'Mobile Safari/537.36 SunnatiApp/8.87.97')), './');
+  assert.strictEqual(opened(IPHONE, 0, true), './');
+  /* drawn as the page that explains the app is: its colours, its sadu, its faces */
+  for (const token of ['#f6f4ee', '#16241c', '#9c2b2b']) assert.ok(page.indexOf(token) !== -1, 'it keeps the app colour ' + token);
+  assert.ok(page.indexOf('svg+xml') !== -1, 'the sadu is drawn, not photographed');
+  assert.ok(page.indexOf('css/fonts.css') !== -1 && !/fonts\.googleapis|fonts\.gstatic|cdn\./.test(page), 'the app\'s own faces, and nobody else\'s');
+  /* a shared link shows the app's name and picture */
+  assert.match(page, /<meta property="og:url" content="https:\/\/sunnati\.3li\.info\/app">/);
+  assert.ok(fs.existsSync(path.join(DOCS, 'icons', 'play-1024.png')));
 });
 
 test('every verse quoted in the adhkar matches the mushaf that ships with it', () => {

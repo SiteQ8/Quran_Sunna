@@ -174,6 +174,8 @@ function check(where, entry) {
 const files = [];
 files.push(['index.html', textFromMarkup(path.join(DOCS, 'index.html'))]);
 files.push(['privacy.html', textFromMarkup(path.join(DOCS, 'privacy.html'))]);
+/* and the page behind the one link handed to anyone, sunnati.3li.info/app */
+files.push(['app.html', textFromMarkup(path.join(DOCS, 'app.html'))]);
 files.push(['js/app.js', stringsFrom(path.join(DOCS, 'js', 'app.js'))]);
 files.push(['js/prayer-engine.js', stringsFrom(path.join(DOCS, 'js', 'prayer-engine.js'))]);
 files.push(['js/hijri.js', stringsFrom(path.join(DOCS, 'js', 'hijri.js'))]);
