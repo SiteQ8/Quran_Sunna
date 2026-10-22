@@ -436,3 +436,30 @@ test('the English table says a recording\'s size and a city\'s timetable once ea
   assert.strictEqual(tx('مواقيت أكتوبر 2026 لدبي'), 'October 2026 prayer times for Dubai', 'the lam is the line\'s own «for», said once');
   assert.strictEqual(tx('الحساب والمظهر والنسخ'), 'Calculation, appearance and backup', 'the reckoning of the times, not an account');
 });
+
+test('a translated setting takes its list under its words when the choice or a word of them is cut', () => {
+  const { win, doc } = boot({ languages: ['en-US'], file: 'en' });
+  win.App.go('settings');
+  const row = doc.getElementById('settings-reciter').closest('.setting');
+  const words = row.firstElementChild;
+  const face = row.querySelector('.picker-label');
+  assert.ok(face, 'the reciter is chosen from the app\'s own list');
+  let cut = false, squeezed = false;
+  Object.defineProperty(face, 'clientWidth', { get: () => 160 });
+  Object.defineProperty(face, 'scrollWidth', { get: () => (cut ? 230 : 160) });
+  Object.defineProperty(words, 'clientWidth', { get: () => 110 });
+  Object.defineProperty(words, 'scrollWidth', { get: () => (squeezed ? 124 : 110) });
+  /* jsdom lays nothing out, so the row is given a size of its own */
+  const box = (w, h) => () => ({ width: w, height: h, top: 0, left: 0, right: w, bottom: h });
+  row.getBoundingClientRect = box(296, 60);
+  words.getBoundingClientRect = box(110, 50);
+  row.querySelector('.picker').getBoundingClientRect = box(170, 48);
+  win.App.helpers.fitSettings();
+  assert.ok(!row.classList.contains('is-stacked'), 'a whole choice beside whole words stays on one line');
+  cut = true;
+  win.App.helpers.fitSettings();
+  assert.ok(row.classList.contains('is-stacked'), 'a reciter\'s name cut short takes the whole row');
+  cut = false; squeezed = true;
+  win.App.helpers.fitSettings();
+  assert.ok(row.classList.contains('is-stacked'), 'a word wider than its column takes the whole row');
+});
