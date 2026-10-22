@@ -729,37 +729,68 @@ test('a grid of choices gives up columns, to a count they fill evenly, while a w
   grid.remove();
 });
 
-test('the counts stand two and two, and the home sections two to a row, only when a word is wider than its box', () => {
+test('the counts stand two and two when their row runs past the card, and the home sections two to a row when a word is wider than its card', () => {
   const { win, doc } = boot();
   win.App.go('prayers');
   const stats = doc.getElementById('prayers-stats');
-  const cells = stats.querySelectorAll('.prayer-stat');
-  assert.strictEqual(cells.length, 4);
+  assert.strictEqual(stats.querySelectorAll('.prayer-stat').length, 4);
   let spill = true;
-  cells.forEach(function (cell) {
-    Object.defineProperty(cell, 'clientWidth', { get: () => 70 });
-    Object.defineProperty(cell, 'scrollWidth', { get: () => (spill ? 84 : 70) });
-  });
+  Object.defineProperty(stats, 'clientWidth', { get: () => 296 });
+  Object.defineProperty(stats, 'scrollWidth', { get: () => (spill ? 360 : 296) });
   win.App.helpers.fitStats();
-  assert.ok(stats.classList.contains('is-tight'));
+  assert.ok(stats.classList.contains('is-tight'), 'four long words that run the row past the card');
   spill = false;
   win.App.helpers.fitStats();
-  assert.ok(!stats.classList.contains('is-tight'));
+  assert.ok(!stats.classList.contains('is-tight'), 'a row that fits, a column widened or not, stays one row');
 
+  /* jsdom draws nothing, so a word is as wide as nine points a letter */
+  const realRange = doc.createRange;
+  doc.createRange = function () {
+    return {
+      setStart(node, at) { this.from = at; }, setEnd(node, at) { this.to = at; },
+      selectNodeContents(node) { this.from = 0; this.to = (node.textContent || '').length; },
+      getClientRects() { return [{ width: (this.to - this.from) * 9, height: 20 }]; },
+      getBoundingClientRect() { return { width: (this.to - this.from) * 9, height: 20, top: 0, left: 0, right: (this.to - this.from) * 9, bottom: 20 }; }
+    };
+  };
   win.App.go('home');
   const tiles = doc.getElementById('home-tiles');
-  const names = tiles.querySelectorAll('.tile-name, .tile-note');
-  assert.ok(names.length > 2);
-  let wide = false;
-  names.forEach(function (name, i) {
-    Object.defineProperty(name, 'clientWidth', { get: () => 86 });
-    Object.defineProperty(name, 'scrollWidth', { get: () => (wide && i === 3 ? 104 : 86) });
+  const boxes = tiles.querySelectorAll('.tile-name, .tile-note');
+  assert.ok(boxes.length > 2);
+  boxes.forEach(function (box) {
+    Object.defineProperty(box, 'clientWidth', { get: () => 200 });
+    /* a note clamped to three lines says it overflows where its ellipsis falls */
+    Object.defineProperty(box, 'scrollWidth', { get: () => 204 });
   });
+  const name = tiles.querySelector('.tile-name');
+  name.textContent = 'قضاء';
   win.App.helpers.fitTiles();
-  assert.ok(!tiles.classList.contains('grid-2'), 'three to a row while every word fits');
-  wide = true;
+  assert.ok(!tiles.classList.contains('grid-2'), 'three to a row while every word fits, whatever a clamped note reports');
+  name.textContent = 'Rattrapages-des-prières-oubliées';
   win.App.helpers.fitTiles();
-  assert.ok(tiles.classList.contains('grid-2'), 'two to a row when one does not');
+  assert.ok(tiles.classList.contains('grid-2'), 'two to a row when one word does not');
+  doc.createRange = realRange;
+});
+
+test('the turns of the mushaf page show their marks over smaller words, then the marks alone, while the bar is wider than the screen', () => {
+  const { win, doc } = boot();
+  win.App.go('page');
+  const nav = doc.querySelector('#v-page .page-nav');
+  assert.ok(nav.querySelector('#page-prev .bar-word') && nav.querySelector('#page-next .bar-word'), 'both words can be left out alike');
+  let over = [true, true];
+  Object.defineProperty(nav, 'offsetWidth', { get: () => 328 });
+  Object.defineProperty(nav, 'clientWidth', { get: () => 328 });
+  Object.defineProperty(nav, 'scrollWidth', {
+    get: () => (nav.classList.contains('is-tighter') ? 328 : nav.classList.contains('is-tight') ? (over[1] ? 340 : 328) : (over[0] ? 380 : 328))
+  });
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(nav.classList.contains('is-tight') && nav.classList.contains('is-tighter'), 'the marks alone at the largest text');
+  over = [true, false];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'marks over smaller words when those fit');
+  over = [false, false];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(!nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'and the bar as it was when the words fit');
 });
 
 test('a timetable wider than its card is drawn in smaller type, never under the least of the narrowest phones', () => {
@@ -772,19 +803,24 @@ test('a timetable wider than its card is drawn in smaller type, never under the 
   let wants = 340;
   const fitNow = () => parseFloat(table.style.getPropertyValue('--tt-fit')) || 1;
   Object.defineProperty(box, 'clientWidth', { get: () => 328 });
-  Object.defineProperty(box, 'scrollWidth', { get: () => Math.round(wants * fitNow()) });
+  Object.defineProperty(box, 'scrollWidth', { get: () => Math.round(wants * fitNow()), configurable: true });
   /* the cell's type as the phone draws it, twelve points */
   const real = win.getComputedStyle;
   win.getComputedStyle = function (el) { return el.tagName === 'TD' ? { fontSize: '12px' } : real.apply(win, arguments); };
   win.App.helpers.fitTimetable(table);
-  assert.ok(table.classList.contains('is-tight'));
+  assert.ok(table.classList.contains('is-tight') && table.classList.contains('is-tighter'));
   assert.ok(fitNow() < 1 && box.scrollWidth <= box.clientWidth + 1, 'it fits at ' + fitNow());
   /* far too wide: it stops at .72rem of the twelve points and the box scrolls the rest */
   wants = 420;
   win.App.helpers.fitTimetable(table);
   assert.strictEqual(table.style.getPropertyValue('--tt-fit'), (0.72 * 16 / 12).toFixed(3));
-  /* and a table that fits keeps its type */
-  wants = 300;
+  /* a table that fits once the marks are gone keeps its heads and its type */
+  Object.defineProperty(box, 'scrollWidth', { get: () => (table.classList.contains('is-tight') ? 328 : 345), configurable: true });
+  win.App.helpers.fitTimetable(table);
+  assert.ok(table.classList.contains('is-tight') && !table.classList.contains('is-tighter'));
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), '');
+  /* and a table that fits keeps everything */
+  Object.defineProperty(box, 'scrollWidth', { get: () => 300 });
   win.App.helpers.fitTimetable(table);
   assert.strictEqual(table.style.getPropertyValue('--tt-fit'), '');
   assert.ok(!table.classList.contains('is-tight'));

@@ -483,7 +483,10 @@ test('the page bar gives its room to the two turns of the page', () => {
   assert.ok(random.getAttribute('aria-label'), 'with its name read out');
   assert.strictEqual(random.querySelector('use').getAttribute('href'), '#i-shuffle');
   assert.match(CSS, /#page-random, #page-autoscroll \{ flex: 0 0 48px;/);
-  assert.ok(!/\.bar-word \{ display: none; \}/.test(CSS), '«التالية» keeps its word as «السابقة» does');
+  assert.ok(!/\n\.bar-word \{ display: none; \}/.test(CSS), '«التالية» keeps its word as «السابقة» does');
+  /* a translated bar too wide for the screen leaves both words out alike, and only then */
+  assert.match(CSS, /html:not\(\.book\) \.page-nav\.is-tighter \.bar-word \{ display: none; \}/);
+  assert.ok(doc.querySelector('#page-prev .bar-word') && doc.querySelector('#page-next .bar-word'));
 });
 
 test('a long press lifts no picture and no card, and the page does not stretch after the finger', () => {
@@ -504,13 +507,23 @@ test('nothing makes the page wider than the phone, and a long label wraps in its
      Arabic buttons are drawn as they were */
   assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn \{\s*white-space: normal; text-align: center; line-height: 1\.25; overflow-wrap: break-word;\s*height: auto; padding-block: 4px;\s*\}/);
   assert.match(CSS, /\.btn \{[^}]*height: 48px; min-height: 48px;[^}]*white-space: nowrap;/);
-  /* the four counts never run past the card, and stand two and two when measured so */
-  assert.match(CSS, /\.prayer-stats \{ display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
-  assert.match(CSS, /\.prayer-stats\.is-tight \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
-  /* the timetable's type follows its fit, and a two word head may wrap in a tight table */
+  /* a translated block or pair uses its own margin before it wraps, and a
+     pair stands one under the other when a word is wider than half the row */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-block, html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ padding-inline: var\(--s2\); \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row \{ flex-wrap: wrap; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ min-width: auto; \}/);
+  /* the four counts are drawn as they were, and stand two and two when measured so */
+  assert.match(CSS, /\.prayer-stats \{ display: grid; grid-template-columns: repeat\(4, 1fr\);/);
+  assert.match(CSS, /\.prayer-stats\.is-tight \{ grid-template-columns: repeat\(2, 1fr\); \}/);
+  /* the last section across a row of two keeps the height of the others */
+  assert.match(CSS, /#home-tiles\.grid-2 > \.tile:last-child:nth-child\(odd\) \.tile-art \{ aspect-ratio: 8 \/ 3; \}/);
+  /* the timetable's type follows its fit, and only a table still too wide
+     without its marks lets a two word head and a long month name wrap */
   assert.match(CSS, /\.tt th, \.tt td \{[^}]*font-size: calc\(var\(--step--2\) \* var\(--tt-fit, 1\)\);/);
   assert.match(CSS, /\.tt-day \{ display: block; font-size: calc\(var\(--step-0\) \* var\(--tt-fit, 1\)\); \}/);
-  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tight thead th \{ white-space: normal; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tighter thead th \{ white-space: normal; \}/);
+  assert.ok(!/\.tt\.is-tight thead th/.test(CSS), 'a table that fits once its marks are gone keeps its heads on one line');
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tighter \.tt-hijri \{ overflow-wrap: anywhere;/);
 });
 
 test('what was measured for a left-to-right page leaves the Arabic page as it was drawn', () => {

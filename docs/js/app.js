@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.97';
+  var VERSION = '8.87.98';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -718,6 +718,7 @@
     if (window.scrollTo) window.scrollTo(0, 0);
     if (RENDERERS[name]) RENDERERS[name]();
     fitChips(target);
+    fitPageNav(target);
     updateReadProgress();
 
     if (!silent) pushAddress(name);
@@ -1846,6 +1847,7 @@
     fitTiles();
     fitStats();
     fitChips($('v-' + state.view));
+    fitPageNav($('v-' + state.view));
     fitSettings();
   }
 
@@ -1884,17 +1886,33 @@
     return false;
   }
 
-  /* The four counts share a row, and a count named in one long word,
-     «Восполнен» in the large text of a phone, ran out of its quarter and
-     pushed the row past the card: they then stand two and two. */
+  /* The four counts share a row, a column widening for a long word as it
+     must; but four long words, «Восполнен» and its neighbours in the large
+     text of a phone, pushed the row past the card: they then stand two and
+     two. One long word, «congregation», still fits the row as it always did. */
   function fitStats() {
     var host = $('prayers-stats');
     if (!host || !host.firstElementChild) return;
     host.classList.remove('is-tight');
     if (window.I18n && window.I18n.apply) window.I18n.apply(host);
-    var cells = host.querySelectorAll('.prayer-stat');
-    for (var i = 0; i < cells.length; i++) {
-      if (cells[i].scrollWidth > cells[i].clientWidth + 1) { host.classList.add('is-tight'); return; }
+    if (host.scrollWidth > host.clientWidth + 1) host.classList.add('is-tight');
+  }
+
+  /* The two turns of the page share the bar with two squares, and a word of
+     a translation, «Berikutnya» or «Предыдущая», was wider than its half: the
+     bar ran past the edge of the screen. Measured so, each turn shows its
+     mark over a smaller word, as the tools of a sheet do, and if even that is
+     too wide, at the phone's largest text, the marks alone; their names are
+     read out all the same. */
+  function fitPageNav(root) {
+    var navs = (root || document).querySelectorAll('.page-nav');
+    for (var i = 0; i < navs.length; i++) {
+      var nav = navs[i];
+      nav.classList.remove('is-tight', 'is-tighter');
+      if (!nav.offsetWidth) continue;
+      if (window.I18n && window.I18n.apply) window.I18n.apply(nav);
+      if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('is-tight');
+      if (nav.scrollWidth > nav.clientWidth + 1) nav.classList.add('is-tighter');
     }
   }
 
@@ -3060,8 +3078,34 @@
     if (window.I18n && window.I18n.apply) window.I18n.apply(host);
     var words = host.querySelectorAll('.tile-name, .tile-note');
     for (var i = 0; i < words.length; i++) {
-      if (words[i].scrollWidth > words[i].clientWidth + 1) { host.classList.add('grid-2'); return; }
+      if (wordWider(words[i])) { host.classList.add('grid-2'); return; }
     }
+  }
+
+  /* Whether one word of a box, as it is drawn, is wider than a line of the
+     box. A word does not break, so it is the one thing a narrow box cuts; a
+     note clamped to three lines reports an overflow of a point or two where
+     its ellipsis falls, and read as a cut word it turned the sections two to
+     a row in Indonesian for no word at all. Only spaces part words here: a
+     no break space holds two words as one, and so are they measured. */
+  function wordWider(el) {
+    if (!el || !el.firstChild || !document.createRange || !document.createTreeWalker) return false;
+    var look = window.getComputedStyle(el);
+    var room = el.clientWidth - (parseFloat(look.paddingLeft) || 0) - (parseFloat(look.paddingRight) || 0);
+    if (!(room > 0)) return false;
+    var range = document.createRange();
+    if (!range.getClientRects) return false;
+    var walk = document.createTreeWalker(el, 4, null, false);
+    for (var node = walk.nextNode(); node; node = walk.nextNode()) {
+      var part = /[^ \t\n\r]+/g, m;
+      while ((m = part.exec(node.nodeValue))) {
+        range.setStart(node, m.index);
+        range.setEnd(node, m.index + m[0].length);
+        var rects = range.getClientRects();
+        for (var r = 0; r < rects.length; r++) if (rects[r].width > room + 1) return true;
+      }
+    }
+    return false;
   }
 
   function renderDailyAyah() {
@@ -8288,10 +8332,15 @@
   function fitTimetable(table) {
     var box = table.parentNode;
     if (!box) return;
-    table.classList.remove('is-tight');
+    table.classList.remove('is-tight', 'is-tighter');
     table.style.removeProperty('--tt-fit');
     if (window.I18n && window.I18n.apply) window.I18n.apply(table);
     if (box.scrollWidth > box.clientWidth + 1) table.classList.add('is-tight');
+    /* still too wide without the marks: a head of two words takes two lines
+       and a long hijri month breaks in the day's column, which a table that
+       fits once the marks are gone never needs, as the Hausa one at a large
+       phone's width */
+    if (box.scrollWidth > box.clientWidth + 1) table.classList.add('is-tighter');
     /* and when even without the marks the seven columns are wider than the
        card, in the large text of a phone, the last of them, the isha, sat
        out of sight past its edge: the table's type is drawn smaller until
@@ -8299,10 +8348,11 @@
        .72rem of the narrowest phones; past that the box scrolls the rest */
     var cell = table.querySelector('td');
     var size = cell ? parseFloat(window.getComputedStyle(cell).fontSize) || 12 : 12;
-    var least = Math.min(1, Math.max(0.7, TT_LEAST / size));
+    var least = Math.min(1, Math.max(0.7, Math.ceil(TT_LEAST / size * 1000) / 1000));
     var fit = 1;
     for (var tries = 0; tries < 4 && box.scrollWidth > box.clientWidth + 1; tries++) {
-      var next = Math.max(least, fit * (box.clientWidth - 1) / box.scrollWidth);
+      /* rounded up, so the least is never undercut by the rounding */
+      var next = Math.ceil(Math.max(least, fit * (box.clientWidth - 1) / box.scrollWidth) * 1000) / 1000;
       if (next > fit - 0.005) break;
       fit = next;
       table.style.setProperty('--tt-fit', fit.toFixed(3));
@@ -10944,7 +10994,7 @@
       loadPlaces: loadPlaces, nearestPlace: nearestPlace, nameAgain: nameAgain, settlePlaceName: settlePlaceName, adoptFix: adoptFix, localName: localName,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, showsMore: showsMore, fitSettings: fitSettings, fitChips: fitChips, fitStats: fitStats, fitTiles: fitTiles, fitTimetable: fitTimetable, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, showsMore: showsMore, fitSettings: fitSettings, fitChips: fitChips, fitStats: fitStats, fitTiles: fitTiles, fitTimetable: fitTimetable, fitPageNav: fitPageNav, wordWider: wordWider, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
