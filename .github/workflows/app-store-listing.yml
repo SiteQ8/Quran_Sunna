@@ -1,7 +1,10 @@
 # The app's page on the App Store, without building anything: what each
 # version is and where its review stands, and the 6.9 inch screenshots of
 # ios/screenshots/6.9-inch and the 13 inch iPad's of ios/screenshots/ipad-13
-# put in place of those there.
+# put in place of those there. Every language is its own page: the pictures
+# of a language come from its folder beside those, ios/screenshots/en-US, and
+# its words from ios/store/en-US and ios/whatsnew/en-US.txt, and a version sent
+# makes the page of a language the store does not have yet.
 #
 # Run by hand only, from the Actions tab: «App Store listing», Run workflow.
 #   status       reads, and changes nothing
@@ -51,6 +54,7 @@ jobs:
             send|replace) B=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
                   python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10 \
                     --notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store \
+                    --shots ios/screenshots/6.9-inch \
                     $([ "$WHAT" = replace ] && echo --replace) ;;
           esac
           [ "$WHAT" = status ] || python3 tools/ios/asc-release.py --status
