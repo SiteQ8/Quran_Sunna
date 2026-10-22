@@ -605,6 +605,38 @@ test('choosing a city moves the times and the qibla', () => {
     'jakarta faces north west, got ' + win.App.state.qibla);
 });
 
+test('the city list names a city only where the reader is in it, not one of the same name elsewhere', () => {
+  /* الدوحة is a district of الكويت as well as the capital of قطر */
+  const storage = memoryStorage();
+  storage.setItem('sunnati.settings', JSON.stringify({ tour: true, placeAsked: true, city: 'الدوحة', lat: 29.32, lng: 47.81, zone: 'Asia/Kuwait', method: 'Kuwait' }));
+  const { win, doc } = boot({ storage: storage });
+  win.App.go('settings');
+  const select = doc.getElementById('settings-city');
+  assert.strictEqual(select.value, '', 'the Qatari capital is not claimed for a district of Kuwait');
+  const doha = win.CITIES.findIndex(function (c) { return c.n === 'الدوحة'; });
+  assert.ok(doha !== -1);
+  select.value = String(doha);
+  fire(win, select, 'change');
+  assert.strictEqual(select.value, String(doha), 'the city itself, chosen from the list, is still named');
+});
+
+test('a list longer than its panel shows the top of the next item, and squeezed words make room', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the panel ends part way into an item, measured by the items' own spacing,
+     and above the tab bar rather than under it */
+  assert.match(app, /function showsMore\(panel\) \{[\s\S]*?items\[1\]\.offsetTop - items\[0\]\.offsetTop[\s\S]*?tall \* 0\.65/);
+  assert.match(app, /var room = window\.innerHeight - r\.bottom - bars;\s*\/\* Under the button/);
+  assert.match(app, /showsMore\(panel\);\s*btn\.setAttribute\('aria-expanded', 'true'\);/);
+  /* a translated row whose words were squeezed beside a long list takes the
+     list under them, and an Arabic row is drawn as it was */
+  assert.match(app, /function fitSettings\(\) \{[\s\S]*?said\.width < whole \* 0\.5 && said\.height > held\.height \* 1\.6/);
+  assert.match(css, /html:not\(\[lang='ar'\]\) \.setting\.is-stacked > \.picker,/);
+  const { win, doc } = boot();
+  win.App.go('settings');
+  assert.strictEqual(doc.querySelectorAll('.setting.is-stacked').length, 0);
+});
+
 /* ---------------- khatma ---------------- */
 
 test('a fixed set of choices is a grid of equal cells, not a ragged wrap', () => {

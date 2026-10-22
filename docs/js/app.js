@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.94';
+  var VERSION = '8.87.95';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1842,6 +1842,7 @@
     if (tt && tt.firstChild) fitTimetable(tt);
     var path = $('umrah-path');
     if (path && path.firstChild) fitJourney(path);
+    fitSettings();
   }
 
   /* The night's own two marks, which are not prayers and so are not in the
@@ -8472,7 +8473,11 @@
     document.body.appendChild(veil);
     document.body.appendChild(panel);
     var r = btn.getBoundingClientRect();
-    var room = window.innerHeight - r.bottom;
+    /* the tab bar along the bottom covers the end of the screen, so the room
+       below the button ends where the bar begins, or the list's last line,
+       the one that says there is more, was drawn under it */
+    var bars = parseFloat(window.getComputedStyle(document.body).paddingBottom) || 0;
+    var room = window.innerHeight - r.bottom - bars;
     /* Under the button and the width of it, placed by left and width rather
        than by inset-inline-end: in a right to left page that end is measured
        from the other side, and the panel slid away from the control it
@@ -8492,15 +8497,37 @@
     /* below the button when there is room, above it when there is not */
     if (room < 220 && r.top > room) {
       panel.style.bottom = (window.innerHeight - r.top + 6) + 'px';
-      panel.style.maxHeight = Math.min(300, r.top - 16) + 'px';
+      panel.style.maxHeight = Math.min(PICKER_MOST, r.top - 16) + 'px';
     } else {
       panel.style.top = (r.bottom + 6) + 'px';
-      panel.style.maxHeight = Math.min(300, room - 16) + 'px';
+      panel.style.maxHeight = Math.min(PICKER_MOST, room - 16) + 'px';
     }
+    showsMore(panel);
     btn.setAttribute('aria-expanded', 'true');
     state.pickerFor = btn;
     var on = panel.querySelector('.is-on');
     if (on) on.scrollIntoView({ block: 'nearest' });
+  }
+
+  /* A list taller than its panel ends in the middle of an item, so the half
+     item at the edge says there is more below: cut cleanly between two, the
+     list looked whole, and the six languages after the sixth went unseen. */
+  var PICKER_MOST = 480;
+  function showsMore(panel) {
+    var cap = parseFloat(panel.style.maxHeight) || 0;
+    var items = panel.querySelectorAll('.picker-item');
+    if (!cap || items.length < 2 || panel.scrollHeight <= panel.clientHeight + 1) return;
+    var tall = items[0].offsetHeight;
+    var pitch = items[1].offsetTop - items[0].offsetTop;
+    if (!tall || pitch <= 0) return;
+    var look = window.getComputedStyle(panel);
+    var edge = (parseFloat(look.paddingTop) || 0) + (parseFloat(look.borderTopWidth) || 0) +
+      (parseFloat(look.borderBottomWidth) || 0);
+    /* a little over half of the next item shows, enough for the top of its
+       words: cut at the half, the line fell between them and showed none */
+    var peek = Math.round(tall * 0.65);
+    var whole = Math.max(1, Math.floor((cap - edge - peek) / pitch));
+    panel.style.maxHeight = (edge + whole * pitch + peek) + 'px';
   }
 
   function closePicker() {
@@ -8602,7 +8629,12 @@
     );
     var cityIndex = '';
     if (typeof CITIES !== 'undefined') {
-      for (var i = 0; i < CITIES.length; i++) if (CITIES[i].n === p.n) { cityIndex = String(i); break; }
+      /* the same name is not the same city: الدوحة is a district of الكويت
+         as well as the capital of قطر, and the list had claimed the one in
+         another country for a reader named after the other */
+      for (var i = 0; i < CITIES.length; i++) {
+        if (CITIES[i].n === p.n && PrayerEngine.between(p.lat, p.lng, CITIES[i].lat, CITIES[i].lng) <= 25) { cityIndex = String(i); break; }
+      }
     }
     fillSelect($('settings-city'), cityOptions, cityIndex);
 
@@ -8775,6 +8807,37 @@
         : 'نص المصحف لم يكتمل تحميله بعد';
     }
     if ($('about-version')) $('about-version').textContent = 'النسخة ' + ar(VERSION) + packageLine();
+    fitSettings();
+  }
+
+  /* In a translated page the words of a setting can run long, and beside a
+     list whose choice is long too, «Device language, English», they were
+     squeezed into a column seven lines tall with the list's half of the row
+     empty under it. A row whose words take less than half of it while
+     standing much taller than the list puts the list on its own line under
+     them. The Arabic rows are drawn as they always were. */
+  function fitSettings() {
+    var page = $('v-' + state.view);
+    if (!page || (state.view !== 'settings' && state.view !== 'reminders')) return;
+    var rows = page.querySelectorAll('.setting');
+    var arabic = (document.documentElement.getAttribute('lang') || 'ar') === 'ar';
+    if (!arabic && window.I18n && window.I18n.apply) window.I18n.apply(page);
+    for (var i = 0; i < rows.length; i++) {
+      var row = rows[i];
+      row.classList.remove('is-stacked');
+      if (arabic) continue;
+      var words = row.firstElementChild;
+      var list = null;
+      for (var c = row.firstElementChild; c; c = c.nextElementSibling) {
+        if (c.classList.contains('picker') || c.classList.contains('select')) { list = c; break; }
+      }
+      if (!words || !list || words === list) continue;
+      var whole = row.getBoundingClientRect().width;
+      var said = words.getBoundingClientRect();
+      var held = list.getBoundingClientRect();
+      if (!whole || !said.height || !held.height) continue;
+      if (said.width < whole * 0.5 && said.height > held.height * 1.6) row.classList.add('is-stacked');
+    }
   }
 
   function chooseCity(index) {
