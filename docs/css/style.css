@@ -2052,6 +2052,10 @@ html:not([lang='ar']) .setting { grid-template-columns: minmax(34%, 1fr) auto; }
 .picker-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .picker-caret { width: 18px; height: 18px; flex: none; color: var(--ink-3); }
 .picker-btn[aria-expanded="true"] { border-color: var(--accent); }
+/* a row whose words were squeezed beside a long list takes the list on a
+   line of its own under them, as wide as the row (a translated page only) */
+html:not([lang='ar']) .setting.is-stacked > .picker,
+html:not([lang='ar']) .setting.is-stacked > .select { grid-column: 1 / -1; grid-row: 2; width: 100%; max-width: none; }
 
 .picker-veil { position: fixed; inset: 0; z-index: 60; }
 .picker-panel {
