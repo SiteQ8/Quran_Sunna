@@ -646,6 +646,17 @@ html.has-sky .arc-wrap { cursor: pointer; }
    the widest place on the bar */
 #page-random, #page-autoscroll { flex: 0 0 48px; padding: 0; }
 .page-nav .btn:disabled { opacity: .4; }
+/* A translated turn of the page can be one word wider than its half,
+   «Berikutnya» or «Предыдущая», and the bar ran past the edge of the screen:
+   measured so, each turn shows its mark over a smaller word, as the tools of
+   a sheet do, and at the phone's largest text the marks alone, whose names
+   are read out all the same. The book of a tablet has the room. */
+html:not(.book) .page-nav.is-tight #page-prev, html:not(.book) .page-nav.is-tight #page-next {
+  flex-direction: column; gap: 2px; height: auto; min-height: 56px;
+  padding-inline: var(--s1); font-size: var(--step--1); line-height: 1.2;
+}
+html:not(.book) .page-nav.is-tight #page-next .icon { order: -1; }
+html:not(.book) .page-nav.is-tighter .bar-word { display: none; }
 
 .goto-row { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: var(--s3); }
 .goto-row .btn { justify-self: start; }
@@ -678,11 +689,12 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .prayer-row.mark-missed .row-mark { color: var(--danger, #b3261e); }
 .prayer-row[disabled] { opacity: .55; }
 
-.prayer-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: var(--s3); }
-/* a count named in a word longer than its quarter, «Восполнен» at the
-   phone's large text, ran out of the row and widened the page: measured
-   so, the four stand two and two */
-.prayer-stats.is-tight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.prayer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
+/* a column widens for a long word, «congregation», and the row still fits;
+   but four such words, «Восполнен» and its neighbours at the phone's large
+   text, ran the row past the card and widened the page: measured so, the
+   four stand two and two */
+.prayer-stats.is-tight { grid-template-columns: repeat(2, 1fr); }
 .prayer-stat { text-align: center; padding: 10px 4px; border-radius: var(--r-sm); background: var(--sunken); }
 .prayer-stat b { display: block; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .prayer-stat span { font-size: var(--step--2); color: var(--ink-3); }
@@ -925,11 +937,14 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
    says which half of the day each time is in */
 html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
 @media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
-/* and whenever the table is measured not to fit, whatever the width; a
-   prayer named in two words, «Fitowar rana», then takes two lines in its
-   head rather than widening its column */
+/* and whenever the table is measured not to fit, whatever the width */
 html:not([lang='ar']) .tt.is-tight td .ampm { display: none; }
-html:not([lang='ar']) .tt.is-tight thead th { white-space: normal; }
+/* If it is still too wide without the marks, a prayer named in two words,
+   «Fitowar rana», takes two lines in its head, and a hijri month named in
+   one long word, «Cemaziyelevvel», breaks in the day's column, which it had
+   made as wide as itself, at a hyphen where the language has them. */
+html:not([lang='ar']) .tt.is-tighter thead th { white-space: normal; }
+html:not([lang='ar']) .tt.is-tighter .tt-hijri { overflow-wrap: anywhere; hyphens: auto; -webkit-hyphens: auto; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
@@ -1256,6 +1271,16 @@ html:not([lang='ar']) .btn {
   white-space: normal; text-align: center; line-height: 1.25; overflow-wrap: break-word;
   height: auto; padding-block: 4px;
 }
+/* A label a little wider than the middle of a button as wide as its row ran
+   into the button's own margin and still sat inside it: it keeps doing so
+   rather than leaving one word alone on a second line, and wraps only when
+   that margin is used up too. */
+html:not([lang='ar']) .btn-block, html:not([lang='ar']) .btn-row > .btn { padding-inline: var(--s2); }
+/* and a pair whose label is one word wider than half the row, «Восстановить»
+   at the phone's large text, which no wrapping can shorten, stand one under
+   the other, each the width of the row */
+html:not([lang='ar']) .btn-row { flex-wrap: wrap; }
+html:not([lang='ar']) .btn-row > .btn { min-width: auto; }
 .btn-row { display: flex; gap: var(--s2); }
 
 /* Wiping what was counted does not stand shoulder to shoulder with what only
@@ -1423,6 +1448,11 @@ html:not([lang='ar']) .btn {
 }
 /* a translated note runs longer than the Arabic it stands for: a third line */
 html:not([lang='ar']) #home-tiles .tile-note { -webkit-line-clamp: 3; }
+/* Two to a row, the ninth section takes the whole last row, and its
+   painting at the width of the row stood twice as tall as the others: every
+   row grew to its height and each card was half empty. Its painting is cut
+   to the height the others have. */
+#home-tiles.grid-2 > .tile:last-child:nth-child(odd) .tile-art { aspect-ratio: 8 / 3; }
 /* the daylight in them is lowered in the dark, as the sky in the niche is */
 html[data-theme="dark"] #home-tiles .tile-art { filter: brightness(.86); }
 
