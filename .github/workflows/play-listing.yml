@@ -3,8 +3,11 @@
 # film only as a YouTube link, so it is uploaded to the channel first and its
 # link given here; the pictures come from the repository, play/listing and
 # play/feature-graphic, and each kind is replaced whole in every language of
-# the page. The short and the full description come from play/listing/ar and
-# are written in the Arabic page alone.
+# the page. The words come from play/listing, a folder for each language by
+# the code Play gives it, ar for the Arabic page as before, and each is
+# written in its own page; a language with no page yet is given one. The
+# phone screenshots of a language come from its own folder beside the Arabic
+# ones, play/listing/en-US/phone, and the Arabic page takes play/listing/phone.
 #
 # Run by hand only, from the Actions tab: «Play listing», Run workflow. With
 # nothing asked it reads the tracks and the page and changes nothing.
@@ -18,11 +21,11 @@ on:
         required: false
         default: ''
       graphics:
-        description: 'replace the icon, the feature graphic and the phone screenshots from play/listing'
+        description: 'replace the icon, the feature graphic and the phone screenshots from play/listing, each language its own'
         type: boolean
         default: false
       text:
-        description: 'write the short and the full description from play/listing/ar'
+        description: 'write the words of every language from play/listing, each in its own page, making the pages not there yet'
         type: boolean
         default: false
 
@@ -48,5 +51,5 @@ jobs:
           [ -n "$VIDEO" ] && set -- "$@" --video "$VIDEO"
           [ "$GRAPHICS" = true ] && set -- "$@" --icon play/listing/icon-512.png \
             --feature play/feature-graphic-1024x500.png --phone play/listing/phone
-          [ "$TEXT" = true ] && set -- "$@" --text play/listing/ar
+          [ "$TEXT" = true ] && set -- "$@" --text play/listing
           python3 tools/android/play-listing.py "$@"

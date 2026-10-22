@@ -5431,7 +5431,7 @@ test('production gets what the testers ran, and the App Store gets the version p
   assert.ok(listing.indexOf('python3 tools/ios/asc-release.py --version "$V" --build "$B" --wait 10') !== -1);
   assert.ok(listing.indexOf('--notes ios/whatsnew/ar-SA.txt --previews ios/previews --ipad ios/screenshots/ipad-13 --text ios/store \\') !== -1);
   const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
-  assert.ok(/if a\.duo:\s*place_duo\(/.test(release), 'with no iPhone Duo pictures to give, that set is left as it is');
+  assert.ok(/if a\.duo and locale == home:\s*place_duo\(/.test(release), 'with no iPhone Duo pictures to give, that set is left as it is, and those given are the Arabic page\'s');
   /* a version waiting is taken back only once the build to replace it is there */
   assert.ok(/build_id = wait_for_build\(a\.version, a\.build, a\.wait\)\s*(#[^\n]*\s*)*if a\.replace and not DRY:\s*withdraw\(\)\s*version_id = version_to_send\(a\.version\)/.test(release));
 });
@@ -11361,9 +11361,295 @@ test('the App Store page is written from the repository with each version, withi
   const release = fs.readFileSync(path.join(__dirname, '..', 'tools', 'ios', 'asc-release.py'), 'utf8');
   assert.ok(release.indexOf("('keywords.txt', 'keywords', 100)") !== -1 && release.indexOf("('description.txt', 'description', 4000)") !== -1 &&
     release.indexOf("('promotional.txt', 'promotionalText', 170)") !== -1, 'the tool holds the same limits');
-  assert.ok(/write_notes\(version_id, notes\)\n    if a\.text:\n        write_text\(version_id, a\.text\)/.test(release), 'written beside what is new');
+  assert.ok(/write_notes\(version_id, notes_for\)\n    if a\.text:\n        write_text\(version_id, a\.text\)/.test(release), 'written beside what is new');
   const flow = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'ios.yml'), 'utf8');
   assert.ok(flow.indexOf('--text ios/store') !== -1, 'with every version sent');
   const play = fs.readFileSync(path.join(__dirname, '..', '.github', 'workflows', 'play-listing.yml'), 'utf8');
-  assert.ok(play.indexOf('[ "$TEXT" = true ] && set -- "$@" --text play/listing/ar') !== -1, 'and the Play page by hand');
+  assert.ok(/\[ "\$TEXT" = true \] && set -- "\$@" --text play\/listing\n/.test(play), 'and the Play page by hand, every language in its own');
+});
+
+/* ---------------- the store pages in every language ---------------- */
+
+/* The languages each store takes for a page, by the code it gives them, as
+   Google Play's help on store listing languages and Apple's locale shortcodes
+   for App Store Connect listed them on 22 October 2026. Neither takes Hausa,
+   and the App Store takes no Persian, so the app speaks both and the stores
+   have no page in them. */
+const STORE_CODES = {
+  play: { ar: 'ar', en: 'en-US', id: 'id', ms: 'ms', fr: 'fr-FR', tr: 'tr-TR', ru: 'ru-RU', bn: 'bn-BD', ur: 'ur', fa: 'fa' },
+  appStore: { ar: 'ar-SA', en: 'en-US', id: 'id', ms: 'ms', fr: 'fr-FR', tr: 'tr', ru: 'ru', bn: 'bn-BD', ur: 'ur-PK' }
+};
+const STORE_ROOT = path.join(__dirname, '..');
+const STORE_DASH = /[‒-―⸺⸻﹘﹣－]/;
+const pngAt = (file) => { const b = fs.readFileSync(file); return [b.readUInt32BE(16), b.readUInt32BE(20)]; };
+const pngsIn = (dir) => fs.readdirSync(dir).filter((n) => n.endsWith('.png')).sort();
+const readWords = (...parts) => fs.readFileSync(path.join(STORE_ROOT, ...parts), 'utf8').trim();
+const captionsModule = () => import(require('node:url').pathToFileURL(path.join(STORE_ROOT, 'tools', 'store', 'captions.mjs')).href);
+
+test('every language a store takes has its page there, under the code that store gives it, and no other', async () => {
+  const { STORES } = await captionsModule();
+  for (const lang of Object.keys(STORES)) {
+    assert.strictEqual(STORES[lang].play, STORE_CODES.play[lang] || null, lang + ' on Google Play');
+    assert.strictEqual(STORES[lang].appStore, STORE_CODES.appStore[lang] || null, lang + ' on the App Store');
+  }
+  assert.strictEqual(STORES.ha.play, null, 'no store takes Hausa');
+  assert.strictEqual(STORES.ha.appStore, null);
+  assert.strictEqual(STORES.fa.appStore, null, 'the App Store takes no Persian');
+  const dirs = (...parts) => fs.readdirSync(path.join(STORE_ROOT, ...parts), { withFileTypes: true })
+    .filter((d) => d.isDirectory()).map((d) => d.name).sort();
+  assert.deepStrictEqual(dirs('play', 'listing').filter((d) => d !== 'phone'), Object.values(STORE_CODES.play).sort(),
+    'a folder of words for each Play language, and none for a language Play does not take');
+  assert.deepStrictEqual(dirs('ios', 'store'), Object.values(STORE_CODES.appStore).sort(), 'and for each App Store language');
+  assert.deepStrictEqual(dirs('ios', 'screenshots').filter((d) => d !== '6.9-inch' && d !== 'ipad-13'),
+    Object.values(STORE_CODES.appStore).filter((c) => c !== 'ar-SA').sort(), 'pictures beside the Arabic ones for each other App Store language');
+});
+
+test('the words of every page are within what its store takes, without a dash, and the Arabic pages keep theirs', () => {
+  const limits = { 'title.txt': 30, 'short.txt': 80, 'full.txt': 4000 };
+  for (const code of Object.values(STORE_CODES.play)) {
+    if (code === 'ar') continue;
+    for (const [file, limit] of Object.entries(limits)) {
+      const words = readWords('play', 'listing', code, file);
+      assert.ok(words.length > 0 && words.length <= limit, `play/listing/${code}/${file} is ${words.length}, Play takes ${limit}`);
+      assert.ok(!STORE_DASH.test(words), `play/listing/${code}/${file} has no dash`);
+      assert.ok(!/open[ -]?source/i.test(words), `play/listing/${code}/${file} makes no claim the app does not`);
+      if (file !== 'full.txt') assert.ok(words.indexOf('\n') === -1, `play/listing/${code}/${file} is one line`);
+    }
+  }
+  const asc = { 'name.txt': 30, 'subtitle.txt': 30, 'promotional.txt': 170, 'description.txt': 4000, 'keywords.txt': 100 };
+  for (const code of Object.values(STORE_CODES.appStore)) {
+    if (code === 'ar-SA') continue;
+    for (const [file, limit] of Object.entries(asc)) {
+      const words = readWords('ios', 'store', code, file);
+      assert.ok(words.length > 0 && words.length <= limit, `ios/store/${code}/${file} is ${words.length}, Apple takes ${limit}`);
+      assert.ok(!STORE_DASH.test(words), `ios/store/${code}/${file} has no dash`);
+      assert.ok(words.indexOf('ﷺ') === -1, `ios/store/${code}/${file}: Apple refuses the sign of the salutation`);
+    }
+    const keywords = readWords('ios', 'store', code, 'keywords.txt').split(',');
+    assert.ok(keywords.every((k) => k === k.trim() && k.length >= 3), code + ': commas with no spaces, and no keyword under three characters');
+    assert.strictEqual(new Set(keywords.map((k) => k.toLowerCase())).size, keywords.length, code + ': no keyword twice');
+    const notes = readWords('ios', 'whatsnew', code + '.txt');
+    assert.ok(notes.length > 0 && notes.length <= 4000 && !STORE_DASH.test(notes) && notes.indexOf('ﷺ') === -1,
+      code + ' says what is new in its own words, as Apple asks of every page of a version');
+  }
+  /* the iPhone's alert is a notification, so only the Play pages say the
+     adhan sounds with the app closed */
+  assert.ok(readWords('play', 'listing', 'en-US', 'full.txt').indexOf('even when the app is closed') !== -1);
+  assert.ok(readWords('ios', 'store', 'en-US', 'description.txt').indexOf('even when the app is closed') === -1);
+  /* the Arabic title and name stay as the consoles hold them */
+  assert.ok(!fs.existsSync(path.join(STORE_ROOT, 'play', 'listing', 'ar', 'title.txt')));
+  assert.ok(!fs.existsSync(path.join(STORE_ROOT, 'ios', 'store', 'ar-SA', 'name.txt')));
+  assert.ok(!fs.existsSync(path.join(STORE_ROOT, 'ios', 'store', 'ar-SA', 'subtitle.txt')));
+});
+
+test('every page shows the scenes of the Arabic one, in its order, at the sizes its store takes', () => {
+  const sets = [
+    ['play', 'listing', 'phone', [1080, 1920], STORE_CODES.play, (c) => ['play', 'listing', c, 'phone']],
+    ['ios', 'screenshots', '6.9-inch', [1320, 2868], STORE_CODES.appStore, (c) => ['ios', 'screenshots', c, '6.9-inch']],
+    ['ios', 'screenshots', 'ipad-13', [2752, 2064], STORE_CODES.appStore, (c) => ['ios', 'screenshots', c, 'ipad-13']]
+  ];
+  for (const [a, b, kind, size, codes, folder] of sets) {
+    const arabic = pngsIn(path.join(STORE_ROOT, a, b, kind));
+    for (const code of Object.values(codes)) {
+      if (code === 'ar' || code === 'ar-SA') continue;
+      const dir = path.join(STORE_ROOT, ...folder(code));
+      assert.deepStrictEqual(pngsIn(dir), arabic, `${path.relative(STORE_ROOT, dir)} has the scenes of ${a}/${b}/${kind}, in its order`);
+      for (const n of arabic) assert.deepStrictEqual(pngAt(path.join(dir, n)), size, `${path.relative(STORE_ROOT, dir)}/${n} at ${size.join(' by ')}`);
+    }
+  }
+});
+
+test('the words over the pictures are written for every language, the Arabic as the Arabic pictures carry them', async () => {
+  const { STORES, CAPTIONS, target } = await captionsModule();
+  const scenes = ['splash', 'home', 'sky', 'sections', 'mushaf', 'azkar', 'prayers', 'qibla', 'mushaf-pad'];
+  for (const lang of Object.keys(STORES)) {
+    if (!STORES[lang].play && !STORES[lang].appStore) {
+      assert.ok(!CAPTIONS[lang], lang + ' has no page, so no words are written for one');
+      continue;
+    }
+    for (const scene of scenes) {
+      const c = CAPTIONS[lang][scene];
+      assert.ok(c && c.top && c.sub, `${lang} ${scene} has its line and the line under it`);
+      assert.ok(!STORE_DASH.test(c.top + c.sub), `${lang} ${scene} has no dash`);
+    }
+  }
+  assert.deepStrictEqual(CAPTIONS.ar.home, { top: 'أوقات الصلاة والأذان', sub: 'تقويم العجيري للكويت، وحسابٌ في جهازك لكل مكان' });
+  assert.deepStrictEqual(CAPTIONS.ar['mushaf-pad'], { top: 'المصحف صفحتان متقابلتان', sub: 'برواية حفص بالرسم العثماني، ٦٠٤ صفحات وتفسير بلا شبكة' });
+  Object.values(CAPTIONS.ar).forEach((c) => assert.ok((c.top + c.sub).indexOf('.') === -1, 'no full stop in the Arabic'));
+  /* Arabic is drawn into the folders it always had, any other language beside them */
+  const ar = target('ar');
+  assert.deepStrictEqual([ar.phone, ar.ipad, ar.play], ['ios/screenshots/6.9-inch', 'ios/screenshots/ipad-13', 'play/listing/phone']);
+  const en = target('en');
+  assert.deepStrictEqual([en.phone, en.ipad, en.play], ['ios/screenshots/en-US/6.9-inch', 'ios/screenshots/en-US/ipad-13', 'play/listing/en-US/phone']);
+  const fa = target('fa');
+  assert.deepStrictEqual([fa.phone, fa.ipad, fa.play], [null, null, 'play/listing/fa/phone'], 'Persian is drawn for Play alone');
+  const ha = target('ha');
+  assert.deepStrictEqual([ha.phone, ha.ipad, ha.play], [null, null, null], 'and Hausa for no store');
+  for (const tool of ['store-shots.mjs', 'ipad-shots.mjs']) {
+    const src = fs.readFileSync(path.join(STORE_ROOT, 'tools', 'store', tool), 'utf8');
+    assert.ok(src.indexOf("import { target } from './captions.mjs';") !== -1, tool + ' takes its words from captions.mjs');
+    assert.ok(src.indexOf("if (lang !== 'ar') localStorage.setItem('sunnati.lang', lang);") !== -1, tool + ' opens the app in the language drawn');
+    assert.ok(/const FIT = T\.lang === 'ar' \? '  place\(\);'/.test(src), tool + ' places the Arabic as it always did');
+  }
+});
+
+/* The publishing tools, run against a store that answers from memory: what
+   a run would write, where, and from which file, with nothing sent anywhere. */
+const hasPython = require('node:child_process').spawnSync('python3', ['-c', 'pass']).status === 0;
+const hasJwt = hasPython && require('node:child_process').spawnSync('python3', ['-c', 'import jwt']).status === 0;
+
+test('the Play page is written in every language, a page made for each new one, each with its own pictures', { skip: !hasPython && 'python3 is missing' }, () => {
+  const harness = [
+    'import importlib.util, json, os, sys',
+    'root = sys.argv[1]; os.chdir(root)',
+    "s = importlib.util.spec_from_file_location('pl', os.path.join(root, 'tools', 'android', 'play-listing.py'))",
+    'm = importlib.util.module_from_spec(s); s.loader.exec_module(m)',
+    'calls = []',
+    "def call(method, url, tok, body=None, raw=None, ctype='application/json'):",
+    "    short = url.split('/applications/')[-1]",
+    '    calls.append([method, short, body if raw is None else len(raw)])',
+    "    if method == 'POST' and short.endswith('/edits'): return {'id': 'E1'}",
+    "    if method == 'GET' and short.endswith('/listings'): return {'listings': [{'language': 'ar', 'title': 'x', 'shortDescription': 'x', 'fullDescription': 'x'}]}",
+    '    return {}',
+    "m.pu.call = call; m.pu.token = lambda sa: 'T'",
+    "os.environ['PLAY_SERVICE_ACCOUNT'] = json.dumps({'client_email': 'test@example.com'})",
+    "sys.argv = ['play-listing.py'] + sys.argv[2:]",
+    'm.main()',
+    "print('CALLS ' + json.dumps(calls, ensure_ascii=False))"
+  ].join('\n');
+  const out = execFileSync('python3', ['-c', harness, STORE_ROOT, '--icon', 'play/listing/icon-512.png', '--feature', 'play/feature-graphic-1024x500.png',
+    '--phone', 'play/listing/phone', '--text', 'play/listing'], { maxBuffer: 1 << 26 }).toString();
+  const calls = JSON.parse(out.split('\n').find((l) => l.startsWith('CALLS ')).slice(6));
+  const at = (lang) => 'com.eworldq8.sunnati/edits/E1/listings/' + lang;
+  for (const code of Object.values(STORE_CODES.play)) {
+    if (code === 'ar') continue;
+    const made = calls.find((c) => c[0] === 'PUT' && c[1] === at(code));
+    assert.ok(made, 'a page is made in ' + code);
+    assert.deepStrictEqual(made[2], { title: readWords('play', 'listing', code, 'title.txt'), shortDescription: readWords('play', 'listing', code, 'short.txt'),
+      fullDescription: readWords('play', 'listing', code, 'full.txt'), language: code }, 'with its own words');
+  }
+  const arabic = calls.filter((c) => c[0] === 'PATCH' && c[1] === at('ar'));
+  assert.deepStrictEqual(arabic.map((c) => c[2]), [{ shortDescription: readWords('play', 'listing', 'ar', 'short.txt'), fullDescription: readWords('play', 'listing', 'ar', 'full.txt') }],
+    'the Arabic page is written as it always was, its title left as the console holds it');
+  for (const code of Object.values(STORE_CODES.play)) {
+    const dir = code === 'ar' ? ['play', 'listing', 'phone'] : ['play', 'listing', code, 'phone'];
+    const sizes = pngsIn(path.join(STORE_ROOT, ...dir)).map((n) => fs.statSync(path.join(STORE_ROOT, ...dir, n)).size);
+    const sent = calls.filter((c) => c[0] === 'POST' && c[1] === 'com.eworldq8.sunnati/edits/E1/listings/' + code + '/phoneScreenshots?uploadType=media').map((c) => c[2]);
+    assert.deepStrictEqual(sent, sizes, code + ' shows the pictures of ' + dir.join('/'));
+    assert.ok(calls.some((c) => c[0] === 'DELETE' && c[1] === at(code) + '/phoneScreenshots'), 'replacing whatever ' + code + ' had');
+  }
+  assert.ok(calls.some((c) => c[0] === 'POST' && c[1] === 'com.eworldq8.sunnati/edits/E1:commit'), 'and the edit is committed once, at the end');
+  assert.ok(!calls.some((c) => /listings\/ha(\/|$)/.test(c[1])), 'with no page in Hausa');
+});
+
+test('the App Store page is written in every language with each version sent, each page its own words, what is new and pictures', { skip: !hasJwt && 'python3 with jwt is missing' }, () => {
+  const os = require('node:os');
+  /* an iPhone Duo picture, enough of one for its size to be read */
+  const duo = fs.mkdtempSync(path.join(os.tmpdir(), 'duo-'));
+  const head = Buffer.alloc(33);
+  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, 0x49, 0x48, 0x44, 0x52]).copy(head);
+  head.writeUInt32BE(1398, 16); head.writeUInt32BE(2034, 20);
+  fs.writeFileSync(path.join(duo, 'closed-1-home-outer.png'), head);
+  const harness = [
+    'import glob, hashlib, importlib.util, json, os, sys',
+    'root = sys.argv[1]; os.chdir(root)',
+    "s = importlib.util.spec_from_file_location('asc', os.path.join(root, 'tools', 'ios', 'asc-release.py'))",
+    'm = importlib.util.module_from_spec(s); s.loader.exec_module(m)',
+    'calls, uploads = [], []',
+    "locs = {'ar-SA': {'id': 'L-ar-SA', 'attributes': {'locale': 'ar-SA', 'supportUrl': 'https://sunnati.3li.info/', 'marketingUrl': 'https://sunnati.3li.info/'}}}",
+    "names = {'ar-SA': {'id': 'I-ar-SA', 'attributes': {'locale': 'ar-SA', 'name': 'x', 'subtitle': 'y', 'privacyPolicyUrl': 'https://sunnati.3li.info/privacy-en.html'}}}",
+    'def arabic_sets():',
+    "    out = {'data': [], 'included': []}",
+    "    for kind, folder in (('APP_IPHONE_67', 'ios/screenshots/6.9-inch'), ('APP_IPAD_PRO_3GEN_129', 'ios/screenshots/ipad-13')):",
+    '        ids = []',
+    "        for f in sorted(glob.glob(folder + '/*.png')):",
+    "            ids.append({'id': kind + f}); out['included'].append({'id': kind + f, 'type': 'appScreenshots', 'attributes': {'sourceFileChecksum': hashlib.md5(open(f, 'rb').read()).hexdigest()}})",
+    "        out['data'].append({'id': 'S' + kind, 'attributes': {'screenshotDisplayType': kind}, 'relationships': {'appScreenshots': {'data': ids}}})",
+    '    return out',
+    'def api(method, path, body=None, writes=True):',
+    "    p = path.split('?')[0]; calls.append([method, p, body])",
+    "    if p == '/v1/apps/%s' % m.APP: return {'data': {'attributes': {'primaryLocale': 'ar-SA'}}}",
+    "    if p.endswith('/appStoreVersions'): return {'data': [{'id': 'V1', 'attributes': {'appStoreState': 'PREPARE_FOR_SUBMISSION', 'versionString': '9.9.9'}}, {'id': 'V0', 'attributes': {'appStoreState': 'READY_FOR_SALE', 'versionString': '9.9.8'}}]}",
+    "    if method == 'GET' and p.endswith('/appStoreVersionLocalizations'): return {'data': list(locs.values())}",
+    "    if method == 'POST' and p == '/v1/appStoreVersionLocalizations':",
+    "        a = body['data']['attributes']; locs[a['locale']] = {'id': 'L-' + a['locale'], 'attributes': dict(a)}; return {'data': locs[a['locale']]}",
+    "    if p.endswith('/appInfos'): return {'data': [{'id': 'I0', 'attributes': {'state': 'READY_FOR_DISTRIBUTION'}}, {'id': 'I1', 'attributes': {'state': 'PREPARE_FOR_SUBMISSION'}}]}",
+    "    if method == 'GET' and p.endswith('/appInfoLocalizations'): return {'data': list(names.values())}",
+    "    if method == 'GET' and p == '/v1/appStoreVersionLocalizations/L-ar-SA/appScreenshotSets': return arabic_sets()",
+    "    if method == 'GET' and (p.endswith('/appScreenshotSets') or p.endswith('/appPreviewSets')): return {'data': [], 'included': []}",
+    "    if method == 'POST' and p in ('/v1/appScreenshotSets', '/v1/appPreviewSets'):",
+    "        d = body['data']; return {'data': {'id': d['relationships']['appStoreVersionLocalization']['data']['id'] + '|' + (d['attributes'].get('screenshotDisplayType') or d['attributes'].get('previewType'))}}",
+    "    if method == 'POST': return {'data': {'id': 'N', 'attributes': {}}}",
+    '    return {}',
+    "m.api = api; m.wait_for_build = lambda v, n, w: 'B1'",
+    'm.upload = lambda set_id, name, data: uploads.append([set_id, name, len(data)])',
+    'm.upload_film = lambda set_id, p: uploads.append([set_id, os.path.basename(p), os.path.getsize(p)])',
+    "m.send = lambda v: calls.append(['SEND', v, None])",
+    "sys.argv = ['asc-release.py'] + sys.argv[2:]",
+    'm.main()',
+    "print('RESULT ' + json.dumps({'calls': calls, 'uploads': uploads}, ensure_ascii=False))"
+  ].join('\n');
+  const run = (...args) => {
+    const out = execFileSync('python3', ['-c', harness, STORE_ROOT, ...args], { maxBuffer: 1 << 26 }).toString();
+    return Object.assign(JSON.parse(out.split('\n').find((l) => l.startsWith('RESULT ')).slice(7)), { log: out });
+  };
+  const sent = run('--version', '9.9.9', '--build', '1', '--duo', duo, '--notes', 'ios/whatsnew/ar-SA.txt', '--previews', 'ios/previews',
+    '--shots', 'ios/screenshots/6.9-inch', '--ipad', 'ios/screenshots/ipad-13', '--text', 'ios/store', '--no-submit');
+  fs.rmSync(duo, { recursive: true, force: true });
+  const others = Object.values(STORE_CODES.appStore).filter((c) => c !== 'ar-SA').sort();
+  /* the name and the subtitle, made for each new language, the Arabic left */
+  const named = sent.calls.filter((c) => c[0] === 'POST' && c[1] === '/v1/appInfoLocalizations').map((c) => c[2].data.attributes);
+  assert.deepStrictEqual(named.map((a) => a.locale), others);
+  named.forEach((a) => {
+    assert.strictEqual(a.name, readWords('ios', 'store', a.locale, 'name.txt'));
+    assert.strictEqual(a.subtitle, readWords('ios', 'store', a.locale, 'subtitle.txt'));
+    assert.strictEqual(a.privacyPolicyUrl, 'https://sunnati.3li.info/privacy-en.html', a.locale + ' takes the privacy policy of the app\'s own language');
+  });
+  assert.ok(!sent.calls.some((c) => c[1] === '/v1/appInfoLocalizations/I-ar-SA'), 'the Arabic name is not touched');
+  /* a page made for each, with the links of the Arabic one */
+  const made = sent.calls.filter((c) => c[0] === 'POST' && c[1] === '/v1/appStoreVersionLocalizations').map((c) => c[2].data.attributes);
+  assert.deepStrictEqual(made.map((a) => a.locale), others);
+  made.forEach((a) => assert.strictEqual(a.supportUrl, 'https://sunnati.3li.info/', a.locale + ' has the support link Apple asks of every page'));
+  /* what is new and the words, each page its own */
+  for (const code of Object.values(STORE_CODES.appStore)) {
+    const patches = sent.calls.filter((c) => c[0] === 'PATCH' && c[1] === '/v1/appStoreVersionLocalizations/L-' + code).map((c) => c[2].data.attributes);
+    assert.ok(patches.some((a) => a.whatsNew === readWords('ios', 'whatsnew', code + '.txt')), code + ' says what is new in its own words');
+    const words = patches.find((a) => a.description);
+    assert.deepStrictEqual(words, { description: readWords('ios', 'store', code, 'description.txt'),
+      keywords: readWords('ios', 'store', code, 'keywords.txt'), promotionalText: readWords('ios', 'store', code, 'promotional.txt') }, code + ' has its own words');
+  }
+  /* the pictures: each new page its own, the Arabic left as it is since it holds them already */
+  const byKind = (code, kind) => sent.uploads.filter((u) => u[0] === 'L-' + code + '|' + kind);
+  for (const code of others) {
+    for (const [kind, sub] of [['APP_IPHONE_67', '6.9-inch'], ['APP_IPAD_PRO_3GEN_129', 'ipad-13']]) {
+      const dir = path.join(STORE_ROOT, 'ios', 'screenshots', code, sub);
+      assert.deepStrictEqual(byKind(code, kind).map((u) => [u[1], u[2]]), pngsIn(dir).map((n) => [n, fs.statSync(path.join(dir, n)).size]),
+        code + ' shows ' + path.relative(STORE_ROOT, dir));
+    }
+    assert.strictEqual(byKind(code, 'IPHONE_67').length, 0, code + ' is not given the Arabic film');
+    assert.strictEqual(byKind(code, 'APP_IPHONE_DUO').length, 0, code + ' is not given the Arabic iPhone Duo pictures');
+  }
+  assert.strictEqual(byKind('ar-SA', 'APP_IPHONE_67').length + byKind('ar-SA', 'APP_IPAD_PRO_3GEN_129').length, 0, 'the Arabic pictures already there stay');
+  assert.ok(/the 6\.9 inch screenshots are there already \(6\)/.test(sent.log));
+  assert.deepStrictEqual(byKind('ar-SA', 'IPHONE_67').map((u) => u[1]), ['sky-day.mp4'], 'the film goes to the Arabic page');
+  assert.deepStrictEqual(byKind('ar-SA', 'APP_IPHONE_DUO').map((u) => u[1]), ['closed-1-home-outer.png'], 'and so do the iPhone Duo pictures of the run');
+  assert.ok(!sent.calls.some((c) => c[0] === 'SEND'), 'and a run told not to send sends nothing');
+
+  /* the screenshots alone go to the pages there are, and a language with no
+     page yet is told to wait for the version that makes it */
+  const shots = run('--shots-only', '--shots', 'ios/screenshots/6.9-inch', '--ipad', 'ios/screenshots/ipad-13', '--version', '9.9.9');
+  assert.strictEqual(shots.uploads.length, 0, 'the Arabic page holds its pictures already');
+  others.forEach((code) => assert.ok(shots.log.indexOf(code + ' has pictures in the repository and no page in this version yet') !== -1, code + ' waits'));
+  assert.ok(!shots.calls.some((c) => c[0] === 'POST' && c[1] === '/v1/appStoreVersionLocalizations'), 'and no page is made without its words');
+});
+
+test('both store pages are written only by hand, every language in one run', () => {
+  const play = fs.readFileSync(path.join(STORE_ROOT, '.github', 'workflows', 'play-listing.yml'), 'utf8');
+  const asc = fs.readFileSync(path.join(STORE_ROOT, '.github', 'workflows', 'app-store-listing.yml'), 'utf8');
+  [play, asc].forEach((flow) => assert.ok(/on:\s*workflow_dispatch:/.test(flow) && flow.indexOf('push:') === -1 && flow.indexOf('schedule:') === -1));
+  assert.ok(/--text play\/listing\n/.test(play), 'the words of every language, from the folder of them all');
+  assert.ok(play.indexOf('--feature play/feature-graphic-1024x500.png --phone play/listing/phone') !== -1, 'each language finds its pictures beside the Arabic');
+  assert.ok(/send\|replace\)[\s\S]*?--text ios\/store \\\s*--shots ios\/screenshots\/6\.9-inch \\/.test(asc), 'a version sent carries every language\'s phone pictures');
+  const tool = fs.readFileSync(path.join(STORE_ROOT, 'tools', 'android', 'play-listing.py'), 'utf8');
+  assert.ok(tool.indexOf("pu.call('PUT', f'{base}/edits/{edit}/listings/{lang}', tok, dict(words, language=lang))") !== -1, 'a page Play does not have yet is made');
 });
