@@ -772,25 +772,37 @@ test('the counts stand two and two when their row runs past the card, and the ho
   doc.createRange = realRange;
 });
 
-test('the turns of the mushaf page show their marks over smaller words, then the marks alone, while the bar is wider than the screen', () => {
+test('the turns of the mushaf page show their marks over smaller words, then the marks alone, while a turn stands past the screen', () => {
   const { win, doc } = boot();
   win.App.go('page');
   const nav = doc.querySelector('#v-page .page-nav');
   assert.ok(nav.querySelector('#page-prev .bar-word') && nav.querySelector('#page-next .bar-word'), 'both words can be left out alike');
-  let over = [true, true];
+  /* jsdom lays nothing out: the screen is 360 wide and the turn of the page
+     at the bar's end starts where the case says */
+  Object.defineProperty(doc.documentElement, 'clientWidth', { get: () => 360 });
   Object.defineProperty(nav, 'offsetWidth', { get: () => 328 });
-  Object.defineProperty(nav, 'clientWidth', { get: () => 328 });
-  Object.defineProperty(nav, 'scrollWidth', {
-    get: () => (nav.classList.contains('is-tighter') ? 328 : nav.classList.contains('is-tight') ? (over[1] ? 340 : 328) : (over[0] ? 380 : 328))
-  });
+  let starts = [-40, -10];
+  const at = () => (nav.classList.contains('is-tighter') ? 16 : nav.classList.contains('is-tight') ? starts[1] : starts[0]);
+  nav.querySelector('#page-next').getBoundingClientRect = () => ({ left: at(), right: at() + 104, width: 104, top: 0, bottom: 48, height: 48 });
+  doc.documentElement.setAttribute('lang', 'id');
   win.App.helpers.fitPageNav(doc);
   assert.ok(nav.classList.contains('is-tight') && nav.classList.contains('is-tighter'), 'the marks alone at the largest text');
-  over = [true, false];
+  starts = [-40, 16];
   win.App.helpers.fitPageNav(doc);
   assert.ok(nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'marks over smaller words when those fit');
-  over = [false, false];
+  /* a bar reaching into the page's margin, still on the screen, is as it was */
+  starts = [10, 16];
   win.App.helpers.fitPageNav(doc);
-  assert.ok(!nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'and the bar as it was when the words fit');
+  assert.ok(!nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'), 'a bar on the screen is drawn as it was');
+  /* the Arabic bar alike: drawn as it was while on the screen, and folded
+     only where the largest text pushes it past a small phone's edge */
+  doc.documentElement.setAttribute('lang', 'ar');
+  starts = [10, 16];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(!nav.classList.contains('is-tight'), 'the Arabic bar on the screen keeps its shape');
+  starts = [-9, 16];
+  win.App.helpers.fitPageNav(doc);
+  assert.ok(nav.classList.contains('is-tight') && !nav.classList.contains('is-tighter'));
 });
 
 test('a timetable wider than its card is drawn in smaller type, never under the least of the narrowest phones', () => {
