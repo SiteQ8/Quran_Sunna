@@ -64,6 +64,15 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
        back undefined, so the about screen printed «حزمة أندرويد» with no
        number on an iPhone. What is not here the page handles itself. */
     let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    /* A web view inside an app reports only the languages the app was built
+       with, and this one is built in Arabic alone, so an iPhone set to French
+       opened the app in Arabic. The phone's own list is handed over instead,
+       in its own order, for the page to choose from. Only the letters,
+       figures and dashes of a language tag are kept, so nothing else can
+       reach the script it is written into. */
+    let languages = Locale.preferredLanguages
+      .map { $0.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" } }
+      .joined(separator: ",")
     let bridge = """
     (function () {
       function send(name, args) {
@@ -75,6 +84,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         __canNotify: true,
         platform: function () { return 'ios'; },
         version: function () { return '\(version)'; },
+        languages: function () { return '\(languages)'; },
         canNotify: function () { return window.SunnatiApp.__canNotify !== false; },
         setReminders: call('setReminders'),
         setQiyamTimes: call('setQiyamTimes'),

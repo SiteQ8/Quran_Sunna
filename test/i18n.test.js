@@ -66,6 +66,8 @@ function boot(opts) {
   win.Audio = function () { return { play: () => Promise.resolve(), pause() {}, paused: true, src: '' }; };
   win.scrollTo = function () {};
   win.__reloaded = 0;
+  /* the native wrapper's bridge, present before any script of the page runs */
+  if (opts.bridge) win.SunnatiApp = opts.bridge;
   const ctx = dom.getInternalVMContext();
   SCRIPTS.forEach(function (rel, i) {
     let src = fs.readFileSync(path.join(DOCS, rel), 'utf8');
@@ -140,6 +142,16 @@ test('a phone the app meets for the first time is read in its own language, and 
   /* android still calls Indonesian «in» */
   const id = boot({ languages: ['in-ID'], table: { 'الإعدادات': 'Pengaturan' } });
   assert.strictEqual(id.win.I18n.lang, 'id');
+});
+
+test('an iPhone set to another language opens the app in it, though its web view reports Arabic alone', () => {
+  /* the web view inside the iPhone app reports only the languages the app was
+     built with, Arabic, so the wrapper hands the phone's own list over */
+  const { win } = boot({ languages: ['ar'], table: { 'الإعدادات': 'Paramètres' }, bridge: { platform: () => 'ios', languages: () => 'fr-FR,ar-KW' } });
+  assert.strictEqual(win.I18n.lang, 'fr');
+  const SWIFT = fs.readFileSync(path.join(__dirname, '..', 'ios', 'Sunnati', 'ReaderController.swift'), 'utf8');
+  assert.match(SWIFT, /let languages = Locale\.preferredLanguages/);
+  assert.match(SWIFT, /languages: function \(\) \{ return '\\\(languages\)'; \},/);
 });
 
 test('a language whose table never came leaves the page as written', () => {
