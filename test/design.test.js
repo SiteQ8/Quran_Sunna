@@ -509,9 +509,12 @@ test('nothing makes the page wider than the phone, and a long label wraps in its
   assert.match(CSS, /\.btn \{[^}]*height: 48px; min-height: 48px;[^}]*white-space: nowrap;/);
   /* a translated block or pair uses its own margin before it wraps, and a
      pair stands one under the other when a word is wider than half the row */
-  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-block, html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ padding-inline: var\(--s2\); \}/);
-  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row \{ flex-wrap: wrap; \}/);
-  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row > \.btn \{ min-width: auto; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-block, html:not\(\[lang='ar'\]\) \.btn-row:not\(\.stepper\) > \.btn \{ padding-inline: var\(--s2\); \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row:not\(\.stepper\) \{ flex-wrap: wrap; \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn-row:not\(\.stepper\) > \.btn \{ min-width: auto; \}/);
+  /* a count between a minus and a plus keeps the three on its line */
+  const HTML = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
+  assert.match(HTML, /<div class="btn-row stepper"[^>]*>\s*<button class="btn btn-ghost" data-act="fast-owed" data-ref="-1"/);
   /* the four counts are drawn as they were, and stand two and two when measured so */
   assert.match(CSS, /\.prayer-stats \{ display: grid; grid-template-columns: repeat\(4, 1fr\);/);
   assert.match(CSS, /\.prayer-stats\.is-tight \{ grid-template-columns: repeat\(2, 1fr\); \}/);
