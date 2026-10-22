@@ -148,6 +148,16 @@
    pinch and drops only the double-tap zoom. Android never zoomed, since it
    honours the viewport; this makes the two behave alike. */
 html { font-size: 16px; touch-action: manipulation; }
+/* Nothing on a page may make it wider than the phone. A word or a button
+   wider than its box, the offline download in Bengali or Malay at the
+   phone's large text, made the whole page a few points wider: the tab bar
+   ran off the edge and the page slid sideways under a finger, as a website
+   does and an app does not. The body alone was not enough, a phone widens
+   the page to what it holds whatever the body says, so the page itself is
+   cut at its edge. Clip rather than hidden, so neither becomes a box of its
+   own that scrolls and the bars that stay at the top keep doing so; an older
+   browser that lacks it keeps the body's hidden. */
+html { overflow-x: clip; }
 
 body {
   font-family: var(--ui);
@@ -155,6 +165,7 @@ body {
   color: var(--ink);
   min-height: 100vh;
   overflow-x: hidden;
+  overflow-x: clip;
   line-height: 1.6;
   /* and the player, while it is open, keeps the foot of the page clear of it:
      it lay over the last button of a surah, «أنهيت هذه السورة» */
@@ -667,7 +678,11 @@ button.window { cursor: pointer; font: inherit; background: none; border: 1px so
 .prayer-row.mark-missed .row-mark { color: var(--danger, #b3261e); }
 .prayer-row[disabled] { opacity: .55; }
 
-.prayer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: var(--s3); }
+.prayer-stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: var(--s3); }
+/* a count named in a word longer than its quarter, «Восполнен» at the
+   phone's large text, ran out of the row and widened the page: measured
+   so, the four stand two and two */
+.prayer-stats.is-tight { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .prayer-stat { text-align: center; padding: 10px 4px; border-radius: var(--r-sm); background: var(--sunken); }
 .prayer-stat b { display: block; font-size: var(--step-2); font-weight: 700; color: var(--accent-ink); font-variant-numeric: tabular-nums; }
 .prayer-stat span { font-size: var(--step--2); color: var(--ink-3); }
@@ -901,7 +916,7 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
 @media (max-width: 340px) { .tt th, .tt td { font-size: .72rem; padding-inline: 2px; } }
 .tt { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 /* the table keeps to the least size, so seven columns still fit a phone */
-.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: var(--step--2); white-space: nowrap; }
+.tt th, .tt td { padding: 9px 3px; text-align: center; font-size: calc(var(--step--2) * var(--tt-fit, 1)); white-space: nowrap; }
 .tt td { direction: ltr; }
 .tt td .ampm { font-size: .8em; margin-inline-start: 2px; }
 /* AM and PM are wider than the Arabic ص and م, and in the seven columns of a
@@ -910,19 +925,22 @@ html:not([lang='ar']) #azkar-groups .tile-name, html:not([lang='ar']) #dua-place
    says which half of the day each time is in */
 html[dir='ltr'] .tt thead th, html[dir='ltr'] .tt td { padding-inline: 2px; }
 @media (max-width: 389px) { html[dir='ltr'] .tt td .ampm { display: none; } }
-/* and whenever the table is measured not to fit, whatever the width */
+/* and whenever the table is measured not to fit, whatever the width; a
+   prayer named in two words, «Fitowar rana», then takes two lines in its
+   head rather than widening its column */
 html:not([lang='ar']) .tt.is-tight td .ampm { display: none; }
+html:not([lang='ar']) .tt.is-tight thead th { white-space: normal; }
 .tt thead th {
   position: sticky; top: 0; z-index: 1; background: var(--raised);
   font-weight: 700; color: var(--ink-2); border-bottom: 1px solid var(--line);
   padding-block: 11px;
 }
 .tt tbody th { text-align: center; font-weight: 600; padding-inline-start: var(--s4); white-space: nowrap; }
-.tt-day { display: block; font-size: var(--step-0); }
+.tt-day { display: block; font-size: calc(var(--step-0) * var(--tt-fit, 1)); }
 /* the name of a hijri month may take a second line in its one row, between its
    words and never inside one, so the seven columns still fit a phone of three
    hundred and sixty points, where the last of them ran off the card */
-.tt-hijri { display: block; font-size: var(--step--2); color: var(--ink-3); font-weight: 400; margin-top: 1px; white-space: normal; }
+.tt-hijri { display: block; font-size: calc(var(--step--2) * var(--tt-fit, 1)); color: var(--ink-3); font-weight: 400; margin-top: 1px; white-space: normal; }
 .tt tbody tr { border-bottom: 1px solid var(--line); }
 .tt tbody tr:last-child { border-bottom: 0; }
 .tt tbody tr[data-friday='1'] { background: var(--sunken); }
@@ -1229,6 +1247,15 @@ html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anyw
 }
 .btn-danger { background: none; border: 1px solid var(--danger); color: var(--danger); }
 .btn-block { width: 100%; }
+/* A translated label can be longer than its button, the offline download in
+   Bengali or «Selesai satu muka surat» in half a row at the phone's large
+   text: it takes a second line inside the button, as the buttons of a grid
+   already do, instead of running out of it over its neighbour and widening
+   the page. The Arabic labels fit and are drawn as they were. */
+html:not([lang='ar']) .btn {
+  white-space: normal; text-align: center; line-height: 1.25; overflow-wrap: break-word;
+  height: auto; padding-block: 4px;
+}
 .btn-row { display: flex; gap: var(--s2); }
 
 /* Wiping what was counted does not stand shoulder to shoulder with what only
@@ -1338,6 +1365,7 @@ html:not([lang='ar']) .journey-path.is-tight .journey-name { overflow-wrap: anyw
   width: 100%; padding: 6px 8px; height: auto; min-height: 44px;
   white-space: normal; text-align: center; line-height: 1.25;
 }
+
 /* one that is not a peer of the rest: it takes the whole row under them */
 .chip-grid .chip-wide { grid-column: 1 / -1; }
 /* and an odd one left over at the end takes the rest of its row rather than

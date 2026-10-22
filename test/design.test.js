@@ -403,6 +403,10 @@ test('no word is drawn under twelve points', () => {
   assert.deepStrictEqual(small.sort(), [0.72, 0.74], 'smaller than the floor: ' + small.join(', '));
   assert.match(CSS, /--step--2: \.75rem;/);
   assert.match(CSS, /\.tab \{[^}]*font-size: var\(--step--2\)/, 'the names of the tabs among them');
+  /* and the month table, drawn smaller to fit a phone in large type, stops
+     at that same least of the narrowest phones */
+  const APP = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.match(APP, /var TT_LEAST = 0\.72 \* 16;/);
 });
 
 test('the six windows take two rows of three when their words outgrow one', () => {
@@ -487,6 +491,26 @@ test('a long press lifts no picture and no card, and the page does not stretch a
   assert.match(CSS, /html, body \{ overscroll-behavior: none; \}/);
   const MAIN = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'MainActivity.java'), 'utf8');
   assert.match(MAIN, /web\.setOverScrollMode\(View\.OVER_SCROLL_NEVER\);/);
+});
+
+test('nothing makes the page wider than the phone, and a long label wraps in its button', () => {
+  /* the page itself is cut at its edge, clipped so neither it nor the body
+     becomes a box that scrolls, with the body's hidden kept for an older
+     browser that lacks clip */
+  assert.match(CSS, /\nhtml \{ overflow-x: clip; \}/);
+  assert.match(CSS, /body \{[^}]*overflow-x: hidden;\s*overflow-x: clip;/);
+  assert.ok(!/\n(html, )?body \{[^}]*overflow-x: hidden;\s*overflow-y/.test(CSS), 'nothing turns the body into a box of its own');
+  /* a translated label takes a second line inside its button, and the
+     Arabic buttons are drawn as they were */
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.btn \{\s*white-space: normal; text-align: center; line-height: 1\.25; overflow-wrap: break-word;\s*height: auto; padding-block: 4px;\s*\}/);
+  assert.match(CSS, /\.btn \{[^}]*height: 48px; min-height: 48px;[^}]*white-space: nowrap;/);
+  /* the four counts never run past the card, and stand two and two when measured so */
+  assert.match(CSS, /\.prayer-stats \{ display: grid; grid-template-columns: repeat\(4, minmax\(0, 1fr\)\);/);
+  assert.match(CSS, /\.prayer-stats\.is-tight \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\); \}/);
+  /* the timetable's type follows its fit, and a two word head may wrap in a tight table */
+  assert.match(CSS, /\.tt th, \.tt td \{[^}]*font-size: calc\(var\(--step--2\) \* var\(--tt-fit, 1\)\);/);
+  assert.match(CSS, /\.tt-day \{ display: block; font-size: calc\(var\(--step-0\) \* var\(--tt-fit, 1\)\); \}/);
+  assert.match(CSS, /html:not\(\[lang='ar'\]\) \.tt\.is-tight thead th \{ white-space: normal; \}/);
 });
 
 test('what was measured for a left-to-right page leaves the Arabic page as it was drawn', () => {

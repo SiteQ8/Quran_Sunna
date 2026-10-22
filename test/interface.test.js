@@ -623,11 +623,11 @@ test('the city list names a city only where the reader is in it, not one of the 
 test('a list longer than its panel shows the top of the next item, and squeezed words make room', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
-  /* the panel ends part way into an item, measured by the items' own spacing,
-     and above the tab bar rather than under it */
-  assert.match(app, /function showsMore\(panel\) \{[\s\S]*?items\[1\]\.offsetTop - items\[0\]\.offsetTop[\s\S]*?tall \* 0\.65/);
+  /* the panel ends part way into an item, above the tab bar rather than
+     under it, and the choice is brought into view by the same measure */
   assert.match(app, /var room = window\.innerHeight - r\.bottom - bars;\s*\/\* Under the button/);
-  assert.match(app, /showsMore\(panel\);\s*btn\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.match(app, /showsMore\(panel, panel\.querySelector\('\.is-on'\)\);\s*btn\.setAttribute\('aria-expanded', 'true'\);/);
+  assert.doesNotMatch(app, /on\.scrollIntoView\(\{ block: 'nearest' \}\)/, 'nothing pulls the choice flush to the edge after the cut');
   /* a translated row whose words were squeezed beside a long list takes the
      list under them, and an Arabic row is drawn as it was */
   assert.match(app, /function fitSettings\(\) \{[\s\S]*?said\.width < whole \* 0\.5 && said\.height > held\.height \* 1\.6/);
@@ -635,6 +635,161 @@ test('a list longer than its panel shows the top of the next item, and squeezed 
   const { win, doc } = boot();
   win.App.go('settings');
   assert.strictEqual(doc.querySelectorAll('.setting.is-stacked').length, 0);
+});
+
+test('the cut is measured on each item: a two line first item, a choice far down, the last one', () => {
+  const { win, doc } = boot();
+  const showsMore = win.App.helpers.showsMore;
+  /* the city list in large text: «اختر مدينة» on two lines, 64 high, then
+     cities 44 high, 2 apart, inside 8 of padding */
+  function panelOf(chosen) {
+    const panel = doc.createElement('div');
+    panel.className = 'picker-panel';
+    panel.style.borderTop = '1px solid'; panel.style.borderBottom = '1px solid';
+    panel.style.paddingTop = '8px';
+    panel.style.maxHeight = '320px';
+    doc.body.appendChild(panel);
+    const tops = [];
+    for (let i = 0; i < 12; i++) {
+      const item = doc.createElement('button');
+      item.className = 'picker-item' + (i === chosen ? ' is-on' : '');
+      const top = i === 0 ? 8 : 74 + (i - 1) * 46;
+      const high = i === 0 ? 64 : 44;
+      Object.defineProperty(item, 'offsetTop', { value: top });
+      Object.defineProperty(item, 'offsetHeight', { value: high });
+      tops.push([top, high]);
+      panel.appendChild(item);
+    }
+    Object.defineProperty(panel, 'scrollHeight', { value: 74 + 10 * 46 + 44 + 8 });
+    Object.defineProperty(panel, 'clientHeight', { value: 318 });
+    let scrolled = 0;
+    Object.defineProperty(panel, 'scrollTop', { get: () => scrolled, set: (v) => { scrolled = v; } });
+    const look = win.getComputedStyle(panel);
+    const rims = (parseFloat(look.borderTopWidth) || 0) + (parseFloat(look.borderBottomWidth) || 0);
+    showsMore(panel, panel.querySelector('.is-on'));
+    const shown = parseFloat(panel.style.maxHeight) - rims;
+    const from = panel.scrollTop, to = from + shown;
+    /* how much of each item the reader sees, from 0 to 1 */
+    const seen = tops.map(([top, high]) => Math.max(0, Math.min(to, top + high) - Math.max(from, top)) / high);
+    panel.remove();
+    return { seen, from };
+  }
+  function cut(part) { return part > 0.3 && part < 0.9; }
+  /* nothing chosen: the list opens at its top, the last item in view cut
+     through its words, sized by the cities and not by the long first item */
+  let { seen, from } = panelOf(-1);
+  assert.strictEqual(from, 0);
+  let edge = seen.findIndex((part) => part < 1);
+  assert.ok(edge > 1 && cut(seen[edge]), 'the item at the foot shows ' + seen[edge] + ' of itself');
+  assert.ok(seen.slice(edge + 1).every((part) => part === 0));
+  /* a choice far down opens whole, with half of the item above it and the
+     top of the one under it showing, so the list plainly goes on both ways */
+  ({ seen, from } = panelOf(9));
+  assert.ok(from > 0, 'the list is scrolled to the choice');
+  assert.strictEqual(seen[9], 1, 'the choice is whole');
+  assert.ok(cut(seen[10]), 'the item under the choice shows ' + seen[10] + ' of itself');
+  const above = seen.findIndex((part) => part > 0);
+  assert.ok(above < 9 && cut(seen[above]), 'the first item in view shows ' + seen[above] + ' of itself');
+  /* the last item chosen: the list opens on its end, still cut at the top */
+  ({ seen, from } = panelOf(11));
+  assert.strictEqual(seen[11], 1);
+  const first = seen.findIndex((part) => part > 0);
+  assert.ok(cut(seen[first]), 'the first item in view shows ' + seen[first] + ' of itself');
+  /* a choice already in view leaves the list at its top */
+  ({ seen, from } = panelOf(2));
+  assert.strictEqual(from, 0);
+  assert.strictEqual(seen[2], 1);
+});
+
+test('a grid of choices gives up columns, to a count they fill evenly, while a word is wider than its cell', () => {
+  const { win, doc } = boot();
+  const grid = doc.createElement('div');
+  grid.className = 'chip-grid';
+  grid.style.setProperty('--cols', '4');
+  for (let i = 0; i < 8; i++) {
+    const chip = doc.createElement('button');
+    chip.className = 'chip';
+    chip.textContent = 'خيار';
+    grid.appendChild(chip);
+  }
+  doc.body.appendChild(grid);
+  let word = 100;
+  const colsNow = () => parseInt(grid.style.getPropertyValue('--cols'), 10);
+  Object.defineProperty(grid, 'offsetWidth', { get: () => 320 });
+  grid.querySelectorAll('.chip').forEach(function (chip) {
+    Object.defineProperty(chip, 'clientWidth', { get: () => Math.floor(320 / colsNow()) });
+    Object.defineProperty(chip, 'scrollWidth', { get: () => Math.max(word, Math.floor(320 / colsNow())) });
+  });
+  win.App.helpers.fitChips(doc);
+  assert.strictEqual(colsNow(), 2, 'eight across three would leave a hole, so four become two');
+  assert.strictEqual(grid.getAttribute('data-cols'), '4', 'the count the page asked for is kept');
+  word = 60;
+  win.App.helpers.fitChips(doc);
+  assert.strictEqual(colsNow(), 4, 'the words fit again and the grid is as it was asked');
+  grid.remove();
+});
+
+test('the counts stand two and two, and the home sections two to a row, only when a word is wider than its box', () => {
+  const { win, doc } = boot();
+  win.App.go('prayers');
+  const stats = doc.getElementById('prayers-stats');
+  const cells = stats.querySelectorAll('.prayer-stat');
+  assert.strictEqual(cells.length, 4);
+  let spill = true;
+  cells.forEach(function (cell) {
+    Object.defineProperty(cell, 'clientWidth', { get: () => 70 });
+    Object.defineProperty(cell, 'scrollWidth', { get: () => (spill ? 84 : 70) });
+  });
+  win.App.helpers.fitStats();
+  assert.ok(stats.classList.contains('is-tight'));
+  spill = false;
+  win.App.helpers.fitStats();
+  assert.ok(!stats.classList.contains('is-tight'));
+
+  win.App.go('home');
+  const tiles = doc.getElementById('home-tiles');
+  const names = tiles.querySelectorAll('.tile-name, .tile-note');
+  assert.ok(names.length > 2);
+  let wide = false;
+  names.forEach(function (name, i) {
+    Object.defineProperty(name, 'clientWidth', { get: () => 86 });
+    Object.defineProperty(name, 'scrollWidth', { get: () => (wide && i === 3 ? 104 : 86) });
+  });
+  win.App.helpers.fitTiles();
+  assert.ok(!tiles.classList.contains('grid-2'), 'three to a row while every word fits');
+  wide = true;
+  win.App.helpers.fitTiles();
+  assert.ok(tiles.classList.contains('grid-2'), 'two to a row when one does not');
+});
+
+test('a timetable wider than its card is drawn in smaller type, never under the least of the narrowest phones', () => {
+  const { win, doc } = boot();
+  const box = doc.createElement('div');
+  const table = doc.createElement('table');
+  table.innerHTML = '<tbody><tr><td>4:33</td></tr></tbody>';
+  box.appendChild(table);
+  doc.body.appendChild(box);
+  let wants = 340;
+  const fitNow = () => parseFloat(table.style.getPropertyValue('--tt-fit')) || 1;
+  Object.defineProperty(box, 'clientWidth', { get: () => 328 });
+  Object.defineProperty(box, 'scrollWidth', { get: () => Math.round(wants * fitNow()) });
+  /* the cell's type as the phone draws it, twelve points */
+  const real = win.getComputedStyle;
+  win.getComputedStyle = function (el) { return el.tagName === 'TD' ? { fontSize: '12px' } : real.apply(win, arguments); };
+  win.App.helpers.fitTimetable(table);
+  assert.ok(table.classList.contains('is-tight'));
+  assert.ok(fitNow() < 1 && box.scrollWidth <= box.clientWidth + 1, 'it fits at ' + fitNow());
+  /* far too wide: it stops at .72rem of the twelve points and the box scrolls the rest */
+  wants = 420;
+  win.App.helpers.fitTimetable(table);
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), (0.72 * 16 / 12).toFixed(3));
+  /* and a table that fits keeps its type */
+  wants = 300;
+  win.App.helpers.fitTimetable(table);
+  assert.strictEqual(table.style.getPropertyValue('--tt-fit'), '');
+  assert.ok(!table.classList.contains('is-tight'));
+  win.getComputedStyle = real;
+  box.remove();
 });
 
 /* ---------------- khatma ---------------- */

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.96';
+  var VERSION = '8.87.97';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -717,6 +717,7 @@
     if (name !== 'reader' && state.repeat) stopRepeat();
     if (window.scrollTo) window.scrollTo(0, 0);
     if (RENDERERS[name]) RENDERERS[name]();
+    fitChips(target);
     updateReadProgress();
 
     if (!silent) pushAddress(name);
@@ -1842,7 +1843,59 @@
     if (tt && tt.firstChild) fitTimetable(tt);
     var path = $('umrah-path');
     if (path && path.firstChild) fitJourney(path);
+    fitTiles();
+    fitStats();
+    fitChips($('v-' + state.view));
     fitSettings();
+  }
+
+  /* A choice of one word longer than its cell, «Богобоязненность» or the
+     second word of «Крепость мусульманина» at the phone's large text, ran
+     over the next cell and off the screen. Its grid then gives up columns
+     until each cell is wide enough for its longest word, broken inside a
+     word it read as two, and only to a count the choices fill evenly: eight
+     across three left a hole at the end of the last row. The count the page
+     asked for is kept on the grid and taken up again when the words fit. */
+  function fitChips(root) {
+    var grids = (root || document).querySelectorAll('.chip-grid');
+    for (var g = 0; g < grids.length; g++) {
+      var grid = grids[g];
+      if (!grid.hasAttribute('data-cols')) {
+        grid.setAttribute('data-cols', grid.style.getPropertyValue('--cols') || '');
+      }
+      var asked = grid.getAttribute('data-cols');
+      if (asked) grid.style.setProperty('--cols', asked); else grid.style.removeProperty('--cols');
+      if (!grid.firstElementChild || !grid.offsetWidth) continue;
+      if (window.I18n && window.I18n.apply) window.I18n.apply(grid);
+      var cols = parseInt(asked, 10) || 3;
+      var choices = grid.querySelectorAll('.chip:not(.chip-wide)').length;
+      while (cols > 1 && chipsSpill(grid)) {
+        do { cols--; } while (cols > 1 && choices % cols);
+        grid.style.setProperty('--cols', String(cols));
+      }
+    }
+  }
+
+  function chipsSpill(grid) {
+    var chips = grid.querySelectorAll('.chip');
+    for (var i = 0; i < chips.length; i++) {
+      if (chips[i].scrollWidth > chips[i].clientWidth + 1) return true;
+    }
+    return false;
+  }
+
+  /* The four counts share a row, and a count named in one long word,
+     «Восполнен» in the large text of a phone, ran out of its quarter and
+     pushed the row past the card: they then stand two and two. */
+  function fitStats() {
+    var host = $('prayers-stats');
+    if (!host || !host.firstElementChild) return;
+    host.classList.remove('is-tight');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(host);
+    var cells = host.querySelectorAll('.prayer-stat');
+    for (var i = 0; i < cells.length; i++) {
+      if (cells[i].scrollWidth > cells[i].clientWidth + 1) { host.classList.add('is-tight'); return; }
+    }
   }
 
   /* The night's own two marks, which are not prayers and so are not in the
@@ -1927,6 +1980,7 @@
       $('prayers-stats').innerHTML =
         stat(stats.inTime, 'في وقتها') + stat(stats.jamaah, 'في جماعة') + stat(stats.late, 'قضاء') + stat(stats.missed, 'فاتت') +
         '<p class="setting-note" style="grid-column:1/-1">' + prayerSummary(stats, total) + '</p>';
+      fitStats();
     }
     var grid = $('prayers-grid');
     if (grid) {
@@ -2981,7 +3035,8 @@
      decoded again and blinked in. A grid found empty is drawn afresh. */
   function renderTiles() {
     var host = $('home-tiles');
-    if (!host || host.firstElementChild) return;
+    if (!host) return;
+    if (host.firstElementChild) { fitTiles(host); return; }
     host.innerHTML = TILES.map(function (t) {
       var key = t.act || t.nav;
       return '<button class="tile" ' + (t.act ? 'data-act="' + esc(t.act) + '"' : 'data-go="' + esc(t.nav) + '"') + '>' +
@@ -2990,6 +3045,23 @@
         '<span class="tile-name" data-tr="tile">' + esc(t.name) + '</span>' +
         '<span class="tile-note">' + esc(t.note) + '</span></button>';
     }).join('');
+    fitTiles(host);
+  }
+
+  /* A section can be named in one long word, «Rattrapages» or «Восполнение»,
+     and in the phone's large text the word was wider than a third of the
+     screen: the card cut it at its edge. Then the cards stand two to a row,
+     each wide enough for its words, as a small phone read in large type
+     wants. */
+  function fitTiles(host) {
+    host = host || $('home-tiles');
+    if (!host || !host.firstElementChild) return;
+    host.classList.remove('grid-2');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(host);
+    var words = host.querySelectorAll('.tile-name, .tile-note');
+    for (var i = 0; i < words.length; i++) {
+      if (words[i].scrollWidth > words[i].clientWidth + 1) { host.classList.add('grid-2'); return; }
+    }
   }
 
   function renderDailyAyah() {
@@ -6182,6 +6254,7 @@
     if (needle.length < 2) {
       if ($('search-count')) $('search-count').textContent = 'اكتب حرفين على الأقل، أو ابدأ بكلمة من هذه';
       host.innerHTML = searchSuggestions();
+      fitChips(host);
       return;
     }
 
@@ -8211,12 +8284,29 @@
      language's longer marks for the half of the day push the last column off
      the card; then each column says which half of the day it is in, as it
      does on the narrowest phones, and the marks are left out. */
+  var TT_LEAST = 0.72 * 16;
   function fitTimetable(table) {
     var box = table.parentNode;
     if (!box) return;
     table.classList.remove('is-tight');
+    table.style.removeProperty('--tt-fit');
     if (window.I18n && window.I18n.apply) window.I18n.apply(table);
     if (box.scrollWidth > box.clientWidth + 1) table.classList.add('is-tight');
+    /* and when even without the marks the seven columns are wider than the
+       card, in the large text of a phone, the last of them, the isha, sat
+       out of sight past its edge: the table's type is drawn smaller until
+       they fit, and never under the least this table is ever drawn at, the
+       .72rem of the narrowest phones; past that the box scrolls the rest */
+    var cell = table.querySelector('td');
+    var size = cell ? parseFloat(window.getComputedStyle(cell).fontSize) || 12 : 12;
+    var least = Math.min(1, Math.max(0.7, TT_LEAST / size));
+    var fit = 1;
+    for (var tries = 0; tries < 4 && box.scrollWidth > box.clientWidth + 1; tries++) {
+      var next = Math.max(least, fit * (box.clientWidth - 1) / box.scrollWidth);
+      if (next > fit - 0.005) break;
+      fit = next;
+      table.style.setProperty('--tt-fit', fit.toFixed(3));
+    }
   }
 
   function stepTimetable(by) {
@@ -8502,32 +8592,58 @@
       panel.style.top = (r.bottom + 6) + 'px';
       panel.style.maxHeight = Math.min(PICKER_MOST, room - 16) + 'px';
     }
-    showsMore(panel);
+    showsMore(panel, panel.querySelector('.is-on'));
     btn.setAttribute('aria-expanded', 'true');
     state.pickerFor = btn;
-    var on = panel.querySelector('.is-on');
-    if (on) on.scrollIntoView({ block: 'nearest' });
   }
 
   /* A list taller than its panel ends in the middle of an item, so the half
      item at the edge says there is more below: cut cleanly between two, the
-     list looked whole, and the six languages after the sixth went unseen. */
+     list looked whole, and the six languages after the sixth went unseen.
+     Each item is measured as it is drawn, not as the first one is: in large
+     text the first, «اختر مدينة», takes two lines, and a cut sized by it fell
+     four pixels into a city. A choice further down opens in view between
+     half of the item above it and the top of the one under it: brought to
+     the edge of the panel, with nothing under it, the list looked as if it
+     ended there and the last two languages went unseen again. */
   var PICKER_MOST = 480;
-  function showsMore(panel) {
+  function showsMore(panel, on) {
     var cap = parseFloat(panel.style.maxHeight) || 0;
     var items = panel.querySelectorAll('.picker-item');
     if (!cap || items.length < 2 || panel.scrollHeight <= panel.clientHeight + 1) return;
-    var tall = items[0].offsetHeight;
-    var pitch = items[1].offsetTop - items[0].offsetTop;
-    if (!tall || pitch <= 0) return;
     var look = window.getComputedStyle(panel);
-    var edge = (parseFloat(look.paddingTop) || 0) + (parseFloat(look.borderTopWidth) || 0) +
-      (parseFloat(look.borderBottomWidth) || 0);
-    /* a little over half of the next item shows, enough for the top of its
-       words: cut at the half, the line fell between them and showed none */
-    var peek = Math.round(tall * 0.65);
-    var whole = Math.max(1, Math.floor((cap - edge - peek) / pitch));
-    panel.style.maxHeight = (edge + whole * pitch + peek) + 'px';
+    var rims = (parseFloat(look.borderTopWidth) || 0) + (parseFloat(look.borderBottomWidth) || 0);
+    var room = cap - rims;
+    /* a little over half of an item shows, enough for the top of its words:
+       cut at the half, the line fell between them and showed none */
+    function peekOf(item) { return item.offsetTop + Math.round(item.offsetHeight * 0.65); }
+    var last = items.length - 1;
+    var start = 0, end = 0, i;
+    for (i = 1; i <= last && peekOf(items[i]) <= room; i++) end = peekOf(items[i]);
+    var at = on ? Array.prototype.indexOf.call(items, on) : -1;
+    if (at > 0 && on.offsetTop + on.offsetHeight > end) {
+      end = at < last ? peekOf(items[at + 1]) : panel.scrollHeight;
+      start = end;
+      for (i = at - 1; i >= 0; i--) {
+        var half = items[i].offsetTop + Math.round(items[i].offsetHeight * 0.5);
+        if (end - half > room) break;
+        start = half;
+      }
+      /* a panel too short for that, beside a button in the middle of a phone
+         held sideways, keeps a smaller part of each rather than a sliver of
+         one: a third of the item above, and no less than a third of the one
+         under it, before it gives up the one above */
+      if (start === end) {
+        var above = items[at - 1], under = items[at + 1];
+        var top = above.offsetTop + Math.round(above.offsetHeight * 0.7);
+        if (under) end = Math.min(end, Math.max(under.offsetTop + Math.round(under.offsetHeight * 0.3), top + room));
+        if (end - top <= room) start = top;
+        else { start = above.offsetTop + above.offsetHeight; end = Math.min(end, start + room); }
+      }
+    }
+    if (end <= start) return;
+    panel.style.maxHeight = (rims + end - start) + 'px';
+    panel.scrollTop = start;
   }
 
   function closePicker() {
@@ -8815,7 +8931,10 @@
      squeezed into a column seven lines tall with the list's half of the row
      empty under it. A row whose words take less than half of it while
      standing much taller than the list puts the list on its own line under
-     them. The Arabic rows are drawn as they always were. */
+     them. So does a row whose choice is cut short, a reciter's whole name
+     and country, or whose words hold one longer than their column,
+     «perhitungan» in the large text of a phone, which the row cut at its
+     edge. The Arabic rows are drawn as they always were. */
   function fitSettings() {
     var page = $('v-' + state.view);
     if (!page || (state.view !== 'settings' && state.view !== 'reminders')) return;
@@ -8836,7 +8955,10 @@
       var said = words.getBoundingClientRect();
       var held = list.getBoundingClientRect();
       if (!whole || !said.height || !held.height) continue;
-      if (said.width < whole * 0.5 && said.height > held.height * 1.6) row.classList.add('is-stacked');
+      var face = list.querySelector('.picker-label');
+      var cut = face && face.scrollWidth > face.clientWidth + 1;
+      var squeezed = words.scrollWidth > words.clientWidth + 1;
+      if ((said.width < whole * 0.5 && said.height > held.height * 1.6) || cut || squeezed) row.classList.add('is-stacked');
     }
   }
 
@@ -10822,7 +10944,7 @@
       loadPlaces: loadPlaces, nearestPlace: nearestPlace, nameAgain: nameAgain, settlePlaceName: settlePlaceName, adoptFix: adoptFix, localName: localName,
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
-      verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
+      verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, showsMore: showsMore, fitSettings: fitSettings, fitChips: fitChips, fitStats: fitStats, fitTiles: fitTiles, fitTimetable: fitTimetable, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
       maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
