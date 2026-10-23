@@ -11926,8 +11926,9 @@ test('the App Store page is written in every language with each version sent, ea
 
 test('every page of a version sent has the support link Apple asks for before the pictures, and a refusal is shown whole', { skip: !hasJwt && 'python3 with jwt is missing' }, () => {
   /* on 23 October Apple refused 8.87.101 after eleven minutes of pictures:
-     the pages Apple had made by itself for the new languages had no support
-     link, and the refusal was cut off after the third of them */
+     the pages of the new languages had no support link, which was given only
+     to a page the run made itself, and the refusal was cut off after the
+     third of them */
   const harness = [
     'import importlib.util, json, os, sys',
     'root = sys.argv[1]; os.chdir(root)',
