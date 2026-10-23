@@ -11924,6 +11924,68 @@ test('the App Store page is written in every language with each version sent, ea
   assert.ok(!shots.calls.some((c) => c[0] === 'POST' && c[1] === '/v1/appStoreVersionLocalizations'), 'and no page is made without its words');
 });
 
+test('every page of a version sent has the support link Apple asks for before the pictures, and a refusal is shown whole', { skip: !hasJwt && 'python3 with jwt is missing' }, () => {
+  /* on 23 October Apple refused 8.87.101 after eleven minutes of pictures:
+     the pages Apple had made by itself for the new languages had no support
+     link, and the refusal was cut off after the third of them */
+  const harness = [
+    'import importlib.util, json, os, sys',
+    'root = sys.argv[1]; os.chdir(root)',
+    "s = importlib.util.spec_from_file_location('asc', os.path.join(root, 'tools', 'ios', 'asc-release.py'))",
+    'm = importlib.util.module_from_spec(s); s.loader.exec_module(m)',
+    'mine, sold, calls = json.loads(sys.argv[2]), json.loads(sys.argv[3]), []',
+    'def api(method, path, body=None, writes=True):',
+    "    p = path.split('?')[0]; calls.append([method, p, body])",
+    "    if p == '/v1/apps/%s' % m.APP: return {'data': {'attributes': {'primaryLocale': 'ar-SA'}}}",
+    "    if p.endswith('/appStoreVersions'): return {'data': [{'id': 'V1', 'attributes': {'appStoreState': 'PREPARE_FOR_SUBMISSION', 'versionString': '9.9.9'}}, {'id': 'V0', 'attributes': {'appStoreState': 'READY_FOR_SALE', 'versionString': '9.9.8'}}]}",
+    "    if p == '/v1/appStoreVersions/V1/appStoreVersionLocalizations': return {'data': [{'id': 'L-' + k, 'attributes': dict(v, locale=k)} for k, v in mine.items()]}",
+    "    if p == '/v1/appStoreVersions/V0/appStoreVersionLocalizations': return {'data': [{'id': 'S-' + k, 'attributes': dict(v, locale=k)} for k, v in sold.items()]}",
+    '    return {}',
+    'm.api = api',
+    'try:',
+    "    m.give_links('V1'); print('DONE yes')",
+    'except SystemExit as e:',
+    "    print('STOPPED ' + str(e))",
+    "print('CALLS ' + json.dumps(calls))",
+    "print('REFUSAL ' + json.dumps(m.refusal(sys.argv[4])))"
+  ].join('\n');
+  const refused = JSON.stringify({ errors: [{ status: '409', code: 'STATE_ERROR.ENTITY_STATE_INVALID',
+    detail: 'This resource cannot be reviewed, please check associated errors to see why.',
+    meta: { associatedErrors: Object.fromEntries(['a1', 'b2', 'c3', 'd4'].map((id) => ['/v1/appStoreVersionLocalizations/' + id, [{ status: '409',
+      code: 'ENTITY_ERROR.ATTRIBUTE.REQUIRED', detail: "You must provide a value for the attribute 'supportUrl' with this request",
+      source: { pointer: '/data/attributes/supportUrl' } }]])) } }] });
+  const run = (mine, sold) => {
+    const out = execFileSync('python3', ['-c', harness, STORE_ROOT, JSON.stringify(mine), JSON.stringify(sold), refused]).toString();
+    const line = (tag) => out.split('\n').find((l) => l.startsWith(tag + ' '));
+    return { done: !!line('DONE'), stopped: (line('STOPPED') || '').slice(8), refusal: JSON.parse(line('REFUSAL').slice(8)),
+      links: JSON.parse(line('CALLS').slice(6)).filter((c) => c[0] === 'PATCH').map((c) => [c[1].split('/').pop(), c[2].data.attributes]) };
+  };
+  const SUPPORT = 'https://sunnati.3li.info/', MARKET = 'https://sunnati.3li.info/app';
+  /* a page without links takes those of the Arabic page, and one with its own support link keeps it */
+  const plain = run({ 'ar-SA': { supportUrl: SUPPORT, marketingUrl: MARKET }, 'en-US': {}, tr: { supportUrl: 'https://t.example/' } }, { 'ar-SA': { supportUrl: 'https://old.example/' } });
+  assert.ok(plain.done);
+  assert.deepStrictEqual(plain.links, [['L-en-US', { supportUrl: SUPPORT, marketingUrl: MARKET }], ['L-tr', { marketingUrl: MARKET }]]);
+  /* with none on the Arabic page, each takes its own language's link on the version on sale, then the Arabic one there */
+  const fromSale = run({ 'ar-SA': {}, 'en-US': {}, ms: {} }, { 'ar-SA': { supportUrl: SUPPORT }, 'en-US': { supportUrl: 'https://en.example/' } });
+  assert.ok(fromSale.done);
+  assert.deepStrictEqual(fromSale.links, [['L-ar-SA', { supportUrl: SUPPORT }], ['L-en-US', { supportUrl: 'https://en.example/' }], ['L-ms', { supportUrl: SUPPORT }]]);
+  /* with none anywhere, the run stops, naming the pages, and nothing is written */
+  const none = run({ 'ar-SA': {}, 'en-US': {} }, {});
+  assert.ok(!none.done);
+  assert.strictEqual(none.stopped, 'no support link was found for ar-SA, en-US, and Apple sends no version for review without one');
+  assert.deepStrictEqual(none.links, []);
+  /* the links are given before what is new and the pictures */
+  const release = fs.readFileSync(path.join(STORE_ROOT, 'tools', 'ios', 'asc-release.py'), 'utf8');
+  const main = release.slice(release.indexOf('def main():'));
+  assert.ok(main.indexOf('give_links(version_id)') > main.indexOf('add_languages(version_id, a.text)'), 'after the pages a run makes');
+  assert.ok(main.indexOf('give_links(version_id)') < main.indexOf('write_notes(version_id, notes_for)'), 'and before what is new and the pictures');
+  /* a refusal lists every page it names, none cut off */
+  const lines = none.refusal.split('\n');
+  assert.strictEqual(lines[0], 'STATE_ERROR.ENTITY_STATE_INVALID: This resource cannot be reviewed, please check associated errors to see why.');
+  assert.deepStrictEqual(lines.slice(1), ['a1', 'b2', 'c3', 'd4'].map((id) => "  /v1/appStoreVersionLocalizations/" + id + " /data/attributes/supportUrl: You must provide a value for the attribute 'supportUrl' with this request"));
+  assert.ok(/raise SystemExit\('%s %s failed with %s: %s' % \(method, path, e\.code, refusal\(e\.read\(\)\.decode\(\)\)\)\)/.test(release), 'and the api shows it so');
+});
+
 test('both store pages are written only by hand, every language in one run', () => {
   const play = fs.readFileSync(path.join(STORE_ROOT, '.github', 'workflows', 'play-listing.yml'), 'utf8');
   const asc = fs.readFileSync(path.join(STORE_ROOT, '.github', 'workflows', 'app-store-listing.yml'), 'utf8');
