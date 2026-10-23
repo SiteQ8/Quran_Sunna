@@ -55,10 +55,9 @@ marketing links of the app's own language, and its name.txt and subtitle.txt
 go to the app's information in that language, which Apple keeps apart from
 the version and takes only while one is being prepared; a language new there
 takes the privacy policy link of the app's own language. A page that is there
-without the support link, as Apple makes one by itself when a language is
-first named in the app's information, is given the links too, before anything
-slow is done, since Apple sends no version for review while one of its pages
-lacks it. What is new is read
+already without the support link is given the links too, before anything slow
+is done, since Apple sends no version for review while one of its pages lacks
+it. What is new is read
 for each language from its own file beside --notes, ios/whatsnew/en-US.txt,
 and a language with no file of its own is given --notes, as every language
 was before; a page made by this run must have its own.
@@ -383,12 +382,12 @@ LINKS = ('supportUrl', 'marketingUrl')
 
 def give_links(version_id):
     """Every page of the version with the support link, without which Apple
-    sends nothing for review, and the marketing link where the app has one. A
-    page Apple made by itself, when its language was first named in the app's
-    information, comes without them, and add_languages finds it there and
-    leaves it; it takes them from the app's own language in this version, or
-    else from the version on sale, its own language there first. A page still
-    without a support link stops the run here, before the pictures."""
+    sends nothing for review, and the marketing link where the app has one.
+    add_languages gives them only to a page it makes, and leaves one it finds
+    there already; a page without them takes them from the app's own language
+    in this version, or else from the version on sale, its own language there
+    first. A page still without a support link stops the run here, before the
+    pictures."""
     sale = on_sale()
     reading = sale['id'] if version_id == 'DRY-RUN' and sale else version_id
     pages = localizations(reading)
