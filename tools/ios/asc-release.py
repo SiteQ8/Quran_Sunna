@@ -54,7 +54,10 @@ language has no page in the version yet is given one, with the support and
 marketing links of the app's own language, and its name.txt and subtitle.txt
 go to the app's information in that language, which Apple keeps apart from
 the version and takes only while one is being prepared; a language new there
-takes the privacy policy link of the app's own language. What is new is read
+takes the privacy policy link of the app's own language. A page that is there
+already without the support link is given the links too, before anything slow
+is done, since Apple sends no version for review while one of its pages lacks
+it. What is new is read
 for each language from its own file beside --notes, ios/whatsnew/en-US.txt,
 and a language with no file of its own is given --notes, as every language
 was before; a page made by this run must have its own.
@@ -130,7 +133,23 @@ def api(method, path, body=None, writes=True):
             text = r.read().decode()
             return json.loads(text) if text else {}
     except urllib.error.HTTPError as e:
-        raise SystemExit('%s %s failed with %s: %s' % (method, path, e.code, e.read().decode()[:1500]))
+        raise SystemExit('%s %s failed with %s: %s' % (method, path, e.code, refusal(e.read().decode())))
+
+
+def refusal(text):
+    """What Apple refused, each error and each one under it on a line of its
+    own, so that none is cut off; the body as it came when it is not Apple's."""
+    try:
+        lines = []
+        for err in json.loads(text)['errors']:
+            lines.append('%s: %s' % (err.get('code'), err.get('detail') or err.get('title')))
+            for where, under in sorted(((err.get('meta') or {}).get('associatedErrors') or {}).items()):
+                for sub in under:
+                    lines.append('  %s %s: %s' % (where, (sub.get('source') or {}).get('pointer') or '',
+                                                   sub.get('detail') or sub.get('title')))
+        return '\n'.join(lines)
+    except (ValueError, KeyError, TypeError, AttributeError):
+        return text[:1500]
 
 
 def png_size(path):
@@ -356,6 +375,48 @@ def add_languages(version_id, folder):
         api('POST', '/v1/appStoreVersionLocalizations', {'data': {
             'type': 'appStoreVersionLocalizations', 'attributes': dict(links, locale=locale),
             'relationships': {'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': version_id}}}}})
+
+
+LINKS = ('supportUrl', 'marketingUrl')
+
+
+def give_links(version_id):
+    """Every page of the version with the support link, without which Apple
+    sends nothing for review, and the marketing link where the app has one.
+    add_languages gives them only to a page it makes, and leaves one it finds
+    there already; a page without them takes them from the app's own language
+    in this version, or else from the version on sale, its own language there
+    first. A page still without a support link stops the run here, before the
+    pictures."""
+    sale = on_sale()
+    reading = sale['id'] if version_id == 'DRY-RUN' and sale else version_id
+    pages = localizations(reading)
+    if not pages:
+        return
+    home = home_locale()
+    mine = {loc['attributes']['locale']: loc['attributes'] for loc in pages}
+    sold = {} if not sale or sale['id'] == reading else {
+        loc['attributes']['locale']: loc['attributes'] for loc in localizations(sale['id'])}
+    bare = []
+    for loc in pages:
+        at = loc['attributes']
+        give = {}
+        for k in LINKS:
+            if at.get(k):
+                continue
+            for there in (mine.get(home), sold.get(at['locale']), sold.get(home)):
+                if there and there.get(k):
+                    give[k] = there[k]
+                    break
+        if give:
+            log('the links of %s: %s' % (at['locale'], ', '.join('%s %s' % kv for kv in sorted(give.items()))))
+            api('PATCH', '/v1/appStoreVersionLocalizations/' + loc['id'], {'data': {
+                'type': 'appStoreVersionLocalizations', 'id': loc['id'], 'attributes': give}})
+        if not (at.get('supportUrl') or give.get('supportUrl')):
+            bare.append(at['locale'])
+    if bare:
+        raise SystemExit('no support link was found for %s, and Apple sends no version for review without one'
+                         % ', '.join(sorted(bare)))
 
 
 def app_info_to_edit():
@@ -915,6 +976,9 @@ def main():
         # the names first, so a name Apple refuses stops the run before the rest
         write_names(a.text)
         add_languages(version_id, a.text)
+    # every page with its links before the pictures, so a page Apple would
+    # refuse stops the run in a minute and not after them
+    give_links(version_id)
     write_notes(version_id, notes_for)
     if a.text:
         write_text(version_id, a.text)
