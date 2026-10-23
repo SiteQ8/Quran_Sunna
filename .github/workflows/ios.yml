@@ -128,8 +128,10 @@ jobs:
         id: xcode
         env:
           WANT: ${{ needs.pick.outputs.xcode }}
+          ASKED: ${{ github.event.inputs.xcode || 'auto' }}
         run: |
           : > "$RUNNER_TEMP/xcodes"
+          : > "$RUNNER_TEMP/all-xcodes"
           seen=" "
           for x in /Applications/Xcode*.app; do
             real=$(realpath "$x") || continue
@@ -145,9 +147,26 @@ jobs:
             echo "  $v ($b) $real"
             # padded, so a plain sort orders 27.10 after 27.9
             key=$(echo "$v" | awk -F. '{ printf "%03d.%03d.%03d", $1, $2, $3 }')
+            echo "$rank $key $real" >> "$RUNNER_TEMP/all-xcodes"
             case "$v" in "$WANT"|"$WANT".*) echo "$rank $key $real" >> "$RUNNER_TEMP/xcodes" ;; esac
           done
           XCODE=$(sort "$RUNNER_TEMP/xcodes" | tail -1 | cut -d' ' -f3-)
+          # The page GitHub publishes for an image can run ahead of the macs
+          # still serving it: on 22 October it named 27.2 a release candidate,
+          # while the mac the build landed on had 27.2 only as beta 2, so the
+          # build was kept as a beta and nothing went up to App Store Connect.
+          # A run that asked for auto takes instead the newest release or
+          # release candidate this mac has from 27.1 on; one that named its
+          # Xcode gets what it named.
+          if [ "$ASKED" = "auto" ]; then
+            case "$XCODE" in *[Bb]eta*)
+              ALT=$(awk '$1 >= 1 && $2 >= "027.001.000"' "$RUNNER_TEMP/all-xcodes" | sort -k2,2 -k1,1 | tail -1 | cut -d' ' -f3-)
+              if [ -n "$ALT" ]; then
+                echo "::notice::$(basename "$XCODE") is a beta on this mac, so $(basename "$ALT") builds instead"
+                XCODE="$ALT"
+              fi ;;
+            esac
+          fi
           [ -n "$XCODE" ] || { echo "::error::no Xcode ${WANT} on this image"; exit 1; }
           sudo xcode-select -s "$XCODE"
           xcodebuild -version
