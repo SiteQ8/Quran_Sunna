@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""لوحات شاشة الافتتاح في أندرويد لوحةٌ لكل بلدٍ من الكويت والسعودية والإمارات
-وقطر والبحرين وعُمان وأخرى لمن سواهم، ولكلّ لوحةٍ نهارٌ وليل.
+"""لوحات شاشة الافتتاح في أندرويد لوحةٌ لكل بلدٍ في PLACES وأخرى لمن سواهم،
+ولكلّ لوحةٍ نهارٌ وليل.
 
 تُرسم الأصول كبيرةً بنسبة ٩ إلى ١٦ تقريباً وأعلاها سماءٌ هادئة خالية والمعلم في
 أسفلها، فتقصّ هذه الأداة كلّ أصلٍ من وسطه على ٩:١٦ ثم تصغّره إلى ١٠٨٠×١٩٢٠
@@ -13,7 +13,7 @@
 
     python3 tools/android/splash-bg.py <مجلّد الأصول>
 
-والأصول فيه بأسماء {kw,sa,ae,qa,bh,om,default}-{day,night}.png.
+والأصول فيه بأسماء البلدان في PLACES ثم -day أو -night ثم .png.
 """
 
 import io
@@ -25,7 +25,7 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'android' / 'app' / 'src' / 'main' / 'res' / 'drawable-nodpi'
 
-PLACES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default']
+PLACES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'eg', 'in', 'iq', 'jo', 'ma', 'dz', 'sy', 'ye', 'ly', 'id', 'my', 'tr', 'pk', 'bd', 'ng', 'default']
 TIMES = ['day', 'night']
 SIZE = (1080, 1920)
 QUALITY = 70

@@ -5,13 +5,13 @@ by night.
 The page opens on a painting of the reader's own country, chosen before the
 first frame by the zone they set or the phone's own, and by whether the sun
 is up there now. The paintings are made large, at any size so long as they
-are about 9:16, and this turns a folder of them into the fourteen files the
-app ships:
+are about 9:16, and this turns a folder of them into the files the app
+ships, two for each country:
 
     python3 tools/store/splash-art.py <folder of masters> [--out <folder>]
 
 The folder holds one PNG for each country and each half of the day, named as
-the page names them: kw, sa, ae, qa, bh, om and default, each with -day and
+the page names them, the codes in COUNTRIES below, each with -day and
 -night, so kw-day.png and kw-night.png and the rest. Each is cut to 9:16
 about its middle, scaled with Lanczos to 900 by 1600, which fills a phone of
 three pixels to the point with the sky to spare, and written as WebP at
@@ -22,8 +22,8 @@ A test holds every painting under 180000 bytes. A painting that comes out
 heavier is written again a few steps lower until it fits, and named in the
 output with the quality it took, so a calm sky keeps its quality and only a
 busy one gives any up. One that cannot fit even at the floor stops the run.
-A missing master stops the run before anything is written, so the fourteen
-never come from two different sets.
+A missing master stops the run before anything is written, so the set never
+comes from two different batches.
 """
 
 import argparse
@@ -36,7 +36,7 @@ from PIL import Image, ImageOps
 ROOT = Path(__file__).resolve().parents[2]
 
 # as the page names them: the zone gives the country, the sun the half
-COUNTRIES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default']
+COUNTRIES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'eg', 'in', 'iq', 'jo', 'ma', 'dz', 'sy', 'ye', 'ly', 'id', 'my', 'tr', 'pk', 'bd', 'ng', 'default']
 HALVES = ['day', 'night']
 SIZE = (900, 1600)
 QUALITY = 72
@@ -74,7 +74,7 @@ def main():
     ap = argparse.ArgumentParser(description='Turn the opening masters into the WebP files the app ships.')
     ap.add_argument('masters', type=Path, help='folder holding kw-day.png, kw-night.png and the rest')
     ap.add_argument('--out', type=Path, default=ROOT / 'docs' / 'img' / 'splash',
-                    help='where the fourteen files go (default: docs/img/splash)')
+                    help='where the files go (default: docs/img/splash)')
     ap.add_argument('--quality', type=int, default=QUALITY, help='WebP quality to start from (default: %d)' % QUALITY)
     args = ap.parse_args()
 
