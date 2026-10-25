@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.104';
+  var VERSION = '8.87.105';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -827,7 +827,29 @@
      own, and this is the same table so the paintings warmed are the ones the
      next opening asks for. */
   var SPLASH_LANDS = { 'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae', 'Asia/Qatar': 'qa',
-    'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om' };
+    'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om',
+    'Africa/Cairo': 'eg',
+    'Asia/Kolkata': 'in',
+    'Asia/Calcutta': 'in',
+    'Asia/Baghdad': 'iq',
+    'Asia/Amman': 'jo',
+    'Africa/Casablanca': 'ma',
+    'Africa/Algiers': 'dz',
+    'Asia/Damascus': 'sy',
+    'Asia/Aden': 'ye',
+    'Africa/Tripoli': 'ly',
+    'Asia/Jakarta': 'id',
+    'Asia/Pontianak': 'id',
+    'Asia/Makassar': 'id',
+    'Asia/Jayapura': 'id',
+    'Asia/Kuala_Lumpur': 'my',
+    'Asia/Kuching': 'my',
+    'Europe/Istanbul': 'tr',
+    'Asia/Istanbul': 'tr',
+    'Asia/Karachi': 'pk',
+    'Asia/Dhaka': 'bd',
+    'Asia/Dacca': 'bd',
+    'Africa/Lagos': 'ng' };
 
   function splashLand() {
     var zone = Store.get('zone');
