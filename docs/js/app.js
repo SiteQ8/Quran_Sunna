@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.108';
+  var VERSION = '8.87.109';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3035,8 +3035,8 @@
        every list reviewed against the book */
     { morning: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 15, 17, 18, 19, 20, null, 22, 23],
       evening: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 21, 18, 19, 20, 22],
-      sleep: [5, 6, 7, 8, 9, 10, 11, 12, 13],
-      wakeup: [0, 1, 2, 3],
+      sleep: [3, 4, 5, 6, 7, 8, 9, 10, 11],
+      wakeup: [0, 1, 2, null],
       afterprayer: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
       mosque: [0, 1],
       home: [0, 1],

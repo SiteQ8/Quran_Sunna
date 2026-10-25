@@ -688,7 +688,7 @@ test('a day counted before the two were added keeps its counts on the same adhka
   /* by the two at the head, then to where the book's order sets them */
   assert.deepStrictEqual(rec.azkar.morning, { 4: 0, 9: 2 }, 'moved along by the two at the head, then to their places now');
   assert.deepStrictEqual(rec.azkar.evening, { 7: 0 });
-  assert.deepStrictEqual(rec.azkar.sleep, { 6: 0 }, 'and the sleep list after the five the book opens it with');
+  assert.deepStrictEqual(rec.azkar.sleep, { 4: 0 }, 'and the sleep list after the three the book opens it with');
   ({ win } = boot({ storage: storage, now: new Date(2026, 9, 12, 9, 0, 0) }));
   rec = JSON.parse(storage.getItem(key));
   assert.deepStrictEqual(rec.azkar.morning, { 4: 0, 9: 2 }, 'and moved once only');
