@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.106';
+  var VERSION = '8.87.107';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3031,9 +3031,26 @@
     { morning: shiftBy(2, 40), evening: shiftBy(2, 40) },
     /* to 2: the morning and the evening as باب ٢٧ of the book has them, the
        three quls each on a card of its own, the whole of سيد الاستغفار and of
-       every dhikr that had been cut short, and those that were missing */
+       every dhikr that had been cut short, and those that were missing, in
+       every list reviewed against the book */
     { morning: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 15, 17, 18, 19, 21, null, 23, 24],
-      evening: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 21, 18, 19, 20, 22] }
+      evening: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 21, 18, 19, 20, 22],
+      sleep: [5, 6, 7, 8, 9, 10, 11, 12, 13],
+      wakeup: [0, 1, 2, 3],
+      afterprayer: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      mosque: [0, 1],
+      home: [0, 1],
+      food: [0, 1, 2, 3, 4, 5],
+      travel: [0, null, null, null, 1, 2],
+      rain: [0, 1, 2, 3],
+      distress: [0, 1, 2, 3, 4],
+      wearing: [0, 1],
+      mirror: [0],
+      market: [0, 1],
+      istighfar: [0, 1, 2, 3, 4],
+      sick: [0, 1, 2, [3, 4]],
+      hardship: [0, 1, 2, 3, 4],
+      funeral: [0, 1, 2, 3] }
   ];
 
   function settleAzkar() {
