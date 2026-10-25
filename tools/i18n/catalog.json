@@ -114,7 +114,7 @@
   ]
  },
  {
-  "key": "أبو داود، من قالها أعتق الله ربعه من النار",
+  "key": "أبو داود، من قالها أربعًا أعتقه الله من النار",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -128,25 +128,18 @@
   ]
  },
  {
-  "key": "أبو داود، من قالها كفاه الله ما أهمه من أمر الدنيا والآخرة",
+  "key": "ابن السني مرفوعًا وأبو داود موقوفًا، كفاه الله ما أهمه من أمر الدنيا والآخرة",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
-  ]
- },
- {
-  "key": "ابن ماجه",
-  "kind": "data",
-  "where": [
-   "data/azkar.js AZKAR_DB.*.items[].r",
-   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
   ]
  },
  {
   "key": "أبو داود وابن ماجه",
   "kind": "data",
   "where": [
-   "data/azkar.js AZKAR_DB.*.items[].r"
+   "data/azkar.js AZKAR_DB.*.items[].r",
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
   ]
  },
  {
@@ -167,7 +160,8 @@
   "key": "أحمد",
   "kind": "data",
   "where": [
-   "data/azkar.js AZKAR_DB.*.items[].r"
+   "data/azkar.js AZKAR_DB.*.items[].r",
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
   ]
  },
  {
@@ -178,14 +172,21 @@
   ]
  },
  {
-  "key": "البخاري ومسلم، كأنه أعتق عشر رقاب",
+  "key": "البخاري ومسلم، من قالها عشر مرات كان كمن أعتق أربعة أنفس من ولد إسماعيل",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
   ]
  },
  {
-  "key": "النسائي، من صلى عليه عشرًا صلى الله عليه عشرًا",
+  "key": "ابن ماجه، بعد السلام من صلاة الفجر",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "الطبراني، من صلى على النبي ﷺ حين يصبح عشرًا وحين يمسي عشرًا أدركته شفاعته يوم القيامة",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -199,6 +200,41 @@
   ]
  },
  {
+  "key": "أبو داود، من قالها حين يمسي فقد أدّى شكر ليلته",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم والترمذي، من قالها حين يمسي ثلاثًا لم تضره حمة تلك الليلة",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري، يجمع كفيه وينفث فيهما ويقرأ السور الثلاث ثم يمسح بهما ما استطاع من جسده، يفعل ذلك ثلاث مرات",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري، لم يزل عليه من الله حافظ ولا يقربه شيطان حتى يصبح",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري ومسلم، من قرأهما في ليلة كفتاه",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
   "key": "أبو داود، كان ﷺ يقولها إذا أراد النوم واضعًا يده تحت خده",
   "kind": "data",
   "where": [
@@ -206,13 +242,10 @@
   ]
  },
  {
-  "key": "متفق عليه",
+  "key": "البخاري ومسلم، من مات من ليلته مات على الفطرة",
   "kind": "data",
   "where": [
-   "data/azkar.js AZKAR_DB.*.items[].r",
-   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)",
-   "data/content.js HADITHS[].r",
-   "data/content.js RUQYAH[].r"
+   "data/azkar.js AZKAR_DB.*.items[].r"
   ]
  },
  {
@@ -223,7 +256,21 @@
   ]
  },
  {
-  "key": "البخاري، ثم دعا استُجيب له",
+  "key": "الترمذي، كان ﷺ لا ينام حتى يقرأها",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري، من قالها ثم دعا استُجيب له",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري ومسلم، كان ﷺ يقرؤها إذا استيقظ من الليل",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -258,14 +305,7 @@
   ]
  },
  {
-  "key": "أبو داود والترمذي والنسائي، مرة بعد كل صلاة، وثلاثا بعد الفجر والمغرب",
-  "kind": "data",
-  "where": [
-   "data/azkar.js AZKAR_DB.*.items[].r"
-  ]
- },
- {
-  "key": "ابن ماجه، بعد السلام من صلاة الفجر",
+  "key": "أبو داود والترمذي والنسائي، بعد كل صلاة",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -342,6 +382,13 @@
   ]
  },
  {
+  "key": "الترمذي، عند الأكل",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
   "key": "الترمذي، عند شرب اللبن",
   "kind": "data",
   "where": [
@@ -349,21 +396,21 @@
   ]
  },
  {
-  "key": "الترمذي، عند شرب اللبن (رواية أخرى)",
+  "key": "مسلم، دعاء الضيف لصاحب الطعام",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
   ]
  },
  {
-  "key": "مسلم، عند ركوب الدابة/السيارة",
+  "key": "مسلم، دعاء السفر",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
   ]
  },
  {
-  "key": "مسلم، عند العودة من السفر",
+  "key": "البخاري ومسلم، عند الرجوع من السفر",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -371,6 +418,41 @@
  },
  {
   "key": "مسلم، عند النزول في منزل",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود والترمذي، عند الركوب",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "الحاكم وابن السني، عند دخول البلدة",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أحمد وابن ماجه، المسافر للمقيم",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "الترمذي، المقيم للمسافر",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، المسافر إذا أسحر",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -385,6 +467,13 @@
  },
  {
   "key": "أبو داود، عند الخروج، يُقال: هُديت وكُفيت ووُقيت",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود والترمذي والنسائي وابن ماجه",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -419,7 +508,7 @@
   ]
  },
  {
-  "key": "الموطأ، عند سماع الرعد",
+  "key": "الموطأ، موقوف على ابن الزبير، عند سماع الرعد",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -427,6 +516,34 @@
  },
  {
   "key": "أبو داود، عند هبوب الريح",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، عند هبوب الريح",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري ومسلم، الاستصحاء",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود، الاستسقاء",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري، الاستسقاء",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -441,6 +558,34 @@
  },
  {
   "key": "الترمذي، دعاء ذي النون، ما دعا بها مسلم إلا استجاب الله له",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أحمد، أذهب الله همه وأبدله مكانه فرحًا",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود، لمن لبس ثوبًا جديدًا",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "ابن ماجه، لمن لبس ثوبًا جديدًا",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أحمد، دعاء مطلق، وتخصيصه بالمرآة حديثه ضعيف",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -496,7 +641,21 @@
   ]
  },
  {
-  "key": "مسلم، من قالها مئة مرة حُطَّت خطاياه وإن كانت مثل زبد البحر",
+  "key": "البخاري ومسلم، من قالها في يوم مئة مرة حُطَّت خطاياه وإن كانت مثل زبد البحر",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري، سيد الاستغفار، من قالها موقنًا بها فمات دخل الجنة",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، كان ﷺ يتوب إلى الله في اليوم مئة مرة",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -510,7 +669,28 @@
   ]
  },
  {
-  "key": "أبو داود والترمذي، من عاد مريضًا فقالها سبعًا عافاه الله",
+  "key": "أبو داود والترمذي، من عاد مريضًا لم يحضر أجله فقالها سبعًا عافاه الله",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، يضع يده على موضع الألم ويقولها ثلاثًا",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، يقولها سبعًا ويده على موضع الألم",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "الترمذي وابن ماجه، من قالها في مرضه ثم مات لم تطعمه النار",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r"
@@ -552,6 +732,13 @@
   ]
  },
  {
+  "key": "أبو داود والترمذي وابن ماجه",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
   "key": "البخاري ومسلم، في التعزية",
   "kind": "data",
   "where": [
@@ -564,6 +751,55 @@
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r",
    "data/content.js DUAS[].items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود، تلقين المحتضر، من كان آخر كلامه لا إله إلا الله دخل الجنة",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، عند إغماض الميت",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود وابن ماجه، في الصلاة على الميت",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "البخاري تعليقًا، في الصلاة على الطفل",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود، عند إدخال الميت القبر",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "أبو داود، استغفروا لأخيكم وسلوا له التثبيت",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
+  ]
+ },
+ {
+  "key": "مسلم، عند زيارة القبور",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r"
   ]
  },
  {
@@ -620,6 +856,13 @@
   ]
  },
  {
+  "key": "ابن السني مرفوعًا وأبو داود موقوفًا",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
   "key": "البخاري ومسلم",
   "kind": "data",
   "where": [
@@ -628,12 +871,34 @@
   ]
  },
  {
-  "key": "النسائي",
+  "key": "ابن ماجه",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
+  "key": "الطبراني",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
+  "key": "مسلم والترمذي",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
+  "key": "متفق عليه",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)",
    "data/azkar.js AZKAR_DB.*.items[].r",
-   "data/content.js DUAS[].items[].r"
+   "data/content.js HADITHS[].r",
+   "data/content.js RUQYAH[].r"
   ]
  },
  {
@@ -641,6 +906,14 @@
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
+  "key": "النسائي",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)",
+   "data/content.js DUAS[].items[].r"
   ]
  },
  {
@@ -665,6 +938,20 @@
   ]
  },
  {
+  "key": "الحاكم وابن السني",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
+  "key": "أحمد وابن ماجه",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
   "key": "الموطأ",
   "kind": "data",
   "where": [
@@ -679,6 +966,13 @@
   ]
  },
  {
+  "key": "الترمذي وابن ماجه",
+  "kind": "data",
+  "where": [
+   "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
+  ]
+ },
+ {
   "key": "ابن حبان",
   "kind": "data",
   "where": [
@@ -686,7 +980,7 @@
   ]
  },
  {
-  "key": "الترمذي وابن ماجه",
+  "key": "البخاري تعليقًا",
   "kind": "data",
   "where": [
    "data/azkar.js AZKAR_DB.*.items[].r (up to its comma)"
@@ -6662,28 +6956,28 @@
   "key": "سُنّتي",
   "kind": "attr",
   "where": [
-   "index.html:164",
-   "index.html:1062",
-   "js/app.js:2230",
-   "js/app.js:2231",
-   "js/app.js:3785",
-   "js/app.js:4618"
+   "index.html:224",
+   "index.html:1122",
+   "js/app.js:2339",
+   "js/app.js:2340",
+   "js/app.js:3987",
+   "js/app.js:4820"
   ]
  },
  {
   "key": "الرئيسية",
   "kind": "text",
   "where": [
-   "index.html:254"
+   "index.html:314"
   ]
  },
  {
   "key": "أذكار بعد الصلاة",
   "kind": "attr",
   "where": [
-   "index.html:258",
-   "index.html:962",
-   "index.html:963",
+   "index.html:318",
+   "index.html:1022",
+   "index.html:1023",
    "data/azkar.js AZKAR_DB.*.title"
   ]
  },
@@ -6691,510 +6985,510 @@
   "key": "شارك مواقيت اليوم صورة",
   "kind": "attr",
   "where": [
-   "index.html:259"
+   "index.html:319"
   ]
  },
  {
   "key": "أنقص يوماً من التاريخ الهجري",
   "kind": "attr",
   "where": [
-   "index.html:262"
+   "index.html:322"
   ]
  },
  {
   "key": "التاريخ معدّل، اضغط للرجوع إلى الحساب",
   "kind": "attr",
   "where": [
-   "index.html:264"
+   "index.html:324"
   ]
  },
  {
   "key": "أضف يوماً إلى التاريخ الهجري",
   "kind": "attr",
   "where": [
-   "index.html:265"
+   "index.html:325"
   ]
  },
  {
   "key": "تقدم الوقت بين الصلاتين",
   "kind": "text",
   "where": [
-   "index.html:333"
+   "index.html:393"
   ]
  },
  {
   "key": "باقٍ على",
   "kind": "text",
   "where": [
-   "index.html:339",
-   "js/app.js:1644"
+   "index.html:399",
+   "js/app.js:1668"
   ]
  },
  {
   "key": "مواقيت اليوم، اضغط صلاة لتعلّمها",
   "kind": "attr",
   "where": [
-   "index.html:346"
+   "index.html:406"
   ]
  },
  {
   "key": "سنن هذا الوقت",
   "kind": "text",
   "where": [
-   "index.html:354"
+   "index.html:414"
   ]
  },
  {
   "key": "وردك اليوم",
   "kind": "text",
   "where": [
-   "index.html:365",
-   "js/app.js:5564"
+   "index.html:425",
+   "js/app.js:5766"
   ]
  },
  {
   "key": "كل السنن",
   "kind": "text",
   "where": [
-   "index.html:366"
+   "index.html:426"
   ]
  },
  {
   "key": "ما تقرأ من السنن اليوم يُحسب هنا، ويبدأ العدّ من جديد كل فجر.",
   "kind": "text",
   "where": [
-   "index.html:368"
+   "index.html:428"
   ]
  },
  {
   "key": "أدّيت",
   "kind": "text",
   "where": [
-   "index.html:369"
+   "index.html:429"
   ]
  },
  {
   "key": "من",
   "kind": "text",
   "where": [
-   "index.html:369",
-   "index.html:563"
+   "index.html:429",
+   "index.html:623"
   ]
  },
  {
   "key": "سُنّة",
   "kind": "text",
   "where": [
-   "index.html:369"
+   "index.html:429"
   ]
  },
  {
   "key": "الأقسام",
   "kind": "text",
   "where": [
-   "index.html:374"
+   "index.html:434"
   ]
  },
  {
   "key": "آية اليوم",
   "kind": "text",
   "where": [
-   "index.html:378"
+   "index.html:438"
   ]
  },
  {
   "key": "مشاركة",
   "kind": "text",
   "where": [
-   "index.html:379"
+   "index.html:439"
   ]
  },
  {
   "key": "على الأبواب",
   "kind": "text",
   "where": [
-   "index.html:386"
+   "index.html:446"
   ]
  },
  {
   "key": "التقويم",
   "kind": "text",
   "where": [
-   "index.html:387"
+   "index.html:447"
   ]
  },
  {
   "key": "المصحف",
   "kind": "text",
   "where": [
-   "index.html:397",
-   "js/app.js:10228"
+   "index.html:457",
+   "js/app.js:10548"
   ]
  },
  {
   "key": "114 سورة و6236 آية محفوظة في جهازك",
   "kind": "text",
   "where": [
-   "index.html:398"
+   "index.html:458"
   ]
  },
  {
   "key": "ابحث في كلمات القرآن",
   "kind": "text",
   "where": [
-   "index.html:400"
+   "index.html:460"
   ]
  },
  {
   "key": "بالصفحات",
   "kind": "text",
   "where": [
-   "index.html:402"
+   "index.html:462"
   ]
  },
  {
   "key": "اذهب إلى",
   "kind": "text",
   "where": [
-   "index.html:403",
-   "js/app.js:4530"
+   "index.html:463",
+   "js/app.js:4732"
   ]
  },
  {
   "key": "المحفوظات",
   "kind": "text",
   "where": [
-   "index.html:404",
-   "index.html:494",
-   "js/app.js:6695"
+   "index.html:464",
+   "index.html:554",
+   "js/app.js:6898"
   ]
  },
  {
   "key": "خطة الختمة",
   "kind": "text",
   "where": [
-   "index.html:405",
-   "index.html:501",
-   "js/app.js:6688"
+   "index.html:465",
+   "index.html:561",
+   "js/app.js:6891"
   ]
  },
  {
   "key": "تابع القراءة",
   "kind": "text",
   "where": [
-   "index.html:408"
+   "index.html:468"
   ]
  },
  {
   "key": "تصفح المصحف",
   "kind": "attr",
   "where": [
-   "index.html:411"
+   "index.html:471"
   ]
  },
  {
   "key": "السور",
   "kind": "text",
   "where": [
-   "index.html:412"
+   "index.html:472"
   ]
  },
  {
   "key": "الأجزاء",
   "kind": "text",
   "where": [
-   "index.html:413"
+   "index.html:473"
   ]
  },
  {
   "key": "اسم السورة أو رقمها",
   "kind": "attr",
   "where": [
-   "index.html:415"
+   "index.html:475"
   ]
  },
  {
   "key": "تصفية السور بالاسم أو الرقم",
   "kind": "attr",
   "where": [
-   "index.html:415"
+   "index.html:475"
   ]
  },
  {
   "key": "رجوع إلى قائمة السور",
   "kind": "attr",
   "where": [
-   "index.html:422",
-   "index.html:456"
+   "index.html:482",
+   "index.html:516"
   ]
  },
  {
   "key": "السورة السابقة",
   "kind": "attr",
   "where": [
-   "index.html:423"
+   "index.html:483"
   ]
  },
  {
   "key": "السورة التالية",
   "kind": "attr",
   "where": [
-   "index.html:424"
+   "index.html:484"
   ]
  },
  {
   "key": "وضع القراءة، تتحرك الصفحة وحدها",
   "kind": "attr",
   "where": [
-   "index.html:425",
-   "index.html:467"
+   "index.html:485",
+   "index.html:527"
   ]
  },
  {
   "key": "احفظ تلاوة السورة للاستماع بلا إنترنت",
   "kind": "attr",
   "where": [
-   "index.html:426",
-   "js/app.js:3325"
+   "index.html:486",
+   "js/app.js:3527"
   ]
  },
  {
   "key": "حفظ الصوت",
   "kind": "text",
   "where": [
-   "index.html:426",
-   "js/app.js:3323"
+   "index.html:486",
+   "js/app.js:3525"
   ]
  },
  {
   "key": "استمع",
   "kind": "text",
   "where": [
-   "index.html:427"
+   "index.html:487"
   ]
  },
  {
   "key": "أنهيت هذه السورة",
   "kind": "text",
   "where": [
-   "index.html:434"
+   "index.html:494"
   ]
  },
  {
   "key": "صلاتي",
   "kind": "text",
   "where": [
-   "index.html:439",
-   "index.html:555",
-   "js/app.js:6686"
+   "index.html:499",
+   "index.html:615",
+   "js/app.js:6889"
   ]
  },
  {
   "key": "تابع فروضك وكيف أدّيتها، ويحفظ لك التطبيق الشهر كله",
   "kind": "text",
   "where": [
-   "index.html:439"
+   "index.html:499"
   ]
  },
  {
   "key": "اليوم",
   "kind": "text",
   "where": [
-   "index.html:441",
+   "index.html:501",
    "js/app.js:462",
-   "js/app.js:1869",
-   "js/app.js:3038",
-   "js/app.js:3115",
-   "js/app.js:3145"
+   "js/app.js:1977",
+   "js/app.js:3240",
+   "js/app.js:3317",
+   "js/app.js:3347"
   ]
  },
  {
   "key": "آخر ثلاثين يوماً",
   "kind": "text",
   "where": [
-   "index.html:445"
+   "index.html:505"
   ]
  },
  {
   "key": "الصلوات في آخر ثلاثين يوماً",
   "kind": "attr",
   "where": [
-   "index.html:447"
+   "index.html:507"
   ]
  },
  {
   "key": "جماعة",
   "kind": "text",
   "where": [
-   "index.html:448"
+   "index.html:508"
   ]
  },
  {
   "key": "في الوقت",
   "kind": "text",
   "where": [
-   "index.html:448",
-   "js/app.js:1862"
+   "index.html:508",
+   "js/app.js:1970"
   ]
  },
  {
   "key": "قضاء",
   "kind": "text",
   "where": [
-   "index.html:448",
-   "js/app.js:1862",
-   "js/app.js:1927"
+   "index.html:508",
+   "js/app.js:1970",
+   "js/app.js:2035"
   ]
  },
  {
   "key": "فاتت",
   "kind": "text",
   "where": [
-   "index.html:448",
-   "js/app.js:1862",
-   "js/app.js:1927",
-   "js/app.js:1954"
+   "index.html:508",
+   "js/app.js:1970",
+   "js/app.js:2035",
+   "js/app.js:2063"
   ]
  },
  {
   "key": "عدّل يوماً مضى",
   "kind": "text",
   "where": [
-   "index.html:449"
+   "index.html:509"
   ]
  },
  {
   "key": "اختر يوماً لتعديل صلواته",
   "kind": "attr",
   "where": [
-   "index.html:450"
+   "index.html:510"
   ]
  },
  {
   "key": "صفحة 1",
   "kind": "text",
   "where": [
-   "index.html:458"
+   "index.html:518"
   ]
  },
  {
   "key": "اذهب إلى صفحة أو جزء أو آية",
   "kind": "attr",
   "where": [
-   "index.html:461"
+   "index.html:521"
   ]
  },
  {
   "key": "الصفحة السابقة",
   "kind": "attr",
   "where": [
-   "index.html:465"
+   "index.html:525"
   ]
  },
  {
   "key": "السابقة",
   "kind": "text",
   "where": [
-   "index.html:465"
+   "index.html:525"
   ]
  },
  {
   "key": "افتح صفحة عشوائية",
   "kind": "attr",
   "where": [
-   "index.html:466"
+   "index.html:526"
   ]
  },
  {
   "key": "الصفحة التالية",
   "kind": "attr",
   "where": [
-   "index.html:468"
+   "index.html:528"
   ]
  },
  {
   "key": "التالية",
   "kind": "text",
   "where": [
-   "index.html:468"
+   "index.html:528"
   ]
  },
  {
   "key": "البحث",
   "kind": "text",
   "where": [
-   "index.html:474"
+   "index.html:534"
   ]
  },
  {
   "key": "في القرآن أو الأذكار أو الأحاديث أو الأدعية أو السنن، بالتشكيل أو بدونه",
   "kind": "text",
   "where": [
-   "index.html:475"
+   "index.html:535"
   ]
  },
  {
   "key": "مجال البحث",
   "kind": "attr",
   "where": [
-   "index.html:477"
+   "index.html:537"
   ]
  },
  {
   "key": "القرآن",
   "kind": "text",
   "where": [
-   "index.html:478"
+   "index.html:538"
   ]
  },
  {
   "key": "كل شيء",
   "kind": "text",
   "where": [
-   "index.html:479"
+   "index.html:539"
   ]
  },
  {
   "key": "الأذكار",
   "kind": "text",
   "where": [
-   "index.html:480",
-   "index.html:512",
-   "index.html:708",
-   "js/app.js:2967",
-   "js/app.js:6687"
+   "index.html:540",
+   "index.html:572",
+   "index.html:768",
+   "js/app.js:3125",
+   "js/app.js:6890"
   ]
  },
  {
   "key": "الأحاديث",
   "kind": "text",
   "where": [
-   "index.html:481"
+   "index.html:541"
   ]
  },
  {
   "key": "الأدعية",
   "kind": "text",
   "where": [
-   "index.html:482",
-   "index.html:733",
-   "js/app.js:2975",
-   "js/app.js:6691"
+   "index.html:542",
+   "index.html:793",
+   "js/app.js:3133",
+   "js/app.js:6894"
   ]
  },
  {
   "key": "السنن",
   "kind": "text",
   "where": [
-   "index.html:483",
-   "js/app.js:10230"
+   "index.html:543",
+   "js/app.js:10550"
   ]
  },
  {
   "key": "حصن المسلم",
   "kind": "text",
   "where": [
-   "index.html:484",
+   "index.html:544",
    "data/adhan.js SALAWAT_SOURCE.n",
    "data/extras.js WIRD_ITEMS[].n"
   ]
@@ -7203,74 +7497,74 @@
   "key": "العمرة",
   "kind": "text",
   "where": [
-   "index.html:485"
+   "index.html:545"
   ]
  },
  {
   "key": "مثال: الحمد لله",
   "kind": "attr",
   "where": [
-   "index.html:487"
+   "index.html:547"
   ]
  },
  {
   "key": "اكتب ما تبحث عنه",
   "kind": "attr",
   "where": [
-   "index.html:487"
+   "index.html:547"
   ]
  },
  {
   "key": "الآيات التي علّمتها للرجوع إليها",
   "kind": "text",
   "where": [
-   "index.html:494"
+   "index.html:554"
   ]
  },
  {
   "key": "افتح المصحف",
   "kind": "text",
   "where": [
-   "index.html:496"
+   "index.html:556"
   ]
  },
  {
   "key": "وزّع صفحات المصحف على الأيام وتابع أين وصلت",
   "kind": "text",
   "where": [
-   "index.html:501"
+   "index.html:561"
   ]
  },
  {
   "key": "مدة الختمة",
   "kind": "text",
   "where": [
-   "index.html:503"
+   "index.html:563"
   ]
  },
  {
   "key": "من حصن المسلم، مع عدّاد يحفظ ما قرأت اليوم",
   "kind": "text",
   "where": [
-   "index.html:512"
+   "index.html:572"
   ]
  },
  {
   "key": "أذكار هذا الوقت",
   "kind": "text",
   "where": [
-   "index.html:516"
+   "index.html:576"
   ]
  },
  {
   "key": "أذكار الصباح",
   "kind": "text",
   "where": [
-   "index.html:517",
-   "index.html:969",
-   "index.html:975",
-   "js/app.js:5587",
-   "js/app.js:9871",
+   "index.html:577",
+   "index.html:1029",
+   "index.html:1035",
+   "js/app.js:5789",
+   "js/app.js:10191",
    "data/azkar.js AZKAR_DB.*.title"
   ]
  },
@@ -7278,1248 +7572,1248 @@
   "key": "الأذكار اليومية",
   "kind": "text",
   "where": [
-   "index.html:522"
+   "index.html:582"
   ]
  },
  {
   "key": "حصن المسلم كاملاً",
   "kind": "text",
   "where": [
-   "index.html:524"
+   "index.html:584"
   ]
  },
  {
   "key": "ابحث في أبواب الكتاب",
   "kind": "attr",
   "where": [
-   "index.html:525"
+   "index.html:585"
   ]
  },
  {
   "key": "ابحث في أبواب حصن المسلم",
   "kind": "attr",
   "where": [
-   "index.html:525"
+   "index.html:585"
   ]
  },
  {
   "key": "رجوع إلى الأذكار",
   "kind": "attr",
   "where": [
-   "index.html:531"
+   "index.html:591"
   ]
  },
  {
   "key": "أعد عدّادات هذا الباب",
   "kind": "attr",
   "where": [
-   "index.html:533"
+   "index.html:593"
   ]
  },
  {
   "key": "رجوع إلى أقسام الأذكار",
   "kind": "attr",
   "where": [
-   "index.html:540"
+   "index.html:600"
   ]
  },
  {
   "key": "إعادة العدّادات",
   "kind": "attr",
   "where": [
-   "index.html:542"
+   "index.html:602"
   ]
  },
  {
   "key": "السنن اليومية",
   "kind": "text",
   "where": [
-   "index.html:550"
+   "index.html:610"
   ]
  },
  {
   "key": "على ترتيب كتاب المنح العلية في بيان السنن اليومية، من الاستيقاظ إلى النوم ثم ما لا يتقيد بوقت، فعلّم ما أدّيته اليوم",
   "kind": "text",
   "where": [
-   "index.html:550"
+   "index.html:610"
   ]
  },
  {
   "key": "الفرائض أولاً",
   "kind": "text",
   "where": [
-   "index.html:554"
+   "index.html:614"
   ]
  },
  {
   "key": "تتبّع صلواتك الخمس وشهرك",
   "kind": "text",
   "where": [
-   "index.html:556",
-   "js/app.js:6686"
+   "index.html:616",
+   "js/app.js:6889"
   ]
  },
  {
   "key": "آخر 30 يوماً",
   "kind": "text",
   "where": [
-   "index.html:568"
+   "index.html:628"
   ]
  },
  {
   "key": "صورة سنن اليوم",
   "kind": "text",
   "where": [
-   "index.html:571"
+   "index.html:631"
   ]
  },
  {
   "key": "المزيد",
   "kind": "text",
   "where": [
-   "index.html:577",
-   "js/app.js:10232"
+   "index.html:637",
+   "js/app.js:10552"
   ]
  },
  {
   "key": "أدوات ومحتوى إضافي",
   "kind": "text",
   "where": [
-   "index.html:577"
+   "index.html:637"
   ]
  },
  {
   "key": "جدول الشهر",
   "kind": "text",
   "where": [
-   "index.html:584",
-   "js/app.js:6693"
+   "index.html:644",
+   "js/app.js:6896"
   ]
  },
  {
   "key": "مواقيت كل يوم في شهر واحد أمامك",
   "kind": "text",
   "where": [
-   "index.html:584"
+   "index.html:644"
   ]
  },
  {
   "key": "الشهر السابق",
   "kind": "attr",
   "where": [
-   "index.html:587",
-   "index.html:759"
+   "index.html:647",
+   "index.html:819"
   ]
  },
  {
   "key": "الشهر التالي",
   "kind": "attr",
   "where": [
-   "index.html:589",
-   "index.html:761"
+   "index.html:649",
+   "index.html:821"
   ]
  },
  {
   "key": "ارجع إلى هذا الشهر",
   "kind": "text",
   "where": [
-   "index.html:593"
+   "index.html:653"
   ]
  },
  {
   "key": "انسخ الجدول",
   "kind": "text",
   "where": [
-   "index.html:594"
+   "index.html:654"
   ]
  },
  {
   "key": "المساجد القريبة",
   "kind": "text",
   "where": [
-   "index.html:601",
-   "js/app.js:6685"
+   "index.html:661",
+   "js/app.js:6888"
   ]
  },
  {
   "key": "أقرب المساجد إلى موقعك، وطريقك إليها",
   "kind": "text",
   "where": [
-   "index.html:602"
+   "index.html:662"
   ]
  },
  {
   "key": "خريطة المساجد حولك",
   "kind": "attr",
   "where": [
-   "index.html:605"
+   "index.html:665"
   ]
  },
  {
   "key": "تقريب",
   "kind": "attr",
   "where": [
-   "index.html:608"
+   "index.html:668"
   ]
  },
  {
   "key": "إبعاد",
   "kind": "attr",
   "where": [
-   "index.html:609"
+   "index.html:669"
   ]
  },
  {
   "key": "ارجع إلى موقعي",
   "kind": "attr",
   "where": [
-   "index.html:610"
+   "index.html:670"
   ]
  },
  {
   "key": "أقربها إليك",
   "kind": "text",
   "where": [
-   "index.html:615"
+   "index.html:675"
   ]
  },
  {
   "key": "القضاء",
   "kind": "text",
   "where": [
-   "index.html:622",
-   "js/app.js:2969"
+   "index.html:682",
+   "js/app.js:3127"
   ]
  },
  {
   "key": "ما عليك من صلاة وصيام، وما قضيته منه",
   "kind": "text",
   "where": [
-   "index.html:623"
+   "index.html:683"
   ]
  },
  {
   "key": "الصلوات",
   "kind": "text",
   "where": [
-   "index.html:626"
+   "index.html:686"
   ]
  },
  {
   "key": "تُحسب من الصلوات التي علّمتها فائتة في صلاتي، وكلما قضيت واحدة فاضغط قضيتها",
   "kind": "text",
   "where": [
-   "index.html:627"
+   "index.html:687"
   ]
  },
  {
   "key": "صيام رمضان",
   "kind": "text",
   "where": [
-   "index.html:631"
+   "index.html:691"
   ]
  },
  {
   "key": "اضبط كم يوماً عليك، ثم علّم كل يوم تصومه",
   "kind": "text",
   "where": [
-   "index.html:632"
+   "index.html:692"
   ]
  },
  {
   "key": "أنقص يوماً مما عليك",
   "kind": "attr",
   "where": [
-   "index.html:634"
+   "index.html:694"
   ]
  },
  {
   "key": "زد يوماً على ما عليك",
   "kind": "attr",
   "where": [
-   "index.html:636"
+   "index.html:696"
   ]
  },
  {
   "key": "صمت يوماً منها",
   "kind": "text",
   "where": [
-   "index.html:638"
+   "index.html:698"
   ]
  },
  {
   "key": "صفة العمرة",
   "kind": "text",
   "where": [
-   "index.html:644",
-   "js/app.js:2970",
-   "js/app.js:6683"
+   "index.html:704",
+   "js/app.js:3128",
+   "js/app.js:6886"
   ]
  },
  {
   "key": "من الميقات إلى التحلل، مرحلة مرحلة، ومعك أين وصلت",
   "kind": "text",
   "where": [
-   "index.html:645"
+   "index.html:705"
   ]
  },
  {
   "key": "مراحل العمرة",
   "kind": "attr",
   "where": [
-   "index.html:648"
+   "index.html:708"
   ]
  },
  {
   "key": "خطوات العمرة",
   "kind": "text",
   "where": [
-   "index.html:652"
+   "index.html:712"
   ]
  },
  {
   "key": "علّم كل خطوة إذا أدّيتها، ويحفظ لك التطبيق موضعك حتى تُتمّها",
   "kind": "text",
   "where": [
-   "index.html:653"
+   "index.html:713"
   ]
  },
  {
   "key": "ابدأ من جديد",
   "kind": "text",
   "where": [
-   "index.html:655"
+   "index.html:715"
   ]
  },
  {
   "key": "مراجع العمرة",
   "kind": "attr",
   "where": [
-   "index.html:657"
+   "index.html:717"
   ]
  },
  {
   "key": "المواقيت",
   "kind": "text",
   "where": [
-   "index.html:658"
+   "index.html:718"
   ]
  },
  {
   "key": "المحظورات",
   "kind": "text",
   "where": [
-   "index.html:659"
+   "index.html:719"
   ]
  },
  {
   "key": "ما يجوز",
   "kind": "text",
   "where": [
-   "index.html:660"
+   "index.html:720"
   ]
  },
  {
   "key": "أخطاء",
   "kind": "text",
   "where": [
-   "index.html:661"
+   "index.html:721"
   ]
  },
  {
   "key": "القبلة",
   "kind": "text",
   "where": [
-   "index.html:668",
-   "js/app.js:2971",
-   "js/app.js:6684"
+   "index.html:728",
+   "js/app.js:3129",
+   "js/app.js:6887"
   ]
  },
  {
   "key": "اتجاه الكعبة من موقعك بحساب دائرة عظمى",
   "kind": "text",
   "where": [
-   "index.html:668"
+   "index.html:728"
   ]
  },
  {
   "key": "compass:ش",
   "kind": "text",
   "where": [
-   "index.html:676"
+   "index.html:736"
   ]
  },
  {
   "key": "فعّل بوصلة الجهاز",
   "kind": "text",
   "where": [
-   "index.html:687"
+   "index.html:747"
   ]
  },
  {
   "key": "حدّث موقعي",
   "kind": "text",
   "where": [
-   "index.html:688",
-   "js/app.js:3172"
+   "index.html:748",
+   "js/app.js:3374"
   ]
  },
  {
   "key": "المسبحة",
   "kind": "text",
   "where": [
-   "index.html:694"
+   "index.html:754"
   ]
  },
  {
   "key": "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم",
   "kind": "text",
   "where": [
-   "index.html:694"
+   "index.html:754"
   ]
  },
  {
   "key": "سبّح",
   "kind": "text",
   "where": [
-   "index.html:699"
+   "index.html:759"
   ]
  },
  {
   "key": "تصفير العدّاد",
   "kind": "text",
   "where": [
-   "index.html:703"
+   "index.html:763"
   ]
  },
  {
   "key": "أذكار الصباح والمساء وحصن المسلم كاملاً",
   "kind": "text",
   "where": [
-   "index.html:709"
+   "index.html:769"
   ]
  },
  {
   "key": "الإذاعة",
   "kind": "text",
   "where": [
-   "index.html:716",
-   "js/app.js:6689"
+   "index.html:776",
+   "js/app.js:6892"
   ]
  },
  {
   "key": "بث مباشر، يحتاج اتصالاً بالإنترنت",
   "kind": "text",
   "where": [
-   "index.html:716"
+   "index.html:776"
   ]
  },
  {
   "key": "مؤقت الإيقاف",
   "kind": "text",
   "where": [
-   "index.html:719"
+   "index.html:779"
   ]
  },
  {
   "key": "من الأربعين النووية",
   "kind": "text",
   "where": [
-   "index.html:727",
-   "js/app.js:6690"
+   "index.html:787",
+   "js/app.js:6893"
   ]
  },
  {
   "key": "عشرون حديثاً جامعاً لأصول الدين",
   "kind": "text",
   "where": [
-   "index.html:727"
+   "index.html:787"
   ]
  },
  {
   "key": "أدعية من الكتاب والسنة، ومواضع الدعاء في القرآن",
   "kind": "text",
   "where": [
-   "index.html:733"
+   "index.html:793"
   ]
  },
  {
   "key": "بالمواضيع",
   "kind": "text",
   "where": [
-   "index.html:735"
+   "index.html:795"
   ]
  },
  {
   "key": "اختر موضوعاً لتقرأ أدعيته، وآيات الدعاء فيه تُقرأ من المصحف",
   "kind": "text",
   "where": [
-   "index.html:736"
+   "index.html:796"
   ]
  },
  {
   "key": "أدعية المواضع",
   "kind": "text",
   "where": [
-   "index.html:741"
+   "index.html:801"
   ]
  },
  {
   "key": "دعاء كل موضع في وقته، بعدّاد يحفظ ما قرأت اليوم",
   "kind": "text",
   "where": [
-   "index.html:742"
+   "index.html:802"
   ]
  },
  {
   "key": "الرقية الشرعية",
   "kind": "text",
   "where": [
-   "index.html:750",
-   "js/app.js:6692"
+   "index.html:810",
+   "js/app.js:6895"
   ]
  },
  {
   "key": "آيات وأدعية ثابتة للرقية",
   "kind": "text",
   "where": [
-   "index.html:750"
+   "index.html:810"
   ]
  },
  {
   "key": "التقويم الهجري",
   "kind": "text",
   "where": [
-   "index.html:756",
-   "js/app.js:6694"
+   "index.html:816",
+   "js/app.js:6897"
   ]
  },
  {
   "key": "الشهر كاملاً ومواسم العبادة فيه",
   "kind": "text",
   "where": [
-   "index.html:756"
+   "index.html:816"
   ]
  },
  {
   "key": "أيام الشهر",
   "kind": "attr",
   "where": [
-   "index.html:764"
+   "index.html:824"
   ]
  },
  {
   "key": "ارجع إلى اليوم",
   "kind": "text",
   "where": [
-   "index.html:765"
+   "index.html:825"
   ]
  },
  {
   "key": "مواسم الشهر",
   "kind": "text",
   "where": [
-   "index.html:768"
+   "index.html:828"
   ]
  },
  {
   "key": "تحويل التاريخ",
   "kind": "text",
   "where": [
-   "index.html:776"
+   "index.html:836"
   ]
  },
  {
   "key": "ميلادي",
   "kind": "text",
   "where": [
-   "index.html:778"
+   "index.html:838"
   ]
  },
  {
   "key": "تاريخ ميلادي",
   "kind": "attr",
   "where": [
-   "index.html:779"
+   "index.html:839"
   ]
  },
  {
   "key": "هجري",
   "kind": "text",
   "where": [
-   "index.html:783"
+   "index.html:843"
   ]
  },
  {
   "key": "date:اليوم الهجري",
   "kind": "attr",
   "where": [
-   "index.html:785"
+   "index.html:845"
   ]
  },
  {
   "key": "date:اليوم",
   "kind": "attr",
   "where": [
-   "index.html:785"
+   "index.html:845"
   ]
  },
  {
   "key": "الشهر الهجري",
   "kind": "attr",
   "where": [
-   "index.html:786"
+   "index.html:846"
   ]
  },
  {
   "key": "السنة الهجرية",
   "kind": "attr",
   "where": [
-   "index.html:787"
+   "index.html:847"
   ]
  },
  {
   "key": "السنة",
   "kind": "attr",
   "where": [
-   "index.html:787"
+   "index.html:847"
   ]
  },
  {
   "key": "قادم",
   "kind": "text",
   "where": [
-   "index.html:792"
+   "index.html:852"
   ]
  },
  {
   "key": "الإعدادات",
   "kind": "text",
   "where": [
-   "index.html:798",
-   "js/app.js:6697"
+   "index.html:858",
+   "js/app.js:6900"
   ]
  },
  {
   "key": "اضبط اللغة والحساب والمظهر ونسخة بياناتك",
   "kind": "text",
   "where": [
-   "index.html:798"
+   "index.html:858"
   ]
  },
  {
   "key": "اللغة",
   "kind": "text",
   "where": [
-   "index.html:801"
+   "index.html:861"
   ]
  },
  {
   "key": "لغة التطبيق",
   "kind": "text",
   "where": [
-   "index.html:802",
-   "index.html:803"
+   "index.html:862",
+   "index.html:863"
   ]
  },
  {
   "key": "يبقى القرآن والحديث والأذكار بالعربية، وتحتها ترجمة معانيها",
   "kind": "text",
   "where": [
-   "index.html:802"
+   "index.html:862"
   ]
  },
  {
   "key": "لغة الجهاز",
   "kind": "text",
   "where": [
-   "index.html:804"
+   "index.html:864"
   ]
  },
  {
   "key": "معاني الآيات",
   "kind": "text",
   "where": [
-   "index.html:817",
-   "index.html:818"
+   "index.html:877",
+   "index.html:878"
   ]
  },
  {
   "key": "تحت كل آية ترجمة معناها، فإن أطفأتها جرت السورة كما في المصحف",
   "kind": "text",
   "where": [
-   "index.html:817"
+   "index.html:877"
   ]
  },
  {
   "key": "الموقع والحساب",
   "kind": "text",
   "where": [
-   "index.html:822"
+   "index.html:882"
   ]
  },
  {
   "key": "موقعك",
   "kind": "text",
   "where": [
-   "index.html:823",
-   "js/app.js:757"
+   "index.html:883",
+   "js/app.js:759"
   ]
  },
  {
   "key": "لم يحدد بعد",
   "kind": "text",
   "where": [
-   "index.html:823"
+   "index.html:883"
   ]
  },
  {
   "key": "تحديد",
   "kind": "text",
   "where": [
-   "index.html:824"
+   "index.html:884"
   ]
  },
  {
   "key": "المدينة",
   "kind": "text",
   "where": [
-   "index.html:825"
+   "index.html:885"
   ]
  },
  {
   "key": "طريقة الحساب",
   "kind": "text",
   "where": [
-   "index.html:827"
+   "index.html:887"
   ]
  },
  {
   "key": "وقت العصر",
   "kind": "text",
   "where": [
-   "index.html:829"
+   "index.html:889"
   ]
  },
  {
   "key": "الجمهور",
   "kind": "text",
   "where": [
-   "index.html:831"
+   "index.html:891"
   ]
  },
  {
   "key": "الحنفي",
   "kind": "text",
   "where": [
-   "index.html:832"
+   "index.html:892"
   ]
  },
  {
   "key": "خطوط العرض العالية",
   "kind": "text",
   "where": [
-   "index.html:834"
+   "index.html:894"
   ]
  },
  {
   "key": "للمدن التي لا يغيب فيها الشفق",
   "kind": "text",
   "where": [
-   "index.html:834"
+   "index.html:894"
   ]
  },
  {
   "key": "نسبة الزاوية",
   "kind": "text",
   "where": [
-   "index.html:836"
+   "index.html:896"
   ]
  },
  {
   "key": "منتصف الليل",
   "kind": "text",
   "where": [
-   "index.html:837",
-   "js/app.js:1856",
-   "js/app.js:7372"
+   "index.html:897",
+   "js/app.js:1964",
+   "js/app.js:7575"
   ]
  },
  {
   "key": "سُبع الليل",
   "kind": "text",
   "where": [
-   "index.html:838"
+   "index.html:898"
   ]
  },
  {
   "key": "بلا تعديل",
   "kind": "text",
   "where": [
-   "index.html:839"
+   "index.html:899"
   ]
  },
  {
   "key": "التذكيرات",
   "kind": "text",
   "where": [
-   "index.html:845",
-   "index.html:949",
-   "js/app.js:6696"
+   "index.html:905",
+   "index.html:1009",
+   "js/app.js:6899"
   ]
  },
  {
   "key": "تنبيه الصلاة والأذان والسنن والورد، في صفحة وحدها",
   "kind": "text",
   "where": [
-   "index.html:846"
+   "index.html:906"
   ]
  },
  {
   "key": "سهولة الوصول",
   "kind": "text",
   "where": [
-   "index.html:849"
+   "index.html:909"
   ]
  },
  {
   "key": "التطبيق يتبع ما ضبطته في هاتفك، ولك أن تغيّره هنا",
   "kind": "text",
   "where": [
-   "index.html:850"
+   "index.html:910"
   ]
  },
  {
   "key": "تباين أعلى",
   "kind": "text",
   "where": [
-   "index.html:851",
-   "index.html:852"
+   "index.html:911",
+   "index.html:912"
   ]
  },
  {
   "key": "حدود أوضح وألوان أشد، لمن يجد النص باهتاً",
   "kind": "text",
   "where": [
-   "index.html:851"
+   "index.html:911"
   ]
  },
  {
   "key": "تقليل الحركة",
   "kind": "text",
   "where": [
-   "index.html:853",
-   "index.html:854",
-   "js/app.js:9938"
+   "index.html:913",
+   "index.html:914",
+   "js/app.js:10258"
   ]
  },
  {
   "key": "يسكن ما يتحرك ويظهر تدريجياً، لمن تزعجه الحركة",
   "kind": "text",
   "where": [
-   "index.html:853"
+   "index.html:913"
   ]
  },
  {
   "key": "القراءة والمظهر",
   "kind": "text",
   "where": [
-   "index.html:858"
+   "index.html:918"
   ]
  },
  {
   "key": "حجم النص",
   "kind": "text",
   "where": [
-   "index.html:859",
-   "index.html:860"
+   "index.html:919",
+   "index.html:920"
   ]
  },
  {
   "key": "لون التطبيق",
   "kind": "text",
   "where": [
-   "index.html:862"
+   "index.html:922"
   ]
  },
  {
   "key": "الزخرفة",
   "kind": "text",
   "where": [
-   "index.html:865"
+   "index.html:925"
   ]
  },
  {
   "key": "سماء الوقت في المحراب",
   "kind": "text",
   "where": [
-   "index.html:868",
-   "index.html:869"
+   "index.html:928",
+   "index.html:929"
   ]
  },
  {
   "key": "لوحة لساحل الخليج يتبدّل ضوؤها مع مواقيتك، والقمر فيها بطوره الحقيقي ليلاً",
   "kind": "text",
   "where": [
-   "index.html:868"
+   "index.html:928"
   ]
  },
  {
   "key": "شكل صفحة المصحف",
   "kind": "text",
   "where": [
-   "index.html:870"
+   "index.html:930"
   ]
  },
  {
   "key": "نصّاً متّصلاً، أو خمسة عشر سطراً كما طُبعت في مصحف المدينة",
   "kind": "text",
   "where": [
-   "index.html:870"
+   "index.html:930"
   ]
  },
  {
   "key": "نص متّصل",
   "kind": "text",
   "where": [
-   "index.html:872"
+   "index.html:932"
   ]
  },
  {
   "key": "كما طُبعت",
   "kind": "text",
   "where": [
-   "index.html:873"
+   "index.html:933"
   ]
  },
  {
   "key": "عند الاستماع لسورة",
   "kind": "text",
   "where": [
-   "index.html:875"
+   "index.html:935"
   ]
  },
  {
   "key": "متّصلة بلا وقفة، أو مع تعليم كل آية",
   "kind": "text",
   "where": [
-   "index.html:875"
+   "index.html:935"
   ]
  },
  {
   "key": "اسألني كل مرة",
   "kind": "text",
   "where": [
-   "index.html:877"
+   "index.html:937"
   ]
  },
  {
   "key": "استماع متّصل",
   "kind": "text",
   "where": [
-   "index.html:878",
-   "js/app.js:4175"
+   "index.html:938",
+   "js/app.js:4377"
   ]
  },
  {
   "key": "تتبّع الآيات",
   "kind": "text",
   "where": [
-   "index.html:879",
-   "js/app.js:4175"
+   "index.html:939",
+   "js/app.js:4377"
   ]
  },
  {
   "key": "صيغة الساعة",
   "kind": "text",
   "where": [
-   "index.html:881"
+   "index.html:941"
   ]
  },
  {
   "key": "اثنتا عشرة بصباح ومساء، أو أربع وعشرون",
   "kind": "text",
   "where": [
-   "index.html:881"
+   "index.html:941"
   ]
  },
  {
   "key": "12 ساعة",
   "kind": "text",
   "where": [
-   "index.html:883"
+   "index.html:943"
   ]
  },
  {
   "key": "24 ساعة",
   "kind": "text",
   "where": [
-   "index.html:884"
+   "index.html:944"
   ]
  },
  {
   "key": "السمة",
   "kind": "text",
   "where": [
-   "index.html:886"
+   "index.html:946"
   ]
  },
  {
   "key": "حسب النظام",
   "kind": "text",
   "where": [
-   "index.html:888"
+   "index.html:948"
   ]
  },
  {
   "key": "فاتح",
   "kind": "text",
   "where": [
-   "index.html:889"
+   "index.html:949"
   ]
  },
  {
   "key": "داكن",
   "kind": "text",
   "where": [
-   "index.html:890"
+   "index.html:950"
   ]
  },
  {
   "key": "القارئ",
   "kind": "text",
   "where": [
-   "index.html:892"
+   "index.html:952"
   ]
  },
  {
   "key": "التفسير",
   "kind": "text",
   "where": [
-   "index.html:894"
+   "index.html:954"
   ]
  },
  {
   "key": "الميسر",
   "kind": "text",
   "where": [
-   "index.html:896"
+   "index.html:956"
   ]
  },
  {
   "key": "الجلالين",
   "kind": "text",
   "where": [
-   "index.html:897"
+   "index.html:957"
   ]
  },
  {
   "key": "الاهتزاز عند العد",
   "kind": "text",
   "where": [
-   "index.html:899"
+   "index.html:959"
   ]
  },
  {
   "key": "الاهتزاز",
   "kind": "attr",
   "where": [
-   "index.html:900"
+   "index.html:960"
   ]
  },
  {
   "key": "التلاوة المحفوظة",
   "kind": "text",
   "where": [
-   "index.html:904"
+   "index.html:964"
   ]
  },
  {
   "key": "بياناتك",
   "kind": "text",
   "where": [
-   "index.html:909"
+   "index.html:969"
   ]
  },
  {
   "key": "ما تسجّله محفوظ في جهازك وحده، ولا يخرج منه إلا ما تطلبه: تلاوة، أو تفسير، أو مساجد قريبة.",
   "kind": "text",
   "where": [
-   "index.html:910"
+   "index.html:970"
   ]
  },
  {
   "key": "نسخة احتياطية",
   "kind": "text",
   "where": [
-   "index.html:912"
+   "index.html:972"
   ]
  },
  {
   "key": "استعادة",
   "kind": "text",
   "where": [
-   "index.html:913"
+   "index.html:973"
   ]
  },
  {
   "key": "حذف كل البيانات",
   "kind": "text",
   "where": [
-   "index.html:916",
-   "js/app.js:8860"
+   "index.html:976",
+   "js/app.js:9180"
   ]
  },
  {
   "key": "العمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "index.html:920"
+   "index.html:980"
   ]
  },
  {
   "key": "ثبّت التطبيق على جهازك",
   "kind": "text",
   "where": [
-   "index.html:922",
-   "js/app.js:8770"
+   "index.html:982",
+   "js/app.js:9053"
   ]
  },
  {
   "key": "حمّل كل شيء للعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "index.html:923"
+   "index.html:983"
   ]
  },
  {
   "key": "أعد تحميل التطبيق",
   "kind": "text",
   "where": [
-   "index.html:924"
+   "index.html:984"
   ]
  },
  {
   "key": "إذا رأيت التطبيق لا يتحدّث، أو ظهر لك شيء قديم، فاضغط هذا الزر، فهو يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة من الموقع، وتبقى بياناتك وأذكارك وعلاماتك كما هي.",
   "kind": "text",
   "where": [
-   "index.html:925"
+   "index.html:985"
   ]
  },
  {
   "key": "انشر الخير",
   "kind": "text",
   "where": [
-   "index.html:929"
+   "index.html:989"
   ]
  },
  {
   "key": "شارك التطبيق",
   "kind": "text",
   "where": [
-   "index.html:930"
+   "index.html:990"
   ]
  },
  {
   "key": "رواه مسلم",
   "kind": "text",
   "where": [
-   "index.html:930"
+   "index.html:990"
   ]
  },
  {
   "key": "شارك",
   "kind": "text",
   "where": [
-   "index.html:931"
+   "index.html:991"
   ]
  },
  {
   "key": "قيّم التطبيق",
   "kind": "text",
   "where": [
-   "index.html:932"
+   "index.html:992"
   ]
  },
  {
   "key": "تقييمك في المتجر يدلّ غيرك عليه",
   "kind": "text",
   "where": [
-   "index.html:932"
+   "index.html:992"
   ]
  },
  {
   "key": "قيّم",
   "kind": "text",
   "where": [
-   "index.html:933"
+   "index.html:993"
   ]
  },
  {
   "key": "المساعدة",
   "kind": "text",
   "where": [
-   "index.html:937"
+   "index.html:997"
   ]
  },
  {
   "key": "جولة في التطبيق",
   "kind": "text",
   "where": [
-   "index.html:938"
+   "index.html:998"
   ]
  },
  {
   "key": "تعرّف على أقسامه في أقل من دقيقة",
   "kind": "text",
   "where": [
-   "index.html:938"
+   "index.html:998"
   ]
  },
  {
   "key": "ابدأ",
   "kind": "text",
   "where": [
-   "index.html:939",
-   "js/app.js:3444",
-   "js/app.js:10234"
+   "index.html:999",
+   "js/app.js:3646",
+   "js/app.js:10554"
   ]
  },
  {
   "key": "أرسل ملاحظاتك",
   "kind": "text",
   "where": [
-   "index.html:940"
+   "index.html:1000"
   ]
  },
  {
   "key": "اقتراح أو خلل وجدته، يصلنا على Site@hotmail.com",
   "kind": "text",
   "where": [
-   "index.html:940"
+   "index.html:1000"
   ]
  },
  {
   "key": "راسلنا",
   "kind": "text",
   "where": [
-   "index.html:941"
+   "index.html:1001"
   ]
  },
  {
   "key": "ما ينبّهك، ومتى، وبأي صوت",
   "kind": "text",
   "where": [
-   "index.html:949",
-   "js/app.js:6696"
+   "index.html:1009",
+   "js/app.js:6899"
   ]
  },
  {
   "key": "الصلاة",
   "kind": "text",
   "where": [
-   "index.html:952",
-   "js/app.js:6142",
+   "index.html:1012",
+   "js/app.js:6344",
    "data/hisn.js HISN_GROUPS[].t"
   ]
  },
@@ -8527,145 +8821,145 @@
   "key": "تنبيه الصلاة",
   "kind": "text",
   "where": [
-   "index.html:953",
-   "index.html:954"
+   "index.html:1013",
+   "index.html:1014"
   ]
  },
  {
   "key": "إشعار عند دخول الوقت",
   "kind": "text",
   "where": [
-   "index.html:953"
+   "index.html:1013"
   ]
  },
  {
   "key": "تنبيه الأذان",
   "kind": "text",
   "where": [
-   "index.html:955",
-   "index.html:956"
+   "index.html:1015",
+   "index.html:1016"
   ]
  },
  {
   "key": "من التطبيق نفسه في وقت كل صلاة لموقعك، ويرنّ والتطبيق مغلق",
   "kind": "text",
   "where": [
-   "index.html:955"
+   "index.html:1015"
   ]
  },
  {
   "key": "صوت الأذان",
   "kind": "text",
   "where": [
-   "index.html:957",
-   "index.html:959"
+   "index.html:1017",
+   "index.html:1019"
   ]
  },
  {
   "key": "يُسمع عند دخول الوقت، وللفجر أذانه",
   "kind": "text",
   "where": [
-   "index.html:957"
+   "index.html:1017"
   ]
  },
  {
   "key": "اسمع الأذان",
   "kind": "attr",
   "where": [
-   "index.html:960"
+   "index.html:1020"
   ]
  },
  {
   "key": "تُعرض عند الضغط على موعد الصلاة",
   "kind": "text",
   "where": [
-   "index.html:962"
+   "index.html:1022"
   ]
  },
  {
   "key": "الأذكار والنوم",
   "kind": "text",
   "where": [
-   "index.html:967"
+   "index.html:1027"
   ]
  },
  {
   "key": "تذكيرات تفعّلها كما تشاء، ولكلٍّ صوتها: صوت الجهاز، أو نغمة هادئة، أو صامت.",
   "kind": "text",
   "where": [
-   "index.html:968"
+   "index.html:1028"
   ]
  },
  {
   "key": "بعد الفجر بنصف ساعة",
   "kind": "text",
   "where": [
-   "index.html:969"
+   "index.html:1029"
   ]
  },
  {
   "key": "صوت أذكار الصباح",
   "kind": "attr",
   "where": [
-   "index.html:971"
+   "index.html:1031"
   ]
  },
  {
   "key": "صوت الجهاز",
   "kind": "text",
   "where": [
-   "index.html:972",
-   "index.html:979",
-   "index.html:988",
-   "index.html:995",
-   "index.html:1002",
-   "index.html:1011"
+   "index.html:1032",
+   "index.html:1039",
+   "index.html:1048",
+   "index.html:1055",
+   "index.html:1062",
+   "index.html:1071"
   ]
  },
  {
   "key": "نغمة هادئة",
   "kind": "text",
   "where": [
-   "index.html:972",
-   "index.html:979",
-   "index.html:988",
-   "index.html:995",
-   "index.html:1002",
-   "index.html:1011"
+   "index.html:1032",
+   "index.html:1039",
+   "index.html:1048",
+   "index.html:1055",
+   "index.html:1062",
+   "index.html:1071"
   ]
  },
  {
   "key": "صامت",
   "kind": "text",
   "where": [
-   "index.html:972",
-   "index.html:979",
-   "index.html:988",
-   "index.html:995",
-   "index.html:1002",
-   "index.html:1011"
+   "index.html:1032",
+   "index.html:1039",
+   "index.html:1048",
+   "index.html:1055",
+   "index.html:1062",
+   "index.html:1071"
   ]
  },
  {
   "key": "اسمع الصوت",
   "kind": "attr",
   "where": [
-   "index.html:974",
-   "index.html:981",
-   "index.html:990",
-   "index.html:997",
-   "index.html:1004",
-   "index.html:1011"
+   "index.html:1034",
+   "index.html:1041",
+   "index.html:1050",
+   "index.html:1057",
+   "index.html:1064",
+   "index.html:1071"
   ]
  },
  {
   "key": "أذكار المساء",
   "kind": "text",
   "where": [
-   "index.html:976",
-   "index.html:982",
-   "js/app.js:5594",
-   "js/app.js:9871",
+   "index.html:1036",
+   "index.html:1042",
+   "js/app.js:5796",
+   "js/app.js:10191",
    "data/azkar.js AZKAR_DB.*.title",
    "data/content.js CURRENT_SUNNAH.*.items[] (up to its comma)"
   ]
@@ -8674,298 +8968,298 @@
   "key": "بعد العصر بنصف ساعة",
   "kind": "text",
   "where": [
-   "index.html:976"
+   "index.html:1036"
   ]
  },
  {
   "key": "صوت أذكار المساء",
   "kind": "attr",
   "where": [
-   "index.html:978"
+   "index.html:1038"
   ]
  },
  {
   "key": "وقت النوم",
   "kind": "text",
   "where": [
-   "index.html:983",
-   "index.html:984"
+   "index.html:1043",
+   "index.html:1044"
   ]
  },
  {
   "key": "تصلك عنده تذكيرات ما قبل النوم التي تفعّلها تحت",
   "kind": "text",
   "where": [
-   "index.html:983"
+   "index.html:1043"
   ]
  },
  {
   "key": "الاستغفار قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:985",
-   "index.html:991",
-   "js/app.js:5602",
-   "js/app.js:9872"
+   "index.html:1045",
+   "index.html:1051",
+   "js/app.js:5804",
+   "js/app.js:10192"
   ]
  },
  {
   "key": "أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه",
   "kind": "text",
   "where": [
-   "index.html:985",
-   "js/app.js:5603"
+   "index.html:1045",
+   "js/app.js:5805"
   ]
  },
  {
   "key": "صوت الاستغفار قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:987"
+   "index.html:1047"
   ]
  },
  {
   "key": "سورة الملك قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:992",
-   "index.html:998",
-   "js/app.js:5606",
-   "js/app.js:9872"
+   "index.html:1052",
+   "index.html:1058",
+   "js/app.js:5808",
+   "js/app.js:10192"
   ]
  },
  {
   "key": "كان النبي ﷺ لا ينام حتى يقرأها",
   "kind": "text",
   "where": [
-   "index.html:992"
+   "index.html:1052"
   ]
  },
  {
   "key": "صوت سورة الملك قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:994"
+   "index.html:1054"
   ]
  },
  {
   "key": "آية الكرسي قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:999",
-   "index.html:1005",
-   "js/app.js:5610",
-   "js/app.js:9873"
+   "index.html:1059",
+   "index.html:1065",
+   "js/app.js:5812",
+   "js/app.js:10193"
   ]
  },
  {
   "key": "لن يزال عليك من الله حافظ ولا يقربك شيطان حتى تصبح",
   "kind": "text",
   "where": [
-   "index.html:999"
+   "index.html:1059"
   ]
  },
  {
   "key": "صوت آية الكرسي قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:1001"
+   "index.html:1061"
   ]
  },
  {
   "key": "آية الكرسي بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "index.html:1002"
+   "index.html:1062"
   ]
  },
  {
   "key": "السنن والمواسم",
   "kind": "text",
   "where": [
-   "index.html:1008"
+   "index.html:1068"
   ]
  },
  {
   "key": "ليلة الجمعة",
   "kind": "text",
   "where": [
-   "index.html:1010",
-   "js/app.js:5616",
-   "js/app.js:5622",
-   "js/app.js:5626",
-   "js/app.js:5641",
-   "js/app.js:5832"
+   "index.html:1070",
+   "js/app.js:5818",
+   "js/app.js:5824",
+   "js/app.js:5828",
+   "js/app.js:5843",
+   "js/app.js:6034"
   ]
  },
  {
   "key": "تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1010"
+   "index.html:1070"
   ]
  },
  {
   "key": "صوت تذكير ليلة الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1011"
+   "index.html:1071"
   ]
  },
  {
   "key": "تذكير ليلة الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1011"
+   "index.html:1071"
   ]
  },
  {
   "key": "عرض ليلة الجمعة عند الفتح",
   "kind": "text",
   "where": [
-   "index.html:1012"
+   "index.html:1072"
   ]
  },
  {
   "key": "بطاقة فيها سورة الكهف والصلاة على النبي ﷺ والدعاء، تُعرض كلما فتحت التطبيق تلك الليلة",
   "kind": "text",
   "where": [
-   "index.html:1012"
+   "index.html:1072"
   ]
  },
  {
   "key": "تذكير الصيام",
   "kind": "text",
   "where": [
-   "index.html:1013",
-   "index.html:1014"
+   "index.html:1073",
+   "index.html:1074"
   ]
  },
  {
   "key": "تنبيه في ليلة اليوم الذي يُستحب صيامه، قبل السحور",
   "kind": "text",
   "where": [
-   "index.html:1013"
+   "index.html:1073"
   ]
  },
  {
   "key": "صوت تذكير الصيام",
   "kind": "attr",
   "where": [
-   "index.html:1014"
+   "index.html:1074"
   ]
  },
  {
   "key": "نداء الجمعة",
   "kind": "text",
   "where": [
-   "index.html:1015",
-   "js/app.js:9930"
+   "index.html:1075",
+   "js/app.js:10250"
   ]
  },
  {
   "key": "تنبيه قبل صلاة الجمعة بقراءة الكهف والصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1015"
+   "index.html:1075"
   ]
  },
  {
   "key": "صوت نداء الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1016"
+   "index.html:1076"
   ]
  },
  {
   "key": "آية الجمعة بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "index.html:1016"
+   "index.html:1076"
   ]
  },
  {
   "key": "قبل ساعة",
   "kind": "text",
   "where": [
-   "index.html:1017"
+   "index.html:1077"
   ]
  },
  {
   "key": "قبل ساعتين",
   "kind": "text",
   "where": [
-   "index.html:1018"
+   "index.html:1078"
   ]
  },
  {
   "key": "قبل ثلاث ساعات",
   "kind": "text",
   "where": [
-   "index.html:1019"
+   "index.html:1079"
   ]
  },
  {
   "key": "تشغيل التذكير",
   "kind": "attr",
   "where": [
-   "index.html:1020",
-   "index.html:1026",
-   "index.html:1052"
+   "index.html:1080",
+   "index.html:1086",
+   "index.html:1112"
   ]
  },
  {
   "key": "تذكير صلاة الضحى",
   "kind": "text",
   "where": [
-   "index.html:1021",
-   "index.html:1022"
+   "index.html:1081",
+   "index.html:1082"
   ]
  },
  {
   "key": "ركعتان فأكثر بعد ارتفاع الشمس إلى قُبيل الزوال",
   "kind": "text",
   "where": [
-   "index.html:1021",
-   "js/app.js:5348"
+   "index.html:1081",
+   "js/app.js:5550"
   ]
  },
  {
   "key": "صوت تذكير صلاة الضحى",
   "kind": "attr",
   "where": [
-   "index.html:1022"
+   "index.html:1082"
   ]
  },
  {
   "key": "تذكير قيام الليل",
   "kind": "text",
   "where": [
-   "index.html:1023",
-   "index.html:1024"
+   "index.html:1083",
+   "index.html:1084"
   ]
  },
  {
   "key": "تنبيه عند دخول الثلث الأخير من الليل",
   "kind": "text",
   "where": [
-   "index.html:1023",
-   "js/app.js:5357"
+   "index.html:1083",
+   "js/app.js:5559"
   ]
  },
  {
   "key": "صوت تذكير قيام الليل",
   "kind": "attr",
   "where": [
-   "index.html:1024"
+   "index.html:1084"
   ]
  },
  {
   "key": "الصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1025",
-   "js/app.js:9930",
+   "index.html:1085",
+   "js/app.js:10250",
    "data/extras.js WIRD_ITEMS[].t"
   ]
  },
@@ -8973,420 +9267,420 @@
   "key": "تذكير كل فترة تختارها",
   "kind": "text",
   "where": [
-   "index.html:1025"
+   "index.html:1085"
   ]
  },
  {
   "key": "صوت التذكير",
   "kind": "attr",
   "where": [
-   "index.html:1026"
+   "index.html:1086"
   ]
  },
  {
   "key": "تذكير بالصلاة على النبي",
   "kind": "attr",
   "where": [
-   "index.html:1026"
+   "index.html:1086"
   ]
  },
  {
   "key": "أي صلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1028"
+   "index.html:1088"
   ]
  },
  {
   "key": "اختر ما يُتلى، وتحته نصّه ومصدره",
   "kind": "text",
   "where": [
-   "index.html:1028"
+   "index.html:1088"
   ]
  },
  {
   "key": "اختيار الصلاة على النبي",
   "kind": "attr",
   "where": [
-   "index.html:1030"
+   "index.html:1090"
   ]
  },
  {
   "key": "صوت الهاتف",
   "kind": "text",
   "where": [
-   "index.html:1034",
-   "index.html:1037"
+   "index.html:1094",
+   "index.html:1097"
   ]
  },
  {
   "key": "اختر صوتاً واضغط زر السماع",
   "kind": "text",
   "where": [
-   "index.html:1034",
-   "js/app.js:2455"
+   "index.html:1094",
+   "js/app.js:2564"
   ]
  },
  {
   "key": "اختيار صوت الهاتف",
   "kind": "attr",
   "where": [
-   "index.html:1036"
+   "index.html:1096"
   ]
  },
  {
   "key": "وردك",
   "kind": "text",
   "where": [
-   "index.html:1043"
+   "index.html:1103"
   ]
  },
  {
   "key": "ورد اليوم",
   "kind": "text",
   "where": [
-   "index.html:1044",
-   "js/app.js:9930"
+   "index.html:1104",
+   "js/app.js:10250"
   ]
  },
  {
   "key": "تنبيه بورد ختمتك في الساعة التي تختارها",
   "kind": "text",
   "where": [
-   "index.html:1044"
+   "index.html:1104"
   ]
  },
  {
   "key": "صوت ورد اليوم",
   "kind": "attr",
   "where": [
-   "index.html:1045"
+   "index.html:1105"
   ]
  },
  {
   "key": "6 صباحاً",
   "kind": "text",
   "where": [
-   "index.html:1046"
+   "index.html:1106"
   ]
  },
  {
   "key": "8 صباحاً",
   "kind": "text",
   "where": [
-   "index.html:1047"
+   "index.html:1107"
   ]
  },
  {
   "key": "12 ظهراً",
   "kind": "text",
   "where": [
-   "index.html:1048"
+   "index.html:1108"
   ]
  },
  {
   "key": "4 عصراً",
   "kind": "text",
   "where": [
-   "index.html:1049"
+   "index.html:1109"
   ]
  },
  {
   "key": "8 مساءً",
   "kind": "text",
   "where": [
-   "index.html:1050"
+   "index.html:1110"
   ]
  },
  {
   "key": "10 مساءً",
   "kind": "text",
   "where": [
-   "index.html:1051"
+   "index.html:1111"
   ]
  },
  {
   "key": "تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.",
   "kind": "text",
   "where": [
-   "index.html:1055"
+   "index.html:1115"
   ]
  },
  {
   "key": "عن سُنّتي",
   "kind": "text",
   "where": [
-   "index.html:1059",
-   "index.html:1092"
+   "index.html:1119",
+   "index.html:1152"
   ]
  },
  {
   "key": "ما الذي يعمل هنا، وكيف",
   "kind": "text",
   "where": [
-   "index.html:1059"
+   "index.html:1119"
   ]
  },
  {
   "key": "شعار سُنّتي: محراب يطل على سماء الغروب وفيه مئذنة وهلال",
   "kind": "attr",
   "where": [
-   "index.html:1061"
+   "index.html:1121"
   ]
  },
  {
   "key": "مصحف ومواقيت وأذكار وسنن في جهازك",
   "kind": "text",
   "where": [
-   "index.html:1062"
+   "index.html:1122"
   ]
  },
  {
   "key": "الشعار محراب يطل على سماء الوقت، وفيه مئذنة على الساحل وهلال فوقها",
   "kind": "text",
   "where": [
-   "index.html:1062"
+   "index.html:1122"
   ]
  },
  {
   "key": "حمّل سُنّتي من متجر آبل",
   "kind": "attr",
   "where": [
-   "index.html:1066"
+   "index.html:1126"
   ]
  },
  {
   "key": "حمّل سُنّتي من Google Play",
   "kind": "attr",
   "where": [
-   "index.html:1067"
+   "index.html:1127"
   ]
  },
  {
   "key": "سُنّتي على متجر آبل وعلى Google Play، فثبّته من متجر جهازك لتصلك تحديثاته منه",
   "kind": "text",
   "where": [
-   "index.html:1069"
+   "index.html:1129"
   ]
  },
  {
   "key": "سُنّتي يعمل كاملاً على جهازك، فالمصحف كله محفوظ معك وأوقات الصلاة تُحسب فلكياً على الجهاز نفسه دون طلب من أي خادم، ثم تبقى الأذكار والقبلة وتتبع السنن متاحة ولو انقطع الإنترنت.",
   "kind": "text",
   "where": [
-   "index.html:1072"
+   "index.html:1132"
   ]
  },
  {
   "key": "ما الذي يحتاج إنترنت",
   "kind": "text",
   "where": [
-   "index.html:1075"
+   "index.html:1135"
   ]
  },
  {
   "key": "تلاوة القارئ والإذاعة والتفسير وحدها تحتاج اتصالاً، وما عدا ذلك يعمل بلا شبكة.",
   "kind": "text",
   "where": [
-   "index.html:1076"
+   "index.html:1136"
   ]
  },
  {
   "key": "المصادر",
   "kind": "text",
   "where": [
-   "index.html:1079"
+   "index.html:1139"
   ]
  },
  {
   "key": "نص المصحف برواية حفص عن عاصم بالرسم العثماني، والأذكار من حصن المسلم، والأحاديث من الأربعين النووية، ثم التلاوات من شبكة القرآن المفتوحة، وخريطة المساجد وبياناتها من",
   "kind": "text",
   "where": [
-   "index.html:1080"
+   "index.html:1140"
   ]
  },
  {
   "key": "أسماء الأماكن من",
   "kind": "text",
   "where": [
-   "index.html:1081"
+   "index.html:1141"
   ]
  },
  {
   "key": "التواصل",
   "kind": "text",
   "where": [
-   "index.html:1085"
+   "index.html:1145"
   ]
  },
  {
   "key": "للاستفسار أو الملاحظات:",
   "kind": "text",
   "where": [
-   "index.html:1086"
+   "index.html:1146"
   ]
  },
  {
   "key": "صدقة جارية",
   "kind": "text",
   "where": [
-   "index.html:1089"
+   "index.html:1149"
   ]
  },
  {
   "key": "التطبيق مجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.",
   "kind": "text",
   "where": [
-   "index.html:1090"
+   "index.html:1150"
   ]
  },
  {
   "key": "سياسة الخصوصية",
   "kind": "text",
   "where": [
-   "index.html:1092"
+   "index.html:1152"
   ]
  },
  {
   "key": "علي العنزي ·",
   "kind": "text",
   "where": [
-   "index.html:1092"
+   "index.html:1152"
   ]
  },
  {
   "key": "مشغل الصوت",
   "kind": "attr",
   "where": [
-   "index.html:1098"
+   "index.html:1158"
   ]
  },
  {
   "key": "اذهب إلى ما يُتلى",
   "kind": "attr",
   "where": [
-   "index.html:1099"
+   "index.html:1159"
   ]
  },
  {
   "key": "إيقاف مؤقت",
   "kind": "attr",
   "where": [
-   "index.html:1103",
-   "js/app.js:3961"
+   "index.html:1163",
+   "js/app.js:4163"
   ]
  },
  {
   "key": "الآية السابقة",
   "kind": "attr",
   "where": [
-   "index.html:1104"
+   "index.html:1164"
   ]
  },
  {
   "key": "الآية التالية",
   "kind": "attr",
   "where": [
-   "index.html:1105"
+   "index.html:1165"
   ]
  },
  {
   "key": "إيقاف",
   "kind": "attr",
   "where": [
-   "index.html:1106"
+   "index.html:1166"
   ]
  },
  {
   "key": "التنقل الرئيسي",
   "kind": "attr",
   "where": [
-   "index.html:1108"
+   "index.html:1168"
   ]
  },
  {
   "key": "tab:الرئيسية",
   "kind": "text",
   "where": [
-   "index.html:1109"
+   "index.html:1169"
   ]
  },
  {
   "key": "tab:المصحف",
   "kind": "text",
   "where": [
-   "index.html:1110"
+   "index.html:1170"
   ]
  },
  {
   "key": "tab:المسبحة",
   "kind": "text",
   "where": [
-   "index.html:1111"
+   "index.html:1171"
   ]
  },
  {
   "key": "tab:السنن",
   "kind": "text",
   "where": [
-   "index.html:1112"
+   "index.html:1172"
   ]
  },
  {
   "key": "tab:المزيد",
   "kind": "text",
   "where": [
-   "index.html:1113"
+   "index.html:1173"
   ]
  },
  {
   "key": "إلى أعلى الصفحة",
   "kind": "attr",
   "where": [
-   "index.html:1116"
+   "index.html:1176"
   ]
  },
  {
   "key": "إخفاء",
   "kind": "attr",
   "where": [
-   "index.html:1122"
+   "index.html:1182"
   ]
  },
  {
   "key": "تخطَّ",
   "kind": "text",
   "where": [
-   "index.html:1136"
+   "index.html:1196"
   ]
  },
  {
   "key": "التالي",
   "kind": "text",
   "where": [
-   "index.html:1137",
-   "js/app.js:6833",
-   "js/app.js:10335"
+   "index.html:1197",
+   "js/app.js:7036",
+   "js/app.js:10655"
   ]
  },
  {
   "key": "سماء الوقت",
   "kind": "attr",
   "where": [
-   "index.html:1142"
+   "index.html:1202"
   ]
  },
  {
   "key": "المس للعودة",
   "kind": "text",
   "where": [
-   "index.html:1186"
+   "index.html:1246"
   ]
  },
  {
   "key": "إغلاق",
   "kind": "attr",
   "where": [
-   "index.html:1192"
+   "index.html:1252"
   ]
  },
  {
@@ -9444,9 +9738,9 @@
   "kind": "text",
   "where": [
    "js/app.js:16",
-   "js/app.js:6911",
-   "js/app.js:7362",
-   "js/app.js:7389"
+   "js/app.js:7114",
+   "js/app.js:7565",
+   "js/app.js:7592"
   ]
  },
  {
@@ -9454,7 +9748,7 @@
   "kind": "text",
   "where": [
    "js/app.js:17",
-   "js/app.js:7363"
+   "js/app.js:7566"
   ]
  },
  {
@@ -9462,7 +9756,7 @@
   "kind": "text",
   "where": [
    "js/app.js:18",
-   "js/app.js:6911",
+   "js/app.js:7114",
    "data/content.js SUNNAH_TRACKER[].s",
    "data/extras.js PROPHET_DAY[].time"
   ]
@@ -9472,8 +9766,8 @@
   "kind": "text",
   "where": [
    "js/app.js:19",
-   "js/app.js:6911",
-   "js/app.js:7367",
+   "js/app.js:7114",
+   "js/app.js:7570",
    "data/extras.js PROPHET_DAY[].time"
   ]
  },
@@ -9482,8 +9776,8 @@
   "kind": "text",
   "where": [
    "js/app.js:20",
-   "js/app.js:6911",
-   "js/app.js:7368",
+   "js/app.js:7114",
+   "js/app.js:7571",
    "data/content.js SUNNAH_TRACKER[].s",
    "data/extras.js PROPHET_DAY[].time"
   ]
@@ -9493,8 +9787,8 @@
   "kind": "text",
   "where": [
    "js/app.js:21",
-   "js/app.js:6911",
-   "js/app.js:7369",
+   "js/app.js:7114",
+   "js/app.js:7572",
    "data/extras.js PROPHET_DAY[].time"
   ]
  },
@@ -9503,8 +9797,8 @@
   "kind": "text",
   "where": [
    "js/app.js:44",
-   "js/app.js:5664",
-   "js/app.js:5669",
+   "js/app.js:5866",
+   "js/app.js:5871",
    "js/hijri.js:9"
   ]
  },
@@ -9640,7 +9934,7 @@
   "kind": "text",
   "where": [
    "js/app.js:141",
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
@@ -9902,7 +10196,7 @@
   "kind": "text",
   "where": [
    "js/app.js:268",
-   "js/app.js:6288"
+   "js/app.js:6491"
   ]
  },
  {
@@ -9986,51 +10280,51 @@
   "key": "شمالاً",
   "kind": "text",
   "where": [
-   "js/app.js:1065"
+   "js/app.js:1089"
   ]
  },
  {
   "key": "جنوباً",
   "kind": "text",
   "where": [
-   "js/app.js:1065"
+   "js/app.js:1089"
   ]
  },
  {
   "key": "شرقاً",
   "kind": "text",
   "where": [
-   "js/app.js:1066"
+   "js/app.js:1090"
   ]
  },
  {
   "key": "غرباً",
   "kind": "text",
   "where": [
-   "js/app.js:1066"
+   "js/app.js:1090"
   ]
  },
  {
   "key": "تعذّر تحديد موقعك، فاختر مدينة من القائمة",
   "kind": "text",
   "where": [
-   "js/app.js:1116"
+   "js/app.js:1140"
   ]
  },
  {
   "key": "جاري تحديد موقعك",
   "kind": "text",
   "where": [
-   "js/app.js:1119"
+   "js/app.js:1143"
   ]
  },
  {
   "key": "ضُبطت المواقيت على {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1122",
-   "js/app.js:1138",
-   "js/app.js:8788"
+   "js/app.js:1146",
+   "js/app.js:1162",
+   "js/app.js:9108"
   ],
   "holes": [
    "place().n"
@@ -10040,30 +10334,30 @@
   "key": "تعذّر تحديد الموقع، فاختر مدينة من القائمة",
   "kind": "text",
   "where": [
-   "js/app.js:1125"
+   "js/app.js:1149"
   ]
  },
  {
   "key": "المس لترى السماء على الشاشة كلها",
   "kind": "text",
   "where": [
-   "js/app.js:1344"
+   "js/app.js:1368"
   ]
  },
  {
   "key": "مضى على",
   "kind": "text",
   "where": [
-   "js/app.js:1634"
+   "js/app.js:1658"
   ]
  },
  {
   "key": "أذان {0:prayer}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1635",
-   "js/app.js:1640",
-   "js/app.js:3806"
+   "js/app.js:1659",
+   "js/app.js:1664",
+   "js/app.js:4008"
   ],
   "holes": [
    "c.prev.ar"
@@ -10073,53 +10367,53 @@
   "key": "الإفطار",
   "kind": "text",
   "where": [
-   "js/app.js:1640"
+   "js/app.js:1664"
   ]
  },
  {
   "key": "الوقت الحالي",
   "kind": "text",
   "where": [
-   "js/app.js:1748"
+   "js/app.js:1772"
   ]
  },
  {
   "key": "الصلاة القادمة",
   "kind": "text",
   "where": [
-   "js/app.js:1748",
-   "js/app.js:10224"
+   "js/app.js:1772",
+   "js/app.js:10544"
   ]
  },
  {
   "key": "اضغط لتعلّمها",
   "kind": "text",
   "where": [
-   "js/app.js:1749",
-   "js/app.js:1747"
+   "js/app.js:1773",
+   "js/app.js:1771"
   ]
  },
  {
   "key": "الثلث الأخير",
   "kind": "text",
   "where": [
-   "js/app.js:1856",
-   "js/app.js:7373"
+   "js/app.js:1964",
+   "js/app.js:7576"
   ]
  },
  {
   "key": "في جماعة",
   "kind": "text",
   "where": [
-   "js/app.js:1862",
-   "js/app.js:1927"
+   "js/app.js:1970",
+   "js/app.js:2035"
   ]
  },
  {
   "key": "صلاة {0:prayer}، {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1871"
+   "js/app.js:1979"
   ],
   "holes": [
    "name",
@@ -10130,43 +10424,43 @@
   "key": "في جماعة وفي الوقت تُحسبان في وقتها، والقضاء ما صُلّي بعد خروج الوقت",
   "kind": "text",
   "where": [
-   "js/app.js:1872"
+   "js/app.js:1980"
   ]
  },
  {
   "key": "امسح العلامة",
   "kind": "text",
   "where": [
-   "js/app.js:1877"
+   "js/app.js:1985"
   ]
  },
  {
   "key": "بلا علامة",
   "kind": "text",
   "where": [
-   "js/app.js:1890",
-   "js/app.js:1941"
+   "js/app.js:1998",
+   "js/app.js:2050"
   ]
  },
  {
   "key": "لم تُعلَّم بعد",
   "kind": "text",
   "where": [
-   "js/app.js:1917"
+   "js/app.js:2025"
   ]
  },
  {
   "key": "لم يدخل وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1917"
+   "js/app.js:2025"
   ]
  },
  {
   "key": "{0} بالخمس",
   "kind": "pattern",
   "where": [
-   "js/app.js:1922"
+   "js/app.js:2030"
   ],
   "holes": [
    "inARow(stats.streak)"
@@ -10176,43 +10470,43 @@
   "key": "لا تتابع بعد",
   "kind": "text",
   "where": [
-   "js/app.js:1922",
-   "js/app.js:6618"
+   "js/app.js:2030",
+   "js/app.js:6821"
   ]
  },
  {
   "key": "في وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1927"
+   "js/app.js:2035"
   ]
  },
  {
   "key": "لم تُعلّم صلاة بعد، فاضغط أي صلاة في الأعلى أو في شريط المواقيت",
   "kind": "text",
   "where": [
-   "js/app.js:1951"
+   "js/app.js:2060"
   ]
  },
  {
   "key": "كانت في وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1954"
+   "js/app.js:2063"
   ]
  },
  {
   "key": "كانت قضاءً",
   "kind": "text",
   "where": [
-   "js/app.js:1954"
+   "js/app.js:2063"
   ]
  },
  {
   "key": "علّمت صلاة واحدة في آخر ثلاثين يوماً، و{0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1954"
+   "js/app.js:2063"
   ],
   "holes": [
    "inTime ? 'كانت في وقتها' : (stats.late ? 'كانت قضاءً' : 'فاتت')"
@@ -10222,28 +10516,28 @@
   "key": "وكلتاهما في وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1957"
+   "js/app.js:2066"
   ]
  },
  {
   "key": "إحداهما في وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1957"
+   "js/app.js:2066"
   ]
  },
  {
   "key": "ولا واحدة منهما في وقتها",
   "kind": "text",
   "where": [
-   "js/app.js:1957"
+   "js/app.js:2066"
   ]
  },
  {
   "key": "علّمت صلاتين في آخر ثلاثين يوماً، {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1957"
+   "js/app.js:2066"
   ],
   "holes": [
    "inTime === 2 ? 'وكلتاهما في وقتها' : inTime === 1 ? 'إحداهما في وقتها' : 'ولا وا"
@@ -10253,53 +10547,53 @@
   "key": "صلاة واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:1959"
+   "js/app.js:2068"
   ]
  },
  {
   "key": "صلاتين",
   "kind": "text",
   "where": [
-   "js/app.js:1959"
+   "js/app.js:2068"
   ]
  },
  {
   "key": "صلوات",
   "kind": "text",
   "where": [
-   "js/app.js:1959",
-   "js/app.js:7539"
+   "js/app.js:2068",
+   "js/app.js:7742"
   ]
  },
  {
   "key": "صلاة",
   "kind": "text",
   "where": [
-   "js/app.js:1959",
-   "js/app.js:7539"
+   "js/app.js:2068",
+   "js/app.js:7742"
   ]
  },
  {
   "key": "{#0} صلوات",
   "kind": "pattern",
   "where": [
-   "js/app.js:1959",
-   "js/app.js:7539"
+   "js/app.js:2068",
+   "js/app.js:7742"
   ]
  },
  {
   "key": "{#0} صلاة",
   "kind": "pattern",
   "where": [
-   "js/app.js:1959",
-   "js/app.js:7539"
+   "js/app.js:2068",
+   "js/app.js:7742"
   ]
  },
  {
   "key": "علّمت {0} في آخر ثلاثين يوماً",
   "kind": "pattern",
   "where": [
-   "js/app.js:1959"
+   "js/app.js:2068"
   ],
   "holes": [
    "count(total, 'صلاة واحدة', 'صلاتين', 'صلوات', 'صلاة')"
@@ -10309,7 +10603,7 @@
   "key": "{0}، وكلها في وقتها",
   "kind": "pattern",
   "where": [
-   "js/app.js:1960"
+   "js/app.js:2069"
   ],
   "holes": [
    "head"
@@ -10319,7 +10613,7 @@
   "key": "{0}، ولا واحدة منها في وقتها",
   "kind": "pattern",
   "where": [
-   "js/app.js:1961"
+   "js/app.js:2070"
   ],
   "holes": [
    "head"
@@ -10329,21 +10623,21 @@
   "key": "واحدة منها",
   "kind": "text",
   "where": [
-   "js/app.js:1962"
+   "js/app.js:2071"
   ]
  },
  {
   "key": "اثنتان منها",
   "kind": "text",
   "where": [
-   "js/app.js:1962"
+   "js/app.js:2071"
   ]
  },
  {
   "key": "{#0} منها",
   "kind": "pattern",
   "where": [
-   "js/app.js:1962"
+   "js/app.js:2071"
   ],
   "holes": [
    "ar(inTime)"
@@ -10353,7 +10647,7 @@
   "key": "أي {#0}%",
   "kind": "pattern",
   "where": [
-   "js/app.js:1963"
+   "js/app.js:2072"
   ],
   "holes": [
    "ar(Math.round(inTime / total * 100))"
@@ -10363,7 +10657,7 @@
   "key": "{0}، {1} في وقتها{2}",
   "kind": "pattern",
   "where": [
-   "js/app.js:1963"
+   "js/app.js:2072"
   ],
   "holes": [
    "head",
@@ -10375,29 +10669,29 @@
   "key": "طلعت الشمس",
   "kind": "text",
   "where": [
-   "js/app.js:2029"
+   "js/app.js:2138"
   ]
  },
  {
   "key": "الله أكبر، حيّ على الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:2029",
-   "js/app.js:2621"
+   "js/app.js:2138",
+   "js/app.js:2730"
   ]
  },
  {
   "key": "ومن سنن الوقت:",
   "kind": "text",
   "where": [
-   "js/app.js:2030"
+   "js/app.js:2139"
   ]
  },
  {
   "key": "ومن سنن الوقت: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2030"
+   "js/app.js:2139"
   ],
   "holes": [
    "lead.replace(/،.*$/, '')"
@@ -10407,8 +10701,8 @@
   "key": "حان وقت {0:prayer}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2031",
-   "js/app.js:2621"
+   "js/app.js:2140",
+   "js/app.js:2730"
   ],
   "holes": [
    "name"
@@ -10418,7 +10712,7 @@
   "key": "حان وقت صلاة {0:prayer}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2037"
+   "js/app.js:2146"
   ],
   "holes": [
    "name.replace(/^أذان /, '')"
@@ -10428,12 +10722,12 @@
   "key": "سورة {0:surah}، آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2091",
-   "js/app.js:3004",
-   "js/app.js:4064",
-   "js/app.js:4121",
-   "js/app.js:4577",
-   "js/app.js:8980"
+   "js/app.js:2200",
+   "js/app.js:3206",
+   "js/app.js:4266",
+   "js/app.js:4323",
+   "js/app.js:4779",
+   "js/app.js:9300"
   ],
   "holes": [
    "meta ? meta.ar : ''",
@@ -10444,17 +10738,17 @@
   "key": "الصلاة على النبي",
   "kind": "text",
   "where": [
-   "js/app.js:2108"
+   "js/app.js:2217"
   ]
  },
  {
   "key": "بصوت {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2206",
-   "js/app.js:2209",
-   "js/app.js:6441",
-   "js/app.js:9075"
+   "js/app.js:2315",
+   "js/app.js:2318",
+   "js/app.js:6644",
+   "js/app.js:9395"
   ],
   "holes": [
    "SALAWAT_RECITER.n"
@@ -10464,7 +10758,7 @@
   "key": "من تسجيلات {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2214"
+   "js/app.js:2323"
   ],
   "holes": [
    "SALAWAT_SOURCE.n"
@@ -10474,14 +10768,14 @@
   "key": "أوقف الصوت",
   "kind": "text",
   "where": [
-   "js/app.js:2320"
+   "js/app.js:2429"
   ]
  },
  {
   "key": "{0}ويُسمع ما دام التطبيق مفتوحاً",
   "kind": "pattern",
   "where": [
-   "js/app.js:2390"
+   "js/app.js:2499"
   ],
   "holes": [
    "v ? v.n + '، ' : ''"
@@ -10491,35 +10785,35 @@
   "key": "نغمة قصيرة من الجهاز",
   "kind": "text",
   "where": [
-   "js/app.js:2391"
+   "js/app.js:2500"
   ]
  },
  {
   "key": "الهاتف ينطق الصلاة على النبي بصوته",
   "kind": "text",
   "where": [
-   "js/app.js:2392"
+   "js/app.js:2501"
   ]
  },
  {
   "key": "يصل التنبيه صامتاً",
   "kind": "text",
   "where": [
-   "js/app.js:2393"
+   "js/app.js:2502"
   ]
  },
  {
   "key": "الأنسب من أصوات جهازك",
   "kind": "text",
   "where": [
-   "js/app.js:2442"
+   "js/app.js:2551"
   ]
  },
  {
   "key": "الصوت {#0}، {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2447"
+   "js/app.js:2556"
   ],
   "holes": [
    "ar(i + 1)",
@@ -10530,76 +10824,76 @@
   "key": "يختاره هاتفك",
   "kind": "text",
   "where": [
-   "js/app.js:2460"
+   "js/app.js:2569"
   ]
  },
  {
   "key": "لتغييره افتح إعدادات الهاتف، ثم تحويل النص إلى كلام، ثم اللغة العربية",
   "kind": "text",
   "where": [
-   "js/app.js:2461"
+   "js/app.js:2570"
   ]
  },
  {
   "key": "اللهم صلِّ وسلِّم على نبينا محمد",
   "kind": "text",
   "where": [
-   "js/app.js:2468",
-   "js/app.js:2489",
-   "js/app.js:2629",
-   "js/app.js:9983",
-   "js/app.js:9990",
-   "js/app.js:10001"
+   "js/app.js:2577",
+   "js/app.js:2598",
+   "js/app.js:2738",
+   "js/app.js:10303",
+   "js/app.js:10310",
+   "js/app.js:10321"
   ]
  },
  {
   "key": "اللهم صلِّ على محمد وعلى آل محمد كما صليت على إبراهيم وعلى آل إبراهيم",
   "kind": "text",
   "where": [
-   "js/app.js:2469"
+   "js/app.js:2578"
   ]
  },
  {
   "key": "من صلى عليَّ صلاةً صلى الله عليه بها عشراً",
   "kind": "text",
   "where": [
-   "js/app.js:2470"
+   "js/app.js:2579"
   ]
  },
  {
   "key": "أكثروا الصلاة عليَّ يوم الجمعة وليلة الجمعة",
   "kind": "text",
   "where": [
-   "js/app.js:2471"
+   "js/app.js:2580"
   ]
  },
  {
   "key": "صلِّ على النبي ﷺ",
   "kind": "text",
   "where": [
-   "js/app.js:2485",
-   "js/app.js:2628"
+   "js/app.js:2594",
+   "js/app.js:2737"
   ]
  },
  {
   "key": "آيفون",
   "kind": "text",
   "where": [
-   "js/app.js:2544"
+   "js/app.js:2653"
   ]
  },
  {
   "key": "أندرويد",
   "kind": "text",
   "where": [
-   "js/app.js:2544"
+   "js/app.js:2653"
   ]
  },
  {
   "key": "وحزمة آيفون {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2544"
+   "js/app.js:2653"
   ],
   "holes": [
    "ar(v)"
@@ -10609,7 +10903,7 @@
   "key": "وحزمة أندرويد {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2544"
+   "js/app.js:2653"
   ],
   "holes": [
    "ar(v)"
@@ -10619,21 +10913,21 @@
   "key": "المواقيت الآن للكويت، فإن كنت في مكان آخر فحدّد موقعك",
   "kind": "text",
   "where": [
-   "js/app.js:2606"
+   "js/app.js:2715"
   ]
  },
  {
   "key": "حدّد موقعي",
   "kind": "text",
   "where": [
-   "js/app.js:2606"
+   "js/app.js:2715"
   ]
  },
  {
   "key": "معدّل +{#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2655"
+   "js/app.js:2764"
   ],
   "holes": [
    "ar(Math.abs(shift))"
@@ -10643,7 +10937,7 @@
   "key": "معدّل −{#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2655"
+   "js/app.js:2764"
   ],
   "holes": [
    "ar(Math.abs(shift))"
@@ -10653,28 +10947,28 @@
   "key": "التاريخ على الحساب الأصلي",
   "kind": "text",
   "where": [
-   "js/app.js:2665"
+   "js/app.js:2774"
   ]
  },
  {
   "key": "للأمام",
   "kind": "text",
   "where": [
-   "js/app.js:2665"
+   "js/app.js:2774"
   ]
  },
  {
   "key": "للخلف",
   "kind": "text",
   "where": [
-   "js/app.js:2665"
+   "js/app.js:2774"
   ]
  },
  {
   "key": "التاريخ معدّل {0} للأمام",
   "kind": "pattern",
   "where": [
-   "js/app.js:2665"
+   "js/app.js:2774"
   ],
   "holes": [
    "daysOf(Math.abs(next), true)"
@@ -10684,7 +10978,7 @@
   "key": "التاريخ معدّل {0} للخلف",
   "kind": "pattern",
   "where": [
-   "js/app.js:2665"
+   "js/app.js:2774"
   ],
   "holes": [
    "daysOf(Math.abs(next), true)"
@@ -10694,12 +10988,12 @@
   "key": "{#0} من {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:2702",
-   "js/app.js:5131",
-   "js/app.js:6382",
-   "js/app.js:6512",
-   "js/app.js:6634",
-   "js/app.js:6859"
+   "js/app.js:2811",
+   "js/app.js:5333",
+   "js/app.js:6585",
+   "js/app.js:6715",
+   "js/app.js:6837",
+   "js/app.js:7062"
   ],
   "holes": [
    "ar(done)",
@@ -10710,201 +11004,201 @@
   "key": "صيام التطوع",
   "kind": "text",
   "where": [
-   "js/app.js:2809"
+   "js/app.js:2918"
   ]
  },
  {
   "key": "يجتمع في هذا اليوم أكثر من سبب للصيام",
   "kind": "text",
   "where": [
-   "js/app.js:2810"
+   "js/app.js:2919"
   ]
  },
  {
   "key": "الورد اليومي",
   "kind": "text",
   "where": [
-   "js/app.js:2815",
-   "js/app.js:6090"
+   "js/app.js:2924",
+   "js/app.js:6292"
   ]
  },
  {
   "key": "لم تبدأ اليوم بعد",
   "kind": "text",
   "where": [
-   "js/app.js:2957"
+   "js/app.js:3115"
   ]
  },
  {
   "key": "tile:الأذكار",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:المساجد",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:القضاء",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:صفة العمرة",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:القبلة",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:الختمة",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:الأربعون",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:الرقية",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "tile:الأدعية",
   "kind": "data",
   "where": [
-   "js/app.js:2966"
+   "js/app.js:3124"
   ]
  },
  {
   "key": "أذكار وقتك وحصن المسلم",
   "kind": "text",
   "where": [
-   "js/app.js:2967"
+   "js/app.js:3125"
   ]
  },
  {
   "key": "المساجد",
   "kind": "text",
   "where": [
-   "js/app.js:2968"
+   "js/app.js:3126"
   ]
  },
  {
   "key": "أقرب المساجد إليك",
   "kind": "text",
   "where": [
-   "js/app.js:2968"
+   "js/app.js:3126"
   ]
  },
  {
   "key": "ما عليك من صلاة وصيام",
   "kind": "text",
   "where": [
-   "js/app.js:2969"
+   "js/app.js:3127"
   ]
  },
  {
   "key": "خطوات العمرة والمواقيت والمحظورات",
   "kind": "text",
   "where": [
-   "js/app.js:2970"
+   "js/app.js:3128"
   ]
  },
  {
   "key": "اتجاه الكعبة",
   "kind": "text",
   "where": [
-   "js/app.js:2971"
+   "js/app.js:3129"
   ]
  },
  {
   "key": "الختمة",
   "kind": "text",
   "where": [
-   "js/app.js:2972"
+   "js/app.js:3130"
   ]
  },
  {
   "key": "خطة قراءة",
   "kind": "text",
   "where": [
-   "js/app.js:2972"
+   "js/app.js:3130"
   ]
  },
  {
   "key": "الأربعون",
   "kind": "text",
   "where": [
-   "js/app.js:2973"
+   "js/app.js:3131"
   ]
  },
  {
   "key": "النووية",
   "kind": "text",
   "where": [
-   "js/app.js:2973"
+   "js/app.js:3131"
   ]
  },
  {
   "key": "الرقية",
   "kind": "text",
   "where": [
-   "js/app.js:2974"
+   "js/app.js:3132"
   ]
  },
  {
   "key": "آيات وأدعية",
   "kind": "text",
   "where": [
-   "js/app.js:2974"
+   "js/app.js:3132"
   ]
  },
  {
   "key": "مأثورة",
   "kind": "text",
   "where": [
-   "js/app.js:2975"
+   "js/app.js:3133"
   ]
  },
  {
   "key": "غداً",
   "kind": "text",
   "where": [
-   "js/app.js:3038",
-   "js/app.js:3115"
+   "js/app.js:3240",
+   "js/app.js:3317"
   ]
  },
  {
   "key": "بعد {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3038",
-   "js/app.js:3115",
-   "js/app.js:3145",
-   "js/app.js:8033"
+   "js/app.js:3240",
+   "js/app.js:3317",
+   "js/app.js:3347",
+   "js/app.js:8236"
   ],
   "holes": [
    "daysOf(eid.days, true)"
@@ -10914,44 +11208,44 @@
   "key": "كل عام وأنتم بخير",
   "kind": "text",
   "where": [
-   "js/app.js:3042"
+   "js/app.js:3244"
   ]
  },
  {
   "key": "تهنئة من سُنّتي",
   "kind": "text",
   "where": [
-   "js/app.js:3042"
+   "js/app.js:3244"
   ]
  },
  {
   "key": "تكبيرات العيد",
   "kind": "text",
   "where": [
-   "js/app.js:3042"
+   "js/app.js:3244"
   ]
  },
  {
   "key": "بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "js/app.js:3042"
+   "js/app.js:3244"
   ]
  },
  {
   "key": "استمع لتكبيرات العيد بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "js/app.js:3042"
+   "js/app.js:3244"
   ]
  },
  {
   "key": "أضف {0} إلى تقويمك",
   "kind": "pattern",
   "where": [
-   "js/app.js:3135",
-   "js/app.js:3143",
-   "js/app.js:8031"
+   "js/app.js:3337",
+   "js/app.js:3345",
+   "js/app.js:8234"
   ],
   "holes": [
    "esc(fast.names)"
@@ -10961,21 +11255,21 @@
   "key": "لا مناسبة قريبة",
   "kind": "text",
   "where": [
-   "js/app.js:3141"
+   "js/app.js:3343"
   ]
  },
  {
   "key": "غيّر الموقع وطريقة الحساب",
   "kind": "text",
   "where": [
-   "js/app.js:3172"
+   "js/app.js:3374"
   ]
  },
  {
   "key": "تقويم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3172"
+   "js/app.js:3374"
   ],
   "holes": [
    "esc(methodName(Store.get('method')))"
@@ -10985,7 +11279,7 @@
   "key": "تبدأ في صفحة {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3190"
+   "js/app.js:3392"
   ],
   "holes": [
    "ar(Mushaf.pageOf(meta.n, 1))"
@@ -10995,7 +11289,7 @@
   "key": "الجزء {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3204"
+   "js/app.js:3406"
   ],
   "holes": [
    "ar(n)"
@@ -11005,7 +11299,7 @@
   "key": "يبدأ من {0:surah} آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3204"
+   "js/app.js:3406"
   ],
   "holes": [
    "esc(meta ? meta.ar : '')",
@@ -11016,19 +11310,19 @@
   "key": "لا سورة بهذا الاسم",
   "kind": "text",
   "where": [
-   "js/app.js:3243"
+   "js/app.js:3445"
   ]
  },
  {
   "key": "سورة {0:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3257",
-   "js/app.js:3319",
-   "js/app.js:3741",
-   "js/app.js:3742",
-   "js/app.js:4057",
-   "js/app.js:4203"
+   "js/app.js:3459",
+   "js/app.js:3521",
+   "js/app.js:3943",
+   "js/app.js:3944",
+   "js/app.js:4259",
+   "js/app.js:4405"
   ],
   "holes": [
    "meta.ar"
@@ -11038,7 +11332,7 @@
   "key": "توقفت عند آية {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3258"
+   "js/app.js:3460"
   ],
   "holes": [
    "ar(last.a || 1)"
@@ -11048,32 +11342,32 @@
   "key": "نص المصحف لم يكتمل تحميله بعد",
   "kind": "text",
   "where": [
-   "js/app.js:3277",
-   "js/app.js:3381",
-   "js/app.js:4037",
-   "js/app.js:4272",
-   "js/app.js:8775"
+   "js/app.js:3479",
+   "js/app.js:3583",
+   "js/app.js:4239",
+   "js/app.js:4474",
+   "js/app.js:9058"
   ]
  },
  {
   "key": "محفوظة",
   "kind": "text",
   "where": [
-   "js/app.js:3323"
+   "js/app.js:3525"
   ]
  },
  {
   "key": "السورة محفوظة للاستماع بلا إنترنت، اضغط للحذف",
   "kind": "text",
   "where": [
-   "js/app.js:3325"
+   "js/app.js:3527"
   ]
  },
  {
   "key": "الجزء {#0}، صفحة {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3331"
+   "js/app.js:3533"
   ],
   "holes": [
    "ar(Mushaf.juzOf(n, state.ayah || 1))",
@@ -11084,18 +11378,18 @@
   "key": "موضع سجدة",
   "kind": "text",
   "where": [
-   "js/app.js:3351",
-   "js/app.js:4250",
-   "js/app.js:4378"
+   "js/app.js:3553",
+   "js/app.js:4452",
+   "js/app.js:4580"
   ]
  },
  {
   "key": "آية {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3352",
-   "js/app.js:4251",
-   "js/app.js:4381"
+   "js/app.js:3554",
+   "js/app.js:4453",
+   "js/app.js:4583"
   ],
   "holes": [
    "a"
@@ -11105,7 +11399,7 @@
   "key": "آية {#0} من {1:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3418"
+   "js/app.js:3620"
   ],
   "holes": [
    "ar(r.at)",
@@ -11116,7 +11410,7 @@
   "key": "الجولة {#0} من {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3419"
+   "js/app.js:3621"
   ],
   "holes": [
    "ar(r.round)",
@@ -11127,7 +11421,7 @@
   "key": "أتممت {0} على {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3429"
+   "js/app.js:3631"
   ],
   "holes": [
    "rounds(r.times, true)",
@@ -11138,92 +11432,92 @@
   "key": "كرّر للحفظ",
   "kind": "text",
   "where": [
-   "js/app.js:3443",
-   "js/app.js:3498"
+   "js/app.js:3645",
+   "js/app.js:3700"
   ]
  },
  {
   "key": "اختر مدى الآيات وعدد الجولات، ويمكنك إخفاء النص لتسترجعه من حفظك.",
   "kind": "text",
   "where": [
-   "js/app.js:3444"
+   "js/app.js:3646"
   ]
  },
  {
   "key": "من آية",
   "kind": "text",
   "where": [
-   "js/app.js:3444"
+   "js/app.js:3646"
   ]
  },
  {
   "key": "إلى آية",
   "kind": "text",
   "where": [
-   "js/app.js:3444"
+   "js/app.js:3646"
   ]
  },
  {
   "key": "عدد الجولات",
   "kind": "text",
   "where": [
-   "js/app.js:3444"
+   "js/app.js:3646"
   ]
  },
  {
   "key": "إخفاء النص",
   "kind": "text",
   "where": [
-   "js/app.js:3444"
+   "js/app.js:3646"
   ]
  },
  {
   "key": "قراءة",
   "kind": "text",
   "where": [
-   "js/app.js:3463"
+   "js/app.js:3665"
   ]
  },
  {
   "key": "مراجعة",
   "kind": "text",
   "where": [
-   "js/app.js:3463"
+   "js/app.js:3665"
   ]
  },
  {
   "key": "حفظ",
   "kind": "text",
   "where": [
-   "js/app.js:3463"
+   "js/app.js:3665"
   ]
  },
  {
   "key": "تدبر",
   "kind": "text",
   "where": [
-   "js/app.js:3463"
+   "js/app.js:3665"
   ]
  },
  {
   "key": "ملاحظتك على الآية",
   "kind": "text",
   "where": [
-   "js/app.js:3469"
+   "js/app.js:3671"
   ]
  },
  {
   "key": "احفظ الملاحظة",
   "kind": "text",
   "where": [
-   "js/app.js:3469"
+   "js/app.js:3671"
   ]
  },
  {
   "key": "سورة {0:surah}، آية {#1}، الجزء {#2}، صفحة {#3}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3485"
+   "js/app.js:3687"
   ],
   "holes": [
    "esc(meta ? meta.ar : '')",
@@ -11236,77 +11530,77 @@
   "key": "أول الصفحة",
   "kind": "text",
   "where": [
-   "js/app.js:3485"
+   "js/app.js:3687"
   ]
  },
  {
   "key": "علامة على الآية",
   "kind": "text",
   "where": [
-   "js/app.js:3485"
+   "js/app.js:3687"
   ]
  },
  {
   "key": "الاستماع للآية",
   "kind": "text",
   "where": [
-   "js/app.js:3491"
+   "js/app.js:3693"
   ]
  },
  {
   "key": "التلاوة من هنا",
   "kind": "text",
   "where": [
-   "js/app.js:3492"
+   "js/app.js:3694"
   ]
  },
  {
   "key": "تفسير الآية",
   "kind": "text",
   "where": [
-   "js/app.js:3493"
+   "js/app.js:3695"
   ]
  },
  {
   "key": "ملاحظتك",
   "kind": "text",
   "where": [
-   "js/app.js:3494"
+   "js/app.js:3696"
   ]
  },
  {
   "key": "ملاحظة",
   "kind": "text",
   "where": [
-   "js/app.js:3494"
+   "js/app.js:3696"
   ]
  },
  {
   "key": "مشاركة الآية",
   "kind": "text",
   "where": [
-   "js/app.js:3495"
+   "js/app.js:3697"
   ]
  },
  {
   "key": "مقطع فيديو",
   "kind": "text",
   "where": [
-   "js/app.js:3496"
+   "js/app.js:3698"
   ]
  },
  {
   "key": "نسخ الآية",
   "kind": "text",
   "where": [
-   "js/app.js:3497"
+   "js/app.js:3699"
   ]
  },
  {
   "key": "آية {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3507"
+   "js/app.js:3709"
   ],
   "holes": [
    "ar(a)"
@@ -11316,7 +11610,7 @@
   "key": "ترجمة المعاني: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3629"
+   "js/app.js:3831"
   ],
   "holes": [
    "book.source"
@@ -11326,7 +11620,7 @@
   "key": "ترجمة المعاني: {0}، {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3635"
+   "js/app.js:3837"
   ],
   "holes": [
    "book.by",
@@ -11337,49 +11631,49 @@
   "key": "لم يصل التفسير",
   "kind": "text",
   "where": [
-   "js/app.js:3665"
+   "js/app.js:3867"
   ]
  },
  {
   "key": "يُحمَّل التفسير الميسر كاملاً مرة واحدة، ثم يعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:3668"
+   "js/app.js:3870"
   ]
  },
  {
   "key": "تحميل التفسير أول مرة يحتاج اتصالاً بالإنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:3673"
+   "js/app.js:3875"
   ]
  },
  {
   "key": "تفسير الجلالين",
   "kind": "text",
   "where": [
-   "js/app.js:3680"
+   "js/app.js:3882"
   ]
  },
  {
   "key": "التفسير يحتاج اتصالاً بالإنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:3682"
+   "js/app.js:3884"
   ]
  },
  {
   "key": "تعذّر التشغيل، فتأكد من الاتصال",
   "kind": "text",
   "where": [
-   "js/app.js:3760"
+   "js/app.js:3962"
   ]
  },
  {
   "key": "الأذان، {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3796"
+   "js/app.js:3998"
   ],
   "holes": [
    "adhanName(id)"
@@ -11389,56 +11683,56 @@
   "key": "متمهّل",
   "kind": "text",
   "where": [
-   "js/app.js:3814"
+   "js/app.js:4016"
   ]
  },
  {
   "key": "متوسط",
   "kind": "text",
   "where": [
-   "js/app.js:3815"
+   "js/app.js:4017"
   ]
  },
  {
   "key": "سريع",
   "kind": "text",
   "where": [
-   "js/app.js:3816"
+   "js/app.js:4018"
   ]
  },
  {
   "key": "بلغت آخر الصفحة",
   "kind": "text",
   "where": [
-   "js/app.js:3837"
+   "js/app.js:4039"
   ]
  },
  {
   "key": "توقفت القراءة",
   "kind": "text",
   "where": [
-   "js/app.js:3850"
+   "js/app.js:4052"
   ]
  },
  {
   "key": "وضع القراءة",
   "kind": "text",
   "where": [
-   "js/app.js:3863"
+   "js/app.js:4065"
   ]
  },
  {
   "key": "تتحرك الصفحة وحدها بالسرعة التي تختارها، فتقرأ بلا أن ترفع يدك، وتقف بلمسة على الشاشة",
   "kind": "text",
   "where": [
-   "js/app.js:3864"
+   "js/app.js:4066"
   ]
  },
  {
   "key": "{#0} دعاء",
   "kind": "pattern",
   "where": [
-   "js/app.js:3928"
+   "js/app.js:4130"
   ],
   "holes": [
    "ar(topics.reduce(function (n, t) { return n + t.i.length; }, 0))"
@@ -11448,23 +11742,23 @@
   "key": "أدعية مختارة من القرآن والسنة",
   "kind": "text",
   "where": [
-   "js/app.js:3930"
+   "js/app.js:4132"
   ]
  },
  {
   "key": "أرسل الدعاء صورة",
   "kind": "text",
   "where": [
-   "js/app.js:3937"
+   "js/app.js:4139"
   ]
  },
  {
   "key": "{0:surah}، آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3944",
-   "js/app.js:6212",
-   "js/app.js:6240"
+   "js/app.js:4146",
+   "js/app.js:6415",
+   "js/app.js:6443"
   ],
   "holes": [
    "esc(meta ? meta.ar : '')",
@@ -11475,16 +11769,16 @@
   "key": "أرسل الآية صورة",
   "kind": "text",
   "where": [
-   "js/app.js:3944",
-   "js/app.js:4961"
+   "js/app.js:4146",
+   "js/app.js:5163"
   ]
  },
  {
   "key": "أدعية {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:3950",
-   "js/app.js:6060"
+   "js/app.js:4152",
+   "js/app.js:6262"
   ],
   "holes": [
    "topic.n"
@@ -11494,35 +11788,35 @@
   "key": "من دعاء القرآن",
   "kind": "text",
   "where": [
-   "js/app.js:3952"
+   "js/app.js:4154"
   ]
  },
  {
   "key": "اضغط أي آية لتفتحها في المصحف",
   "kind": "text",
   "where": [
-   "js/app.js:3952"
+   "js/app.js:4154"
   ]
  },
  {
   "key": "تشغيل",
   "kind": "text",
   "where": [
-   "js/app.js:3961"
+   "js/app.js:4163"
   ]
  },
  {
   "key": "الورد",
   "kind": "text",
   "where": [
-   "js/app.js:4057"
+   "js/app.js:4259"
   ]
  },
  {
   "key": "تمت تلاوة {0:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4057"
+   "js/app.js:4259"
   ],
   "holes": [
    "done ? 'سورة ' + done.ar : 'الورد'"
@@ -11532,35 +11826,35 @@
   "key": "كيف تستمع؟",
   "kind": "text",
   "where": [
-   "js/app.js:4174"
+   "js/app.js:4376"
   ]
  },
  {
   "key": "تلاوة السورة كاملة بلا وقفة، من غير تعليم الآيات.",
   "kind": "text",
   "where": [
-   "js/app.js:4175"
+   "js/app.js:4377"
   ]
  },
  {
   "key": "يتم تحديد كل آية وهي تُتلى وتنتقل الصفحة معها، وبينها وقفة يسيرة.",
   "kind": "text",
   "where": [
-   "js/app.js:4175"
+   "js/app.js:4377"
   ]
  },
  {
   "key": "لا تسألني ثانية",
   "kind": "text",
   "where": [
-   "js/app.js:4175"
+   "js/app.js:4377"
   ]
  },
  {
   "key": "تمت تلاوة سورة {0:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4208"
+   "js/app.js:4410"
   ],
   "holes": [
    "meta ? meta.ar : ''"
@@ -11570,16 +11864,16 @@
   "key": "تعذّر بناء هذه الصفحة",
   "kind": "text",
   "where": [
-   "js/app.js:4236",
-   "js/app.js:4284",
-   "js/app.js:4358"
+   "js/app.js:4438",
+   "js/app.js:4486",
+   "js/app.js:4560"
   ]
  },
  {
   "key": "الصفحتان {0} و{1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4292"
+   "js/app.js:4494"
   ],
   "holes": [
    "mushafDigits(leaves.right)",
@@ -11590,7 +11884,7 @@
   "key": "صفحة {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4293"
+   "js/app.js:4495"
   ],
   "holes": [
    "mushafDigits(n)"
@@ -11600,7 +11894,7 @@
   "key": "الجزء {0}، {1}، {2:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4299"
+   "js/app.js:4501"
   ],
   "holes": [
    "mushafDigits(Mushaf.juzOf(first.s, first.a))",
@@ -11612,7 +11906,7 @@
   "key": "من {0:surah} إلى {1:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4300"
+   "js/app.js:4502"
   ],
   "holes": [
    "firstMeta.ar",
@@ -11623,28 +11917,28 @@
   "key": "وربعه",
   "kind": "text",
   "where": [
-   "js/app.js:4516"
+   "js/app.js:4718"
   ]
  },
  {
   "key": "ونصفه",
   "kind": "text",
   "where": [
-   "js/app.js:4516"
+   "js/app.js:4718"
   ]
  },
  {
   "key": "وثلاثة أرباعه",
   "kind": "text",
   "where": [
-   "js/app.js:4516"
+   "js/app.js:4718"
   ]
  },
  {
   "key": "الحزب {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4516"
+   "js/app.js:4718"
   ],
   "holes": [
    "fig"
@@ -11654,63 +11948,63 @@
   "key": "1 إلى 604",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "افتح",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "جزء",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "1 إلى 30",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "سورة وآية",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "الآية",
   "kind": "text",
   "where": [
-   "js/app.js:4531"
+   "js/app.js:4733"
   ]
  },
  {
   "key": "اكتب رقم صفحة من 1 إلى 604",
   "kind": "text",
   "where": [
-   "js/app.js:4548"
+   "js/app.js:4750"
   ]
  },
  {
   "key": "اكتب رقم جزء من 1 إلى 30",
   "kind": "text",
   "where": [
-   "js/app.js:4554"
+   "js/app.js:4756"
   ]
  },
  {
   "key": "سورة {0:surah} فيها {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4564"
+   "js/app.js:4766"
   ],
   "holes": [
    "meta.ar",
@@ -11721,15 +12015,15 @@
   "key": "القرآن الكريم",
   "kind": "text",
   "where": [
-   "js/app.js:4577"
+   "js/app.js:4779"
   ]
  },
  {
   "key": "سورة {0:surah} آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4761",
-   "js/app.js:8981"
+   "js/app.js:4963",
+   "js/app.js:9301"
   ],
   "holes": [
    "meta ? meta.ar : ''",
@@ -11740,37 +12034,37 @@
   "key": "جاري تجهيز الصورة",
   "kind": "text",
   "where": [
-   "js/app.js:4771"
+   "js/app.js:4973"
   ]
  },
  {
   "key": "تعذّر رسم الصورة",
   "kind": "text",
   "where": [
-   "js/app.js:4773"
+   "js/app.js:4975"
   ]
  },
  {
   "key": "تعذّرت المشاركة من التطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:4783",
-   "js/app.js:4975",
-   "js/app.js:5000"
+   "js/app.js:4985",
+   "js/app.js:5177",
+   "js/app.js:5202"
   ]
  },
  {
   "key": "نُزّلت الصورة",
   "kind": "text",
   "where": [
-   "js/app.js:4802"
+   "js/app.js:5004"
   ]
  },
  {
   "key": "{0} آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4876"
+   "js/app.js:5078"
   ],
   "holes": [
    "surah",
@@ -11781,7 +12075,7 @@
   "key": "{0}، آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:4877"
+   "js/app.js:5079"
   ],
   "holes": [
    "surah",
@@ -11792,50 +12086,50 @@
   "key": "مقطع الآية",
   "kind": "text",
   "where": [
-   "js/app.js:4886"
+   "js/app.js:5088"
   ]
  },
  {
   "key": "تُجهَّز التلاوة والمشهد",
   "kind": "text",
   "where": [
-   "js/app.js:4887"
+   "js/app.js:5089"
   ]
  },
  {
   "key": "أوقف",
   "kind": "text",
   "where": [
-   "js/app.js:4887",
-   "js/app.js:5104"
+   "js/app.js:5089",
+   "js/app.js:5306"
   ]
  },
  {
   "key": "بصوت",
   "kind": "text",
   "where": [
-   "js/app.js:4899"
+   "js/app.js:5101"
   ]
  },
  {
   "key": "يُسجَّل المقطع مع التلاوة، فأبقِ التطبيق مفتوحاً حتى يكتمل",
   "kind": "text",
   "where": [
-   "js/app.js:4917"
+   "js/app.js:5119"
   ]
  },
  {
   "key": "يُجهَّز المقطع",
   "kind": "text",
   "where": [
-   "js/app.js:4918"
+   "js/app.js:5120"
   ]
  },
  {
   "key": "يُسجَّل المقطع {0} من {1}، فأبقِ التطبيق مفتوحاً",
   "kind": "pattern",
   "where": [
-   "js/app.js:4923"
+   "js/app.js:5125"
   ],
   "holes": [
    "videoClock(done)",
@@ -11846,100 +12140,100 @@
   "key": "توقف التسجيل لأن التطبيق خرج من الشاشة",
   "kind": "text",
   "where": [
-   "js/app.js:4942"
+   "js/app.js:5144"
   ]
  },
  {
   "key": "لم يبدأ صوت التلاوة، فأعد المحاولة",
   "kind": "text",
   "where": [
-   "js/app.js:4945"
+   "js/app.js:5147"
   ]
  },
  {
   "key": "تعذّر تنزيل التلاوة، فأُرسلت الآية صورة",
   "kind": "text",
   "where": [
-   "js/app.js:4946"
+   "js/app.js:5148"
   ]
  },
  {
   "key": "الآية أطول مما يتسع له المقطع، فأُرسلت صورة",
   "kind": "text",
   "where": [
-   "js/app.js:4947"
+   "js/app.js:5149"
   ]
  },
  {
   "key": "تعذّر صنع المقطع على هذا الجهاز، فأُرسلت الآية صورة",
   "kind": "text",
   "where": [
-   "js/app.js:4948"
+   "js/app.js:5150"
   ]
  },
  {
   "key": "المقطع جاهز للتنزيل",
   "kind": "text",
   "where": [
-   "js/app.js:4961"
+   "js/app.js:5163"
   ]
  },
  {
   "key": "المقطع جاهز للإرسال",
   "kind": "text",
   "where": [
-   "js/app.js:4961"
+   "js/app.js:5163"
   ]
  },
  {
   "key": "نزّل المقطع",
   "kind": "text",
   "where": [
-   "js/app.js:4962",
-   "js/app.js:4961"
+   "js/app.js:5164",
+   "js/app.js:5163"
   ]
  },
  {
   "key": "أرسل المقطع",
   "kind": "text",
   "where": [
-   "js/app.js:4962",
-   "js/app.js:4961"
+   "js/app.js:5164",
+   "js/app.js:5163"
   ]
  },
  {
   "key": "تعذّرت المشاركة",
   "kind": "text",
   "where": [
-   "js/app.js:4984"
+   "js/app.js:5186"
   ]
  },
  {
   "key": "تعذّر تنزيل المقطع",
   "kind": "text",
   "where": [
-   "js/app.js:4988"
+   "js/app.js:5190"
   ]
  },
  {
   "key": "نُزّل المقطع",
   "kind": "text",
   "where": [
-   "js/app.js:4995"
+   "js/app.js:5197"
   ]
  },
  {
   "key": "تعذّر حفظ الصوت على هذا الجهاز",
   "kind": "text",
   "where": [
-   "js/app.js:5098"
+   "js/app.js:5300"
   ]
  },
  {
   "key": "حفظ سورة {0:surah}",
   "kind": "pattern",
   "where": [
-   "js/app.js:5103"
+   "js/app.js:5305"
   ],
   "holes": [
    "meta ? meta.ar : ''"
@@ -11949,7 +12243,7 @@
   "key": "بصوت {0}، نحو {1}، وتبقى في جهازك حتى تحذفها",
   "kind": "pattern",
   "where": [
-   "js/app.js:5104"
+   "js/app.js:5306"
   ],
   "holes": [
    "esc(reciterName())",
@@ -11960,7 +12254,7 @@
   "key": "0 من {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:5104"
+   "js/app.js:5306"
   ],
   "holes": [
    "ar(verses)"
@@ -11970,7 +12264,7 @@
   "key": "حُفظت سورة {0:surah} للاستماع بلا إنترنت",
   "kind": "pattern",
   "where": [
-   "js/app.js:5143"
+   "js/app.js:5345"
   ],
   "holes": [
    "meta ? meta.ar : ''"
@@ -11980,28 +12274,28 @@
   "key": "توقف الحفظ، وما نُزّل يبقى",
   "kind": "text",
   "where": [
-   "js/app.js:5145"
+   "js/app.js:5347"
   ]
  },
  {
   "key": "تعذّر الحفظ، فتأكد من الاتصال",
   "kind": "text",
   "where": [
-   "js/app.js:5154"
+   "js/app.js:5356"
   ]
  },
  {
   "key": "لا تتسع مساحة الحفظ في جهازك لهذه السورة، فاحذف سورة محفوظة أو أفرغ شيئاً من مساحة الهاتف ثم أعد المحاولة",
   "kind": "text",
   "where": [
-   "js/app.js:5162"
+   "js/app.js:5364"
   ]
  },
  {
   "key": "{#0} م.ب",
   "kind": "pattern",
   "where": [
-   "js/app.js:5204"
+   "js/app.js:5406"
   ],
   "holes": [
    "ar(mb >= 10 ? Math.round(mb) : Math.round(mb * 10) / 10)"
@@ -12011,21 +12305,21 @@
   "key": "نغمة الجهاز",
   "kind": "text",
   "where": [
-   "js/app.js:5266"
+   "js/app.js:5468"
   ]
  },
  {
   "key": "أذان الفجر",
   "kind": "text",
   "where": [
-   "js/app.js:5268"
+   "js/app.js:5470"
   ]
  },
  {
   "key": "{0}، أذان الفجر",
   "kind": "pattern",
   "where": [
-   "js/app.js:5268"
+   "js/app.js:5470"
   ],
   "holes": [
    "v.n"
@@ -12035,29 +12329,29 @@
   "key": "يصل التنبيه بلا صوت",
   "kind": "text",
   "where": [
-   "js/app.js:5273",
-   "js/app.js:9593"
+   "js/app.js:5475",
+   "js/app.js:9913"
   ]
  },
  {
   "key": "نغمة التنبيه المعتادة في هاتفك",
   "kind": "text",
   "where": [
-   "js/app.js:5274"
+   "js/app.js:5476"
   ]
  },
  {
   "key": "يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم",
   "kind": "text",
   "where": [
-   "js/app.js:5275"
+   "js/app.js:5477"
   ]
  },
  {
   "key": "وقتها من {0} إلى {1}، وأفضلها نحو {2}",
   "kind": "pattern",
   "where": [
-   "js/app.js:5347"
+   "js/app.js:5549"
   ],
   "holes": [
    "clockText(w.from)",
@@ -12069,7 +12363,7 @@
   "key": "تنبيه عند دخول الثلث الأخير من الليل، وهو الليلة عند {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:5356"
+   "js/app.js:5558"
   ],
   "holes": [
    "clockText(at.getHours() * 60 + at.getMinutes())"
@@ -12079,49 +12373,49 @@
   "key": "من تطبيق سُنّتي",
   "kind": "text",
   "where": [
-   "js/app.js:5372"
+   "js/app.js:5574"
   ]
  },
  {
   "key": "افتح تقويمك لتحفظه",
   "kind": "text",
   "where": [
-   "js/app.js:5377"
+   "js/app.js:5579"
   ]
  },
  {
   "key": "حُفظ الموعد، فأضفه إلى تقويمك",
   "kind": "text",
   "where": [
-   "js/app.js:5392"
+   "js/app.js:5594"
   ]
  },
  {
   "key": "حدّث التطبيق لتُضيف المواعيد إلى تقويمك",
   "kind": "text",
   "where": [
-   "js/app.js:5397"
+   "js/app.js:5599"
   ]
  },
  {
   "key": "نُزّل الموعد، فافتحه ليُضاف إلى تقويمك",
   "kind": "text",
   "where": [
-   "js/app.js:5409"
+   "js/app.js:5611"
   ]
  },
  {
   "key": "تعذّرت الإضافة إلى التقويم",
   "kind": "text",
   "where": [
-   "js/app.js:5412"
+   "js/app.js:5614"
   ]
  },
  {
   "key": "آية الكرسي، بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "js/app.js:5485",
+   "js/app.js:5687",
    "data/adhan.js SALAWAT_VOICES[].n"
   ]
  },
@@ -12129,14 +12423,14 @@
   "key": "آية الجمعة، بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "js/app.js:5486"
+   "js/app.js:5688"
   ]
  },
  {
   "key": "من صفحة {#0} إلى صفحة {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:5565"
+   "js/app.js:5767"
   ],
   "holes": [
    "ar(portion.from)",
@@ -12147,7 +12441,7 @@
   "key": "صلاة الضحى",
   "kind": "text",
   "where": [
-   "js/app.js:5573",
+   "js/app.js:5775",
    "data/content.js CURRENT_SUNNAH.*.items[] (up to its comma)",
    "data/content.js SUNNAH_TRACKER[].i[] (up to its comma)",
    "data/extras.js PROPHET_DAY[].items[]",
@@ -12158,59 +12452,59 @@
   "key": "ركعتان فأكثر، ووقتها إلى قُبيل الزوال",
   "kind": "text",
   "where": [
-   "js/app.js:5574"
+   "js/app.js:5776"
   ]
  },
  {
   "key": "أصبحنا وأصبح الملك لله",
   "kind": "text",
   "where": [
-   "js/app.js:5588"
+   "js/app.js:5790"
   ]
  },
  {
   "key": "أمسينا وأمسى الملك لله",
   "kind": "text",
   "where": [
-   "js/app.js:5595"
+   "js/app.js:5797"
   ]
  },
  {
   "key": "كان النبي ﷺ لا ينام حتى يقرأ ألم تنزيل السجدة وتبارك الذي بيده الملك",
   "kind": "text",
   "where": [
-   "js/app.js:5607"
+   "js/app.js:5809"
   ]
  },
  {
   "key": "إذا أويت إلى فراشك فاقرأ آية الكرسي، لن يزال عليك من الله حافظ",
   "kind": "text",
   "where": [
-   "js/app.js:5611"
+   "js/app.js:5813"
   ]
  },
  {
   "key": "أكثِر من الصلاة على النبي ﷺ، فإن صلاتكم معروضة عليه",
   "kind": "text",
   "where": [
-   "js/app.js:5623",
-   "js/app.js:5642",
-   "js/app.js:5834",
-   "js/app.js:5850"
+   "js/app.js:5825",
+   "js/app.js:5844",
+   "js/app.js:6036",
+   "js/app.js:6052"
   ]
  },
  {
   "key": "صيام الغد",
   "kind": "text",
   "where": [
-   "js/app.js:5658"
+   "js/app.js:5860"
   ]
  },
  {
   "key": "{0}، فاعقد النية ولا تدع السحور",
   "kind": "pattern",
   "where": [
-   "js/app.js:5659"
+   "js/app.js:5861"
   ],
   "holes": [
    "reasons.map(function (r) { return r.name; }).join('، ')"
@@ -12220,130 +12514,130 @@
   "key": "اقرأ سورة الكهف، وأكثِر من الصلاة على النبي ﷺ قبل الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:5670"
+   "js/app.js:5872"
   ]
  },
  {
   "key": "قيام الليل",
   "kind": "text",
   "where": [
-   "js/app.js:5720"
+   "js/app.js:5922"
   ]
  },
  {
   "key": "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى",
   "kind": "text",
   "where": [
-   "js/app.js:5720"
+   "js/app.js:5922"
   ]
  },
  {
   "key": "تعذّرت الإشعارات على هذا الجهاز، فلن يصلك التذكير",
   "kind": "text",
   "where": [
-   "js/app.js:5770"
+   "js/app.js:5972"
   ]
  },
  {
   "key": "الإشعارات مغلقة لسُنّتي، فاسمح بها من الإعدادات ليصلك التذكير",
   "kind": "text",
   "where": [
-   "js/app.js:5772"
+   "js/app.js:5974"
   ]
  },
  {
   "key": "لم يُسمح بالإشعارات، فلن يصلك التذكير",
   "kind": "text",
   "where": [
-   "js/app.js:5774"
+   "js/app.js:5976"
   ]
  },
  {
   "key": "من مغرب الخميس إلى فجر الجمعة، وتُعرض كلما فتحت التطبيق حتى تؤجّلها أو تُخفيها",
   "kind": "text",
   "where": [
-   "js/app.js:5833"
+   "js/app.js:6035"
   ]
  },
  {
   "key": "افتح سورة الكهف",
   "kind": "text",
   "where": [
-   "js/app.js:5833"
+   "js/app.js:6035"
   ]
  },
  {
   "key": "صورة",
   "kind": "text",
   "where": [
-   "js/app.js:5833"
+   "js/app.js:6035"
   ]
  },
  {
   "key": "ذكّرني بعد ساعة",
   "kind": "text",
   "where": [
-   "js/app.js:5833"
+   "js/app.js:6035"
   ]
  },
  {
   "key": "لا تُذكّرني",
   "kind": "text",
   "where": [
-   "js/app.js:5833"
+   "js/app.js:6035"
   ]
  },
  {
   "key": "اقرأ سورة الكهف، وتُجزئ ليلة الجمعة ويومها",
   "kind": "text",
   "where": [
-   "js/app.js:5835",
-   "js/app.js:5851"
+   "js/app.js:6037",
+   "js/app.js:6053"
   ]
  },
  {
   "key": "أكثِر من الدعاء، ففي الجمعة ساعة لا يُرد فيها سائل",
   "kind": "text",
   "where": [
-   "js/app.js:5836",
-   "js/app.js:5852"
+   "js/app.js:6038",
+   "js/app.js:6054"
   ]
  },
  {
   "key": "اغتسل غداً وتطيّب وبكّر إلى المسجد",
   "kind": "text",
   "where": [
-   "js/app.js:5837",
-   "js/app.js:5853"
+   "js/app.js:6039",
+   "js/app.js:6055"
   ]
  },
  {
   "key": "من مغرب الخميس إلى فجر الجمعة",
   "kind": "text",
   "where": [
-   "js/app.js:5858"
+   "js/app.js:6060"
   ]
  },
  {
   "key": "تطبيق سُنّتي · sunnati.3li.info",
   "kind": "text",
   "where": [
-   "js/app.js:5860",
-   "js/app.js:9045"
+   "js/app.js:6062",
+   "js/app.js:9365"
   ]
  },
  {
   "key": "الإشعارات مغلقة لسُنّتي في إعدادات الهاتف، فافتحها ليصلك الأذان",
   "kind": "text",
   "where": [
-   "js/app.js:5990"
+   "js/app.js:6192"
   ]
  },
  {
   "key": "{0}، {1}، نحو {2}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6011"
+   "js/app.js:6213"
   ],
   "holes": [
    "esc(who ? who.name : rid)",
@@ -12355,14 +12649,14 @@
   "key": "احذف",
   "kind": "text",
   "where": [
-   "js/app.js:6011"
+   "js/app.js:6213"
   ]
  },
  {
   "key": "المجموع نحو {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6018"
+   "js/app.js:6220"
   ],
   "holes": [
    "megabytes(totalBytes)"
@@ -12372,14 +12666,14 @@
   "key": "لم تحفظ سورة بعد، وفي المصحف عند كل سورة زر يحفظها",
   "kind": "text",
   "where": [
-   "js/app.js:6019"
+   "js/app.js:6221"
   ]
  },
  {
   "key": "حصن المسلم، {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6055"
+   "js/app.js:6257"
   ],
   "holes": [
    "c.t"
@@ -12389,7 +12683,7 @@
   "key": "صفة العمرة، {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6065"
+   "js/app.js:6267"
   ],
   "holes": [
    "st.t"
@@ -12399,15 +12693,15 @@
   "key": "محظورات الإحرام",
   "kind": "text",
   "where": [
-   "js/app.js:6067"
+   "js/app.js:6269"
   ]
  },
  {
   "key": "الحديث {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6079",
-   "js/app.js:7778"
+   "js/app.js:6281",
+   "js/app.js:7981"
   ],
   "holes": [
    "ar(h.n)"
@@ -12417,8 +12711,8 @@
   "key": "{0}، ص {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6088",
-   "js/app.js:6633"
+   "js/app.js:6290",
+   "js/app.js:6836"
   ],
   "holes": [
    "g.s",
@@ -12429,7 +12723,7 @@
   "key": "الحديث {#0}، {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6096"
+   "js/app.js:6298"
   ],
   "holes": [
    "ar(h.n)",
@@ -12440,21 +12734,21 @@
   "key": "لا نتيجة في هذا المجال",
   "kind": "text",
   "where": [
-   "js/app.js:6106"
+   "js/app.js:6308"
   ]
  },
  {
   "key": "الصبر",
   "kind": "text",
   "where": [
-   "js/app.js:6142"
+   "js/app.js:6344"
   ]
  },
  {
   "key": "الرحمة",
   "kind": "text",
   "where": [
-   "js/app.js:6142",
+   "js/app.js:6344",
    "data/dua-themes.js DUA_THEMES[].n",
    "data/duas.js DUA_BOOK[].n"
   ]
@@ -12463,14 +12757,14 @@
   "key": "التوبة",
   "kind": "text",
   "where": [
-   "js/app.js:6142"
+   "js/app.js:6344"
   ]
  },
  {
   "key": "الجنة",
   "kind": "text",
   "where": [
-   "js/app.js:6142",
+   "js/app.js:6344",
    "data/dua-themes.js DUA_THEMES[].n",
    "data/duas.js DUA_BOOK[].n"
   ]
@@ -12479,64 +12773,64 @@
   "key": "التقوى",
   "kind": "text",
   "where": [
-   "js/app.js:6142"
+   "js/app.js:6344"
   ]
  },
  {
   "key": "اكتب حرفين على الأقل",
   "kind": "text",
   "where": [
-   "js/app.js:6165"
+   "js/app.js:6367"
   ]
  },
  {
   "key": "نتيجة واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "نتيجتين",
   "kind": "text",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "نتائج",
   "kind": "text",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "نتيجة",
   "kind": "text",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "{#0} نتائج",
   "kind": "pattern",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "{#0} نتيجة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6172"
+   "js/app.js:6374"
   ]
  },
  {
   "key": "وجدنا {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6172",
-   "js/app.js:6197"
+   "js/app.js:6374",
+   "js/app.js:6400"
   ],
   "holes": [
    "count(found.length, 'نتيجة واحدة', 'نتيجتين', 'نتائج', 'نتيجة')"
@@ -12546,22 +12840,22 @@
   "key": "لا نتيجة",
   "kind": "text",
   "where": [
-   "js/app.js:6173",
-   "js/app.js:6197"
+   "js/app.js:6375",
+   "js/app.js:6400"
   ]
  },
  {
   "key": "اكتب حرفين على الأقل، أو ابدأ بكلمة من هذه",
   "kind": "text",
   "where": [
-   "js/app.js:6182"
+   "js/app.js:6384"
   ]
  },
  {
   "key": "وردت في {0}، وهذه أول {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6196"
+   "js/app.js:6399"
   ],
   "holes": [
    "ayat(total, true)",
@@ -12572,49 +12866,49 @@
   "key": "سورة واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "سورتين",
   "kind": "text",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "سور",
   "kind": "text",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "سورة",
   "kind": "text",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "{#0} سور",
   "kind": "pattern",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "{#0} سورة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6197"
+   "js/app.js:6400"
   ]
  },
  {
   "key": "{0}، تبدأ في صفحة {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6200"
+   "js/app.js:6403"
   ],
   "holes": [
    "ayat(m.ay)",
@@ -12625,28 +12919,28 @@
   "key": "لم نجد هذه الكلمة في المصحف",
   "kind": "text",
   "where": [
-   "js/app.js:6207"
+   "js/app.js:6410"
   ]
  },
  {
   "key": "لم تحفظ آية بعد، فافتح سورة واضغط على أي آية لحفظها",
   "kind": "text",
   "where": [
-   "js/app.js:6229"
+   "js/app.js:6432"
   ]
  },
  {
   "key": "امسح كل العلامات",
   "kind": "text",
   "where": [
-   "js/app.js:6234"
+   "js/app.js:6437"
   ]
  },
  {
   "key": "نحو {0} كل يوم، أي قرابة {1} من التلاوة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6272"
+   "js/app.js:6475"
   ],
   "holes": [
    "pages(perDay, true)",
@@ -12657,15 +12951,15 @@
   "key": "أتممت الختمة، فتقبل الله منك",
   "kind": "text",
   "where": [
-   "js/app.js:6281",
-   "js/app.js:6327"
+   "js/app.js:6484",
+   "js/app.js:6530"
   ]
  },
  {
   "key": "أنت متقدم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6282"
+   "js/app.js:6485"
   ],
   "holes": [
    "pages(status.ahead, true)"
@@ -12675,7 +12969,7 @@
   "key": "عليك {0} لتلحق بخطتك",
   "kind": "pattern",
   "where": [
-   "js/app.js:6283"
+   "js/app.js:6486"
   ],
   "holes": [
    "pages(Math.abs(status.ahead))"
@@ -12685,21 +12979,21 @@
   "key": "أنت في الموعد",
   "kind": "text",
   "where": [
-   "js/app.js:6284"
+   "js/app.js:6487"
   ]
  },
  {
   "key": "قرأت",
   "kind": "text",
   "where": [
-   "js/app.js:6288"
+   "js/app.js:6491"
   ]
  },
  {
   "key": "من {#0} صفحة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6288"
+   "js/app.js:6491"
   ],
   "holes": [
    "ar(TOTAL_PAGES)"
@@ -12709,14 +13003,14 @@
   "key": "قرأت صفحة",
   "kind": "text",
   "where": [
-   "js/app.js:6288"
+   "js/app.js:6491"
   ]
  },
  {
   "key": "ورد اليوم من صفحة {#0} إلى {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6293"
+   "js/app.js:6496"
   ],
   "holes": [
    "ar(today.from)",
@@ -12727,7 +13021,7 @@
   "key": "الصفحة القادمة تبدأ عند {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6296"
+   "js/app.js:6499"
   ],
   "holes": [
    "esc(pageLabel(status.read + 1))"
@@ -12737,7 +13031,7 @@
   "key": "تابع من صفحة {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6296"
+   "js/app.js:6499"
   ],
   "holes": [
    "ar(status.read + 1)"
@@ -12747,15 +13041,15 @@
   "key": "ابدأ ختمة جديدة",
   "kind": "text",
   "where": [
-   "js/app.js:6309",
-   "js/app.js:9026"
+   "js/app.js:6512",
+   "js/app.js:9346"
   ]
  },
  {
   "key": "{0:surah} آية {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6318"
+   "js/app.js:6521"
   ],
   "holes": [
    "meta ? meta.ar : ''",
@@ -12766,98 +13060,98 @@
   "key": "من بعد الفجر إلى الضحى",
   "kind": "text",
   "where": [
-   "js/app.js:6351"
+   "js/app.js:6554"
   ]
  },
  {
   "key": "بعد كل صلاة مكتوبة",
   "kind": "text",
   "where": [
-   "js/app.js:6352"
+   "js/app.js:6555"
   ]
  },
  {
   "key": "من بعد العصر إلى العشاء",
   "kind": "text",
   "where": [
-   "js/app.js:6353"
+   "js/app.js:6556"
   ]
  },
  {
   "key": "قبل أن تنام",
   "kind": "text",
   "where": [
-   "js/app.js:6354"
+   "js/app.js:6557"
   ]
  },
  {
   "key": "أتممتها اليوم",
   "kind": "text",
   "where": [
-   "js/app.js:6382"
+   "js/app.js:6585"
   ]
  },
  {
   "key": "ذكر واحد",
   "kind": "text",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "ذكران",
   "kind": "text",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "أذكار",
   "kind": "text",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "ذكراً",
   "kind": "text",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "ذكرين",
   "kind": "text",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "{#0} أذكار",
   "kind": "pattern",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "{#0} ذكراً",
   "kind": "pattern",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "{#0} ذكر",
   "kind": "pattern",
   "where": [
-   "js/app.js:6409"
+   "js/app.js:6612"
   ]
  },
  {
   "key": "أدّيت {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6410"
+   "js/app.js:6613"
   ],
   "holes": [
    "ar(p.done)"
@@ -12867,21 +13161,21 @@
   "key": "لا باب بهذا الاسم",
   "kind": "text",
   "where": [
-   "js/app.js:6414"
+   "js/app.js:6617"
   ]
  },
  {
   "key": "لم نجد هذا الباب",
   "kind": "text",
   "where": [
-   "js/app.js:6422"
+   "js/app.js:6625"
   ]
  },
  {
   "key": "الباب {#0}، {#1} من {#2}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6434"
+   "js/app.js:6637"
   ],
   "holes": [
    "ar(chapter.id)",
@@ -12893,14 +13187,14 @@
   "key": "استمع للدعاء",
   "kind": "text",
   "where": [
-   "js/app.js:6441"
+   "js/app.js:6644"
   ]
  },
  {
   "key": "استمع للدعاء بصوت {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6441"
+   "js/app.js:6644"
   ],
   "holes": [
    "esc(heard.n)"
@@ -12910,8 +13204,8 @@
   "key": "خالد بوهندي",
   "kind": "text",
   "where": [
-   "js/app.js:6456",
-   "js/app.js:6460",
+   "js/app.js:6659",
+   "js/app.js:6663",
    "data/adhan.js SALAWAT_RECITER.n"
   ]
  },
@@ -12919,14 +13213,14 @@
   "key": "اللَّهُ لاَ إِلَهَ إِلاَّ هُوَ الْحَيُّ الْقَيُّومُ",
   "kind": "text",
   "where": [
-   "js/app.js:6460"
+   "js/app.js:6663"
   ]
  },
  {
   "key": "آية الكرسي",
   "kind": "text",
   "where": [
-   "js/app.js:6460",
+   "js/app.js:6663",
    "data/adhan.js SALAWAT_VOICES[].n (up to its comma)"
   ]
  },
@@ -12934,85 +13228,85 @@
   "key": "مرة واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "مرتان",
   "kind": "text",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "مرات",
   "kind": "text",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "مرة",
   "kind": "text",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "مرتين",
   "kind": "text",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "{#0} مرات",
   "kind": "pattern",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "{#0} مرة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6482",
-   "js/app.js:9315",
-   "js/app.js:9325",
-   "js/app.js:9332"
+   "js/app.js:6685",
+   "js/app.js:9635",
+   "js/app.js:9645",
+   "js/app.js:9652"
   ]
  },
  {
   "key": "صورة للمشاركة",
   "kind": "text",
   "where": [
-   "js/app.js:6483",
-   "js/app.js:7811"
+   "js/app.js:6686",
+   "js/app.js:8014"
   ]
  },
  {
   "key": "استمع لـ{0} بصوت {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6495"
+   "js/app.js:6698"
   ],
   "holes": [
    "esc(heard.t)",
@@ -13023,8 +13317,8 @@
   "key": "أتممت {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6555",
-   "js/app.js:6575"
+   "js/app.js:6758",
+   "js/app.js:6778"
   ],
   "holes": [
    "chapter.t"
@@ -13034,7 +13328,7 @@
   "key": "أُعيدت عدّادات {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6586"
+   "js/app.js:6789"
   ],
   "holes": [
    "def.title"
@@ -13044,7 +13338,7 @@
   "key": "اليوم {#0} من 5",
   "kind": "pattern",
   "where": [
-   "js/app.js:6599"
+   "js/app.js:6802"
   ],
   "holes": [
    "ar(done)"
@@ -13054,14 +13348,14 @@
   "key": "لم تُعلَّم صلاة اليوم",
   "kind": "text",
   "where": [
-   "js/app.js:6599"
+   "js/app.js:6802"
   ]
  },
  {
   "key": "و{0} بالخمس",
   "kind": "pattern",
   "where": [
-   "js/app.js:6599"
+   "js/app.js:6802"
   ],
   "holes": [
    "inARow(st.streak)"
@@ -13071,7 +13365,7 @@
   "key": "أطول تتابع {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6617"
+   "js/app.js:6820"
   ],
   "holes": [
    "daysOf(s.longest)"
@@ -13081,143 +13375,143 @@
   "key": "من الميقات إلى التحلل، على دليل المعتمر",
   "kind": "text",
   "where": [
-   "js/app.js:6683"
+   "js/app.js:6886"
   ]
  },
  {
   "key": "اتجاه الكعبة من موقعك",
   "kind": "text",
   "where": [
-   "js/app.js:6684"
+   "js/app.js:6887"
   ]
  },
  {
   "key": "أقرب المساجد إليك على الخريطة",
   "kind": "text",
   "where": [
-   "js/app.js:6685"
+   "js/app.js:6888"
   ]
  },
  {
   "key": "الأذكار اليومية وحصن المسلم كاملاً",
   "kind": "text",
   "where": [
-   "js/app.js:6687"
+   "js/app.js:6890"
   ]
  },
  {
   "key": "وزّع المصحف على أيامك",
   "kind": "text",
   "where": [
-   "js/app.js:6688"
+   "js/app.js:6891"
   ]
  },
  {
   "key": "بث مباشر ومؤقت إيقاف",
   "kind": "text",
   "where": [
-   "js/app.js:6689"
+   "js/app.js:6892"
   ]
  },
  {
   "key": "عشرون حديثاً جامعاً",
   "kind": "text",
   "where": [
-   "js/app.js:6690"
+   "js/app.js:6893"
   ]
  },
  {
   "key": "من الكتاب والسنة",
   "kind": "text",
   "where": [
-   "js/app.js:6691"
+   "js/app.js:6894"
   ]
  },
  {
   "key": "آيات وأدعية ثابتة",
   "kind": "text",
   "where": [
-   "js/app.js:6692"
+   "js/app.js:6895"
   ]
  },
  {
   "key": "مواقيت كل يوم في صفحة",
   "kind": "text",
   "where": [
-   "js/app.js:6693"
+   "js/app.js:6896"
   ]
  },
  {
   "key": "المناسبات والمواسم",
   "kind": "text",
   "where": [
-   "js/app.js:6694"
+   "js/app.js:6897"
   ]
  },
  {
   "key": "تتبّع حفظك",
   "kind": "text",
   "where": [
-   "js/app.js:6695"
+   "js/app.js:6898"
   ]
  },
  {
   "key": "الحساب والمظهر والنسخ",
   "kind": "text",
   "where": [
-   "js/app.js:6697"
+   "js/app.js:6900"
   ]
  },
  {
   "key": "عن التطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:6698"
+   "js/app.js:6901"
   ]
  },
  {
   "key": "المصادر وما يحتاج إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:6698"
+   "js/app.js:6901"
   ]
  },
  {
   "key": "العبادة",
   "kind": "text",
   "where": [
-   "js/app.js:6707"
+   "js/app.js:6910"
   ]
  },
  {
   "key": "القرآن والحديث",
   "kind": "text",
   "where": [
-   "js/app.js:6708"
+   "js/app.js:6911"
   ]
  },
  {
   "key": "المواقيت والأماكن",
   "kind": "text",
   "where": [
-   "js/app.js:6709"
+   "js/app.js:6912"
   ]
  },
  {
   "key": "التطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:6710"
+   "js/app.js:6913"
   ]
  },
  {
   "key": "النسخة {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6733",
-   "js/app.js:8777",
-   "js/app.js:10184",
-   "js/app.js:10590"
+   "js/app.js:6936",
+   "js/app.js:9060",
+   "js/app.js:10504",
+   "js/app.js:10910"
   ],
   "holes": [
    "ar(VERSION)"
@@ -13227,35 +13521,35 @@
   "key": "تمّت",
   "kind": "text",
   "where": [
-   "js/app.js:6823"
+   "js/app.js:7026"
   ]
  },
  {
   "key": "تقبّل الله منك",
   "kind": "text",
   "where": [
-   "js/app.js:6823"
+   "js/app.js:7026"
   ]
  },
  {
   "key": "حلّ لك كل ما حُرّم عليك بالإحرام. واحمد الله أن بلّغك بيته وأعانك على إتمام نسكك.",
   "kind": "text",
   "where": [
-   "js/app.js:6823"
+   "js/app.js:7026"
   ]
  },
  {
   "key": "أنت الآن في",
   "kind": "text",
   "where": [
-   "js/app.js:6831"
+   "js/app.js:7034"
   ]
  },
  {
   "key": "{0}، صفحة {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6859"
+   "js/app.js:7062"
   ],
   "holes": [
    "esc(UMRAH_SOURCE.b)",
@@ -13266,7 +13560,7 @@
   "key": "و{0}، {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6873"
+   "js/app.js:7076"
   ],
   "holes": [
    "UMRAH_SOURCE_2.b",
@@ -13277,14 +13571,14 @@
   "key": "من مرّ على ميقات وهو يريد العمرة لزمه الإحرام منه، ومن كان مسكنه دونها أحرم من مكانه، وأهل مكة يُحرمون للعمرة من الحلّ خارج حدود الحرم كالتنعيم.",
   "kind": "text",
   "where": [
-   "js/app.js:6891"
+   "js/app.js:7094"
   ]
  },
  {
   "key": "{0}، ويبعد {#1} كم عن مكة",
   "kind": "pattern",
   "where": [
-   "js/app.js:6893"
+   "js/app.js:7096"
   ],
   "holes": [
    "esc(m.w)",
@@ -13295,7 +13589,7 @@
   "key": "ويُسمّى اليوم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6894"
+   "js/app.js:7097"
   ],
   "holes": [
    "esc(m.now)"
@@ -13305,49 +13599,49 @@
   "key": "يحرم على المعتمر بعد إحرامه من الميقات",
   "kind": "text",
   "where": [
-   "js/app.js:6900"
+   "js/app.js:7103"
   ]
  },
  {
   "key": "ويجوز للمحرم",
   "kind": "text",
   "where": [
-   "js/app.js:6901"
+   "js/app.js:7104"
   ]
  },
  {
   "key": "مما يقع فيه بعض الناس",
   "kind": "text",
   "where": [
-   "js/app.js:6901"
+   "js/app.js:7104"
   ]
  },
  {
   "key": "أَسْتَغْفِرُ اللَّهَ",
   "kind": "text",
   "where": [
-   "js/app.js:6922"
+   "js/app.js:7125"
   ]
  },
  {
   "key": "يقولها فور التسليم",
   "kind": "text",
   "where": [
-   "js/app.js:6922"
+   "js/app.js:7125"
   ]
  },
  {
   "key": "تقبّل الله",
   "kind": "text",
   "where": [
-   "js/app.js:6960"
+   "js/app.js:7163"
   ]
  },
  {
   "key": "أذكار ما بعد {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:6977"
+   "js/app.js:7180"
   ],
   "holes": [
    "PRAYER_NAMES[key]"
@@ -13357,22 +13651,22 @@
   "key": "افتح الباب كاملاً",
   "kind": "text",
   "where": [
-   "js/app.js:6978"
+   "js/app.js:7181"
   ]
  },
  {
   "key": "لا تعرضها بعد كل صلاة",
   "kind": "text",
   "where": [
-   "js/app.js:6978"
+   "js/app.js:7181"
   ]
  },
  {
   "key": "{#0} م",
   "kind": "pattern",
   "where": [
-   "js/app.js:7016",
-   "js/app.js:8367"
+   "js/app.js:7219",
+   "js/app.js:8593"
   ],
   "holes": [
    "ar(m)"
@@ -13382,7 +13676,7 @@
   "key": "{#0} كم",
   "kind": "pattern",
   "where": [
-   "js/app.js:7016"
+   "js/app.js:7219"
   ],
   "holes": [
    "ar((m / 1000).toFixed(1))"
@@ -13392,45 +13686,45 @@
   "key": "الطريق",
   "kind": "text",
   "where": [
-   "js/app.js:7080",
-   "js/app.js:7217"
+   "js/app.js:7283",
+   "js/app.js:7420"
   ]
  },
  {
   "key": "حدّد موقعك من الإعدادات لتظهر المساجد حولك",
   "kind": "text",
   "where": [
-   "js/app.js:7192"
+   "js/app.js:7395"
   ]
  },
  {
   "key": "جاري البحث عن المساجد حولك…",
   "kind": "text",
   "where": [
-   "js/app.js:7198",
-   "js/app.js:7307"
+   "js/app.js:7401",
+   "js/app.js:7510"
   ]
  },
  {
   "key": "لم يُعثر على مساجد مسجّلة حولك.",
   "kind": "text",
   "where": [
-   "js/app.js:7203"
+   "js/app.js:7406"
   ]
  },
  {
   "key": "تحديث",
   "kind": "text",
   "where": [
-   "js/app.js:7203",
-   "js/app.js:7314"
+   "js/app.js:7406",
+   "js/app.js:7517"
   ]
  },
  {
   "key": "{#0} حولك",
   "kind": "pattern",
   "where": [
-   "js/app.js:7214"
+   "js/app.js:7417"
   ],
   "holes": [
    "ar(state.mosques.length)"
@@ -13440,7 +13734,7 @@
   "key": "أرِني {0} على الخريطة",
   "kind": "pattern",
   "where": [
-   "js/app.js:7217"
+   "js/app.js:7420"
   ],
   "holes": [
    "esc(m.n)"
@@ -13450,44 +13744,44 @@
   "key": "مسجد",
   "kind": "text",
   "where": [
-   "js/app.js:7287",
-   "js/app.js:7339",
-   "js/app.js:7341"
+   "js/app.js:7490",
+   "js/app.js:7542",
+   "js/app.js:7544"
   ]
  },
  {
   "key": "خوادم الخرائط مشغولة الآن، وليس معناه أن لا مساجد حولك، فجرّب بعد قليل",
   "kind": "text",
   "where": [
-   "js/app.js:7314"
+   "js/app.js:7517"
   ]
  },
  {
   "key": "تعذّر فتح الطريق",
   "kind": "text",
   "where": [
-   "js/app.js:7331"
+   "js/app.js:7534"
   ]
  },
  {
   "key": "مسجد قريب",
   "kind": "text",
   "where": [
-   "js/app.js:7340"
+   "js/app.js:7543"
   ]
  },
  {
   "key": "تعذّر فتح الخريطة",
   "kind": "text",
   "where": [
-   "js/app.js:7351"
+   "js/app.js:7554"
   ]
  },
  {
   "key": "في {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7486"
+   "js/app.js:7689"
   ],
   "holes": [
    "where.n"
@@ -13497,7 +13791,7 @@
   "key": "مواقيت الصلاة اليوم{0}:",
   "kind": "pattern",
   "where": [
-   "js/app.js:7486"
+   "js/app.js:7689"
   ],
   "holes": [
    "where ? ' في ' + where.n : ''"
@@ -13507,7 +13801,7 @@
   "key": "الفجر {0}، الظهر {1}، العصر {2}، المغرب {3}، العشاء {4}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7486"
+   "js/app.js:7689"
   ],
   "holes": [
    "clockText(t.fajr)",
@@ -13521,87 +13815,87 @@
   "key": "مواقيت اليوم",
   "kind": "text",
   "where": [
-   "js/app.js:7490",
-   "js/app.js:10226"
+   "js/app.js:7693",
+   "js/app.js:10546"
   ]
  },
  {
   "key": "الفطر",
   "kind": "text",
   "where": [
-   "js/app.js:7496"
+   "js/app.js:7699"
   ]
  },
  {
   "key": "الأضحى",
   "kind": "text",
   "where": [
-   "js/app.js:7497"
+   "js/app.js:7700"
   ]
  },
  {
   "key": "الغسل والتطيّب ولبس أحسن الثياب",
   "kind": "text",
   "where": [
-   "js/app.js:7510",
-   "js/app.js:7515"
+   "js/app.js:7713",
+   "js/app.js:7718"
   ]
  },
  {
   "key": "الأكل قبل الخروج، تمرات وتراً",
   "kind": "text",
   "where": [
-   "js/app.js:7511"
+   "js/app.js:7714"
   ]
  },
  {
   "key": "التكبير من ليلة العيد إلى الصلاة: الله أكبر الله أكبر، لا إله إلا الله، والله أكبر الله أكبر ولله الحمد",
   "kind": "text",
   "where": [
-   "js/app.js:7512"
+   "js/app.js:7715"
   ]
  },
  {
   "key": "الخروج ماشياً، والرجوع من طريق آخر",
   "kind": "text",
   "where": [
-   "js/app.js:7513",
-   "js/app.js:7518"
+   "js/app.js:7716",
+   "js/app.js:7721"
   ]
  },
  {
   "key": "التهنئة: تقبّل الله منا ومنكم",
   "kind": "text",
   "where": [
-   "js/app.js:7514"
+   "js/app.js:7717"
   ]
  },
  {
   "key": "ألا يأكل حتى يرجع فيأكل من أضحيته",
   "kind": "text",
   "where": [
-   "js/app.js:7516"
+   "js/app.js:7719"
   ]
  },
  {
   "key": "التكبير المطلق في أيام العشر، والمقيّد بعد الصلوات إلى آخر أيام التشريق",
   "kind": "text",
   "where": [
-   "js/app.js:7517"
+   "js/app.js:7720"
   ]
  },
  {
   "key": "الأضحية بعد الصلاة، لا قبلها",
   "kind": "text",
   "where": [
-   "js/app.js:7519"
+   "js/app.js:7722"
   ]
  },
  {
   "key": "عيد {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7521"
+   "js/app.js:7724"
   ],
   "holes": [
    "which"
@@ -13611,7 +13905,7 @@
   "key": "نحو {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7522"
+   "js/app.js:7725"
   ],
   "holes": [
    "at"
@@ -13621,7 +13915,7 @@
   "key": "صلاة العيد{0}، بعد ارتفاع الشمس قدر رمح",
   "kind": "pattern",
   "where": [
-   "js/app.js:7522"
+   "js/app.js:7725"
   ],
   "holes": [
    "at ? ' نحو ' + at : ''"
@@ -13631,28 +13925,28 @@
   "key": "واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:7539"
+   "js/app.js:7742"
   ]
  },
  {
   "key": "اثنتان",
   "kind": "text",
   "where": [
-   "js/app.js:7539"
+   "js/app.js:7742"
   ]
  },
  {
   "key": "اثنتين",
   "kind": "text",
   "where": [
-   "js/app.js:7539"
+   "js/app.js:7742"
   ]
  },
  {
   "key": "عليك {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7539"
+   "js/app.js:7742"
   ],
   "holes": [
    "count(owed[k], 'واحدة', 'اثنتان', 'صلوات', 'صلاة')"
@@ -13662,21 +13956,21 @@
   "key": "ليس عليك شيء",
   "kind": "text",
   "where": [
-   "js/app.js:7539"
+   "js/app.js:7742"
   ]
  },
  {
   "key": "قضيتها",
   "kind": "text",
   "where": [
-   "js/app.js:7540"
+   "js/app.js:7743"
   ]
  },
  {
   "key": "{#0} عليك",
   "kind": "pattern",
   "where": [
-   "js/app.js:7544"
+   "js/app.js:7747"
   ],
   "holes": [
    "ar(total)"
@@ -13686,16 +13980,16 @@
   "key": "لا شيء عليك",
   "kind": "text",
   "where": [
-   "js/app.js:7544",
-   "js/app.js:7549",
-   "js/app.js:7551"
+   "js/app.js:7747",
+   "js/app.js:7752",
+   "js/app.js:7754"
   ]
  },
  {
   "key": "{0} عليك",
   "kind": "pattern",
   "where": [
-   "js/app.js:7549"
+   "js/app.js:7752"
   ],
   "holes": [
    "daysOf(owedDays)"
@@ -13705,7 +13999,7 @@
   "key": "بقي {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7551"
+   "js/app.js:7754"
   ],
   "holes": [
    "daysOf(owedDays)"
@@ -13715,7 +14009,7 @@
   "key": "من {0} إلى الكعبة {#1} كيلومتراً",
   "kind": "pattern",
   "where": [
-   "js/app.js:7565"
+   "js/app.js:7768"
   ],
   "holes": [
    "p.n",
@@ -13726,7 +14020,7 @@
   "key": "{0}، والزاوية من الشمال الحقيقي، فوجّه أعلى الجهاز نحو الشمال ثم اتبع السهم",
   "kind": "pattern",
   "where": [
-   "js/app.js:7567"
+   "js/app.js:7770"
   ],
   "holes": [
    "where"
@@ -13736,7 +14030,7 @@
   "key": "{0}، وأنت الآن مواجه القبلة",
   "kind": "pattern",
   "where": [
-   "js/app.js:7570"
+   "js/app.js:7773"
   ],
   "holes": [
    "where"
@@ -13746,7 +14040,7 @@
   "key": "{0}، فأدر نفسك {#1} درجة حتى يستقيم السهم لأعلى",
   "kind": "pattern",
   "where": [
-   "js/app.js:7572"
+   "js/app.js:7775"
   ],
   "holes": [
    "where",
@@ -13757,28 +14051,28 @@
   "key": "فُعّلت البوصلة",
   "kind": "text",
   "where": [
-   "js/app.js:7643"
+   "js/app.js:7846"
   ]
  },
  {
   "key": "لم يُسمح باستخدام البوصلة",
   "kind": "text",
   "where": [
-   "js/app.js:7644"
+   "js/app.js:7847"
   ]
  },
  {
   "key": "تعذّر تفعيل البوصلة",
   "kind": "text",
   "where": [
-   "js/app.js:7645"
+   "js/app.js:7848"
   ]
  },
  {
   "key": "سبحان الله",
   "kind": "text",
   "where": [
-   "js/app.js:7651",
+   "js/app.js:7854",
    "data/extras.js TASBIH_PHRASES[].t"
   ]
  },
@@ -13786,7 +14080,7 @@
   "key": "أذكار هذا الوقت: {0}، {#1} من {#2}، وحصن المسلم كاملاً",
   "kind": "pattern",
   "where": [
-   "js/app.js:7661"
+   "js/app.js:7864"
   ],
   "holes": [
    "def.title",
@@ -13798,7 +14092,7 @@
   "key": "الهدف {#0}، بلغت الهدف",
   "kind": "pattern",
   "where": [
-   "js/app.js:7673"
+   "js/app.js:7876"
   ],
   "holes": [
    "ar(current.target)"
@@ -13808,7 +14102,7 @@
   "key": "الهدف {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7673"
+   "js/app.js:7876"
   ],
   "holes": [
    "ar(current.target)"
@@ -13818,14 +14112,14 @@
   "key": "بلغت الهدف",
   "kind": "text",
   "where": [
-   "js/app.js:7674"
+   "js/app.js:7877"
   ]
  },
  {
   "key": "مجموع اليوم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7683"
+   "js/app.js:7886"
   ],
   "holes": [
    "tasbihat(Store.day().tasbih || 0)"
@@ -13835,7 +14129,7 @@
   "key": "بلغت {#0} في {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7709"
+   "js/app.js:7912"
   ],
   "holes": [
    "ar(current.target)",
@@ -13846,22 +14140,22 @@
   "key": "إلغاء",
   "kind": "text",
   "where": [
-   "js/app.js:7730"
+   "js/app.js:7933"
   ]
  },
  {
   "key": "المؤقت متوقف",
   "kind": "text",
   "where": [
-   "js/app.js:7748"
+   "js/app.js:7951"
   ]
  },
  {
   "key": "سيتوقف البث بعد {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7750",
-   "js/app.js:7768"
+   "js/app.js:7953",
+   "js/app.js:7971"
   ],
   "holes": [
    "minutesOf(left, true)"
@@ -13871,112 +14165,112 @@
   "key": "شغّل إذاعة أولاً ثم اختر متى يتوقف البث",
   "kind": "text",
   "where": [
-   "js/app.js:7756"
+   "js/app.js:7959"
   ]
  },
  {
   "key": "أُلغي المؤقت",
   "kind": "text",
   "where": [
-   "js/app.js:7758"
+   "js/app.js:7961"
   ]
  },
  {
   "key": "توقف البث",
   "kind": "text",
   "where": [
-   "js/app.js:7765"
+   "js/app.js:7968"
   ]
  },
  {
   "key": "يناير",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "فبراير",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "مارس",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "أبريل",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "مايو",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "يونيو",
   "kind": "text",
   "where": [
-   "js/app.js:7829"
+   "js/app.js:8032"
   ]
  },
  {
   "key": "يوليو",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "أغسطس",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "سبتمبر",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "أكتوبر",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "نوفمبر",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "ديسمبر",
   "kind": "text",
   "where": [
-   "js/app.js:7830"
+   "js/app.js:8033"
   ]
  },
  {
   "key": "{0} {#1} هـ",
   "kind": "pattern",
   "where": [
-   "js/app.js:7867"
+   "js/app.js:8070"
   ],
   "holes": [
    "Hijri.MONTHS[month.m - 1]",
@@ -13987,7 +14281,7 @@
   "key": "{#0} {1} إلى {#2} {3} {#4}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7871"
+   "js/app.js:8074"
   ],
   "holes": [
    "ar(from.getDate())",
@@ -14001,14 +14295,14 @@
   "key": "تعذّر بناء هذا الشهر",
   "kind": "text",
   "where": [
-   "js/app.js:7894"
+   "js/app.js:8097"
   ]
  },
  {
   "key": "مواسم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7940"
+   "js/app.js:8143"
   ],
   "holes": [
    "Hijri.MONTHS[month.m - 1]"
@@ -14018,14 +14312,14 @@
   "key": "لا موسم مخصوص في هذا الشهر، وصيام الإثنين والخميس قائم فيه كما في غيره.",
   "kind": "text",
   "where": [
-   "js/app.js:7965"
+   "js/app.js:8168"
   ]
  },
  {
   "key": "{#0} إلى {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7976"
+   "js/app.js:8179"
   ],
   "holes": [
    "ar(from)",
@@ -14036,7 +14330,7 @@
   "key": "{#0} {1} إلى {#2} {3}",
   "kind": "pattern",
   "where": [
-   "js/app.js:7988"
+   "js/app.js:8191"
   ],
   "holes": [
    "ar(first.getDate())",
@@ -14049,22 +14343,22 @@
   "key": "لا مناسبة مخصوصة في هذا اليوم، والعمل الصالح فيه محبوب على كل حال.",
   "kind": "text",
   "where": [
-   "js/app.js:8023"
+   "js/app.js:8226"
   ]
  },
  {
   "key": "تاريخ غير صالح",
   "kind": "text",
   "where": [
-   "js/app.js:8069",
-   "js/app.js:8085"
+   "js/app.js:8272",
+   "js/app.js:8288"
   ]
  },
  {
   "key": "{0} {#1} فيه {2} فقط",
   "kind": "pattern",
   "where": [
-   "js/app.js:8081"
+   "js/app.js:8284"
   ],
   "holes": [
    "Hijri.MONTHS[m - 1]",
@@ -14076,7 +14370,7 @@
   "key": "{0}، تقويم {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8168"
+   "js/app.js:8371"
   ],
   "holes": [
    "place().n",
@@ -14087,15 +14381,15 @@
   "key": "الإمساك",
   "kind": "text",
   "where": [
-   "js/app.js:8180",
-   "js/app.js:8179"
+   "js/app.js:8383",
+   "js/app.js:8382"
   ]
  },
  {
   "key": "لـ{0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8234"
+   "js/app.js:8460"
   ],
   "holes": [
    "place().n"
@@ -14105,7 +14399,7 @@
   "key": "مواقيت {0} {#1} {2}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8235"
+   "js/app.js:8461"
   ],
   "holes": [
    "GREG_MONTHS[at.m]",
@@ -14117,7 +14411,7 @@
   "key": "حساب {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8236"
+   "js/app.js:8462"
   ],
   "holes": [
    "methodName(Store.get('method'))"
@@ -14127,7 +14421,7 @@
   "key": "{#0} ص",
   "kind": "pattern",
   "where": [
-   "js/app.js:8367"
+   "js/app.js:8593"
   ],
   "holes": [
    "ar(v % 12 === 0 ? 12 : v % 12)"
@@ -14137,49 +14431,49 @@
   "key": "اختر يوماً",
   "kind": "text",
   "where": [
-   "js/app.js:8445"
+   "js/app.js:8671"
   ]
  },
  {
   "key": "تذكير الصيام موقوف",
   "kind": "text",
   "where": [
-   "js/app.js:8565"
+   "js/app.js:8843"
   ]
  },
  {
   "key": "شغّله ليصلك التنبيه ليلة اليوم الذي يُستحب صيامه",
   "kind": "text",
   "where": [
-   "js/app.js:8565"
+   "js/app.js:8843"
   ]
  },
  {
   "key": "والتنبيه الليلة بعد المغرب بساعة ونصف",
   "kind": "text",
   "where": [
-   "js/app.js:8577"
+   "js/app.js:8855"
   ]
  },
  {
   "key": "والتنبيه ليلته بعد المغرب بساعة ونصف",
   "kind": "text",
   "where": [
-   "js/app.js:8578"
+   "js/app.js:8856"
   ]
  },
  {
   "key": "اليوم، والتنبيه وصلك ليلته",
   "kind": "text",
   "where": [
-   "js/app.js:8579"
+   "js/app.js:8857"
   ]
  },
  {
   "key": "أقرب صيام: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8581"
+   "js/app.js:8859"
   ],
   "holes": [
    "next.names"
@@ -14189,14 +14483,14 @@
   "key": "اختر مدينة",
   "kind": "text",
   "where": [
-   "js/app.js:8598"
+   "js/app.js:8876"
   ]
  },
  {
   "key": "لغة الجهاز{0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8648"
+   "js/app.js:8931"
   ],
   "holes": [
    "device ? '، ' + device.name : ''"
@@ -14206,121 +14500,121 @@
   "key": "كل ساعة",
   "kind": "text",
   "where": [
-   "js/app.js:8658"
+   "js/app.js:8941"
   ]
  },
  {
   "key": "كل ساعتين",
   "kind": "text",
   "where": [
-   "js/app.js:8659"
+   "js/app.js:8942"
   ]
  },
  {
   "key": "كل ثلاث ساعات",
   "kind": "text",
   "where": [
-   "js/app.js:8660"
+   "js/app.js:8943"
   ]
  },
  {
   "key": "كل ست ساعات",
   "kind": "text",
   "where": [
-   "js/app.js:8661"
+   "js/app.js:8944"
   ]
  },
  {
   "key": "صوت قارئ",
   "kind": "text",
   "where": [
-   "js/app.js:8735"
+   "js/app.js:9018"
   ]
  },
  {
   "key": "نغمة",
   "kind": "text",
   "where": [
-   "js/app.js:8736"
+   "js/app.js:9019"
   ]
  },
  {
   "key": "صوت الهاتف ينطقها",
   "kind": "text",
   "where": [
-   "js/app.js:8737"
+   "js/app.js:9020"
   ]
  },
  {
   "key": "يتبع وقت الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:8742"
+   "js/app.js:9025"
   ]
  },
  {
   "key": "ثبّت التطبيق من Google Play",
   "kind": "text",
   "where": [
-   "js/app.js:8770"
+   "js/app.js:9053"
   ]
  },
  {
   "key": "نص المصحف محمّل في جهازك، فالقراءة تعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:8774",
-   "js/app.js:10080"
+   "js/app.js:9057",
+   "js/app.js:10400"
   ]
  },
  {
   "key": "تعذّرت الإشعارات على هذا الجهاز",
   "kind": "text",
   "where": [
-   "js/app.js:8794"
+   "js/app.js:9114"
   ]
  },
  {
   "key": "ستصلك تنبيهات الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:8799"
+   "js/app.js:9119"
   ]
  },
  {
   "key": "اسمح بالإشعارات لسُنّتي من إعدادات الهاتف، ثم أعد المحاولة",
   "kind": "text",
   "where": [
-   "js/app.js:8799"
+   "js/app.js:9119"
   ]
  },
  {
   "key": "لم يُسمح بالإشعارات",
   "kind": "text",
   "where": [
-   "js/app.js:8799",
-   "js/app.js:9970"
+   "js/app.js:9119",
+   "js/app.js:10290"
   ]
  },
  {
   "key": "هكذا يصلك التنبيه عند دخول الوقت",
   "kind": "text",
   "where": [
-   "js/app.js:8802"
+   "js/app.js:9122"
   ]
  },
  {
   "key": "اختر أين تحفظ نسختك",
   "kind": "text",
   "where": [
-   "js/app.js:8818"
+   "js/app.js:9138"
   ]
  },
  {
   "key": "حُفظت نسختك في التنزيلات باسم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8818"
+   "js/app.js:9138"
   ],
   "holes": [
    "name"
@@ -14330,29 +14624,29 @@
   "key": "تعذّر حفظ النسخة",
   "kind": "text",
   "where": [
-   "js/app.js:8819"
+   "js/app.js:9139"
   ]
  },
  {
   "key": "نُزّلت نسختك الاحتياطية",
   "kind": "text",
   "where": [
-   "js/app.js:8831"
+   "js/app.js:9151"
   ]
  },
  {
   "key": "الملف غير صالح",
   "kind": "text",
   "where": [
-   "js/app.js:8839",
-   "js/store.js:644"
+   "js/app.js:9159",
+   "js/store.js:643"
   ]
  },
  {
   "key": "استُعيدت {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8852"
+   "js/app.js:9172"
   ],
   "holes": [
    "entries(result.count)"
@@ -14362,21 +14656,21 @@
   "key": "يُحذف من هذا الجهاز كل ما سجّلته فيه: إعداداتك وموقعك، والآيات التي علّمتها وملاحظاتك عليها، وسجل صلواتك وسننك وأذكارك، وخطة الختمة وخطوات العمرة، والتلاوات المحفوظة للاستماع بلا إنترنت، ولا يعود شيء منه إلا من نسخة احتياطية، فخذ نسختك قبل الحذف إن أردت الاحتفاظ به",
   "kind": "text",
   "where": [
-   "js/app.js:8861"
+   "js/app.js:9181"
   ]
  },
  {
   "key": "احذف كل شيء",
   "kind": "text",
   "where": [
-   "js/app.js:8864"
+   "js/app.js:9184"
   ]
  },
  {
   "key": "حُذفت {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8883"
+   "js/app.js:9203"
   ],
   "holes": [
    "entries(removed)"
@@ -14386,42 +14680,42 @@
   "key": "جاري جلب النسخة الأحدث",
   "kind": "text",
   "where": [
-   "js/app.js:8889"
+   "js/app.js:9209"
   ]
  },
  {
   "key": "تعذّر التخزين للعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:8908"
+   "js/app.js:9228"
   ]
  },
  {
   "key": "جاري التحميل",
   "kind": "text",
   "where": [
-   "js/app.js:8909"
+   "js/app.js:9229"
   ]
  },
  {
   "key": "صار كل شيء متاحاً بلا إنترنت، ومعه التفسير",
   "kind": "text",
   "where": [
-   "js/app.js:8915"
+   "js/app.js:9235"
   ]
  },
  {
   "key": "تعذّر إكمال التحميل",
   "kind": "text",
   "where": [
-   "js/app.js:8917"
+   "js/app.js:9237"
   ]
  },
  {
   "key": "عُلّمت الآية: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:8966"
+   "js/app.js:9286"
   ],
   "holes": [
    "BOOKMARK_NAMES[kind]"
@@ -14431,28 +14725,28 @@
   "key": "أُزيلت العلامة",
   "kind": "text",
   "where": [
-   "js/app.js:8966"
+   "js/app.js:9286"
   ]
  },
  {
   "key": "حُفظت الملاحظة",
   "kind": "text",
   "where": [
-   "js/app.js:8997"
+   "js/app.js:9317"
   ]
  },
  {
   "key": "أُزيلت الملاحظة",
   "kind": "text",
   "where": [
-   "js/app.js:8997"
+   "js/app.js:9317"
   ]
  },
  {
   "key": "من أدعية {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9005"
+   "js/app.js:9325"
   ],
   "holes": [
    "topic.n"
@@ -14462,14 +14756,14 @@
   "key": "ختمة جديدة",
   "kind": "text",
   "where": [
-   "js/app.js:9023"
+   "js/app.js:9343"
   ]
  },
  {
   "key": "يرجع عدّاد الختمة إلى أول المصحف وتبدأ أيام الخطة من اليوم، وكنت قرأت {#0} من {1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9024"
+   "js/app.js:9344"
   ],
   "holes": [
    "ar(Store.progress().pagesRead || 0)",
@@ -14480,22 +14774,22 @@
   "key": "بدأت ختمة جديدة",
   "kind": "text",
   "where": [
-   "js/app.js:9033"
+   "js/app.js:9353"
   ]
  },
  {
   "key": "سنن اليوم",
   "kind": "text",
   "where": [
-   "js/app.js:9044",
-   "js/app.js:9045"
+   "js/app.js:9364",
+   "js/app.js:9365"
   ]
  },
  {
   "key": "سنذكّرك عند {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9050"
+   "js/app.js:9370"
   ],
   "holes": [
    "clockText(new Date(at).getHours() * 60 + new Date(at).getMinutes())"
@@ -14505,21 +14799,21 @@
   "key": "لن تُعرض ليلة الجمعة عند الفتح، وتعيدها من الإعدادات ← السنن والمواسم",
   "kind": "text",
   "where": [
-   "js/app.js:9059"
+   "js/app.js:9379"
   ]
  },
  {
   "key": "لن تُعرض بعد الصلاة، وتعيدها من الإعدادات",
   "kind": "text",
   "where": [
-   "js/app.js:9080"
+   "js/app.js:9400"
   ]
  },
  {
   "key": "تقبّل الله، {0} قضيتها",
   "kind": "pattern",
   "where": [
-   "js/app.js:9113"
+   "js/app.js:9433"
   ],
   "holes": [
    "PRAYER_NAMES[ref]"
@@ -14529,14 +14823,14 @@
   "key": "ليس عليك صيام",
   "kind": "text",
   "where": [
-   "js/app.js:9120"
+   "js/app.js:9440"
   ]
  },
  {
   "key": "تقبّل الله، بقي {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9125"
+   "js/app.js:9445"
   ],
   "holes": [
    "daysOf(left)"
@@ -14546,77 +14840,77 @@
   "key": "تقبّل الله، وقضيت كل ما عليك",
   "kind": "text",
   "where": [
-   "js/app.js:9125"
+   "js/app.js:9445"
   ]
  },
  {
   "key": "لم تعلّم خطوة بعد",
   "kind": "text",
   "where": [
-   "js/app.js:9140"
+   "js/app.js:9460"
   ]
  },
  {
   "key": "البدء من جديد",
   "kind": "text",
   "where": [
-   "js/app.js:9143"
+   "js/app.js:9463"
   ]
  },
  {
   "key": "خطوة واحدة",
   "kind": "text",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "خطوتان",
   "kind": "text",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "خطوات",
   "kind": "text",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "خطوة",
   "kind": "text",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "خطوتين",
   "kind": "text",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "{#0} خطوات",
   "kind": "pattern",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "{#0} خطوة",
   "kind": "pattern",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ]
  },
  {
   "key": "تُمسح علامات الخطوات التي أدّيتها وهي {0} من {#1}، فتبدأ العمرة من أولها",
   "kind": "pattern",
   "where": [
-   "js/app.js:9144"
+   "js/app.js:9464"
   ],
   "holes": [
    "count(marked, 'خطوة واحدة', 'خطوتان', 'خطوات', 'خطوة')",
@@ -14627,29 +14921,29 @@
   "key": "امسح الخطوات",
   "kind": "text",
   "where": [
-   "js/app.js:9146"
+   "js/app.js:9466"
   ]
  },
  {
   "key": "بدأت الخطوات من أولها",
   "kind": "text",
   "where": [
-   "js/app.js:9152"
+   "js/app.js:9472"
   ]
  },
  {
   "key": "حُذف الصوت",
   "kind": "text",
   "where": [
-   "js/app.js:9158",
-   "js/app.js:9430"
+   "js/app.js:9478",
+   "js/app.js:9750"
   ]
  },
  {
   "key": "{0} بالخمس في وقتها، ثبّتك الله",
   "kind": "pattern",
   "where": [
-   "js/app.js:9169"
+   "js/app.js:9489"
   ],
   "holes": [
    "daysOf(st.streak)"
@@ -14659,29 +14953,29 @@
   "key": "نُسخت الآية",
   "kind": "text",
   "where": [
-   "js/app.js:9206"
+   "js/app.js:9526"
   ]
  },
  {
   "key": "تعذّر النسخ",
   "kind": "text",
   "where": [
-   "js/app.js:9206",
-   "js/app.js:9683"
+   "js/app.js:9526",
+   "js/app.js:10003"
   ]
  },
  {
   "key": "مسح كل العلامات",
   "kind": "text",
   "where": [
-   "js/app.js:9221"
+   "js/app.js:9541"
   ]
  },
  {
   "key": "تُمسح العلامات التي وضعتها على الآيات كلها، وعددها {#0}، وتبقى ملاحظاتك عليها كما هي",
   "kind": "pattern",
   "where": [
-   "js/app.js:9222"
+   "js/app.js:9542"
   ],
   "holes": [
    "ar(marked)"
@@ -14691,21 +14985,21 @@
   "key": "امسح العلامات",
   "kind": "text",
   "where": [
-   "js/app.js:9223"
+   "js/app.js:9543"
   ]
  },
  {
   "key": "مُسحت المحفوظات",
   "kind": "text",
   "where": [
-   "js/app.js:9229"
+   "js/app.js:9549"
   ]
  },
  {
   "key": "حصن المسلم، الباب {#0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9315"
+   "js/app.js:9635"
   ],
   "holes": [
    "ar(chapter.id)"
@@ -14715,14 +15009,14 @@
   "key": "أذكار ما بعد الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:9323"
+   "js/app.js:9643"
   ]
  },
  {
   "key": "حصن المسلم، الأذكار بعد السلام من الصلاة{0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9324"
+   "js/app.js:9644"
   ],
   "holes": [
    "after.r > 1 ? '، ' + count(after.r, 'مرة واحدة', 'مرتان', 'مرات', 'مرة') : ''"
@@ -14732,7 +15026,7 @@
   "key": "{0}حصن المسلم{1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9332"
+   "js/app.js:9652"
   ],
   "holes": [
    "it.r ? it.r + '، ' : ''",
@@ -14743,15 +15037,15 @@
   "key": "شغّل التذكير أولاً من المفتاح",
   "kind": "text",
   "where": [
-   "js/app.js:9360",
-   "js/app.js:9491"
+   "js/app.js:9680",
+   "js/app.js:9811"
   ]
  },
  {
   "key": "سورة {0:surah} محفوظة",
   "kind": "pattern",
   "where": [
-   "js/app.js:9419"
+   "js/app.js:9739"
   ],
   "holes": [
    "sm ? sm.ar : ''"
@@ -14761,7 +15055,7 @@
   "key": "تلاوتها بصوت {0} في جهازك، وتعمل بلا إنترنت",
   "kind": "pattern",
   "where": [
-   "js/app.js:9420"
+   "js/app.js:9740"
   ],
   "holes": [
    "esc(reciterName())"
@@ -14771,197 +15065,197 @@
   "key": "احذفها من الجهاز",
   "kind": "text",
   "where": [
-   "js/app.js:9420"
+   "js/app.js:9740"
   ]
  },
  {
   "key": "سُجّلت السورة في تقدمك",
   "kind": "text",
   "where": [
-   "js/app.js:9562"
+   "js/app.js:9882"
   ]
  },
  {
   "key": "صُفّر العدّاد",
   "kind": "text",
   "where": [
-   "js/app.js:9573"
+   "js/app.js:9893"
   ]
  },
  {
   "key": "يصل بنغمة التنبيه في هاتفك",
   "kind": "text",
   "where": [
-   "js/app.js:9594"
+   "js/app.js:9914"
   ]
  },
  {
   "key": "يرنّ الأذان في وقته",
   "kind": "text",
   "where": [
-   "js/app.js:9607"
+   "js/app.js:9927"
   ]
  },
  {
   "key": "أوقفت تنبيه الأذان",
   "kind": "text",
   "where": [
-   "js/app.js:9607"
+   "js/app.js:9927"
   ]
  },
  {
   "key": "أُعيدت عدّادات هذا الباب",
   "kind": "text",
   "where": [
-   "js/app.js:9615"
+   "js/app.js:9935"
   ]
  },
  {
   "key": "لا تُعلَّم صلاة لم يأت يومها",
   "kind": "text",
   "where": [
-   "js/app.js:9621"
+   "js/app.js:9941"
   ]
  },
  {
   "key": "نُسخ جدول الشهر",
   "kind": "text",
   "where": [
-   "js/app.js:9682"
+   "js/app.js:10002"
   ]
  },
  {
   "key": "عاد التاريخ إلى حساب أم القرى",
   "kind": "text",
   "where": [
-   "js/app.js:9690"
+   "js/app.js:10010"
   ]
  },
  {
   "key": "تُعرض الصفحة نصّاً متّصلاً",
   "kind": "text",
   "where": [
-   "js/app.js:9754"
+   "js/app.js:10074"
   ]
  },
  {
   "key": "تُعرض الصفحة كما طُبعت في مصحف المدينة",
   "kind": "text",
   "where": [
-   "js/app.js:9757"
+   "js/app.js:10077"
   ]
  },
  {
   "key": "تعذّر تحميل الصفحات كما طُبعت، فتأكد من الاتصال",
   "kind": "text",
   "where": [
-   "js/app.js:9759"
+   "js/app.js:10079"
   ]
  },
  {
   "key": "ستُعرض الأذكار بعد الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:9773"
+   "js/app.js:10093"
   ]
  },
  {
   "key": "لن تُعرض بعد الصلاة",
   "kind": "text",
   "where": [
-   "js/app.js:9773"
+   "js/app.js:10093"
   ]
  },
  {
   "key": "سيُعمل بها في كل سورة",
   "kind": "text",
   "where": [
-   "js/app.js:9795"
+   "js/app.js:10115"
   ]
  },
  {
   "key": "ستُسأل كل مرة",
   "kind": "text",
   "where": [
-   "js/app.js:9795"
+   "js/app.js:10115"
   ]
  },
  {
   "key": "الساعة على أربع وعشرين",
   "kind": "text",
   "where": [
-   "js/app.js:9804"
+   "js/app.js:10124"
   ]
  },
  {
   "key": "الساعة على اثنتي عشرة",
   "kind": "text",
   "where": [
-   "js/app.js:9804"
+   "js/app.js:10124"
   ]
  },
  {
   "key": "سيصلك ورد اليوم في وقته",
   "kind": "text",
   "where": [
-   "js/app.js:9809"
+   "js/app.js:10129"
   ]
  },
  {
   "key": "أُوقف تذكير الورد",
   "kind": "text",
   "where": [
-   "js/app.js:9809"
+   "js/app.js:10129"
   ]
  },
  {
   "key": "سيصلك تذكير ليلة الجمعة",
   "kind": "text",
   "where": [
-   "js/app.js:9852"
+   "js/app.js:10172"
   ]
  },
  {
   "key": "أُوقف تذكير ليلة الجمعة",
   "kind": "text",
   "where": [
-   "js/app.js:9852"
+   "js/app.js:10172"
   ]
  },
  {
   "key": "سيصلك نداء الجمعة قبلها",
   "kind": "text",
   "where": [
-   "js/app.js:9858"
+   "js/app.js:10178"
   ]
  },
  {
   "key": "أُوقف نداء الجمعة",
   "kind": "text",
   "where": [
-   "js/app.js:9858"
+   "js/app.js:10178"
   ]
  },
  {
   "key": "سيصلك تذكير في ليلة اليوم الذي يُستحب صيامه",
   "kind": "text",
   "where": [
-   "js/app.js:9867"
+   "js/app.js:10187"
   ]
  },
  {
   "key": "أُوقف تذكير الصيام",
   "kind": "text",
   "where": [
-   "js/app.js:9867"
+   "js/app.js:10187"
   ]
  },
  {
   "key": "سيصلك تذكير: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9879",
-   "js/app.js:9934"
+   "js/app.js:10199",
+   "js/app.js:10254"
   ],
   "holes": [
    "pair[1]"
@@ -14971,8 +15265,8 @@
   "key": "أُوقف تذكير {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9879",
-   "js/app.js:9934"
+   "js/app.js:10199",
+   "js/app.js:10254"
   ],
   "holes": [
    "pair[1]"
@@ -14982,7 +15276,7 @@
   "key": "وقت النوم {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9890"
+   "js/app.js:10210"
   ],
   "holes": [
    "timeLabel(e.target.value)"
@@ -14992,29 +15286,29 @@
   "key": "هذا التذكير يصل بلا صوت",
   "kind": "text",
   "where": [
-   "js/app.js:9903",
-   "js/app.js:9998"
+   "js/app.js:10223",
+   "js/app.js:10318"
   ]
  },
  {
   "key": "يصل بصوت الإشعارات في هاتفك",
   "kind": "text",
   "where": [
-   "js/app.js:9904"
+   "js/app.js:10224"
   ]
  },
  {
   "key": "التباين الأعلى",
   "kind": "text",
   "where": [
-   "js/app.js:9938"
+   "js/app.js:10258"
   ]
  },
  {
   "key": "شُغّل {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9944"
+   "js/app.js:10264"
   ],
   "holes": [
    "p[2]"
@@ -15024,7 +15318,7 @@
   "key": "أُوقف {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:9944"
+   "js/app.js:10264"
   ],
   "holes": [
    "p[2]"
@@ -15034,58 +15328,58 @@
   "key": "سيصلك تذكير بصلاة الضحى",
   "kind": "text",
   "where": [
-   "js/app.js:9953"
+   "js/app.js:10273"
   ]
  },
  {
   "key": "أُوقف تذكير الضحى",
   "kind": "text",
   "where": [
-   "js/app.js:9953"
+   "js/app.js:10273"
   ]
  },
  {
   "key": "سيصلك تنبيه عند الثلث الأخير",
   "kind": "text",
   "where": [
-   "js/app.js:9962"
+   "js/app.js:10282"
   ]
  },
  {
   "key": "أُوقف تذكير القيام",
   "kind": "text",
   "where": [
-   "js/app.js:9962"
+   "js/app.js:10282"
   ]
  },
  {
   "key": "سيصلك تذكير بالصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "js/app.js:9970",
-   "js/app.js:9973"
+   "js/app.js:10290",
+   "js/app.js:10293"
   ]
  },
  {
   "key": "تعذّر تحميل نص المصحف",
   "kind": "text",
   "where": [
-   "js/app.js:10069",
-   "js/app.js:10072"
+   "js/app.js:10389",
+   "js/app.js:10392"
   ]
  },
  {
   "key": "سُنّتي: المصحف ومواقيت الصلاة والأذكار والسنن في جهازك، مجاني بلا إعلانات ويعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:10159"
+   "js/app.js:10479"
   ]
  },
  {
   "key": "للآيفون: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:10159"
+   "js/app.js:10479"
   ],
   "holes": [
    "LINKS.apple"
@@ -15095,7 +15389,7 @@
   "key": "لأندرويد: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:10159"
+   "js/app.js:10479"
   ],
   "holes": [
    "LINKS.play"
@@ -15105,7 +15399,7 @@
   "key": "وموقعه: {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:10159"
+   "js/app.js:10479"
   ],
   "holes": [
    "LINKS.web"
@@ -15115,14 +15409,14 @@
   "key": "نُسخت الدعوة بروابطها، فألصقها حيث شئت",
   "kind": "text",
   "where": [
-   "js/app.js:10175"
+   "js/app.js:10495"
   ]
  },
  {
   "key": "تعذّر النسخ، ورابط التطبيق {0}",
   "kind": "pattern",
   "where": [
-   "js/app.js:10176"
+   "js/app.js:10496"
   ],
   "holes": [
    "LINKS.web"
@@ -15132,84 +15426,84 @@
   "key": "ملاحظات على سُنّتي",
   "kind": "text",
   "where": [
-   "js/app.js:10183"
+   "js/app.js:10503"
   ]
  },
  {
   "key": "إن نفعك سُنّتي فقيّمه في المتجر، فتقييمك يدلّ غيرك عليه",
   "kind": "text",
   "where": [
-   "js/app.js:10208"
+   "js/app.js:10528"
   ]
  },
  {
   "key": "قيّمه",
   "kind": "text",
   "where": [
-   "js/app.js:10208"
+   "js/app.js:10528"
   ]
  },
  {
   "key": "أهلاً بك في سُنّتي",
   "kind": "text",
   "where": [
-   "js/app.js:10221"
+   "js/app.js:10541"
   ]
  },
  {
   "key": "مصحفك ومواقيت صلاتك وأذكارك وسننك في مكان واحد يعمل كله بلا إنترنت، وهذه جولة قصيرة فيه لا تأخذ منك دقيقة.",
   "kind": "text",
   "where": [
-   "js/app.js:10222"
+   "js/app.js:10542"
   ]
  },
  {
   "key": "ابدأ الجولة",
   "kind": "text",
   "where": [
-   "js/app.js:10223"
+   "js/app.js:10543"
   ]
  },
  {
   "key": "العدّ إلى الصلاة القادمة في محراب يتبدّل ضوؤه مع الوقت، فالمس المحراب لترى سماء الوقت على الشاشة كلها.",
   "kind": "text",
   "where": [
-   "js/app.js:10225"
+   "js/app.js:10545"
   ]
  },
  {
   "key": "مواقيت الصلوات لمدينتك، واضغط الصلاة بعد أدائها لتسجّل كيف صلّيتها وتتابع شهرك كله.",
   "kind": "text",
   "where": [
-   "js/app.js:10227"
+   "js/app.js:10547"
   ]
  },
  {
   "key": "المصحف كاملاً في جهازك برواية حفص بالرسم العثماني، ومعه التفسير والتلاوة بأصوات القرّاء.",
   "kind": "text",
   "where": [
-   "js/app.js:10229"
+   "js/app.js:10549"
   ]
  },
  {
   "key": "سنن يومك من الاستيقاظ إلى النوم، فسجّل ما أدّيته منها ليُحسب في وردك.",
   "kind": "text",
   "where": [
-   "js/app.js:10231"
+   "js/app.js:10551"
   ]
  },
  {
   "key": "القبلة والمساجد القريبة والأذكار وصفة العمرة والتذكيرات والإعدادات، وفي الإعدادات تجد هذه الجولة متى أردتها.",
   "kind": "text",
   "where": [
-   "js/app.js:10233"
+   "js/app.js:10553"
   ]
  },
  {
   "key": "الخطوة {#0} من {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:10341"
+   "js/app.js:10661"
   ],
   "holes": [
    "ar(tour.at + 1)",
@@ -15220,107 +15514,107 @@
   "key": "سُنّتي على Google Play، وفيه يصلك الأذان والتطبيق مغلق",
   "kind": "text",
   "where": [
-   "js/app.js:10450"
+   "js/app.js:10770"
   ]
  },
  {
   "key": "ثبّته",
   "kind": "text",
   "where": [
-   "js/app.js:10450"
+   "js/app.js:10770"
   ]
  },
  {
   "key": "سُنّتي تطبيق عربي، فاقرأه بالعربية إن شئت",
   "kind": "text",
   "where": [
-   "js/app.js:10477"
+   "js/app.js:10797"
   ]
  },
  {
   "key": "العربية",
   "kind": "text",
   "where": [
-   "js/app.js:10477"
+   "js/app.js:10797"
   ]
  },
  {
   "key": "ثبّت سُنّتي على جهازك ليعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:10491"
+   "js/app.js:10811"
   ]
  },
  {
   "key": "تثبيت",
   "kind": "text",
   "where": [
-   "js/app.js:10491"
+   "js/app.js:10811"
   ]
  },
  {
   "key": "ثُبّت سُنّتي، وتجده الآن مع تطبيقاتك",
   "kind": "text",
   "where": [
-   "js/app.js:10498"
+   "js/app.js:10818"
   ]
  },
  {
   "key": "من قائمة الخيارات اختر: إضافة إلى الشاشة الرئيسية",
   "kind": "text",
   "where": [
-   "js/app.js:10505"
+   "js/app.js:10825"
   ]
  },
  {
   "key": "جاري التثبيت",
   "kind": "text",
   "where": [
-   "js/app.js:10510"
+   "js/app.js:10830"
   ]
  },
  {
   "key": "لا اتصال الآن، والمصحف والأذكار والمواقيت تعمل كما هي",
   "kind": "text",
   "where": [
-   "js/app.js:10521",
-   "js/app.js:10525"
+   "js/app.js:10841",
+   "js/app.js:10845"
   ]
  },
  {
   "key": "وصل تحديث للتطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:10543"
+   "js/app.js:10863"
   ]
  },
  {
   "key": "حدّث الآن",
   "kind": "text",
   "where": [
-   "js/app.js:10543",
-   "js/app.js:10594"
+   "js/app.js:10863",
+   "js/app.js:10914"
   ]
  },
  {
   "key": "وصل تحديث جديد للتطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:10594"
+   "js/app.js:10914"
   ]
  },
  {
   "key": "حيّ الله أهل",
   "kind": "text",
   "where": [
-   "js/boot.js:94"
+   "js/boot.js:116"
   ]
  },
  {
   "key": "حيّاكم الله",
   "kind": "text",
   "where": [
-   "js/boot.js:94"
+   "js/boot.js:116"
   ]
  },
  {
@@ -15680,7 +15974,7 @@
   "kind": "text",
   "where": [
    "js/prayer-engine.js format",
-   "js/app.js:8367",
+   "js/app.js:8593",
    "js/prayer-engine.js:212"
   ]
  },
@@ -15689,7 +15983,7 @@
   "kind": "text",
   "where": [
    "js/prayer-engine.js format",
-   "js/app.js:8367",
+   "js/app.js:8593",
    "js/prayer-engine.js:212"
   ]
  },
@@ -15816,7 +16110,7 @@
   "key": "هذا الملف ليس نسخة احتياطية من التطبيق",
   "kind": "text",
   "where": [
-   "js/store.js:646"
+   "js/store.js:645"
   ]
  }
 ]
