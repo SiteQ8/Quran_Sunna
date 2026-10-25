@@ -102,7 +102,8 @@ const HAND = {
   'afterprayer#0': 66, /* forgiveness three times, then As-Salam: one dhikr in the book */
   'afterprayer#7': 69, /* the hundredth after the three thirty-threes, as the book says it */
   'food#4': 179,      /* after food, and after milk: one dhikr in the book */
-  'toilet#0': 10      /* Bismillah, which the app's copy of the chapter keeps in a note */
+  'toilet#0': 10,     /* Bismillah, which the app's copy of the chapter keeps in a note */
+  'evening#16': 89    /* its evening wording, which the book gives in a note beside the morning's */
 };
 
 function load() {
