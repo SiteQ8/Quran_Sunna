@@ -55,7 +55,29 @@
       try { zone = Intl.DateTimeFormat().resolvedOptions().timeZone || ''; } catch (e) { zone = ''; }
     }
     var LANDS = { 'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae', 'Asia/Qatar': 'qa',
-      'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om' };
+      'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om',
+      'Africa/Cairo': 'eg',
+      'Asia/Kolkata': 'in',
+      'Asia/Calcutta': 'in',
+      'Asia/Baghdad': 'iq',
+      'Asia/Amman': 'jo',
+      'Africa/Casablanca': 'ma',
+      'Africa/Algiers': 'dz',
+      'Asia/Damascus': 'sy',
+      'Asia/Aden': 'ye',
+      'Africa/Tripoli': 'ly',
+      'Asia/Jakarta': 'id',
+      'Asia/Pontianak': 'id',
+      'Asia/Makassar': 'id',
+      'Asia/Jayapura': 'id',
+      'Asia/Kuala_Lumpur': 'my',
+      'Asia/Kuching': 'my',
+      'Europe/Istanbul': 'tr',
+      'Asia/Istanbul': 'tr',
+      'Asia/Karachi': 'pk',
+      'Asia/Dhaka': 'bd',
+      'Asia/Dacca': 'bd',
+      'Africa/Lagos': 'ng' };
     var land = Object.prototype.hasOwnProperty.call(LANDS, zone) ? LANDS[zone] : 'default';
 
     var now = new Date();

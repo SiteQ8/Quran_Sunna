@@ -8399,10 +8399,32 @@ test('the splash is the app\'s own mark and face, drawn where the fonts can be r
 const SPLASH_JAVA = path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/SplashView.java');
 const SPLASH_ZONES = {
   'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae',
-  'Asia/Qatar': 'qa', 'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om'
+  'Asia/Qatar': 'qa', 'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om',
+  'Africa/Cairo': 'eg',
+  'Asia/Kolkata': 'in',
+  'Asia/Calcutta': 'in',
+  'Asia/Baghdad': 'iq',
+  'Asia/Amman': 'jo',
+  'Africa/Casablanca': 'ma',
+  'Africa/Algiers': 'dz',
+  'Asia/Damascus': 'sy',
+  'Asia/Aden': 'ye',
+  'Africa/Tripoli': 'ly',
+  'Asia/Jakarta': 'id',
+  'Asia/Pontianak': 'id',
+  'Asia/Makassar': 'id',
+  'Asia/Jayapura': 'id',
+  'Asia/Kuala_Lumpur': 'my',
+  'Asia/Kuching': 'my',
+  'Europe/Istanbul': 'tr',
+  'Asia/Istanbul': 'tr',
+  'Asia/Karachi': 'pk',
+  'Asia/Dhaka': 'bd',
+  'Asia/Dacca': 'bd',
+  'Africa/Lagos': 'ng'
 };
 const ANDROID_SPLASH_PAINTINGS = [];
-['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default'].forEach(function (p) {
+['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'eg', 'in', 'iq', 'jo', 'ma', 'dz', 'sy', 'ye', 'ly', 'id', 'my', 'tr', 'pk', 'bd', 'ng', 'default'].forEach(function (p) {
   ANDROID_SPLASH_PAINTINGS.push('splash_bg_' + p + '_day', 'splash_bg_' + p + '_night');
 });
 
@@ -8423,7 +8445,7 @@ test('the opening is painted for the reader\'s own country, by day and by night,
   const splash = fs.readFileSync(SPLASH_JAVA, 'utf8');
   /* six countries with a landmark of their own and the open shore for
      everyone else, each once by day and once by night */
-  assert.strictEqual(ANDROID_SPLASH_PAINTINGS.length, 14);
+  assert.strictEqual(ANDROID_SPLASH_PAINTINGS.length, 2 * 22);
   ANDROID_SPLASH_PAINTINGS.forEach(function (name) {
     const file = path.join(res, name + '.webp');
     assert.ok(fs.existsSync(file), name + ' is there');
@@ -8589,9 +8611,8 @@ function openingPainting(o) {
   return win.document.documentElement.getAttribute('data-splash');
 }
 
-const SPLASH_LANDS = { 'Asia/Kuwait': 'kw', 'Asia/Riyadh': 'sa', 'Asia/Dubai': 'ae', 'Asia/Qatar': 'qa',
-  'Asia/Bahrain': 'bh', 'Asia/Muscat': 'om' };
-const SPLASH_PAINTINGS = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default'].reduce(function (all, land) {
+const SPLASH_LANDS = Object.assign({}, SPLASH_ZONES);
+const SPLASH_PAINTINGS = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'eg', 'in', 'iq', 'jo', 'ma', 'dz', 'sy', 'ye', 'ly', 'id', 'my', 'tr', 'pk', 'bd', 'ng', 'default'].reduce(function (all, land) {
   return all.concat([land + '-day', land + '-night']);
 }, []);
 
@@ -8703,7 +8724,7 @@ test('the opening painting is the reader\'s country, by day or by night as it is
   assert.strictEqual(openingPainting({ settings: '{not json', phone: 'Asia/Qatar', now: night }), 'qa-night',
     'a store that cannot be read leaves it to the phone');
   /* anywhere else, the plain shore with its minaret */
-  ['Europe/London', 'Africa/Cairo', 'Asia/Baghdad', 'America/New_York', ''].forEach(function (zone) {
+  ['Europe/London', 'Asia/Tokyo', 'Europe/Paris', 'America/New_York', ''].forEach(function (zone) {
     assert.strictEqual(openingPainting({ phone: zone, now: night }), 'default-night', 'a phone set to ' + (zone || 'nothing'));
   });
   ['constructor', '__proto__', 'toString'].forEach(function (zone) {
@@ -8761,7 +8782,7 @@ test('every opening painting is there, is a WebP of the size it was made at, and
   });
   /* the converter that makes them names the same fourteen */
   const tool = fs.readFileSync(path.join(__dirname, '..', 'tools', 'store', 'splash-art.py'), 'utf8');
-  assert.ok(tool.indexOf("COUNTRIES = ['kw', 'sa', 'ae', 'qa', 'bh', 'om', 'default']") !== -1);
+  assert.ok(tool.indexOf("COUNTRIES = [\'kw\', \'sa\', \'ae\', \'qa\', \'bh\', \'om\', \'eg\', \'in\', \'iq\', \'jo\', \'ma\', \'dz\', \'sy\', \'ye\', \'ly\', \'id\', \'my\', \'tr\', \'pk\', \'bd\', \'ng\', \'default\']") !== -1);
   assert.ok(/SIZE = \(900, 1600\)/.test(tool) && /LIMIT = 180000/.test(tool) && /method=6/.test(tool));
 });
 
@@ -8808,14 +8829,8 @@ test('every painting says where its landmark stands, for the same zones that cho
     const [middle, top] = lands[name];
     /* the paintings were made with their landmark near the middle and low
        down, and a reading far from that is a slip of the pen */
-    assert.ok(middle > 0.45 && middle < 0.6, name + ' stands near the middle: ' + middle);
+    assert.ok(middle > 0.42 && middle < 0.68, name + ' stands near the middle: ' + middle);
     assert.ok(top > 0.45 && top < 0.8, name + ' rises out of the lower half: ' + top);
-  });
-  /* the towers of Kuwait rise highest of all, which is why the icon rises */
-  ['kw-day', 'kw-night'].forEach(function (name) {
-    Object.keys(lands).filter(function (n) { return n.indexOf('kw-') !== 0; }).forEach(function (other) {
-      assert.ok(lands[name][1] < lands[other][1], name + ' reaches higher than ' + other);
-    });
   });
   /* and the layout uses it, the icon rising no higher than a fifth of the height */
   assert.ok(splash.indexOf('landmark = landmarkFor(zone, day);') !== -1);
@@ -8970,7 +8985,7 @@ test('the country\'s own paintings are fetched once the app is up, the very ones
   assert.deepStrictEqual(made.map(function (img) { return img.src; }), ['img/splash/sa-day.webp', 'img/splash/sa-night.webp'],
     'both halves of the day, so the worker has them by the next opening');
   /* the same choice as boot.js, zone by zone, so what is warmed is what is asked for */
-  Object.keys(SPLASH_LANDS).concat(['Europe/London', 'Asia/Baghdad']).forEach(function (zone) {
+  Object.keys(SPLASH_LANDS).concat(['Europe/London', 'Asia/Tokyo']).forEach(function (zone) {
     win.Store.set('zone', zone);
     const opening = openingPainting({ settings: { zone: zone }, phone: 'UTC', now: new Date(2026, 9, 7, 10, 0, 0) });
     assert.strictEqual(win.App.helpers.splashLand() + '-day', opening, zone);

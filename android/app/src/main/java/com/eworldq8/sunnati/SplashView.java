@@ -17,9 +17,11 @@ import java.util.TimeZone;
  * name under the icon.
  *
  * The country is read from the phone's time zone, which needs no permission
- * and is right before the page has said anything. Asia/Kuwait, Asia/Riyadh,
- * Asia/Dubai, Asia/Qatar, Asia/Bahrain and Asia/Muscat each have a landmark
- * of their own, and every other zone gets the open shore. Day runs from 05:00
+ * and is right before the page has said anything. The six Gulf states,
+ * Egypt, India, Iraq, Jordan, Morocco, Algeria, Syria, Yemen, Libya,
+ * Indonesia, Malaysia, Turkey, Pakistan, Bangladesh and Nigeria each have a
+ * landmark of their own, by every zone the country keeps, and every other
+ * zone gets the open shore. Day runs from 05:00
  * to 17:59 by the phone's clock and every other hour is night. The hour, not
  * the dark theme, chooses the painting, the icon picture and the colours of
  * the greeting, since a painting of the night sky at noon reads as wrong
@@ -146,6 +148,50 @@ final class SplashView extends View {
                 return day ? R.drawable.splash_bg_bh_day : R.drawable.splash_bg_bh_night;
             case "Asia/Muscat":
                 return day ? R.drawable.splash_bg_om_day : R.drawable.splash_bg_om_night;
+            case "Africa/Cairo":
+                return day ? R.drawable.splash_bg_eg_day : R.drawable.splash_bg_eg_night;
+            case "Asia/Kolkata":
+                return day ? R.drawable.splash_bg_in_day : R.drawable.splash_bg_in_night;
+            case "Asia/Calcutta":
+                return day ? R.drawable.splash_bg_in_day : R.drawable.splash_bg_in_night;
+            case "Asia/Baghdad":
+                return day ? R.drawable.splash_bg_iq_day : R.drawable.splash_bg_iq_night;
+            case "Asia/Amman":
+                return day ? R.drawable.splash_bg_jo_day : R.drawable.splash_bg_jo_night;
+            case "Africa/Casablanca":
+                return day ? R.drawable.splash_bg_ma_day : R.drawable.splash_bg_ma_night;
+            case "Africa/Algiers":
+                return day ? R.drawable.splash_bg_dz_day : R.drawable.splash_bg_dz_night;
+            case "Asia/Damascus":
+                return day ? R.drawable.splash_bg_sy_day : R.drawable.splash_bg_sy_night;
+            case "Asia/Aden":
+                return day ? R.drawable.splash_bg_ye_day : R.drawable.splash_bg_ye_night;
+            case "Africa/Tripoli":
+                return day ? R.drawable.splash_bg_ly_day : R.drawable.splash_bg_ly_night;
+            case "Asia/Jakarta":
+                return day ? R.drawable.splash_bg_id_day : R.drawable.splash_bg_id_night;
+            case "Asia/Pontianak":
+                return day ? R.drawable.splash_bg_id_day : R.drawable.splash_bg_id_night;
+            case "Asia/Makassar":
+                return day ? R.drawable.splash_bg_id_day : R.drawable.splash_bg_id_night;
+            case "Asia/Jayapura":
+                return day ? R.drawable.splash_bg_id_day : R.drawable.splash_bg_id_night;
+            case "Asia/Kuala_Lumpur":
+                return day ? R.drawable.splash_bg_my_day : R.drawable.splash_bg_my_night;
+            case "Asia/Kuching":
+                return day ? R.drawable.splash_bg_my_day : R.drawable.splash_bg_my_night;
+            case "Europe/Istanbul":
+                return day ? R.drawable.splash_bg_tr_day : R.drawable.splash_bg_tr_night;
+            case "Asia/Istanbul":
+                return day ? R.drawable.splash_bg_tr_day : R.drawable.splash_bg_tr_night;
+            case "Asia/Karachi":
+                return day ? R.drawable.splash_bg_pk_day : R.drawable.splash_bg_pk_night;
+            case "Asia/Dhaka":
+                return day ? R.drawable.splash_bg_bd_day : R.drawable.splash_bg_bd_night;
+            case "Asia/Dacca":
+                return day ? R.drawable.splash_bg_bd_day : R.drawable.splash_bg_bd_night;
+            case "Africa/Lagos":
+                return day ? R.drawable.splash_bg_ng_day : R.drawable.splash_bg_ng_night;
             default:
                 return day ? R.drawable.splash_bg_default_day : R.drawable.splash_bg_default_night;
         }
@@ -173,6 +219,50 @@ final class SplashView extends View {
                 return day ? new float[] { 0.53f, 0.675f } : new float[] { 0.52f, 0.702f };
             case "Asia/Muscat":
                 return day ? new float[] { 0.49f, 0.643f } : new float[] { 0.5f, 0.651f };
+            case "Africa/Cairo":
+                return day ? new float[] { 0.495f, 0.556f } : new float[] { 0.509f, 0.571f };
+            case "Asia/Kolkata":
+                return day ? new float[] { 0.511f, 0.546f } : new float[] { 0.509f, 0.579f };
+            case "Asia/Calcutta":
+                return day ? new float[] { 0.511f, 0.546f } : new float[] { 0.509f, 0.579f };
+            case "Asia/Baghdad":
+                return day ? new float[] { 0.579f, 0.555f } : new float[] { 0.556f, 0.564f };
+            case "Asia/Amman":
+                return day ? new float[] { 0.498f, 0.569f } : new float[] { 0.496f, 0.588f };
+            case "Africa/Casablanca":
+                return day ? new float[] { 0.51f, 0.496f } : new float[] { 0.539f, 0.54f };
+            case "Africa/Algiers":
+                return day ? new float[] { 0.493f, 0.519f } : new float[] { 0.556f, 0.499f };
+            case "Asia/Damascus":
+                return day ? new float[] { 0.476f, 0.556f } : new float[] { 0.448f, 0.583f };
+            case "Asia/Aden":
+                return day ? new float[] { 0.473f, 0.541f } : new float[] { 0.514f, 0.586f };
+            case "Africa/Tripoli":
+                return day ? new float[] { 0.533f, 0.57f } : new float[] { 0.531f, 0.571f };
+            case "Asia/Jakarta":
+                return day ? new float[] { 0.653f, 0.536f } : new float[] { 0.629f, 0.584f };
+            case "Asia/Pontianak":
+                return day ? new float[] { 0.653f, 0.536f } : new float[] { 0.629f, 0.584f };
+            case "Asia/Makassar":
+                return day ? new float[] { 0.653f, 0.536f } : new float[] { 0.629f, 0.584f };
+            case "Asia/Jayapura":
+                return day ? new float[] { 0.653f, 0.536f } : new float[] { 0.629f, 0.584f };
+            case "Asia/Kuala_Lumpur":
+                return day ? new float[] { 0.59f, 0.53f } : new float[] { 0.594f, 0.559f };
+            case "Asia/Kuching":
+                return day ? new float[] { 0.59f, 0.53f } : new float[] { 0.594f, 0.559f };
+            case "Europe/Istanbul":
+                return day ? new float[] { 0.512f, 0.541f } : new float[] { 0.498f, 0.611f };
+            case "Asia/Istanbul":
+                return day ? new float[] { 0.512f, 0.541f } : new float[] { 0.498f, 0.611f };
+            case "Asia/Karachi":
+                return day ? new float[] { 0.508f, 0.588f } : new float[] { 0.491f, 0.645f };
+            case "Asia/Dhaka":
+                return day ? new float[] { 0.471f, 0.688f } : new float[] { 0.493f, 0.745f };
+            case "Asia/Dacca":
+                return day ? new float[] { 0.471f, 0.688f } : new float[] { 0.493f, 0.745f };
+            case "Africa/Lagos":
+                return day ? new float[] { 0.527f, 0.557f } : new float[] { 0.501f, 0.613f };
             default:
                 return day ? new float[] { 0.51f, 0.72f } : new float[] { 0.515f, 0.712f };
         }
