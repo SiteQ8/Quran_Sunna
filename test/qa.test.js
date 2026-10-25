@@ -667,9 +667,11 @@ test('the morning and evening lists open with آية الكرسي and the three 
     const items = win.AZKAR_DB[key].items;
     assert.strictEqual(items[0].t, book[0].t, key + ': the words of the book');
     assert.strictEqual(items[0].c, book[0].r);
-    /* the count is the counter's, not a note in brackets after the words */
-    assert.strictEqual(items[1].t, book[1].t.replace(/\s*\([^()]*\)$/, ''));
-    assert.strictEqual(items[1].c, book[1].r);
+    /* the three quls each on a card of its own, three times each, and the
+       three together the book's words, the count the counter's and not a
+       note in brackets after them */
+    assert.strictEqual([1, 2, 3].map((i) => items[i].t).join('. '), book[1].t.replace(/\s*\([^()]*\)$/, ''));
+    [1, 2, 3].forEach((i) => assert.strictEqual(items[i].c, book[1].r));
     assert.strictEqual(items[1].c, 3);
   });
   win.App.go('azkar');
@@ -683,12 +685,13 @@ test('a day counted before the two were added keeps its counts on the same adhka
   storage.setItem(key, JSON.stringify({ azkar: { morning: { 0: 0, 5: 2 }, evening: { 3: 0 }, sleep: { 1: 0 } }, sunnah: {} }));
   let { win } = boot({ storage: storage, now: new Date(2026, 9, 12, 9, 0, 0) });
   let rec = JSON.parse(storage.getItem(key));
-  assert.deepStrictEqual(rec.azkar.morning, { 2: 0, 7: 2 }, 'moved along by the two at the head');
-  assert.deepStrictEqual(rec.azkar.evening, { 5: 0 });
-  assert.deepStrictEqual(rec.azkar.sleep, { 1: 0 }, 'other lists are as they were');
+  /* by the two at the head, then to where the book's order sets them */
+  assert.deepStrictEqual(rec.azkar.morning, { 4: 0, 9: 2 }, 'moved along by the two at the head, then to their places now');
+  assert.deepStrictEqual(rec.azkar.evening, { 7: 0 });
+  assert.deepStrictEqual(rec.azkar.sleep, { 4: 0 }, 'and the sleep list after the three the book opens it with');
   ({ win } = boot({ storage: storage, now: new Date(2026, 9, 12, 9, 0, 0) }));
   rec = JSON.parse(storage.getItem(key));
-  assert.deepStrictEqual(rec.azkar.morning, { 2: 0, 7: 2 }, 'and moved once only');
+  assert.deepStrictEqual(rec.azkar.morning, { 4: 0, 9: 2 }, 'and moved once only');
 
   /* a day counted now carries the order it was counted in */
   win.Store.setAzkarCount('morning', 0, 0);
@@ -700,7 +703,24 @@ test('a day counted before the two were added keeps its counts on the same adhka
   const old = { app: 'sunnati', version: 5, data: { 'sunnati.day.2026-10-10': JSON.stringify({ azkar: { morning: { 1: 0 } } }) } };
   win.Store.importAll(JSON.stringify(old));
   win.App.helpers.settleAzkar();
-  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-10')).azkar.morning, { 3: 0 });
+  assert.deepStrictEqual(JSON.parse(storage.getItem('sunnati.day.2026-10-10')).azkar.morning, { 5: 0 });
+});
+
+test('a day counted in the order before the book\'s keeps each count on its dhikr', () => {
+  const storage = memoryStorage();
+  const key = 'sunnati.day.2026-10-24';
+  /* the quls done, the evening's cut سيد الاستغفار done, the old العفو
+     card half said, a travel card that left the list, and the sick card
+     that became two */
+  storage.setItem(key, JSON.stringify({ azkarOrder: 1, azkar: {
+    morning: { 1: 0, 9: 2, 18: 0, 20: 4 }, evening: { 4: 0, 13: 1 }, travel: { 2: 0, 4: 0 }, sick: { 3: 0 } }, sunnah: {} }));
+  boot({ storage: storage, now: new Date(2026, 9, 24, 9, 0, 0) });
+  const rec = JSON.parse(storage.getItem(key));
+  assert.deepStrictEqual(rec.azkar.morning, { 1: 0, 2: 0, 3: 0, 23: 4 }, 'each qul done, the cut card started again, the one that left gone');
+  assert.deepStrictEqual(rec.azkar.evening, { 6: 0, 21: 1 });
+  assert.deepStrictEqual(rec.azkar.travel, { 1: 0 });
+  assert.deepStrictEqual(rec.azkar.sick, { 3: 0, 4: 0 });
+  assert.strictEqual(rec.azkarOrder, 2);
 });
 
 test('the shortcut named أذكار الصباح opens the morning list', () => {

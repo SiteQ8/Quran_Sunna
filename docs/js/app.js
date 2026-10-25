@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.105';
+  var VERSION = '8.87.109';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3010,30 +3010,79 @@
     return written;
   }
 
-  /* آية الكرسي and the three quls head the morning and the evening lists, as
-     they head باب ٢٧ of the book, two entries in each. A dhikr is counted by
-     its place in its list, so a day counted against the shorter lists, which
-     carries no mark of the order, has its counts moved along by two, once, and
-     every tap stays on the dhikr it was made on. A backup from before brings
-     such days with it, so this runs after a restore as well as at the start. */
-  var AZKAR_HEAD = { morning: 2, evening: 2 };
+  /* A dhikr is counted by its place in its list, so a day counted against an
+     older order of the lists has its counts carried to where each dhikr
+     stands now, one step for each order it missed. Each step maps a list's
+     old places to its new ones: a number, several where one card became
+     several, or nothing where a dhikr left the list. A count carries when the
+     dhikr was finished, or when what is left still fits the new card; one that
+     does not fit starts again. A day with no mark of its order was counted
+     before آية الكرسي and the three quls headed the morning and the evening,
+     two entries then. A backup from before brings such days with it, so this
+     runs after a restore as well as at the start. */
+  function shiftBy(n, length) {
+    var map = [];
+    for (var i = 0; i < length; i++) map.push(i + n);
+    return map;
+  }
+
+  var AZKAR_STEPS = [
+    /* to 1: آية الكرسي and the quls at the head of both, two entries */
+    { morning: shiftBy(2, 40), evening: shiftBy(2, 40) },
+    /* to 2: the morning and the evening as باب ٢٧ of the book has them, the
+       three quls each on a card of its own, the whole of سيد الاستغفار and of
+       every dhikr that had been cut short, and those that were missing, in
+       every list reviewed against the book */
+    { morning: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 15, 17, 18, 19, 20, null, 22, 23],
+      evening: [0, [1, 2, 3], 4, 5, 6, 7, 8, 9, 10, 11, 11, 13, 14, 21, 18, 19, 20, 22],
+      sleep: [3, 4, 5, 6, 7, 8, 9, 10, 11],
+      wakeup: [0, 1, 2, null],
+      afterprayer: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13],
+      mosque: [0, 1],
+      home: [0, 1],
+      food: [0, 1, 2, 3, 4, 5],
+      travel: [0, null, null, null, 1, 2],
+      rain: [0, 1, 2, 3],
+      distress: [0, 1, 2, 3, 4],
+      wearing: [0, 1],
+      mirror: [0],
+      market: [0, 1],
+      istighfar: [0, 1, 2, 3, 4],
+      sick: [0, 1, 2, [3, 4]],
+      hardship: [0, 1, 2, 3, 4],
+      funeral: [0, 1, 2, 3] }
+  ];
 
   function settleAzkar() {
     return Store.eachDay(function (rec) {
-      if (+rec.azkarOrder >= Store.AZKAR_ORDER) return false;
-      var changed = false;
-      Object.keys(AZKAR_HEAD).forEach(function (list) {
-        var counts = rec.azkar && rec.azkar[list];
-        if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return;
-        var moved = {};
-        Object.keys(counts).forEach(function (i) {
-          moved[/^\d+$/.test(i) ? +i + AZKAR_HEAD[list] : i] = counts[i];
+      var from = +rec.azkarOrder || 0;
+      if (from >= Store.AZKAR_ORDER) return false;
+      for (var step = from; step < Store.AZKAR_ORDER && step < AZKAR_STEPS.length; step++) {
+        Object.keys(AZKAR_STEPS[step]).forEach(function (list) {
+          var counts = rec.azkar && rec.azkar[list];
+          if (!counts || typeof counts !== 'object' || Array.isArray(counts)) return;
+          var map = AZKAR_STEPS[step][list];
+          var items = AZKAR_DB[list] ? AZKAR_DB[list].items : [];
+          var moved = {};
+          Object.keys(counts).forEach(function (i) {
+            if (!/^\d+$/.test(i)) { moved[i] = counts[i]; return; }
+            var to = map[+i];
+            if (to === null || to === undefined) return;
+            [].concat(to).forEach(function (j) {
+              var left = counts[i];
+              /* an intermediate step is not checked against today's cards */
+              var last = step === Store.AZKAR_ORDER - 1;
+              if (last && left !== 0 && !(items[j] && left <= (items[j].c || 1))) return;
+              if (Object.prototype.hasOwnProperty.call(moved, j) && moved[j] !== 0) return;
+              if (Object.prototype.hasOwnProperty.call(moved, j) && left !== 0) return;
+              moved[j] = left;
+            });
+          });
+          rec.azkar[list] = moved;
         });
-        rec.azkar[list] = moved;
-        changed = true;
-      });
-      if (changed) rec.azkarOrder = Store.AZKAR_ORDER;
-      return changed;
+      }
+      rec.azkarOrder = Store.AZKAR_ORDER;
+      return true;
     });
   }
 
