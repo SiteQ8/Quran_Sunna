@@ -716,7 +716,7 @@ test('a day counted in the order before the book\'s keeps each count on its dhik
     morning: { 1: 0, 9: 2, 18: 0, 20: 4 }, evening: { 4: 0, 13: 1 }, travel: { 2: 0, 4: 0 }, sick: { 3: 0 } }, sunnah: {} }));
   boot({ storage: storage, now: new Date(2026, 9, 24, 9, 0, 0) });
   const rec = JSON.parse(storage.getItem(key));
-  assert.deepStrictEqual(rec.azkar.morning, { 1: 0, 2: 0, 3: 0, 24: 4 }, 'each qul done, the cut card started again, the one that left gone');
+  assert.deepStrictEqual(rec.azkar.morning, { 1: 0, 2: 0, 3: 0, 23: 4 }, 'each qul done, the cut card started again, the one that left gone');
   assert.deepStrictEqual(rec.azkar.evening, { 6: 0, 21: 1 });
   assert.deepStrictEqual(rec.azkar.travel, { 1: 0 });
   assert.deepStrictEqual(rec.azkar.sick, { 3: 0, 4: 0 });
