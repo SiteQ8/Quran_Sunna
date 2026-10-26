@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.111';
+  var VERSION = '8.87.112';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3056,7 +3056,8 @@
        hundred times in the morning beside the one said ten, and the cards
        whose words were set right kept where they were */
     { morning: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24],
-      sleep: [[0, 1, 2], 3, 4, 5, 6, 7, 8, 17, 9, 10, 11, 12, 13, 14, 15, 16] }
+      sleep: [[0, 1, 2], 3, 4, 5, 6, 7, 8, 17, 9, 10, 11, 12, 13, 14, 15, 16],
+      adhan: [0, 1, 2, 3, null] }
   ];
 
   function settleAzkar() {
@@ -6742,7 +6743,7 @@
       var target = item.c || 1;
       var left = Object.prototype.hasOwnProperty.call(counts, i) ? counts[i] : target;
       var done = left === 0;
-      return dhikrCard({ t: item.t, r: item.r, n: item.n }, i, target, left, done, 'daily');
+      return dhikrCard({ t: item.t, r: item.r, n: item.n, s: item.s }, i, target, left, done, 'daily');
     }).join('') + bookSource('hisn');
     withBook('hisn', function () { if (state.view === 'azkar-list') renderAzkarList(); });
 
