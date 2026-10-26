@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.109';
+  var VERSION = '8.87.110';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6698,6 +6698,8 @@
         return heard ? '<button class="dhikr-share" data-hear="' + esc(heard.f) +
           '" aria-label="استمع لـ' + esc(heard.t) + ' بصوت ' + esc(heard.n) + '">' + icon('play') + '</button>' : '';
       }()) +
+      /* a card that asks for a whole surah opens it in the mushaf */
+      (item.s ? '<button class="dhikr-share" data-dhikr-surah="' + (+item.s) + '" aria-label="افتح السورة في المصحف">' + icon('book') + '</button>' : '') +
       '<button class="dhikr-share" data-picture="' + kind + ':' + i + '" aria-label="صورة للمشاركة">' + icon('share') + '</button>' +
       '<span class="dhikr-count' + (isDone ? ' is-done' : '') + '">' +
       ring(said, target) + '<span class="dhikr-left">' + (isDone ? icon('check') : ar(left)) + '</span></span></div></div>';
@@ -9620,6 +9622,8 @@
     var azkar = target.closest('[data-azkar]');
     if (azkar) { openAzkar(azkar.getAttribute('data-azkar')); return; }
 
+    var dhikrSurah = target.closest('[data-dhikr-surah]');
+    if (dhikrSurah) { state.surah = +dhikrSurah.getAttribute('data-dhikr-surah'); go('reader'); return; }
     var picture = target.closest('[data-picture]');
     if (picture) {
       var picRef = picture.getAttribute('data-picture').split(':');
