@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.110';
+  var VERSION = '8.87.111';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3050,7 +3050,13 @@
       istighfar: [0, 1, 2, 3, 4],
       sick: [0, 1, 2, [3, 4]],
       hardship: [0, 1, 2, 3, 4],
-      funeral: [0, 1, 2, 3] }
+      funeral: [0, 1, 2, 3] },
+    /* to 3: the three quls before sleep each on a card of its own, «أسلمت
+       نفسي إليك» the last of the night as the hadith asks, the tahlil said a
+       hundred times in the morning beside the one said ten, and the cards
+       whose words were set right kept where they were */
+    { morning: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 21, 22, 23, 24],
+      sleep: [[0, 1, 2], 3, 4, 5, 6, 7, 8, 17, 9, 10, 11, 12, 13, 14, 15, 16] }
   ];
 
   function settleAzkar() {
