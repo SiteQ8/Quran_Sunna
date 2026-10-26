@@ -235,7 +235,7 @@
   /* The order of the morning and evening lists a day was counted in. A dhikr
      is counted by its place in its list, so a day counted in an older order
      has its counts moved to where each dhikr stands now (settleAzkar). */
-  var AZKAR_ORDER = 2;
+  var AZKAR_ORDER = 3;
 
   /* marked: what a row of the hour card marked by itself, by the row, so a
      second touch can take back only that, even after the app was closed */

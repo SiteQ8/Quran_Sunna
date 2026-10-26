@@ -3205,7 +3205,9 @@ test('the sections added carry sound attributions', () => {
 test('no dhikr is repeated inside its own section', () => {
   const { win } = boot();
   Object.keys(win.AZKAR_DB).forEach(function (key) {
-    const texts = win.AZKAR_DB[key].items.map(function (i) { return i.t; });
+    /* the same words twice only where the book has them said a different
+       number of times, the tahlil ten times and a hundred in the morning */
+    const texts = win.AZKAR_DB[key].items.map(function (i) { return i.t + '#' + (i.c || 1); });
     assert.strictEqual(new Set(texts).size, texts.length, key + ' repeats a dhikr');
   });
 });
