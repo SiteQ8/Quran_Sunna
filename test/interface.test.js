@@ -3202,6 +3202,22 @@ test('the sections added carry sound attributions', () => {
   });
 });
 
+test('a dhikr that asks for a whole surah names it plainly and opens it in the mushaf', () => {
+  const { win, doc } = boot();
+  const sleep = win.AZKAR_DB.sleep.items;
+  const asks = sleep.filter((i) => i.s);
+  assert.strictEqual(JSON.stringify(asks.map((i) => [i.t, i.s])), JSON.stringify([['قراءة سورة السجدة', 32], ['قراءة سورة الملك', 67]]));
+  /* and «أسلمت نفسي إليك» is the last thing said, as the hadith asks */
+  assert.ok(/أَسْلَمْتُ نَفْسِي إِلَيْكَ/.test(sleep[sleep.length - 1].t));
+  win.App.go('azkar');
+  click(win, doc.querySelector('[data-azkar="sleep"]'));
+  const open = doc.querySelector('#azkar-items [data-dhikr-surah="67"]');
+  assert.ok(open, 'the card carries a button to the surah');
+  click(win, open);
+  assert.strictEqual(win.App.state.view, 'reader');
+  assert.strictEqual(win.App.state.surah, 67);
+});
+
 test('no dhikr is repeated inside its own section', () => {
   const { win } = boot();
   Object.keys(win.AZKAR_DB).forEach(function (key) {
