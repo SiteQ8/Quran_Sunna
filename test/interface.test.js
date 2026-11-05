@@ -12121,3 +12121,26 @@ test('iqama: between the adhan and the iqama the clock counts to the iqama, and 
   assert.ok(pre.length >= 5, 'a word before every adhan ahead');
   pre.forEach(function (r) { assert.ok(/^أذان .+ بعد عشر دقائق$/.test(r.t), r.t); });
 });
+
+test('zakat: what reaches the nisab pays a quarter of a tenth, each carat weighed for its pure gold', () => {
+  const { win, doc } = boot();
+  const z = win.App.helpers.zakatFigures;
+  /* 24 carat at 30 a gram: the nisab is 85 grams, 2550 */
+  const below = z({ goldPrice: 30, cash: 2000 });
+  assert.strictEqual(below.nisab, 2550);
+  assert.ok(below.total < below.nisab, 'two thousand is below the nisab');
+  /* 96 grams of 21 carat are 84 of pure gold */
+  const gold = z({ goldPrice: 30, g21: 96 });
+  assert.strictEqual(gold.total, 84 * 30);
+  /* debts come off, and silver sets the nisab when chosen */
+  assert.strictEqual(z({ goldPrice: 30, cash: 5000, debts: 1000 }).total, 4000);
+  assert.strictEqual(z({ silverPrice: 0.4, nisab: 'silver' }).nisab, 238);
+  win.App.go('zakat');
+  const cash = doc.querySelector('[data-zakat="cash"]');
+  cash.value = '10000';
+  cash.dispatchEvent(new win.Event('input'));
+  const price = doc.querySelector('[data-zakat="goldPrice"]');
+  price.value = '30';
+  price.dispatchEvent(new win.Event('input'));
+  assert.ok(doc.getElementById('zakat-result').textContent.indexOf('250') !== -1, 'ten thousand pays two hundred and fifty');
+});

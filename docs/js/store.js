@@ -57,6 +57,8 @@
        them, for the reader to set to his own mosque; and how long before the
        adhan a word comes, none by default */
     iqama: { fajr: 25, dhuhr: 20, asr: 20, maghrib: 10, isha: 20 },
+    /* what the reader typed into the zakat calculator, kept on the phone */
+    zakat: {},
     preAdhan: 0,
     /* ramadan: the suhur reminder and how long before the fajr it comes, the
        word before the iftar, the odd nights of the last ten, the zakat of the

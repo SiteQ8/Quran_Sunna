@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.116';
+  var VERSION = '8.87.117';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6950,6 +6950,88 @@
     else renderTodayMeter();
   }
 
+  /* ---------------- الزكاة ---------------- */
+
+  /* Ninety grams of gold of twenty four carats are not ninety of twenty one:
+     each is weighed for its pure gold. The nisab is eighty five grams of
+     gold or five hundred and ninety five of silver, and the zakat a quarter
+     of a tenth of what reaches it. */
+  var ZAKAT_PURE = { g24: 1, g21: 21 / 24, g18: 18 / 24 };
+  var NISAB_GRAMS = { gold: 85, silver: 595 };
+
+  function zakatNumber(n) {
+    var r = Math.round(n * 100) / 100;
+    try { return r.toLocaleString('en-US', { maximumFractionDigits: 2 }); } catch (e) { return String(r); }
+  }
+
+  function zakatFigures(v) {
+    var num = function (k) { var n = parseFloat(v[k]); return isFinite(n) && n > 0 ? n : 0; };
+    var gold = num('goldPrice'), silver = num('silverPrice');
+    var pure = num('g24') * ZAKAT_PURE.g24 + num('g21') * ZAKAT_PURE.g21 + num('g18') * ZAKAT_PURE.g18;
+    var total = num('cash') + pure * gold + num('silver') * silver + num('trade') + num('owed') - num('debts');
+    var by = v.nisab === 'silver' ? 'silver' : 'gold';
+    var price = by === 'silver' ? silver : gold;
+    return { total: Math.max(0, total), nisab: price ? NISAB_GRAMS[by] * price : 0, by: by,
+      missing: (pure && !gold) || (num('silver') && !silver) || !price, people: Math.floor(num('people')) };
+  }
+
+  function renderZakatResult() {
+    var v = Store.get('zakat') || {};
+    var f = zakatFigures(v);
+    var host = $('zakat-result');
+    if (!host) return;
+    var body;
+    if (f.missing) {
+      body = '<p class="setting-note">' + esc(f.by === 'silver' ? 'اكتب سعر غرام الفضة ليُحسب النصاب' : 'اكتب سعر غرام الذهب ليُحسب النصاب') + '</p>';
+    } else if (f.total < f.nisab) {
+      body = '<p class="setting-note">' + esc('مالك ' + zakatNumber(f.total) + ' دون النصاب ' + zakatNumber(f.nisab) + '، فلا زكاة عليه') + '</p>';
+    } else {
+      body = '<div class="prayer-stats zakat-stats">' +
+        '<div class="prayer-stat"><b>' + esc(zakatNumber(f.total * 0.025)) + '</b><span>' + esc('الزكاة الواجبة') + '</span></div>' +
+        '<div class="prayer-stat"><b>' + esc(zakatNumber(f.total)) + '</b><span>' + esc('المال الذي تجب فيه') + '</span></div>' +
+        '<div class="prayer-stat"><b>' + esc(zakatNumber(f.nisab)) + '</b><span>' + esc('النصاب') + '</span></div></div>' +
+        '<p class="setting-note">ربع العشر، أي اثنان ونصف في المئة، إذا حال على المال حول هجري</p>';
+    }
+    host.innerHTML = '<div class="card-head"><h2>' + icon('check') + 'زكاتك</h2></div>' + body;
+    if ($('zakat-fitr')) {
+      $('zakat-fitr').textContent = f.people
+        ? count(f.people, 'صاع واحد', 'صاعان', 'آصع', 'صاعاً') + '، أي نحو ' + count(f.people * 3, 'كيلوغرام واحد', 'كيلوغرامين', 'كيلوغرامات', 'كيلوغراماً') + ' من غالب قوت البلد، تُخرج قبل صلاة العيد'
+        : 'صاع من طعام عن كل فرد، نحو 3 كيلوغرامات من غالب قوت البلد';
+    }
+  }
+
+  function renderZakat() {
+    var v = Store.get('zakat') || {};
+    Array.prototype.forEach.call(document.querySelectorAll('[data-zakat]'), function (el) {
+      var k = el.getAttribute('data-zakat');
+      if (document.activeElement !== el) el.value = v[k] ? String(v[k]) : '';
+      if (!el.__zakat) {
+        el.__zakat = true;
+        el.addEventListener('input', function () {
+          var next = Object.assign({}, Store.get('zakat') || {});
+          var n = parseFloat(el.value);
+          if (isFinite(n) && n > 0) next[k] = n; else delete next[k];
+          Store.set('zakat', next);
+          renderZakatResult();
+        });
+      }
+    });
+    var nisab = $('zakat-nisab');
+    if (nisab) {
+      nisab.value = v.nisab === 'silver' ? 'silver' : 'gold';
+      if (!nisab.__zakat) {
+        nisab.__zakat = true;
+        nisab.addEventListener('change', function () {
+          var next = Object.assign({}, Store.get('zakat') || {});
+          next.nisab = nisab.value === 'silver' ? 'silver' : 'gold';
+          Store.set('zakat', next);
+          renderZakatResult();
+        });
+      }
+    }
+    renderZakatResult();
+  }
+
   /* ---------------- الإقامة ---------------- */
 
   var IQAMA_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
@@ -7259,6 +7341,7 @@
     { act: 'mosques', icon: 'mosque', name: 'المساجد القريبة', note: 'أقرب المساجد إليك على الخريطة' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
     { nav: 'ramadan', icon: 'crescent', name: 'رمضان', note: 'الصيام والقيام والعشر الأواخر' },
+    { nav: 'zakat', icon: 'coins', name: 'حاسبة الزكاة', note: 'المال والذهب والتجارة وزكاة الفطر' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
@@ -7279,7 +7362,7 @@
      each keeps the order the list gives it while an entry no shelf names goes
      on the first rather than going missing. */
   var MORE_SHELVES = [
-    { title: 'العبادة', keys: ['umrah', 'prayers', 'ramadan', 'azkar', 'dua', 'ruqyah'] },
+    { title: 'العبادة', keys: ['umrah', 'prayers', 'ramadan', 'zakat', 'azkar', 'dua', 'ruqyah'] },
     { title: 'القرآن والحديث', keys: ['khatma', 'bookmarks', 'radio', 'hadith'] },
     { title: 'المواقيت والأماكن', keys: ['qibla', 'mosques', 'timetable', 'calendar'] },
     { title: 'التطبيق', keys: ['reminders', 'settings', 'about'] }
@@ -9629,6 +9712,7 @@
     umrah: renderUmrah,
     qada: renderQada,
     ramadan: renderRamadan,
+    zakat: renderZakat,
     mosques: renderMosques,
     qibla: renderQibla,
     tasbih: renderTasbih,
@@ -11484,7 +11568,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter,
+      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter, zakatFigures: zakatFigures,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,

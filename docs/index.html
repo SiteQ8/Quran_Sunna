@@ -297,6 +297,7 @@
 <g id="i-dua"><path d="M3.6 12.2c0 4.5 3.8 8.2 8.4 8.2s8.4-3.7 8.4-8.2"/><path d="M12 20.4v-8.2"/><path d="M3.6 12.2V8.7a1.4 1.4 0 0 1 2.8 0v2.4"/><path d="M6.4 11.1V7a1.4 1.4 0 0 1 2.8 0v3.6"/><path d="M20.4 12.2V8.7a1.4 1.4 0 0 0-2.8 0v2.4"/><path d="M17.6 11.1V7a1.4 1.4 0 0 0-2.8 0v3.6"/></g>
 <g id="i-kaaba"><path d="M12 2.6 20.8 6.9v10.2L12 21.4 3.2 17.1V6.9z"/><path d="M3.2 6.9 12 11.2l8.8-4.3M12 11.2v10.2"/><path d="M3.6 9.4 12 13.5l8.4-4.1"/></g>
 <g id="i-crescent"><path d="M15 3a9 9 0 1 0 6 15.5A7.5 7.5 0 0 1 15 3Z"/><path d="M19 4l.5 1.5L21 6l-1.5.5L19 8l-.5-1.5L17 6l1.5-.5Z"/></g>
+<g id="i-coins"><ellipse cx="9" cy="6" rx="6" ry="2.5"/><path d="M3 6v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V6"/><path d="M3 10v4c0 1.4 2.7 2.5 6 2.5"/><ellipse cx="15" cy="14" rx="6" ry="2.5"/><path d="M9 14v4c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5v-4"/></g>
 <g id="i-gift"><path d="M20 12v9H4v-9M2 7h20v5H2Z"/><path d="M12 7v14M12 7c-1.5-3-5-3-5-1s3 1 5 1c2 0 5 1 5-1s-3.5-2-5 1"/></g>
 <g id="i-cloud-sun"><path d="M12 2v2M5 5l1.5 1.5M19 5l-1.5 1.5M2 12h2"/><path d="M8 13a4 4 0 1 1 7.5-2"/><path d="M8 20a3.5 3.5 0 0 1-.4-7A5 5 0 0 1 17.5 15 3 3 0 0 1 17 20H8Z"/></g>
 <g id="i-chevron"><path d="m6 9 6 6 6-6"/></g>
@@ -707,6 +708,49 @@
       <span class="row-body"><span class="row-title">تذكيرات رمضان</span>
       <span class="row-note">السحور والإفطار وليالي الوتر وزكاة الفطر</span></span></button>
   </div>
+</section>
+
+<section class="view" id="v-zakat" aria-labelledby="zakat-title">
+  <div class="view-head"><h1 id="zakat-title">حاسبة الزكاة</h1><p>زكاة مالك وذهبك وتجارتك، وزكاة الفطر</p></div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-coins"/></svg>ما تملكه</h2></div>
+    <div class="setting"><span><span class="setting-label">النقد في يدك وفي البنك</span></span>
+      <input class="field" data-zakat="cash" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="النقد في يدك وفي البنك"></div>
+    <div class="setting"><span><span class="setting-label">ذهب عيار 24</span><br><span class="setting-note">بالغرام</span></span>
+      <input class="field" data-zakat="g24" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="ذهب عيار 24"></div>
+    <div class="setting"><span><span class="setting-label">ذهب عيار 21</span><br><span class="setting-note">بالغرام</span></span>
+      <input class="field" data-zakat="g21" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="ذهب عيار 21"></div>
+    <div class="setting"><span><span class="setting-label">ذهب عيار 18</span><br><span class="setting-note">بالغرام</span></span>
+      <input class="field" data-zakat="g18" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="ذهب عيار 18"></div>
+    <div class="setting"><span><span class="setting-label">الفضة</span><br><span class="setting-note">بالغرام</span></span>
+      <input class="field" data-zakat="silver" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="الفضة"></div>
+    <div class="setting"><span><span class="setting-label">عروض التجارة</span><br><span class="setting-note">بقيمتها يوم الحساب</span></span>
+      <input class="field" data-zakat="trade" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="عروض التجارة"></div>
+    <div class="setting"><span><span class="setting-label">ديون لك ترجو سدادها</span></span>
+      <input class="field" data-zakat="owed" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="ديون لك ترجو سدادها"></div>
+    <div class="setting"><span><span class="setting-label">ديون عليك حلّ وقتها</span><br><span class="setting-note">تُطرح من المال</span></span>
+      <input class="field" data-zakat="debts" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="ديون عليك حلّ وقتها"></div>
+  </div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"/></svg>الأسعار والنصاب</h2></div>
+    <div class="setting"><span><span class="setting-label">سعر غرام الذهب عيار 24</span><br><span class="setting-note">بعملتك من سعر اليوم</span></span>
+      <input class="field" data-zakat="goldPrice" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="سعر غرام الذهب عيار 24"></div>
+    <div class="setting"><span><span class="setting-label">سعر غرام الفضة</span><br><span class="setting-note">بعملتك من سعر اليوم</span></span>
+      <input class="field" data-zakat="silverPrice" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="سعر غرام الفضة"></div>
+    <div class="setting"><span><span class="setting-label">النصاب</span><br><span class="setting-note">الذهب 85 غراماً، والفضة 595 غراماً</span></span>
+      <select class="select" id="zakat-nisab" aria-label="النصاب">
+        <option value="gold">بنصاب الذهب</option>
+        <option value="silver">بنصاب الفضة</option>
+      </select></div>
+  </div>
+  <div class="card" id="zakat-result" aria-live="polite"></div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-gift"/></svg>زكاة الفطر</h2></div>
+    <div class="setting"><span><span class="setting-label">عدد من تُخرج عنهم</span><br><span class="setting-note">نفسك ومن تنفق عليهم</span></span>
+      <input class="field" data-zakat="people" type="number" min="0" step="any" inputmode="decimal" placeholder="0" aria-label="عدد من تُخرج عنهم"></div>
+    <p class="setting-note" id="zakat-fitr"></p>
+  </div>
+  <p class="setting-note" style="margin:var(--s3) var(--s2)">حساب تقريبي يعين على معرفة القدر، وتجب الزكاة إذا بلغ المال النصاب وحال عليه حول هجري، وفي زكاة حلي الزينة خلاف بين أهل العلم، فاسأل عما يخصك.</p>
 </section>
 
 <section class="view" id="v-qada" aria-labelledby="qada-title">
