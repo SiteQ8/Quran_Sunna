@@ -12144,3 +12144,20 @@ test('zakat: what reaches the nisab pays a quarter of a tenth, each carat weighe
   price.dispatchEvent(new win.Event('input'));
   assert.ok(doc.getElementById('zakat-result').textContent.indexOf('250') !== -1, 'ten thousand pays two hundred and fifty');
 });
+
+test('hifz: a surah marked memorised counts in the total and comes round for review, the oldest first', () => {
+  const { win, doc } = boot();
+  win.App.helpers.setHifz(67, 2);
+  win.App.helpers.setHifz(112, 2);
+  win.App.helpers.setHifz(36, 1);
+  const all = win.Store.get('hifz');
+  all[112].r = '2026-01-01';
+  win.Store.set('hifz', all);
+  assert.strictEqual(win.App.helpers.hifzDue().n, 112, 'the surah gone longest without review comes first');
+  win.App.go('hifz');
+  assert.ok(doc.getElementById('hifz-summary').textContent.indexOf('34') !== -1, 'al mulk and al ikhlas are thirty four verses');
+  assert.strictEqual(doc.querySelectorAll('#hifz-list [data-hifz]').length, 114);
+  click(win, doc.querySelector('[data-act="hifz-reviewed"]'));
+  assert.strictEqual(win.Store.get('hifz')[112].r, win.Store.dayKey(), 'reviewing it dates it today');
+  assert.strictEqual(win.App.helpers.hifzDue().n, 67, 'and the next comes round');
+});

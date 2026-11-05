@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.117';
+  var VERSION = '8.87.118';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -6950,6 +6950,92 @@
     else renderTodayMeter();
   }
 
+  /* ---------------- الحفظ ---------------- */
+
+  /* A surah is memorising (1) or memorised (2). The review of the day is the
+     memorised surah gone longest without one, so the whole of what is kept
+     comes round in turn. */
+  var HIFZ_WORDS = { 0: 'لم أبدأ بها', 1: 'أحفظها الآن', 2: 'حفظتها' };
+  var TOTAL_AYAT = 6236;
+
+  function hifzOf(n) { var h = (Store.get('hifz') || {})[n]; return h && (h.st === 1 || h.st === 2) ? h : null; }
+
+  function setHifz(n, st, reviewed) {
+    var all = Object.assign({}, Store.get('hifz') || {});
+    var was = all[n] || {};
+    if (!st) delete all[n];
+    else all[n] = { st: st, r: reviewed ? Store.dayKey() : (was.r || (st === 2 ? Store.dayKey() : '')) };
+    Store.set('hifz', all);
+    if (state.view === 'hifz') renderHifz();
+  }
+
+  function hifzDue() {
+    var all = Store.get('hifz') || {};
+    var best = null;
+    Object.keys(all).forEach(function (k) {
+      var h = all[k];
+      if (!h || h.st !== 2) return;
+      if (!best || (h.r || '') < (best.r || '')) best = { n: +k, r: h.r || '' };
+    });
+    return best;
+  }
+
+  function renderHifz() {
+    var all = Store.get('hifz') || {};
+    var kept = 0, keeping = 0, ayatKept = 0;
+    SURAHS.forEach(function (m) {
+      var h = hifzOf(m.n);
+      if (h && h.st === 2) { kept++; ayatKept += m.ay; }
+      if (h && h.st === 1) keeping++;
+    });
+    var share = Math.round(ayatKept / TOTAL_AYAT * 1000) / 10;
+    if ($('hifz-summary')) {
+      $('hifz-summary').innerHTML = '<div class="meter-head"><span>' + esc('حفظت ' + ayat(ayatKept)) + '</span>' +
+        '<span class="badge">' + esc(ar(share) + '%') + '</span></div>' +
+        '<div class="meter"><span style="width:' + Math.min(100, share) + '%"></span></div>' +
+        '<p class="setting-note">' + esc(kept || keeping
+          ? 'حفظت ' + count(kept, 'سورة واحدة', 'سورتين', 'سور', 'سورة') + '، وتحفظ الآن ' + count(keeping, 'سورة واحدة', 'سورتين', 'سور', 'سورة')
+          : 'اضغط سورة من القائمة لتعلّمها حفظتها أو تحفظها الآن') + '</p>';
+    }
+    var due = hifzDue();
+    if ($('hifz-review')) {
+      var meta = due ? surahMeta(due.n) : null;
+      $('hifz-review').innerHTML = '<div class="card-head"><h2>' + icon('refresh') + 'مراجعة اليوم</h2></div>' +
+        (meta ? '<div class="row"><span class="row-mark">' + ar(meta.n) + '</span><span class="row-body">' +
+          '<span class="row-title" data-tr="surah">' + esc(meta.ar) + '</span>' +
+          '<span class="row-note">' + esc(due.r === Store.dayKey() ? 'راجعتها اليوم' : due.r ? 'آخر مراجعة ' + whenItFalls(dateOfStamp(due.r)) : 'لم تراجعها بعد') + '</span></span></div>' +
+          '<div class="mark-choices"><button class="btn btn-primary" data-surah="' + meta.n + '">' + icon('book') + 'افتحها في المصحف</button>' +
+          '<button class="btn btn-ghost" data-act="hifz-reviewed" data-ref="' + meta.n + '">' + icon('check') + 'راجعتها</button></div>'
+          : '<p class="setting-note">إذا علّمت سورة حفظتها جاءتك هنا في دورها للمراجعة، الأقدم مراجعة أولاً</p>');
+    }
+    if ($('hifz-list')) {
+      $('hifz-list').innerHTML = SURAHS.map(function (m) {
+        var h = hifzOf(m.n);
+        var st = h ? h.st : 0;
+        return '<button class="row' + (st === 2 ? ' is-done' : '') + '" data-hifz="' + m.n + '">' +
+          '<span class="row-mark">' + (st === 2 ? icon('check') : ar(m.n)) + '</span>' +
+          '<span class="row-body"><span class="row-title" data-tr="surah">' + esc(m.ar) + '</span>' +
+          '<span class="row-note">' + esc(HIFZ_WORDS[st]) + '</span></span>' +
+          '<span class="row-meta">' + ayat(m.ay) + '</span></button>';
+      }).join('');
+    }
+  }
+
+  function hifzSheet(n) {
+    var meta = surahMeta(n);
+    if (!meta) return;
+    var h = hifzOf(n);
+    var st = h ? h.st : 0;
+    var choice = function (v, ic, word) {
+      return '<button class="btn ' + (st === v ? 'btn-primary' : 'btn-ghost') + '" data-act="hifz-mark" data-ref="' + n + ':' + v + '">' + icon(ic) + esc(word) + '</button>';
+    };
+    openSheet('سورة ' + meta.ar,
+      '<div class="mark-choices">' + choice(2, 'check', 'حفظتها') + choice(1, 'book', 'أحفظها الآن') +
+      (st ? choice(0, 'close', 'امسح العلامة') : '') + '</div>' +
+      '<div class="mark-choices" style="margin-top:12px"><button class="btn btn-ghost" data-surah="' + n + '">' + icon('book') + 'افتحها في المصحف</button>' +
+      '<button class="btn btn-ghost" data-act="hifz-repeat" data-ref="' + n + '">' + icon('refresh') + 'كرّر للحفظ</button></div>');
+  }
+
   /* ---------------- الزكاة ---------------- */
 
   /* Ninety grams of gold of twenty four carats are not ninety of twenty one:
@@ -7341,6 +7427,7 @@
     { act: 'mosques', icon: 'mosque', name: 'المساجد القريبة', note: 'أقرب المساجد إليك على الخريطة' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
     { nav: 'ramadan', icon: 'crescent', name: 'رمضان', note: 'الصيام والقيام والعشر الأواخر' },
+    { nav: 'hifz', icon: 'layers', name: 'حفظي', note: 'ما تحفظه من القرآن ومراجعته' },
     { nav: 'zakat', icon: 'coins', name: 'حاسبة الزكاة', note: 'المال والذهب والتجارة وزكاة الفطر' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
@@ -7363,7 +7450,7 @@
      on the first rather than going missing. */
   var MORE_SHELVES = [
     { title: 'العبادة', keys: ['umrah', 'prayers', 'ramadan', 'zakat', 'azkar', 'dua', 'ruqyah'] },
-    { title: 'القرآن والحديث', keys: ['khatma', 'bookmarks', 'radio', 'hadith'] },
+    { title: 'القرآن والحديث', keys: ['khatma', 'hifz', 'bookmarks', 'radio', 'hadith'] },
     { title: 'المواقيت والأماكن', keys: ['qibla', 'mosques', 'timetable', 'calendar'] },
     { title: 'التطبيق', keys: ['reminders', 'settings', 'about'] }
   ];
@@ -9713,6 +9800,7 @@
     qada: renderQada,
     ramadan: renderRamadan,
     zakat: renderZakat,
+    hifz: renderHifz,
     mosques: renderMosques,
     qibla: renderQibla,
     tasbih: renderTasbih,
@@ -9891,6 +9979,21 @@
       buzz(8);
       renderQada();
       toast('تقبّل الله، ' + PRAYER_NAMES[ref] + ' قضيتها');
+    },
+    'hifz-mark': function (ref) {
+      var at = ref.indexOf(':');
+      setHifz(+ref.slice(0, at), +ref.slice(at + 1));
+      closeSheet();
+    },
+    'hifz-reviewed': function (ref) {
+      setHifz(+ref, 2, true);
+      toast('بارك الله في حفظك');
+    },
+    'hifz-repeat': function (ref) {
+      closeSheet();
+      state.surah = +ref;
+      go('reader');
+      repeatSheet(+ref, 1);
     },
     'ramadan-mark': function (ref) {
       var at = ref.lastIndexOf(':');
@@ -10081,6 +10184,8 @@
       setRamadanFast(fastDay, ramadanFastOf(fastDay) === 1 ? 0 : 1);
       return;
     }
+    var hifzRow = target.closest('[data-hifz]');
+    if (hifzRow) { hifzSheet(+hifzRow.getAttribute('data-hifz')); return; }
     var ramadanDay = target.closest('[data-ramadan-day]');
     if (ramadanDay) { ramadanDaySheet(ramadanDay.getAttribute('data-ramadan-day')); return; }
 
@@ -11568,7 +11673,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter, zakatFigures: zakatFigures,
+      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter, zakatFigures: zakatFigures, setHifz: setHifz, hifzDue: hifzDue,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
