@@ -52,7 +52,12 @@
     remindSound: { morningAdhkar: 'device', eveningAdhkar: 'device', sleepIstighfar: 'device',
       sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device',
       jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device',
-      suhoor: 'device', iftar: 'device', lastTen: 'device', fitrZakat: 'device' },
+      suhoor: 'device', iftar: 'device', lastTen: 'device', fitrZakat: 'device', preAdhan: 'device' },
+    /* minutes from each adhan to its iqama, as most mosques of the gulf keep
+       them, for the reader to set to his own mosque; and how long before the
+       adhan a word comes, none by default */
+    iqama: { fajr: 25, dhuhr: 20, asr: 20, maghrib: 10, isha: 20 },
+    preAdhan: 0,
     /* ramadan: the suhur reminder and how long before the fajr it comes, the
        word before the iftar, the odd nights of the last ten, the zakat of the
        fitr, and the card the home screen shows through the month */

@@ -1051,6 +1051,16 @@
         <select class="select" id="settings-adhan-voice" aria-label="صوت الأذان"></select>
         <button class="btn btn-ghost" id="settings-adhan-try" aria-label="اسمع الأذان"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button>
       </span></div>
+    <div class="setting setting-remind"><span><span class="setting-label">قبل الأذان</span><br><span class="setting-note">تنبيه يسبق كل صلاة لتستعد لها</span></span>
+      <span class="remind-controls"><select class="select select-sound" data-sound="preAdhan" aria-label="صوت التنبيه قبل الأذان"><option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option></select><button class="btn btn-ghost btn-icon try-sound" data-try="preAdhan" aria-label="اسمع الصوت"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button><select class="select" id="settings-pre-adhan" aria-label="متى يصل التنبيه قبل الأذان">
+        <option value="0">لا تنبيه</option>
+        <option value="5">قبل الأذان بخمس دقائق</option>
+        <option value="10">قبل الأذان بعشر دقائق</option>
+        <option value="15">قبل الأذان بربع ساعة</option>
+        <option value="20">قبل الأذان بثلث ساعة</option>
+      </select></span></div>
+    <div class="setting"><span><span class="setting-label">الإقامة بعد الأذان</span><br><span class="setting-note" id="settings-iqama-note">يعدّ لها الحساب في الرئيسية بعد الأذان</span></span>
+      <button class="btn btn-ghost" id="settings-iqama">اضبطها</button></div>
     <div class="setting"><span><span class="setting-label">أذكار بعد الصلاة</span><br><span class="setting-note">تُعرض عند الضغط على موعد الصلاة</span></span>
       <button class="switch" id="settings-after-prayer" role="switch" aria-checked="true" aria-label="أذكار بعد الصلاة"></button></div>
   </div>

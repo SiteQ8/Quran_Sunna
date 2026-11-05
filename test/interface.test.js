@@ -12101,3 +12101,23 @@ test('the next prayer reaches the home screen on both phones, in the reader\'s l
   const last = sent[sent.length - 1] || [];
   assert.ok(last.length && last.every(function (r) { return r.label && r.clock && r.head; }), 'each time carries its words');
 });
+
+test('iqama: between the adhan and the iqama the clock counts to the iqama, and a word comes before each adhan', () => {
+  const day = new Date(2026, 10, 3, 12, 0, 0);
+  const probe = boot({ now: day });
+  const t = probe.win.App.computeTimes(day);
+  const after = new Date(2026, 10, 3, 0, Math.ceil(t.asr) + 3, 0);
+  const { win, doc } = boot({ now: after });
+  win.App.go('home');
+  assert.ok(doc.getElementById('arc-name').textContent.indexOf('إقامة') === 0, 'three minutes after the asr adhan the iqama is counted');
+  win.Store.set('iqama', { fajr: 25, dhuhr: 20, asr: 0, maghrib: 10, isha: 20 });
+  win.App.go('home');
+  assert.ok(doc.getElementById('arc-name').textContent.indexOf('إقامة') === -1, 'a prayer set to none counts no iqama');
+  /* the jumuah has its khutbah, not an iqama */
+  assert.strictEqual(win.App.helpers.iqamaAfter('dhuhr', new Date(2026, 10, 6)), 0);
+  /* ten minutes before each adhan */
+  win.Store.set('preAdhan', 10);
+  const pre = win.App.helpers.reminderList().filter(function (r) { return r.k === 'preAdhan'; });
+  assert.ok(pre.length >= 5, 'a word before every adhan ahead');
+  pre.forEach(function (r) { assert.ok(/^أذان .+ بعد عشر دقائق$/.test(r.t), r.t); });
+});

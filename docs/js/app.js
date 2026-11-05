@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.115';
+  var VERSION = '8.87.116';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1652,7 +1652,16 @@
        counted from it. */
     var sinceAdhan = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
     var fresh = sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES;
-    if (fresh) {
+    /* Between the adhan and the iqama the reader is counting to the iqama,
+       so that is the count shown; the jumuah has its khutbah instead. */
+    var iqamaAt = fresh ? iqamaAfter(c.prev.key, new Date()) : 0;
+    if (iqamaAt && sinceAdhan < iqamaAt) {
+      var left = Math.max(0, Math.round((iqamaAt - sinceAdhan) * 60));
+      $('arc-count').textContent = ar(pad(Math.floor(left / 3600)) + ':' + pad(Math.floor((left % 3600) / 60)) + ':' + pad(left % 60));
+      $('arc-label').textContent = 'باقٍ على';
+      $('arc-name').textContent = 'إقامة ' + c.prev.ar;
+      $('arc-at').textContent = clockText(c.prev.at + iqamaAt);
+    } else if (fresh) {
       var up = Math.max(0, Math.round(sinceAdhan * 60));
       $('arc-count').textContent = ar(pad(Math.floor(up / 3600)) + ':' + pad(Math.floor((up % 3600) / 60)) + ':' + pad(up % 60));
       $('arc-label').textContent = 'مضى على';
@@ -3291,7 +3300,8 @@
     suhoor: 'ramadan',
     iftar: 'ramadan',
     lastTen: 'ramadan',
-    fitrZakat: 'ramadan'
+    fitrZakat: 'ramadan',
+    preAdhan: 'home'
   };
 
   function cameFrom(kind) {
@@ -5883,6 +5893,19 @@
          last ten, which begin at the maghrib before their day, and the zakat
          of the fitr on the evening of the twenty eighth, a day or two before
          the eid as the companions gave it. */
+      /* a word before each adhan, as long before it as the reader chose */
+      var pre = +Store.get('preAdhan') || 0;
+      if (pre && PRE_ADHAN_WORDS[pre]) {
+        var pt = computeTimes(day);
+        IQAMA_KEYS.forEach(function (k) {
+          if (typeof pt[k] !== 'number' || !isFinite(pt[k])) return;
+          var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, pt[k] - pre, 0, 0);
+          if (at.getTime() > Date.now()) {
+            out.push({ at: at.getTime(), t: 'أذان ' + prayerName(k, day) + ' ' + PRE_ADHAN_WORDS[pre],
+              b: 'وقت يسير للوضوء والاستعداد للصلاة', s: channelFor('preAdhan'), k: 'preAdhan' });
+          }
+        });
+      }
       var rh = Hijri.toHijri(day, Store.get('hijriAdjust'));
       if (rh.m === 9) {
         var rt = computeTimes(day);
@@ -6925,6 +6948,52 @@
     if (state.view === 'ramadan') renderRamadan();
     if (state.view === 'home') { renderNowSunnah(); renderTodayMeter(); renderHomeRamadan(); }
     else renderTodayMeter();
+  }
+
+  /* ---------------- الإقامة ---------------- */
+
+  var IQAMA_KEYS = ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'];
+  var IQAMA_CHOICES = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45];
+  var PRE_ADHAN_WORDS = { 5: 'بعد خمس دقائق', 10: 'بعد عشر دقائق', 15: 'بعد ربع ساعة', 20: 'بعد ثلث ساعة' };
+
+  /* Minutes from a prayer's adhan to its iqama, or none: none for a prayer
+     the reader set to none, and none for the jumuah, whose khutbah comes
+     between them. */
+  function iqamaAfter(key, date) {
+    if (key === 'dhuhr' && isFriday(date)) return 0;
+    var all = Store.get('iqama') || {};
+    var n = +all[key];
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function iqamaNote() {
+    var all = Store.get('iqama') || {};
+    return IQAMA_KEYS.map(function (k) {
+      var n = +all[k] || 0;
+      return prayerName(k, new Date(2026, 0, 1)) + ' ' + ar(n);
+    }).join('، ');
+  }
+
+  function iqamaSheet() {
+    var all = Store.get('iqama') || {};
+    openSheet('الإقامة بعد الأذان', IQAMA_KEYS.map(function (k) {
+      var name = prayerName(k, new Date(2026, 0, 1));
+      return '<div class="setting"><span class="setting-label">' + esc(name) + '</span>' +
+        '<select class="select" data-iqama="' + k + '" aria-label="' + esc('إقامة ' + name) + '">' +
+        IQAMA_CHOICES.map(function (n) {
+          return '<option value="' + n + '"' + ((+all[k] || 0) === n ? ' selected' : '') + '>' +
+            esc(n ? 'بعد ' + count(n, 'دقيقة واحدة', 'دقيقتين', 'دقائق', 'دقيقة') : 'لا تُعرض') + '</option>';
+        }).join('') + '</select></div>';
+    }).join('') + '<p class="setting-note" style="margin-top:12px">اضبطها على مسجدك، فيعدّ لها الحساب في الرئيسية من الأذان إلى الإقامة</p>');
+    Array.prototype.forEach.call(document.querySelectorAll('#sheet-body [data-iqama]'), function (sel) {
+      sel.addEventListener('change', function () {
+        var next = Object.assign({}, Store.get('iqama') || {});
+        next[sel.getAttribute('data-iqama')] = +sel.value || 0;
+        Store.set('iqama', next);
+        if ($('settings-iqama-note')) $('settings-iqama-note').textContent = iqamaNote();
+        tick();
+      });
+    });
   }
 
   /* ---------------- رمضان ---------------- */
@@ -9290,6 +9359,8 @@
       setSwitch($('settings-' + key), !!Store.get(key));
     });
     if ($('settings-suhoor-before')) $('settings-suhoor-before').value = String(+Store.get('suhoorBefore') || 30);
+    if ($('settings-pre-adhan')) $('settings-pre-adhan').value = String(+Store.get('preAdhan') || 0);
+    if ($('settings-iqama-note')) $('settings-iqama-note').textContent = iqamaNote();
     if ($('settings-sleep-at')) $('settings-sleep-at').value = Store.get('sleepAt') || '22:30';
     document.querySelectorAll('.select-sound').forEach(function (sel) {
       sel.value = soundFor(sel.getAttribute('data-sound'));
@@ -10499,6 +10570,13 @@
       toast(+e.target.value ? 'سيصلك نداء الجمعة قبلها' : 'أُوقف نداء الجمعة');
     });
 
+    bind('settings-pre-adhan', 'change', function (e) {
+      Store.set('preAdhan', +e.target.value || 0);
+      handRemindersToApp();
+      if (+e.target.value) toast('سيصلك تنبيه قبل كل أذان');
+    });
+    bind('settings-iqama', 'click', iqamaSheet);
+
     bind('settings-suhoor-before', 'change', function (e) {
       Store.set('suhoorBefore', +e.target.value || 30);
       handRemindersToApp();
@@ -11406,7 +11484,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
-      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast,
+      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,
