@@ -325,7 +325,7 @@ const DATA = {
   'duas.js': ['DUA_BOOK[].n', 'DUA_BOOK_SOURCE.b', 'DUA_BOOK_SOURCE.n'],
   'content.js': ['HADITHS[].s', 'HADITHS[].r', 'RUQYAH[].r', 'DUAS[].cat', 'DUAS[].items[].r', 'CURRENT_SUNNAH.*.l',
     'CURRENT_SUNNAH.*.sub', 'CURRENT_SUNNAH.*.items[]', 'FRIDAY_SUNNAH.l', 'FRIDAY_SUNNAH.sub', 'FRIDAY_SUNNAH.items[]', 'SUNNAH_SOURCE.t',
-    'SUNNAH_SOURCE.a', 'SUNNAH_TRACKER[].s', 'SUNNAH_TRACKER[].i[]'],
+    'SUNNAH_SOURCE.a', 'SUNNAH_TRACKER[].s', 'SUNNAH_TRACKER[].i[]', 'RAMADAN_SUNAN[].g', 'RAMADAN_SUNAN[].i[].h', 'RAMADAN_SUNAN[].i[].r'],
   'extras.js': ['CITIES[].n', 'PROPHET_DAY[].time', 'PROPHET_DAY[].items[]', 'RADIO_STATIONS[].name', 'RADIO_STATIONS[].note',
     'SURAH_VIRTUES.*', 'TASBIH_PHRASES[].t', 'WIRD_ITEMS[].t', 'WIRD_ITEMS[].n', 'RECITERS[].name', 'RECITERS[].country']
 };
