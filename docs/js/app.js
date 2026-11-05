@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.113';
+  var VERSION = '8.87.114';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2680,7 +2680,9 @@
       ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (k) {
         if (typeof t[k] !== 'number' || isNaN(t[k])) return;
         var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, t[k], 0, 0).getTime();
-        if (at > Date.now()) list.push({ at: at, name: prayerName(k, day) });
+        /* name is what the adhan says; label, clock and head are the home
+           screen widget's words, in the language the reader chose */
+        if (at > Date.now()) list.push({ at: at, name: prayerName(k, day), label: tongue(prayerName(k, day)), clock: tongue(clockText(t[k])), head: tongue('الصلاة القادمة') });
       });
     }
     try { app.setPrayerTimes(JSON.stringify(list)); return true; } catch (e) { return false; }
@@ -7016,7 +7018,7 @@
       '<div class="meter"><span style="width:' + Math.round(d / len * 100) + '%"></span></div>';
     var tonight = ramadanTonight(d, len);
     var ticks = [
-      { ticks: ['ramadan:taraweeh'], label: 'صلاة التراويح', note: 'من قام رمضان إيماناً واحتساباً غُفر له' },
+      { ticks: ['ramadan:taraweeh'], label: 'صلاة التراويح', note: 'من قام رمضان إيماناً واحتساباً غُفر له ما تقدم من ذنبه' },
       { ticks: ['wird:quran'], label: 'ورد من القرآن', note: '' },
       { ticks: ['wird:sadaqah'], label: 'صدقة ولو يسيرة', note: '' }
     ];
