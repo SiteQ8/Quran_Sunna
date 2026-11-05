@@ -3,4 +3,9 @@
     <color name="colorPrimary">#9c2b2b</color>
     <color name="backgroundColor">#f6f4ee</color>
     <color name="navigationColor">#f6f4ee</color>
+    <!-- the home screen widget, in the app's own colours -->
+    <color name="widgetSurface">#f6f4ee</color>
+    <color name="widgetAccent">#9c2b2b</color>
+    <color name="widgetInk">#1d1a16</color>
+    <color name="widgetMuted">#6b645a</color>
 </resources>

@@ -51,6 +51,8 @@ public final class AdhanScheduler {
             JSONArray list = new JSONArray(json);
             prefs(context).edit().putString(KEY_TIMES, list.toString()).apply();
             scheduleNext(context);
+            /* the home screen widget reads the same list */
+            PrayerWidget.refresh(context);
         } catch (Exception ignored) {
             /* a malformed list changes nothing; the built in times still ring */
         }

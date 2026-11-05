@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- two cells by two, and stretchable; it wakes itself at each prayer, and the
+     half hourly update is only a fallback for a phone that slept through it -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_prayer"
+    android:previewLayout="@layout/widget_prayer"
+    android:description="@string/widgetDescription"/>

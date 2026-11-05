@@ -3,4 +3,8 @@
     <color name="colorPrimary">#10161a</color>
     <color name="backgroundColor">#10161a</color>
     <color name="navigationColor">#10161a</color>
+    <color name="widgetSurface">#1a2228</color>
+    <color name="widgetAccent">#e08a7c</color>
+    <color name="widgetInk">#f1ece2</color>
+    <color name="widgetMuted">#a39b8f</color>
 </resources>

@@ -245,7 +245,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       prayerRows = parsePrayers(json)
       let times = prayerReminders()
       Notifier.shared.replace(times, prefix: "adhan-")
-      shareWithWidget(times)
+      shareWithWidget(times, raw: json)
 
     case "setAdhanSilent":
       adhanSilent = (args.first as? Bool) ?? ((args.first as? Int) == 1)
@@ -551,12 +551,23 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
 
   /* The widget shows the same times the reader sees, so the app hands them
      over rather than letting the widget compute its own and drift. */
-  private func shareWithWidget(_ times: [Reminder]) {
+  private func shareWithWidget(_ times: [Reminder], raw: String) {
     guard let store = UserDefaults(suiteName: "group.com.eworldq8.sunnati") else { return }
-    let payload = [
-      "names": times.map(\.title),
+    /* the page hands each prayer's name in the reader's language as label,
+       and the heading as head; the adhan keeps its own Arabic name */
+    let rows = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [[String: Any]] ?? []
+    var labels: [Double: String] = [:]
+    var head: String? = nil
+    for row in rows {
+      guard let ms = row["at"] as? Double else { continue }
+      if let label = row["label"] as? String, !label.isEmpty { labels[(ms / 1000).rounded()] = label }
+      if head == nil, let h = row["head"] as? String, !h.isEmpty { head = h }
+    }
+    var payload = [
+      "names": times.map { labels[$0.at.timeIntervalSince1970.rounded()] ?? $0.title },
       "at": times.map { $0.at.timeIntervalSince1970 }
     ] as [String: Any]
+    if let head = head { payload["head"] = head }
     if let data = try? JSONSerialization.data(withJSONObject: payload) {
       store.set(data, forKey: "times")
       WidgetCentre.reload()

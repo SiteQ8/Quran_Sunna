@@ -12084,3 +12084,20 @@ test('ramadan: its reminders come on its days, the odd nights at their maghrib',
   off.win.App.go('home');
   assert.strictEqual(off.doc.getElementById('home-ramadan').hidden, true);
 });
+
+test('the next prayer reaches the home screen on both phones, in the reader\'s language', () => {
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  assert.ok(/receiver android:name="\.PrayerWidget"[\s\S]*?APPWIDGET_UPDATE[\s\S]*?@xml\/widget_prayer_info/.test(manifest), 'android declares the widget');
+  assert.ok(read('android/app/src/main/java/com/eworldq8/sunnati/AdhanScheduler.java').indexOf('PrayerWidget.refresh(context)') !== -1,
+    'new times redraw it');
+  const swift = read('ios/Widget/PrayerWidget.swift');
+  ['.accessoryCircular', '.accessoryRectangular', '.accessoryInline'].forEach(function (f) {
+    assert.ok(swift.indexOf(f) !== -1, 'the iPhone lock screen offers ' + f);
+  });
+  /* the page hands each prayer its name, time and heading in the reader's words */
+  const sent = [];
+  const { win } = boot({ now: new Date(2026, 10, 1, 9, 0, 0), bridge: { setPrayerTimes: function (j) { sent.push(JSON.parse(j)); } } });
+  const last = sent[sent.length - 1] || [];
+  assert.ok(last.length && last.every(function (r) { return r.label && r.clock && r.head; }), 'each time carries its words');
+});
