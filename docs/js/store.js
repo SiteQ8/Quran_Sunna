@@ -59,6 +59,9 @@
     iqama: { fajr: 25, dhuhr: 20, asr: 20, maghrib: 10, isha: 20 },
     /* what the reader typed into the zakat calculator, kept on the phone */
     zakat: {},
+    /* the surahs the reader memorised or is memorising, each with the day he
+       last reviewed it: { 67: { st: 2, r: '2026-11-06' } } */
+    hifz: {},
     preAdhan: 0,
     /* ramadan: the suhur reminder and how long before the fajr it comes, the
        word before the iftar, the odd nights of the last ten, the zakat of the
