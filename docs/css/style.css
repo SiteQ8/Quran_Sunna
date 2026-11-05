@@ -2605,3 +2605,7 @@ html[dir='ltr']:not(.book) #v-page .reader-bar use[href='#i-back'] { transform: 
 .ramadan-said { padding: var(--s3) 0; border-top: 1px solid var(--line-soft); }
 .ramadan-said:first-child { border-top: 0; padding-top: 0; }
 .ramadan-said-head { font-weight: 700; font-size: var(--step--1); color: var(--accent-ink); margin-bottom: 4px; }
+.prayer-stats.zakat-stats { grid-template-columns: repeat(3, 1fr); margin: var(--s2) 0; }
+/* the calculator's amounts are short numbers, so the field keeps a fixed
+   width beside its words rather than taking the row from them */
+#v-zakat .setting > .field:last-child { width: 9.5rem; justify-self: end; text-align: end; font-variant-numeric: tabular-nums; }
