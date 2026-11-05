@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- before Android 12 the size is told in dp alone; xml-v31 adds cells
+     and a live preview. Two cells by two, and stretchable; it wakes itself at each prayer, and the
+     half hourly update is only a fallback for a phone that slept through it -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:updatePeriodMillis="1800000"
+    android:initialLayout="@layout/widget_prayer"
+    android:description="@string/widgetDescription"/>

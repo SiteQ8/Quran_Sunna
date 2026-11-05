@@ -75,6 +75,13 @@
                 <action android:name="com.eworldq8.sunnati.ADHAN"/>
             </intent-filter>
         </receiver>
+        <!-- the next prayer on the home screen -->
+        <receiver android:name=".PrayerWidget" android:exported="false" android:label="@string/widgetDescription">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_info"/>
+        </receiver>
         <!-- a reboot or a change of the clock throws alarms away -->
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>
