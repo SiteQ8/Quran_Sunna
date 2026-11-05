@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.112';
+  var VERSION = '8.87.113';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3284,7 +3284,12 @@
     fastNote: 'calendar',
     jumuahBefore: 'tracker',
     qiyam: 'home',
-    adhan: 'home'
+    adhan: 'home',
+    /* the four of ramadan open its own screen, where the day is laid out */
+    suhoor: 'ramadan',
+    iftar: 'ramadan',
+    lastTen: 'ramadan',
+    fitrZakat: 'ramadan'
   };
 
   function cameFrom(kind) {
@@ -3363,6 +3368,7 @@
     refreshTimes();
     renderDate();
     tick();
+    renderHomeRamadan();
     renderNowSunnah();
     renderTodayMeter();
     renderTiles();
@@ -5870,6 +5876,35 @@
           }
         }
       }
+      /* The four of ramadan, on its days alone: the suhur before the dawn of
+         a day of the month, a word before its maghrib, the odd nights of the
+         last ten, which begin at the maghrib before their day, and the zakat
+         of the fitr on the evening of the twenty eighth, a day or two before
+         the eid as the companions gave it. */
+      var rh = Hijri.toHijri(day, Store.get('hijriAdjust'));
+      if (rh.m === 9) {
+        var rt = computeTimes(day);
+        var push = function (minute, t, b, k, sound) {
+          if (!isFinite(minute)) return;
+          var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, minute, 0, 0);
+          if (at.getTime() > Date.now()) out.push({ at: at.getTime(), t: t, b: b, s: sound, k: k });
+        };
+        if (Store.get('suhoor') && typeof rt.fajr === 'number') {
+          push(rt.fajr - (+Store.get('suhoorBefore') || 30), 'السحور', 'تسحّروا فإن في السحور بركة، والأكل حلال حتى أذان الفجر', 'suhoor', channelFor('suhoor'));
+        }
+        if (typeof rt.maghrib === 'number') {
+          if (Store.get('iftar')) {
+            push(rt.maghrib - 15, 'الإفطار بعد ربع ساعة', 'وتعجيل الفطر من السنة، ودعاء الإفطار في صفحة رمضان', 'iftar', channelFor('iftar'));
+          }
+          var night = rh.d + 1;
+          if (Store.get('lastTen') && night >= 21 && night <= 29 && night % 2 === 1) {
+            push(rt.maghrib + 20, 'ليلة ' + ar(night) + ' من رمضان', 'تحرّوا ليلة القدر في الوتر من العشر الأواخر، ودعاؤها في صفحة رمضان', 'lastTen', channelFor('lastTen'));
+          }
+          if (Store.get('fitrZakat') && rh.d === 28) {
+            push(rt.maghrib + 45, 'زكاة الفطر', 'صاع من طعام عن كل فرد من أهل بيتك، تُخرجها قبل صلاة العيد', 'fitrZakat', channelFor('fitrZakat'));
+          }
+        }
+      }
       if (before && day.getDay() === 5 && !already(out, 'الجمعة')) {
         var times = computeTimes(day);
         if (typeof times.dhuhr === 'number') {
@@ -6885,8 +6920,264 @@
     }, day);
     buzz(10);
     if (state.view === 'tracker') renderTracker();
-    if (state.view === 'home') { renderNowSunnah(); renderTodayMeter(); }
+    if (state.view === 'ramadan') renderRamadan();
+    if (state.view === 'home') { renderNowSunnah(); renderTodayMeter(); renderHomeRamadan(); }
     else renderTodayMeter();
+  }
+
+  /* ---------------- رمضان ---------------- */
+
+  var RAMADAN_REMINDERS = ['suhoor', 'iftar', 'lastTen', 'fitrZakat'];
+  var ramadanDays = { key: '', list: [] };
+
+  /* The days of the month the screen shows: this year's ramadan, still to
+     come before it and kept as a record after it, laid out by the calendar
+     the app reckons with and the nudge the reader gave it. */
+  function ramadanMonth() {
+    var adjust = Store.get('hijriAdjust');
+    var h = Hijri.toHijri(new Date(), adjust);
+    var key = h.y + ':' + adjust;
+    if (ramadanDays.key !== key) ramadanDays = { key: key, list: Hijri.monthDays(h.y, 9, adjust) };
+    return { h: h, y: h.y, days: ramadanDays.list, len: ramadanDays.list.length || 30 };
+  }
+
+  /* The day ramadan comes next, and how far off it is. */
+  function ramadanAhead(m) {
+    if (m.h.m === 9) return null;
+    var y = m.h.m < 9 ? m.y : m.y + 1;
+    var first = Hijri.toGregorian(y, 9, 1, Store.get('hijriAdjust'));
+    return first ? { date: first, days: Hijri.daysBetween(new Date(), first) } : null;
+  }
+
+  /* A day of the month is fasted (1), or not fasted and owed (2). A day not
+     fasted is added to the days owed on the qada screen, and taken off it
+     again if the mark is cleared, so the two never tell different stories. */
+  function ramadanFastOf(date) { return +Store.day(date).ramadan || 0; }
+
+  function setRamadanFast(date, st) {
+    var was = 0;
+    Store.updateDay(function (rec) { was = +rec.ramadan || 0; rec.ramadan = st; }, date);
+    var owed = +Store.get('fastOwed') || 0;
+    if (was !== 2 && st === 2) { Store.setFastOwed(owed + 1); toast('أُضيف يوم إلى ما عليك من القضاء'); }
+    else if (was === 2 && st !== 2) Store.setFastOwed(owed - 1);
+    buzz(10);
+    if (state.view === 'ramadan') renderRamadan();
+    renderHomeRamadan();
+  }
+
+  function ramadanTimes(t) {
+    var tile = function (minutes, label) {
+      return '<div class="prayer-stat"><b>' + clockMarkup(minutes) + '</b><span>' + esc(label) + '</span></div>';
+    };
+    return '<div class="prayer-stats ramadan-times">' +
+      tile(t.fajr - 10, 'الإمساك') + tile(t.fajr, 'آخر السحور، الفجر') + tile(t.maghrib, 'الإفطار، المغرب') + '</div>';
+  }
+
+  function ramadanFastRow(today) {
+    var st = ramadanFastOf(today);
+    return '<button class="check' + (st === 1 ? ' is-done' : '') + '" data-ramadan-fast="' + Store.dayKey(today) +
+      '" role="checkbox" aria-checked="' + (st === 1 ? 'true' : 'false') + '">' +
+      '<span class="check-box">' + icon('check') + '</span>' +
+      '<span class="check-label">صيام اليوم' +
+      (st === 2 ? '<span class="check-note">علّمته يوماً أفطرت فيه، وهو في القضاء</span>' : '') + '</span></button>';
+  }
+
+  /* The night that comes next is the one after today's day: the twenty
+     first night falls at the maghrib of the twentieth. */
+  function ramadanTonight(d, len) {
+    var night = d + 1;
+    if (d >= len) return 'الليلة ليلة العيد، فكبّر، وأخرج زكاة الفطر قبل الصلاة إن لم تخرجها';
+    if (night >= 21 && night % 2 === 1) return 'الليلة ليلة ' + ar(night) + '، من ليالي الوتر في العشر الأواخر';
+    if (night >= 21) return 'الليلة ليلة ' + ar(night) + ' من العشر الأواخر';
+    return '';
+  }
+
+  /* Today in the month, on the screen in full and on the home card short:
+     the day, the hours that bound the fast, and the ticks of the day. */
+  function ramadanTodayHtml(full) {
+    var m = ramadanMonth();
+    var now = new Date();
+    if (m.h.m !== 9) {
+      var ahead = ramadanAhead(m);
+      if (!ahead) return '';
+      var owed = Store.fastOwed();
+      return '<div class="card-head"><h2>' + icon('crescent') +
+        (ahead.days <= 0 ? 'رمضان اليوم' : ahead.days === 1 ? 'رمضان غداً إن شاء الله' : 'رمضان بعد ' + daysOf(ahead.days, true)) + '</h2></div>' +
+        '<p class="setting-note">يبدأ ' + esc(whenItFalls(ahead.date)) + ' بحساب أم القرى، والعبرة برؤية الهلال في بلدك</p>' +
+        (owed && full ? '<div class="row"><span class="row-mark">' + ar(owed) + '</span><span class="row-body">' +
+          '<span class="row-title">عليك ' + esc(daysOf(owed)) + ' من القضاء</span>' +
+          '<span class="row-note">اقضها قبل أن يدخل الشهر</span></span>' +
+          '<button class="btn btn-ghost" data-go="qada">القضاء</button></div>' : '');
+    }
+    var d = m.h.d, len = m.len, left = len - d;
+    var t = computeTimes(now);
+    var head = '<div class="meter-head"><span>' + esc('اليوم ' + ar(d) + ' من رمضان') + '</span>' +
+      '<span class="badge">' + (left ? 'بقي ' + daysOf(left) : 'آخر يوم') + '</span></div>' +
+      '<div class="meter"><span style="width:' + Math.round(d / len * 100) + '%"></span></div>';
+    var tonight = ramadanTonight(d, len);
+    var ticks = [
+      { ticks: ['ramadan:taraweeh'], label: 'صلاة التراويح', note: 'من قام رمضان إيماناً واحتساباً غُفر له' },
+      { ticks: ['wird:quran'], label: 'ورد من القرآن', note: '' },
+      { ticks: ['wird:sadaqah'], label: 'صدقة ولو يسيرة', note: '' }
+    ];
+    var record = Store.day(sunnahDay());
+    return head +
+      (typeof t.fajr === 'number' && typeof t.maghrib === 'number' ? ramadanTimes(t) : '') +
+      (full ? '<p class="setting-note">يحلّ الأكل والشرب حتى أذان الفجر، والإمساك قبله بعشر دقائق كما تطبعه التقاويم</p>' : '') +
+      (tonight ? '<p class="ramadan-tonight">' + icon('moon') + '<span>' + esc(tonight) + '</span></p>' : '') +
+      '<div class="ramadan-ticks" data-sunnah-day="' + Store.dayKey(sunnahDay()) + '">' + ramadanFastRow(now) +
+      (full ? ticks : ticks.slice(0, 1)).map(function (row) { return checkRow(row, record); }).join('') + '</div>';
+  }
+
+  function renderHomeRamadan() {
+    var card = $('home-ramadan');
+    if (!card || typeof Hijri === 'undefined') return;
+    var m = ramadanMonth();
+    var ahead = ramadanAhead(m);
+    var show = Store.get('ramadanCard') !== false && (m.h.m === 9 || !!(ahead && ahead.days <= 1));
+    card.hidden = !show;
+    if (!show) return;
+    $('home-ramadan-body').innerHTML = m.h.m === 9 ? ramadanTodayHtml(false)
+      : '<p class="setting-note">' + esc(ahead.days <= 0 ? 'رمضان اليوم' : 'رمضان غداً إن شاء الله') +
+        '، يبدأ ' + esc(whenItFalls(ahead.date)) + ' بحساب أم القرى، والعبرة برؤية الهلال في بلدك</p>';
+  }
+
+  function renderRamadanGrid(m) {
+    var grid = $('ramadan-grid');
+    if (!grid) return;
+    var today = new Date();
+    var week = $('ramadan-week');
+    if (week && !week.innerHTML) {
+      var initials = ['ح', 'ن', 'ث', 'ر', 'خ', 'ج', 'س'];
+      var other = window.I18n && window.I18n.lang !== 'ar' ? window.I18n.speech : null;
+      if (other) {
+        try {
+          var narrow = new Intl.DateTimeFormat(other, { weekday: 'narrow' });
+          initials = initials.map(function (letter, i) { return narrow.format(new Date(2026, 0, 4 + i)); });
+        } catch (e) { /* the Arabic letters, then */ }
+      }
+      week.innerHTML = initials.map(function (letter, i) {
+        return '<span title="' + esc(Hijri.WEEKDAYS[i]) + '"' + (other ? ' translate="no"' : '') + '>' + esc(letter) + '</span>';
+      }).join('');
+    }
+    if ($('ramadan-month')) $('ramadan-month').textContent = 'رمضان ' + ar(m.y) + ' هـ';
+    if (!m.days.length) { grid.innerHTML = empty('تعذّر بناء هذا الشهر'); return; }
+    var cells = '';
+    for (var blank = 0; blank < m.days[0].weekday; blank++) cells += '<span class="cal-cell is-empty"></span>';
+    var fasted = 0, broke = 0, prayed = 0;
+    m.days.forEach(function (day) {
+      var st = ramadanFastOf(day.date);
+      var eve = new Date(day.date.getFullYear(), day.date.getMonth(), day.date.getDate() - 1, 12);
+      if (Store.day(eve).sunnah['ramadan:taraweeh']) prayed++;
+      if (st === 1) fasted++;
+      if (st === 2) broke++;
+      var isToday = sameDay(day.date, today);
+      var future = day.date > today && !isToday;
+      var cls = 'cal-cell' + (isToday ? ' is-today' : '') + (st === 1 ? ' is-fasted' : st === 2 ? ' is-broke' : '') + (future ? ' is-future' : '');
+      var spoken = ar(day.d) + ' رمضان، ' + Hijri.WEEKDAYS[day.weekday] + ' ' + ar(day.date.getDate()) + ' ' +
+        GREG_MONTHS[day.date.getMonth()] + (st === 1 ? '، صمته' : st === 2 ? '، أفطرت فيه' : '') + (isToday ? '، اليوم' : '');
+      cells += '<button class="' + cls + '"' + (future ? ' disabled' : ' data-ramadan-day="' + Store.dayKey(day.date) + '"') +
+        ' aria-label="' + esc(spoken) + '"' + (isToday ? ' aria-current="date"' : '') + '>' +
+        '<span class="cal-num">' + ar(day.d) + '</span>' +
+        '<span class="cal-greg">' + ar(day.date.getDate()) + '</span></button>';
+    });
+    grid.innerHTML = cells;
+    if ($('ramadan-tally')) $('ramadan-tally').textContent = ar(fasted) + ' من ' + ar(m.days.length);
+    if ($('ramadan-summary')) {
+      var parts = [];
+      if (fasted) parts.push('صمت ' + daysOf(fasted));
+      if (broke) parts.push('أفطرت ' + daysOf(broke) + ' تُقضى');
+      if (prayed) parts.push('صليت التراويح ' + count(prayed, 'ليلة واحدة', 'ليلتين', 'ليالٍ', 'ليلة'));
+      $('ramadan-summary').textContent = parts.length ? parts.join('، ') :
+        (m.h.m === 9 ? 'اضغط يوماً لتعلّمه صمته أو أفطرت فيه' : 'تُعلَّم الأيام إذا جاء الشهر');
+    }
+  }
+
+  function ramadanDaySheet(stamp) {
+    var date = dateOfStamp(stamp);
+    var st = ramadanFastOf(date);
+    var h = Hijri.toHijri(date, Store.get('hijriAdjust'));
+    openSheet('اليوم ' + ar(h.d) + ' من رمضان، ' + Hijri.WEEKDAYS[date.getDay()] + ' ' + ar(date.getDate()) + ' ' + GREG_MONTHS[date.getMonth()],
+      '<div class="mark-choices">' +
+      '<button class="btn ' + (st === 1 ? 'btn-primary' : 'btn-ghost') + '" data-act="ramadan-mark" data-ref="' + stamp + ':1">' + icon('check') + 'صمته</button>' +
+      '<button class="btn ' + (st === 2 ? 'btn-primary' : 'btn-ghost') + '" data-act="ramadan-mark" data-ref="' + stamp + ':2">' + icon('close') + 'أفطرت فيه</button>' +
+      (st ? '<button class="btn btn-ghost" data-act="ramadan-mark" data-ref="' + stamp + ':0">امسح العلامة</button>' : '') +
+      '</div><p class="setting-note" style="margin-top:12px">اليوم الذي أفطرت فيه يُضاف إلى ما عليك في القضاء، فإن مسحت علامته حُذف منه</p>');
+  }
+
+  function renderRamadanKhatma(m) {
+    var host = $('ramadan-khatma');
+    if (!host) return;
+    var read = Math.min(TOTAL_PAGES, Store.progress().pagesRead || 0);
+    var line;
+    if (m.h.m === 9) {
+      var daysLeft = Math.max(1, m.len - m.h.d + 1);
+      line = read >= TOTAL_PAGES ? 'أتممت الختمة، فتقبل الله منك'
+        : 'بقي من ختمتك ' + pages(TOTAL_PAGES - read) + '، فلتختم قبل العيد اقرأ نحو ' +
+          pages(Math.ceil((TOTAL_PAGES - read) / daysLeft), true) + ' كل يوم';
+    } else {
+      line = 'لتختم في الشهر اقرأ نحو ' + pages(Math.ceil(TOTAL_PAGES / 30), true) + ' كل يوم، أي جزءاً كل يوم تقريباً';
+    }
+    host.innerHTML = '<div class="card-head"><h2>' + icon('book') + 'ختمة رمضان</h2>' +
+      '<button class="card-more" data-go="khatma">خطة الختمة</button></div>' +
+      '<p class="setting-note">' + esc(line) + '</p>';
+  }
+
+  function renderRamadanTen(m) {
+    var host = $('ramadan-ten');
+    if (!host) return;
+    host.hidden = m.h.m !== 9;
+    if (host.hidden) return;
+    var d = m.h.d, tonight = d + 1, marks = '';
+    for (var n = 21; n <= Math.max(29, m.len); n++) {
+      var cls = 'ten-night' + (n % 2 ? ' is-odd' : '') + (n === tonight ? ' is-tonight' : '') + (n <= d ? ' is-past' : '');
+      marks += '<span class="' + cls + '">' + ar(n) + '</span>';
+    }
+    /* the dua of the night, from the list of the month where its source is */
+    var afw = null;
+    (typeof RAMADAN_SUNAN !== 'undefined' ? RAMADAN_SUNAN : []).forEach(function (g) {
+      g.i.forEach(function (item) { if (item.k === 'afw') afw = item; });
+    });
+    var when = d < 20 ? 'تبدأ العشر الأواخر بمغرب اليوم العشرين، بعد ' + daysOf(20 - d, true)
+      : 'كان النبي ﷺ يجتهد فيها ما لا يجتهد في غيرها، فأكثر فيها من القيام والدعاء';
+    host.innerHTML = '<div class="card-head"><h2>' + icon('moon') + 'العشر الأواخر</h2></div>' +
+      '<div class="ten-nights" aria-hidden="true">' + marks + '</div>' +
+      '<p class="setting-note">' + esc(when) + '</p>' +
+      (afw ? '<p class="naskh ramadan-afw"' + SAID + '>' + esc(afw.t) + '</p>' +
+        '<p class="source">' + esc(afw.h) + '، ' + esc(afw.r) + '</p>' : '');
+  }
+
+  function renderRamadanSunan() {
+    var host = $('ramadan-sunan');
+    if (!host || typeof RAMADAN_SUNAN === 'undefined') return;
+    var said = bookOf('hadith');
+    host.innerHTML = RAMADAN_SUNAN.map(function (group, gi) {
+      var key = 'ramadan:' + gi;
+      var open = openGroups[key] === true;
+      return '<section class="fold' + (open ? ' is-open' : '') + '" data-fold="' + key + '">' +
+        '<button class="fold-head" aria-expanded="' + (open ? 'true' : 'false') + '">' + icon(group.icon) +
+        '<span class="fold-title">' + esc(group.g) + '</span>' +
+        '<span class="fold-tally">' + ar(group.i.length) + '</span>' + icon('chevron', 'fold-arrow') + '</button>' +
+        '<div class="fold-body">' + group.i.map(function (item) {
+          var meaning = said && said.q && item.q && said.q[item.q] ? saidIn(said.q[item.q].t) : '';
+          return '<div class="ramadan-said"><p class="ramadan-said-head">' + esc(item.h) + '</p>' +
+            '<p class="naskh"' + SAID + '>' + esc(item.t) + '</p>' + meaning +
+            '<p class="source">' + esc(item.r) + '</p></div>';
+        }).join('') + '</div></section>';
+    }).join('') + bookSource('hadith');
+    withBook('hadith', function () { if (state.view === 'ramadan') renderRamadanSunan(); });
+  }
+
+  function renderRamadan() {
+    var today = $('ramadan-today');
+    if (!today || typeof Hijri === 'undefined') return;
+    var m = ramadanMonth();
+    today.innerHTML = ramadanTodayHtml(true);
+    renderRamadanGrid(m);
+    renderRamadanKhatma(m);
+    renderRamadanTen(m);
+    renderRamadanSunan();
+    setSwitch($('settings-ramadan-card'), Store.get('ramadanCard') !== false);
   }
 
   /* ---------------- more ---------------- */
@@ -6896,6 +7187,7 @@
     { nav: 'qibla', icon: 'compass', name: 'القبلة', note: 'اتجاه الكعبة من موقعك' },
     { act: 'mosques', icon: 'mosque', name: 'المساجد القريبة', note: 'أقرب المساجد إليك على الخريطة' },
     { nav: 'prayers', icon: 'check', name: 'صلاتي', note: 'تتبّع صلواتك الخمس وشهرك' },
+    { nav: 'ramadan', icon: 'crescent', name: 'رمضان', note: 'الصيام والقيام والعشر الأواخر' },
     { nav: 'azkar', icon: 'hands', name: 'الأذكار', note: 'الأذكار اليومية وحصن المسلم كاملاً' },
     { nav: 'khatma', icon: 'target', name: 'خطة الختمة', note: 'وزّع المصحف على أيامك' },
     { nav: 'radio', icon: 'radio', name: 'الإذاعة', note: 'بث مباشر ومؤقت إيقاف' },
@@ -6916,7 +7208,7 @@
      each keeps the order the list gives it while an entry no shelf names goes
      on the first rather than going missing. */
   var MORE_SHELVES = [
-    { title: 'العبادة', keys: ['umrah', 'prayers', 'azkar', 'dua', 'ruqyah'] },
+    { title: 'العبادة', keys: ['umrah', 'prayers', 'ramadan', 'azkar', 'dua', 'ruqyah'] },
     { title: 'القرآن والحديث', keys: ['khatma', 'bookmarks', 'radio', 'hadith'] },
     { title: 'المواقيت والأماكن', keys: ['qibla', 'mosques', 'timetable', 'calendar'] },
     { title: 'التطبيق', keys: ['reminders', 'settings', 'about'] }
@@ -8992,9 +9284,10 @@
       }
     });
     /* the reader's own reminders and the sound each makes */
-    ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'].forEach(function (key) {
+    ['morningAdhkar', 'eveningAdhkar', 'sleepIstighfar', 'sleepMulk', 'sleepKursi'].concat(RAMADAN_REMINDERS).forEach(function (key) {
       setSwitch($('settings-' + key), !!Store.get(key));
     });
+    if ($('settings-suhoor-before')) $('settings-suhoor-before').value = String(+Store.get('suhoorBefore') || 30);
     if ($('settings-sleep-at')) $('settings-sleep-at').value = Store.get('sleepAt') || '22:30';
     document.querySelectorAll('.select-sound').forEach(function (sel) {
       sel.value = soundFor(sel.getAttribute('data-sound'));
@@ -9262,6 +9555,7 @@
     more: renderMore,
     umrah: renderUmrah,
     qada: renderQada,
+    ramadan: renderRamadan,
     mosques: renderMosques,
     qibla: renderQibla,
     tasbih: renderTasbih,
@@ -9441,6 +9735,11 @@
       renderQada();
       toast('تقبّل الله، ' + PRAYER_NAMES[ref] + ' قضيتها');
     },
+    'ramadan-mark': function (ref) {
+      var at = ref.lastIndexOf(':');
+      setRamadanFast(dateOfStamp(ref.slice(0, at)), +ref.slice(at + 1));
+      closeSheet();
+    },
     'fast-owed': function (ref) {
       Store.setFastOwed((+Store.get('fastOwed') || 0) + (+ref));
       renderQada();
@@ -9618,6 +9917,15 @@
       foldHead.setAttribute('aria-expanded', section.classList.contains('is-open') ? 'true' : 'false');
       return;
     }
+
+    var ramadanFast = target.closest('[data-ramadan-fast]');
+    if (ramadanFast) {
+      var fastDay = dateOfStamp(ramadanFast.getAttribute('data-ramadan-fast'));
+      setRamadanFast(fastDay, ramadanFastOf(fastDay) === 1 ? 0 : 1);
+      return;
+    }
+    var ramadanDay = target.closest('[data-ramadan-day]');
+    if (ramadanDay) { ramadanDaySheet(ramadanDay.getAttribute('data-ramadan-day')); return; }
 
     var check = target.closest('[data-check]');
     if (check) {
@@ -10189,6 +10497,17 @@
       toast(+e.target.value ? 'سيصلك نداء الجمعة قبلها' : 'أُوقف نداء الجمعة');
     });
 
+    bind('settings-suhoor-before', 'change', function (e) {
+      Store.set('suhoorBefore', +e.target.value || 30);
+      handRemindersToApp();
+    });
+    bind('settings-ramadan-card', 'click', function () {
+      var on = Store.get('ramadanCard') === false;
+      Store.set('ramadanCard', on);
+      setSwitch($('settings-ramadan-card'), on);
+      renderHomeRamadan();
+    });
+
     bind('settings-fast-note', 'click', function () {
       var on = !Store.get('fastNote');
       Store.set('fastNote', on);
@@ -10201,7 +10520,8 @@
     /* five switches of one shape: flip, keep, hand to the wrapper, say so */
     [['morningAdhkar', 'أذكار الصباح'], ['eveningAdhkar', 'أذكار المساء'],
      ['sleepIstighfar', 'الاستغفار قبل النوم'], ['sleepMulk', 'سورة الملك قبل النوم'],
-     ['sleepKursi', 'آية الكرسي قبل النوم']].forEach(function (pair) {
+     ['sleepKursi', 'آية الكرسي قبل النوم'], ['suhoor', 'السحور'], ['iftar', 'قبل الإفطار'],
+     ['lastTen', 'ليالي الوتر من العشر الأواخر'], ['fitrZakat', 'زكاة الفطر']].forEach(function (pair) {
       bind('settings-' + pair[0], 'click', function () {
         var on = !Store.get(pair[0]);
         Store.set(pair[0], on);
@@ -11084,6 +11404,7 @@
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
+      ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,

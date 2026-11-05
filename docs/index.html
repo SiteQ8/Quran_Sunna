@@ -408,6 +408,14 @@
     <div class="place-line" id="place-line"></div>
   </div>
 
+  <div class="card" id="home-ramadan" hidden>
+    <div class="card-head">
+      <h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-crescent"/></svg><span id="home-ramadan-title">رمضان</span></h2>
+      <button class="card-more" data-go="ramadan">صفحة رمضان</button>
+    </div>
+    <div id="home-ramadan-body"></div>
+  </div>
+
   <section class="fold is-open" id="now-fold" data-fold="now">
     <button class="fold-head">
       <svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-clock"/></svg>
@@ -674,6 +682,30 @@
   <div class="card">
     <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-mosque"/></svg>أقربها إليك</h2><span class="badge" id="mosque-count"></span></div>
     <div id="mosque-list"></div>
+  </div>
+</section>
+
+<section class="view" id="v-ramadan" aria-labelledby="ramadan-title">
+  <div class="view-head"><h1 id="ramadan-title">رمضان</h1><p>صيامك وقيامك وختمتك في الشهر، يوماً بيوم</p></div>
+  <div class="card" id="ramadan-today"></div>
+  <div class="card">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-calendar"/></svg><span id="ramadan-month">أيام الشهر</span></h2><span class="badge" id="ramadan-tally"></span></div>
+    <div class="cal-week" id="ramadan-week" aria-hidden="true"></div>
+    <div class="cal-grid ramadan-grid" id="ramadan-grid" role="grid" aria-label="أيام رمضان"></div>
+    <p class="setting-note ramadan-legend"><span class="rg fasted"></span> صمته <span class="rg broke"></span> أفطرت فيه</p>
+    <p class="setting-note" id="ramadan-summary"></p>
+  </div>
+  <div class="card" id="ramadan-khatma"></div>
+  <div class="card" id="ramadan-ten" hidden></div>
+  <h2 class="section-title">من السنة في رمضان</h2>
+  <div id="ramadan-sunan"></div>
+  <div class="card" style="margin-top:12px">
+    <div class="setting"><span><span class="setting-label">بطاقة رمضان في الرئيسية</span><br><span class="setting-note">تظهر تحت المواقيت طوال الشهر، بالسحور والإفطار وصيام اليوم</span></span>
+      <button class="switch" id="settings-ramadan-card" role="switch" aria-checked="true" aria-label="بطاقة رمضان في الرئيسية"></button></div>
+    <button class="row" data-go="reminders">
+      <span class="row-mark"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-bell"/></svg></span>
+      <span class="row-body"><span class="row-title">تذكيرات رمضان</span>
+      <span class="row-note">السحور والإفطار وليالي الوتر وزكاة الفطر</span></span></button>
   </div>
 </section>
 
@@ -1097,6 +1129,23 @@
   <span class="voice-plain" id="settings-voice-plain" hidden>صوت الهاتف</span>
   </span></div>
     </div>
+  </div>
+
+  <div class="card" id="reminders-ramadan">
+    <div class="card-head"><h2><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-crescent"/></svg>رمضان</h2></div>
+    <p class="setting-note" style="margin-bottom:var(--s3)">تصل في أيام رمضان وحدها، على مواقيت موقعك.</p>
+    <div class="setting setting-remind"><span><span class="setting-label">السحور</span><br><span class="setting-note">قبل أذان الفجر بالوقت الذي تختاره</span></span>
+      <span class="remind-controls"><select class="select select-sound" data-sound="suhoor" aria-label="صوت تذكير السحور"><option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option></select><button class="btn btn-ghost btn-icon try-sound" data-try="suhoor" aria-label="اسمع الصوت"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button><select class="select" id="settings-suhoor-before" aria-label="متى يصل تذكير السحور">
+        <option value="30">قبل الفجر بنصف ساعة</option>
+        <option value="45">قبل الفجر بثلاثة أرباع ساعة</option>
+        <option value="60">قبل الفجر بساعة</option>
+      </select></span><button class="switch" id="settings-suhoor" role="switch" aria-checked="false" aria-label="تذكير السحور"></button></div>
+    <div class="setting setting-remind"><span><span class="setting-label">قبل الإفطار</span><br><span class="setting-note">قبل المغرب بربع ساعة</span></span>
+      <span class="remind-controls"><select class="select select-sound" data-sound="iftar" aria-label="صوت تذكير الإفطار"><option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option></select><button class="btn btn-ghost btn-icon try-sound" data-try="iftar" aria-label="اسمع الصوت"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button></span><button class="switch" id="settings-iftar" role="switch" aria-checked="false" aria-label="تذكير قبل الإفطار"></button></div>
+    <div class="setting setting-remind"><span><span class="setting-label">ليالي الوتر من العشر الأواخر</span><br><span class="setting-note">بعد المغرب في ليلة 21 و23 و25 و27 و29</span></span>
+      <span class="remind-controls"><select class="select select-sound" data-sound="lastTen" aria-label="صوت تذكير ليالي الوتر"><option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option></select><button class="btn btn-ghost btn-icon try-sound" data-try="lastTen" aria-label="اسمع الصوت"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button></span><button class="switch" id="settings-lastTen" role="switch" aria-checked="true" aria-label="تذكير ليالي الوتر"></button></div>
+    <div class="setting setting-remind"><span><span class="setting-label">زكاة الفطر</span><br><span class="setting-note">مساء اليوم الثامن والعشرين، لتُخرجها قبل صلاة العيد</span></span>
+      <span class="remind-controls"><select class="select select-sound" data-sound="fitrZakat" aria-label="صوت تذكير زكاة الفطر"><option value="device">صوت الجهاز</option><option value="chime">نغمة هادئة</option><option value="silent">صامت</option></select><button class="btn btn-ghost btn-icon try-sound" data-try="fitrZakat" aria-label="اسمع الصوت"><svg class="icon ic-play" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-play"/></svg></button></span><button class="switch" id="settings-fitrZakat" role="switch" aria-checked="true" aria-label="تذكير زكاة الفطر"></button></div>
   </div>
 
   <div class="card">

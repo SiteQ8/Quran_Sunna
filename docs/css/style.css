@@ -2572,3 +2572,36 @@ html[dir='ltr']:not(.book) #v-page .reader-bar use[href='#i-back'] { transform: 
 .said-meaning { display: block; margin-top: 2px; }
 .meaning-source { text-align: center; margin-top: var(--s4); }
 #daily-meaning .meaning { text-align: center; }
+
+/* ---------- رمضان ---------- */
+/* the month's days, on the calendar's own cells: a day fasted takes the
+   accent, a day not fasted a ring in the colour of a missed prayer */
+.ramadan-grid .cal-cell.is-fasted { background: var(--accent-solid); }
+.ramadan-grid .cal-cell.is-fasted .cal-num, .ramadan-grid .cal-cell.is-fasted .cal-greg { color: var(--on-accent); }
+.ramadan-grid .cal-cell.is-broke { box-shadow: inset 0 0 0 2px var(--danger); }
+.ramadan-grid .cal-cell.is-today { box-shadow: inset 0 0 0 2px var(--accent-solid); background: var(--sunken); }
+.ramadan-grid .cal-cell.is-today .cal-num { color: var(--accent-ink); }
+.ramadan-grid .cal-cell.is-today .cal-greg { color: var(--ink-3); }
+.ramadan-grid .cal-cell.is-today.is-fasted { background: var(--accent-solid); outline: 2px solid var(--accent-solid); outline-offset: 2px; }
+.ramadan-grid .cal-cell.is-today.is-fasted .cal-num, .ramadan-grid .cal-cell.is-today.is-fasted .cal-greg { color: var(--on-accent); }
+.ramadan-grid .cal-cell.is-future { opacity: .45; }
+.ramadan-legend { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; margin-top: var(--s3); }
+.rg { width: 14px; height: 14px; border-radius: 3px; display: inline-block; }
+.rg.fasted { background: var(--accent-solid); }
+.rg.broke { box-shadow: inset 0 0 0 2px var(--danger); }
+.prayer-stats.ramadan-times { grid-template-columns: repeat(3, 1fr); margin: var(--s3) 0 var(--s2); }
+.ramadan-times .prayer-stat b { font-size: var(--step-1); }
+.ramadan-times .ampm { font-size: .8em; font-weight: 600; margin-inline-start: 2px; }
+.ramadan-tonight { display: flex; gap: 8px; align-items: center; margin: var(--s2) 0; font-size: var(--step--1); color: var(--accent-ink); font-weight: 600; }
+.ramadan-tonight .icon { width: 18px; height: 18px; flex: none; }
+.ramadan-ticks { margin-top: var(--s2); }
+.ten-nights { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; margin-bottom: var(--s3); }
+.ten-night { aspect-ratio: 1; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center;
+  background: var(--sunken); font-size: var(--step--2); color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ten-night.is-odd { color: var(--accent-ink); font-weight: 700; box-shadow: inset 0 0 0 1px var(--line); }
+.ten-night.is-past { opacity: .45; }
+.ten-night.is-tonight { background: var(--accent-solid); color: var(--on-accent); box-shadow: none; opacity: 1; }
+.ramadan-afw { text-align: center; margin-top: var(--s2); }
+.ramadan-said { padding: var(--s3) 0; border-top: 1px solid var(--line-soft); }
+.ramadan-said:first-child { border-top: 0; padding-top: 0; }
+.ramadan-said-head { font-weight: 700; font-size: var(--step--1); color: var(--accent-ink); margin-bottom: 4px; }

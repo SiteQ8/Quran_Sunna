@@ -29,7 +29,16 @@ const LANGS = ['en', 'ur', 'id', 'tr', 'fr', 'bn', 'fa', 'ms', 'ru', 'ha'];
 const API = 'https://hadeethenc.com/api/v1/';
 
 /* the quoted hadiths, by the name the page gives them, and their HadeethEnc id */
-const QUOTED = { dal: '5354' };
+const QUOTED = {
+  dal: '5354',
+  /* the hadiths of the Ramadan screen, RAMADAN_SUNAN in docs/data/content.js */
+  rGates: '10107', rFast: '4196', rRayyan: '3738', rSuhoor: '4498', rHaste: '4438',
+  rDates: '6185', rFeed: '6271', rGenerous: '6179', rSeek: '4540', rStrive: '4944',
+  rItikaf: '4495', rQadr: '4202', rFitr: '4520'
+};
+/* A report that tells what the Prophet ﷺ did, rather than quoting him, is
+   kept whole: its last quotation is not its meaning. */
+const WHOLE = ['rDates', 'rGenerous', 'rStrive', 'rItikaf', 'rFitr'];
 
 /* The app's typography writes no long dash: the few a translation has become
    the hyphen, where they stand, every word and space as published. */
@@ -77,7 +86,7 @@ async function quoted() {
     for (const lang of LANGS) {
       if ((one.translations || []).indexOf(lang) === -1) continue;
       const tr = await json(API + 'hadeeths/one/?language=' + lang + '&id=' + id);
-      const words = lastQuote(tr.hadeeth);
+      const words = WHOLE.indexOf(name) !== -1 ? String(tr.hadeeth || '').trim() : lastQuote(tr.hadeeth);
       if (!words) continue;
       (all[lang] = all[lang] || {})[name] = { id: id, t: dashes(words), r: dashes(String(tr.attribution || '').trim()) };
       await wait(80);

@@ -12030,3 +12030,57 @@ test('both store pages are written only by hand, every language in one run', () 
   const tool = fs.readFileSync(path.join(STORE_ROOT, 'tools', 'android', 'play-listing.py'), 'utf8');
   assert.ok(tool.indexOf("pu.call('PUT', f'{base}/edits/{edit}/listings/{lang}', tok, dict(words, language=lang))") !== -1, 'a page Play does not have yet is made');
 });
+
+test('ramadan: the month is laid out, a day kept or not kept is marked, and a day not kept is owed', () => {
+  const now = new Date(2027, 2, 1, 12, 0, 0);
+  const { win, doc } = boot({ now: now });
+  const m = win.App.helpers.ramadanMonth();
+  assert.strictEqual(m.h.m, 9, 'the first of March 2027 is in ramadan');
+  /* the home card shows through the month and says which day it is */
+  win.App.go('home');
+  const card = doc.getElementById('home-ramadan');
+  assert.strictEqual(card.hidden, false, 'the home card shows in ramadan');
+  assert.ok(card.textContent.indexOf('اليوم ' + m.h.d + ' من رمضان') !== -1, 'and names the day');
+
+  win.App.go('ramadan');
+  const cells = doc.querySelectorAll('#ramadan-grid .cal-cell:not(.is-empty)');
+  assert.strictEqual(cells.length, m.days.length, 'one cell a day of the month');
+  /* the fast of today, ticked from the card */
+  click(win, doc.querySelector('#ramadan-today [data-ramadan-fast]'));
+  assert.strictEqual(win.Store.day(now).ramadan, 1, 'today is marked kept');
+  /* a day before, marked not kept, goes to the qada and comes off it again */
+  const owed = win.Store.fastOwed();
+  const before = new Date(2027, 1, 27, 12);
+  win.App.helpers.setRamadanFast(before, 2);
+  assert.strictEqual(win.Store.fastOwed(), owed + 1, 'a day not kept is owed');
+  win.App.helpers.setRamadanFast(before, 0);
+  assert.strictEqual(win.Store.fastOwed(), owed, 'and clearing it takes it off');
+  /* every hadith of the screen that names a meaning has one in English */
+  const en = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'meanings', 'hadith-en.json'), 'utf8'));
+  win.RAMADAN_SUNAN.forEach(function (g) {
+    g.i.forEach(function (item) { if (item.q) assert.ok(en.q[item.q], 'a meaning for ' + item.h); });
+  });
+});
+
+test('ramadan: its reminders come on its days, the odd nights at their maghrib', () => {
+  const { win } = boot({ now: new Date(2027, 2, 1, 12, 0, 0) });
+  win.Store.set('suhoor', true);
+  win.Store.set('iftar', true);
+  const list = win.App.helpers.reminderList();
+  const kinds = list.map(function (r) { return r.k; });
+  ['suhoor', 'iftar', 'lastTen'].forEach(function (k) { assert.ok(kinds.indexOf(k) !== -1, k + ' is planned'); });
+  list.filter(function (r) { return r.k === 'lastTen'; }).forEach(function (r) {
+    assert.ok(/ليلة (21|23|25|27|29) من رمضان/.test(r.t), 'only an odd night: ' + r.t);
+  });
+  const t = win.App.computeTimes(new Date(2027, 2, 2));
+  const suhoor = list.filter(function (r) { return r.k === 'suhoor' && new Date(r.at).getDate() === 2; })[0];
+  const at = new Date(suhoor.at);
+  assert.strictEqual(at.getHours() * 60 + at.getMinutes(), Math.floor(t.fajr) - 30, 'half an hour before the fajr');
+
+  /* outside the month nothing of it is planned and the home card stays away */
+  const off = boot({ now: new Date(2026, 10, 1, 12, 0, 0) });
+  off.win.Store.set('suhoor', true);
+  assert.ok(off.win.App.helpers.reminderList().every(function (r) { return ['suhoor', 'iftar', 'lastTen', 'fitrZakat'].indexOf(r.k) === -1; }));
+  off.win.App.go('home');
+  assert.strictEqual(off.doc.getElementById('home-ramadan').hidden, true);
+});

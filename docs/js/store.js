@@ -51,7 +51,17 @@
     /* the sound each makes: device, chime, or silent */
     remindSound: { morningAdhkar: 'device', eveningAdhkar: 'device', sleepIstighfar: 'device',
       sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device',
-      jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device' },
+      jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device',
+      suhoor: 'device', iftar: 'device', lastTen: 'device', fitrZakat: 'device' },
+    /* ramadan: the suhur reminder and how long before the fajr it comes, the
+       word before the iftar, the odd nights of the last ten, the zakat of the
+       fitr, and the card the home screen shows through the month */
+    suhoor: false,
+    suhoorBefore: 30,
+    iftar: false,
+    lastTen: true,
+    fitrZakat: true,
+    ramadanCard: true,
     wirdAt: '',
     /* which eid greeting was already shown, so it greets once a day */
     eidShown: '',
@@ -240,7 +250,8 @@
   /* marked: what a row of the hour card marked by itself, by the row, so a
      second touch can take back only that, even after the app was closed */
   function emptyDay() {
-    return { azkar: {}, hisn: {}, sunnah: {}, marked: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0, azkarOrder: AZKAR_ORDER };
+    /* ramadan: the fast of a day of the month, 1 kept and 2 not kept and owed */
+    return { azkar: {}, hisn: {}, sunnah: {}, marked: {}, wird: {}, prayers: {}, tasbih: 0, pages: 0, ayahs: 0, azkarOrder: AZKAR_ORDER, ramadan: 0 };
   }
 
   /* A field of the wrong kind, which a hand-edited backup or an old build can
