@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">Mushaf</string>
+    <string name="shortcutAzkar">Zikirler</string>
+    <string name="shortcutQibla">Kıble</string>
+    <string name="shortcutTimetable">Aylık vakitler</string>
+    <string name="shortcutAdhan">Ezan uyarısını aç veya kapat</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">Sıradaki namaz</string>
+    <string name="widgetDescription">Sıradaki namaz ve kalan süre, o saatin gökyüzü üzerinde</string>
+    <string name="widgetDayName">Bugünün namazları</string>
+    <string name="widgetDayDescription">Bugünün beş vakit namazı ve vakitleri, sıradaki öne çıkarılmış</string>
+    <string name="widgetHijriName">Hicri tarih</string>
+    <string name="widgetHijriDescription">Bugünün hicri tarihi ve yaklaşan özel gün</string>
+    <string name="widgetAyahName">Günün ayeti</string>
+    <string name="widgetAyahDescription">Her gün Kur\'an\'dan bir ayet, sayfası tek dokunuşla açılır</string>
+    <string name="widgetKhatmaName">Hatmim</string>
+    <string name="widgetKhatmaDescription">Hatminizden okuduklarınız ve bugünkü virdiniz</string>
+    <string name="widgetAdhkarName">Zikirler</string>
+    <string name="widgetAdhkarDescription">Günün bu vaktinin zikirleri ve bugün kaçını tamamladığınız</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">Zikirler</string>
+    <string name="widgetSample2">Sabah zikirleri</string>
+    <string name="widgetSample3">9 / 25</string>
+    <string name="widgetSample4">Günün ayeti</string>
+    <string name="widgetSample5">Bakara suresi, ayet 286</string>
+    <string name="widgetSample7">"Çarşamba  24 Cemaziyelevvel 1448 H"</string>
+    <string name="widgetSample8">Sabah</string>
+    <string name="widgetSample9">04:42</string>
+    <string name="widgetSample11">Öğle</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">İkindi</string>
+    <string name="widgetSample14">14:38</string>
+    <string name="widgetSample15">Akşam</string>
+    <string name="widgetSample16">17:00</string>
+    <string name="widgetSample17">Yatsı</string>
+    <string name="widgetSample18">18:18</string>
+    <string name="widgetSample19">Çarşamba</string>
+    <string name="widgetSample20">24 Cemaziyelevvel 1448 H</string>
+    <string name="widgetSample21">4 Kasım 2026</string>
+    <string name="widgetSample22">"Mübarek Ramazan ayı  96 gün sonra"</string>
+    <string name="widgetSample23">Hatmim</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">Sayfa 231 / 604</string>
+    <string name="widgetSample26">Bugünkü virdiniz 20 sayfa</string>
+    <string name="widgetSample27">Sıradaki namaz</string>
+    <string name="widgetSample28">14:38</string>
+</resources>

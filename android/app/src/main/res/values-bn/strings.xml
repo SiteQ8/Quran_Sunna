@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">কুরআন</string>
+    <string name="shortcutAzkar">জিকির</string>
+    <string name="shortcutQibla">কিবলা</string>
+    <string name="shortcutTimetable">মাসিক সময়সূচি</string>
+    <string name="shortcutAdhan">আজানের অ্যালার্ট চালু বা বন্ধ</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">পরবর্তী নামাজ</string>
+    <string name="widgetDescription">পরবর্তী নামাজ ও তার বাকি সময়, এই সময়ের আকাশের পটে</string>
+    <string name="widgetDayName">আজকের নামাজ</string>
+    <string name="widgetDayDescription">আজকের পাঁচ ওয়াক্ত নামাজ ও তাদের সময়, পরবর্তীটি আলাদা করে দেখানো</string>
+    <string name="widgetHijriName">হিজরি তারিখ</string>
+    <string name="widgetHijriDescription">আজকের হিজরি তারিখ ও আসন্ন উপলক্ষ</string>
+    <string name="widgetAyahName">আজকের আয়াত</string>
+    <string name="widgetAyahDescription">প্রতিদিন কুরআনের একটি আয়াত, এক স্পর্শে খোলে তার পৃষ্ঠা</string>
+    <string name="widgetKhatmaName">আমার খতম</string>
+    <string name="widgetKhatmaDescription">আপনার খতমের কতটুকু পড়েছেন এবং আজকের ওযিফা</string>
+    <string name="widgetAdhkarName">জিকির</string>
+    <string name="widgetAdhkarDescription">দিনের এই সময়ের জিকির এবং আজ আপনি কতগুলো সম্পন্ন করেছেন</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">জিকির</string>
+    <string name="widgetSample2">সকালের জিকির</string>
+    <string name="widgetSample3">৯ / ২৫</string>
+    <string name="widgetSample4">আজকের আয়াত</string>
+    <string name="widgetSample5">সূরা আল-বাকারা, আয়াত ২৮৬</string>
+    <string name="widgetSample7">"বুধবার  ২৪ জমাদিউল আউয়াল ১৪৪৮ হিজরি"</string>
+    <string name="widgetSample8">ফজর</string>
+    <string name="widgetSample9">৪:৪২</string>
+    <string name="widgetSample11">যোহর</string>
+    <string name="widgetSample12">১১:৩২</string>
+    <string name="widgetSample13">আসর</string>
+    <string name="widgetSample14">২:৩৮</string>
+    <string name="widgetSample15">মাগরিব</string>
+    <string name="widgetSample16">৫:০০</string>
+    <string name="widgetSample17">এশা</string>
+    <string name="widgetSample18">৬:১৮</string>
+    <string name="widgetSample19">বুধবার</string>
+    <string name="widgetSample20">২৪ জমাদিউল আউয়াল ১৪৪৮ হিজরি</string>
+    <string name="widgetSample21">৪ নভেম্বর ২০২৬</string>
+    <string name="widgetSample22">"বরকতময় রমজান মাস  বাকি ৯৬ দিন"</string>
+    <string name="widgetSample23">আমার খতম</string>
+    <string name="widgetSample24" formatted="false">৩৮%</string>
+    <string name="widgetSample25">পৃষ্ঠা ২৩১ / ৬০৪</string>
+    <string name="widgetSample26">আপনার আজকের ওযিফা ২০ পৃষ্ঠা</string>
+    <string name="widgetSample27">পরবর্তী নামাজ</string>
+    <string name="widgetSample28">২:৩৮ PM</string>
+</resources>

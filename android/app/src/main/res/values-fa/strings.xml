@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">مصحف</string>
+    <string name="shortcutAzkar">اذکار</string>
+    <string name="shortcutQibla">قبله</string>
+    <string name="shortcutTimetable">جدول ماه</string>
+    <string name="shortcutAdhan">روشن یا خاموش کردن اعلان اذان</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">نماز بعدی</string>
+    <string name="widgetDescription">نماز بعدی و زمان باقی‌مانده تا آن، بر آسمانِ همان ساعت</string>
+    <string name="widgetDayName">نمازهای امروز</string>
+    <string name="widgetDayDescription">پنج نماز امروز با اوقاتشان، نماز بعدی برجسته</string>
+    <string name="widgetHijriName">تاریخ هجری</string>
+    <string name="widgetHijriDescription">تاریخ هجری امروز و مناسبت پیش رو</string>
+    <string name="widgetAyahName">آیهٔ روز</string>
+    <string name="widgetAyahDescription">هر روز آیه‌ای از مصحف، که صفحه‌اش با یک لمس باز می‌شود</string>
+    <string name="widgetKhatmaName">ختم من</string>
+    <string name="widgetKhatmaDescription">آنچه از ختم خود خوانده‌اید، و ورد امروز</string>
+    <string name="widgetAdhkarName">اذکار</string>
+    <string name="widgetAdhkarDescription">اذکار این وقت از روز و آنچه امروز از آن‌ها تمام کرده‌اید</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">اذکار</string>
+    <string name="widgetSample2">اذکار صبح</string>
+    <string name="widgetSample3">۹ از ۲۵</string>
+    <string name="widgetSample4">آیهٔ روز</string>
+    <string name="widgetSample5">سورهٔ بقره، آیهٔ ۲۸۶</string>
+    <string name="widgetSample7">"چهارشنبه  ۲۴ جمادی‌الاول ۱۴۴۸ ق"</string>
+    <string name="widgetSample8">صبح</string>
+    <string name="widgetSample9">۰۴:۴۲</string>
+    <string name="widgetSample11">ظهر</string>
+    <string name="widgetSample12">۱۱:۳۲</string>
+    <string name="widgetSample13">عصر</string>
+    <string name="widgetSample14">۱۴:۳۸</string>
+    <string name="widgetSample15">مغرب</string>
+    <string name="widgetSample16">۱۷:۰۰</string>
+    <string name="widgetSample17">عشا</string>
+    <string name="widgetSample18">۱۸:۱۸</string>
+    <string name="widgetSample19">چهارشنبه</string>
+    <string name="widgetSample20">۲۴ جمادی‌الاول ۱۴۴۸ ق</string>
+    <string name="widgetSample21">۴ نوامبر ۲۰۲۶</string>
+    <string name="widgetSample22">"ماه مبارک رمضان  ۹۶ روز دیگر"</string>
+    <string name="widgetSample23">ختم من</string>
+    <string name="widgetSample24" formatted="false">۳۸%</string>
+    <string name="widgetSample25">صفحه ۲۳۱ از ۶۰۴</string>
+    <string name="widgetSample26">ورد امروز ۲۰ صفحه</string>
+    <string name="widgetSample27">نماز بعدی</string>
+    <string name="widgetSample28">۱۴:۳۸</string>
+</resources>

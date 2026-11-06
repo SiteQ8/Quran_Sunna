@@ -1,14 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The phone's own words for the app: the shortcuts on its icon and the
+     widgets as the picker lists them. Everything inside the app is the
+     page's, in the language chosen there; these follow the phone. English
+     is the default here, as it is on the page for a phone set to none of
+     the app's languages, and Arabic with the nine others sits beside it in
+     values-<language>, written by the same rule as the page's tables. -->
 <resources>
-    <string name="appName">سُنّتي</string>
-    <string name="launcherName">سُنّتي</string>
+    <string name="appName" translatable="false">سُنّتي</string>
+    <string name="launcherName" translatable="false">سُنّتي</string>
     <string name="assetStatements" translatable="false">[{ \"relation\": [\"delegate_permission/common.handle_all_urls\"], \"target\": { \"namespace\": \"web\", \"site\": \"https://sunnati.3li.info\" }}]</string>
-    <string name="shortcutQuran">المصحف</string>
-    <string name="shortcutAzkar">الأذكار</string>
-    <string name="shortcutQibla">القبلة</string>
-    <string name="shortcutTimetable">جدول الشهر</string>
-    <string name="shortcutAdhan">تشغيل أو إيقاف تنبيه الأذان</string>
-    <string name="widgetDescription">الصلاة القادمة والوقت الباقي عليها</string>
-    <string name="widgetDayDescription">صلوات اليوم بأوقاتها والتاريخ الهجري</string>
-    <string name="widgetHijriDescription">التاريخ الهجري اليوم</string>
+    <string name="shortcutQuran">Quran</string>
+    <string name="shortcutAzkar">Adhkar</string>
+    <string name="shortcutQibla">Qibla</string>
+    <string name="shortcutTimetable">Monthly timetable</string>
+    <string name="shortcutAdhan">Adhan alert on or off</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">Next prayer</string>
+    <string name="widgetDescription">The next prayer and the time left until it, over the sky of the hour</string>
+    <string name="widgetDayName">Today\'s prayers</string>
+    <string name="widgetDayDescription">Today\'s five prayers and their times, with the next one highlighted</string>
+    <string name="widgetHijriName">Hijri date</string>
+    <string name="widgetHijriDescription">Today\'s Hijri date and the occasion coming up</string>
+    <string name="widgetAyahName">Verse of the day</string>
+    <string name="widgetAyahDescription">A verse of the Quran each day, its page one tap away</string>
+    <string name="widgetKhatmaName">My khatmah</string>
+    <string name="widgetKhatmaDescription">What you have read of your khatmah, and your wird today</string>
+    <string name="widgetAdhkarName">Adhkar</string>
+    <string name="widgetAdhkarDescription">The adhkar for this time of day and how many you have completed today</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">Adhkar</string>
+    <string name="widgetSample2">Morning adhkar</string>
+    <string name="widgetSample3">9 of 25</string>
+    <string name="widgetSample4">Verse of the day</string>
+    <string name="widgetSample5">Surah Al-Baqara, verse 286</string>
+    <string name="widgetSample7">"Wednesday  24 Jumada al-Ula 1448 AH"</string>
+    <string name="widgetSample8">Fajr</string>
+    <string name="widgetSample9">4:42</string>
+    <string name="widgetSample11">Dhuhr</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">Asr</string>
+    <string name="widgetSample14">2:38</string>
+    <string name="widgetSample15">Maghrib</string>
+    <string name="widgetSample16">5:00</string>
+    <string name="widgetSample17">Isha</string>
+    <string name="widgetSample18">6:18</string>
+    <string name="widgetSample19">Wednesday</string>
+    <string name="widgetSample20">24 Jumada al-Ula 1448 AH</string>
+    <string name="widgetSample21">4 November 2026</string>
+    <string name="widgetSample22">"The blessed month of Ramadan  In 96 days"</string>
+    <string name="widgetSample23">My khatmah</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">Page 231 of 604</string>
+    <string name="widgetSample26">Your wird today 20 pages</string>
+    <string name="widgetSample27">Next prayer</string>
+    <string name="widgetSample28">2:38 PM</string>
+    <!-- the same in every language: the ayah stays as it was revealed -->
+    <string name="widgetSample6" translatable="false">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</string>
+    <string name="widgetSample10" translatable="false">✓</string>
 </resources>

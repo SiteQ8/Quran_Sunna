@@ -8,4 +8,5 @@
     <color name="widgetAccent">#9c2b2b</color>
     <color name="widgetInk">#1d1a16</color>
     <color name="widgetMuted">#6b645a</color>
+    <color name="widgetTrack">#1F9c2b2b</color>
 </resources>

@@ -45,6 +45,15 @@ public final class Bridge {
     }
 
     /** The prayer times of the days ahead, as the page computed them for the reader's own place. */
+    /** Everything the home screen widgets show besides the times, handed by
+     *  the page in one piece (handWidgetData); every widget is drawn again. */
+    @JavascriptInterface
+    public void setWidgetData(String json) {
+        if (json == null || json.length() > 200000) return;
+        WidgetStore.save(host, json);
+        PrayerWidget.refresh(host);
+    }
+
     @JavascriptInterface
     public void setPrayerTimes(String json) {
         AdhanScheduler.setTimes(host, json);

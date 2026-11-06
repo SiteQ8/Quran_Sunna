@@ -2086,7 +2086,6 @@ test('the compass keeps north at north whichever way the phone is held', () => {
     'rotate(' + win.App.state.qibla.toFixed(2) + ' 100 100)');
 });
 
-
 test('the dot riding the arc never sits on the words inside it', () => {
   const { win, doc } = boot();
   /* The dot climbs to the top of the arc halfway through a window, which is
@@ -2324,7 +2323,6 @@ test('the worker hands over only when the page asks', () => {
     'a worker that waits for every tab to close never takes over on a busy phone');
   assert.match(code, /clients\.claim\(\)/, 'and it should take charge of the page already open');
 });
-
 
 test('the browser is told never to serve the worker from its own cache', () => {
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
@@ -4634,7 +4632,6 @@ test('the settings list the arabic voices on the phone, numbered, with a try but
   assert.ok(doc.getElementById('settings-voice-try'), 'a button to hear it');
 });
 
-
 /* ---------------- room, but not too much ---------------- */
 
 test('the counter and the settings rows no longer breathe a hall of air', () => {
@@ -5934,7 +5931,6 @@ test('the app knows it runs in its own package by the referrer, and remembers', 
 });
 
 
-
 /* ---------------- the bridge to the android package ---------------- */
 
 function fakeBridge(win) {
@@ -6018,7 +6014,6 @@ test('the worker serves the shell from one version, fetched past the browser cac
   assert.ok(sw.indexOf("caches.match(request, { cacheName: VERSION })") !== -1, 'code and markup come from this version\'s cache, whole');
   assert.ok(sw.indexOf("fetch(request).then(function (response) {\n      return keep(request, response);\n    }).catch") === -1, 'the file by file network first path is gone');
 });
-
 
 test('inside the app the about page names the package version beside the page version', () => {
   const { win, doc } = boot();
@@ -6278,7 +6273,6 @@ test('the chosen adhan is handed to the app so it sounds with the app closed', (
   const receiver = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java'), 'utf8');
   assert.ok(receiver.indexOf('CHANNEL_SILENT') !== -1, 'the notification keeps quiet when the app raises the adhan itself');
 });
-
 
 test('each voice button shows only its own sound playing', () => {
   const { win, doc } = boot();
@@ -6651,7 +6645,6 @@ test('a station carries a filled play control, not a stray hairline', () => {
 });
 
 /* ---------------- صفة العمرة ---------------- */
-
 
 
 /* ---------------- صفة العمرة ---------------- */
@@ -12163,4 +12156,74 @@ test('hifz: a surah marked memorised counts in the total and comes round for rev
   click(win, doc.querySelector('[data-act="hifz-reviewed"]'));
   assert.strictEqual(win.Store.get('hifz')[112].r, win.Store.dayKey(), 'reviewing it dates it today');
   assert.strictEqual(win.App.helpers.hifzDue().n, 67, 'and the next comes round');
+});
+
+test('widgets: the page hands every widget its seven days, its words and the khatma in one piece', () => {
+  const sent = [];
+  const { win } = boot({ now: new Date(2027, 2, 1, 10, 0, 0), bridge: { setPrayerTimes: function () {}, setWidgetData: function (j) { sent.push(JSON.parse(j)); } } });
+  win.App.helpers.handWidgetData();
+  const d = sent[sent.length - 1] || win.App.helpers.widgetData();
+  assert.strictEqual(d.days.length, 7, 'a week ahead, so the widgets stay right while the app is closed');
+  const today = d.days[0];
+  assert.strictEqual(today.five.length, 5, 'the five prayers of the day, the ones gone included');
+  assert.ok(today.five.every(function (p) { return p.label && p.clock && p.at; }));
+  assert.ok(today.five.every(function (p) { return p.short && !/[صم]/.test(p.short) && p.clock.indexOf(p.short) === 0; }),
+    'the day row\'s five narrow columns get the time without its ص or م');
+  assert.strictEqual(today.civil, '1 مارس 2027', 'the civil date in the reader\'s language, beside the hijri');
+  assert.strictEqual(d.digits, '0123456789', 'and the figures the widgets count in');
+  assert.ok(today.ramadan, 'the first of March 2027 is in ramadan');
+  const maghrib = today.five.filter(function (p) { return p.key === 'maghrib'; })[0];
+  assert.strictEqual(maghrib.sub, 'الإفطار', 'and its maghrib is the iftar');
+  assert.ok(today.sky.length >= 8 && today.sky.every(function (s) { return typeof s[0] === 'number' && /^[a-z]+$/.test(s[1]); }), 'the turns of the sky through the day');
+  assert.ok(today.hijri && today.day && today.occasion, 'the hijri date and what comes next');
+  assert.ok(today.adhkar.some(function (a) { return a.key === 'morning' && a.total > 0; }), 'the adhkar of each part of the day');
+  assert.ok(d.words.next && d.words.ayah && d.khatma.total === 604);
+  /* nothing goes twice when nothing changed */
+  const before = sent.length;
+  win.App.helpers.handWidgetData();
+  assert.strictEqual(sent.length, before);
+});
+
+test('widgets: the phone lists them in its own language, with Arabic and the nine others beside English', () => {
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const RES = 'android/app/src/main/res/';
+  const strings = function (folder) {
+    const out = {};
+    const re = /<string name="([^"]+)"([^>]*)>([\s\S]*?)<\/string>/g;
+    let m;
+    while ((m = re.exec(read(RES + folder + '/strings.xml')))) out[m[1]] = { text: m[3], fixed: /translatable="false"/.test(m[2]) };
+    return out;
+  };
+  const base = strings('values');
+  const wanted = Object.keys(base).filter(function (k) { return !base[k].fixed; }).sort();
+  assert.ok(wanted.indexOf('widgetDayName') !== -1 && wanted.indexOf('shortcutAdhan') !== -1 && wanted.indexOf('widgetSample27') !== -1);
+  assert.strictEqual(base.widgetPrayerName.text, 'Next prayer', 'English is the default, as on the page for a phone set to none of the eleven');
+  const AR = /[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]/;
+  const FOLDERS = { ar: 'values-ar', id: 'values-in', ms: 'values-ms', fr: 'values-fr', ha: 'values-ha', tr: 'values-tr', ru: 'values-ru', bn: 'values-bn', ur: 'values-ur', fa: 'values-fa' };
+  Object.keys(FOLDERS).forEach(function (lang) {
+    const t = strings(FOLDERS[lang]);
+    assert.deepStrictEqual(Object.keys(t).sort(), wanted, lang + ' names every widget, shortcut and sample, and nothing else');
+    Object.keys(t).forEach(function (k) {
+      assert.ok(t[k].text.trim(), lang + ' ' + k);
+      assert.ok(!/[–—]/.test(t[k].text), lang + ' ' + k + ' has no dash');
+      if (lang !== 'ar' && lang !== 'ur' && lang !== 'fa') assert.ok(!AR.test(t[k].text), lang + ' ' + k + ' is not left in Arabic');
+    });
+  });
+  assert.strictEqual(strings('values-ar').widgetPrayerName.text, 'الصلاة القادمة', 'an Arabic phone with English second still reads Arabic');
+  assert.strictEqual(strings('values-fa').widgetSample24.text, '۳۸%', 'and each sample is written as the page writes it, in its figures');
+
+  /* the iPhone gallery, keyed by the Arabic the widget code writes */
+  const swift = read('ios/Widget/PrayerWidget.swift');
+  const keys = [];
+  swift.replace(/\.(?:configurationDisplayName|description)\("([^"]+)"\)/g, function (all, k) { keys.push(k); return all; });
+  assert.strictEqual(keys.length, 12, 'six widgets, each with a name and a description');
+  ['ar', 'en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn', 'ur', 'fa'].forEach(function (lang) {
+    const file = read('ios/Widget/' + lang + '.lproj/Localizable.strings');
+    keys.forEach(function (k) {
+      const m = new RegExp('^"' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '" = "([^"]+)";$', 'm').exec(file);
+      assert.ok(m && m[1].trim(), lang + ' names ' + k);
+      if (lang === 'ar') assert.strictEqual(m[1], k, 'Arabic is listed too, so a phone reading it first is not handed its second language');
+    });
+  });
+  assert.ok(/CFBundleDevelopmentRegion<\/key><string>en</.test(read('ios/Widget/Info.plist')), 'and English for a phone set to none of them');
 });

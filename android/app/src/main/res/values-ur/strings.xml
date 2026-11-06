@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">مصحف</string>
+    <string name="shortcutAzkar">اذکار</string>
+    <string name="shortcutQibla">قبلہ</string>
+    <string name="shortcutTimetable">ماہانہ نظام الاوقات</string>
+    <string name="shortcutAdhan">اذان کی اطلاع چالو یا بند</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">اگلی نماز</string>
+    <string name="widgetDescription">اگلی نماز اور اس میں باقی وقت، اس گھڑی کے آسمان کے پس منظر میں</string>
+    <string name="widgetDayName">آج کی نمازیں</string>
+    <string name="widgetDayDescription">آج کی پانچوں نمازیں اپنے اوقات کے ساتھ، اگلی نمایاں</string>
+    <string name="widgetHijriName">ہجری تاریخ</string>
+    <string name="widgetHijriDescription">آج کی ہجری تاریخ اور آنے والا موقع</string>
+    <string name="widgetAyahName">آج کی آیت</string>
+    <string name="widgetAyahDescription">ہر دن مصحف کی ایک آیت، ایک لمس سے اس کا صفحہ کھلتا ہے</string>
+    <string name="widgetKhatmaName">میرا ختم</string>
+    <string name="widgetKhatmaDescription">آپ نے اپنے ختم میں سے کتنا پڑھا، اور آج کا ورد</string>
+    <string name="widgetAdhkarName">اذکار</string>
+    <string name="widgetAdhkarDescription">اس وقت کے اذکار اور آج آپ نے ان میں سے کتنے مکمل کیے</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">اذکار</string>
+    <string name="widgetSample2">صبح کے اذکار</string>
+    <string name="widgetSample3">9 / 25</string>
+    <string name="widgetSample4">آج کی آیت</string>
+    <string name="widgetSample5">سورۃ البقرہ، آیت 286</string>
+    <string name="widgetSample7">"بدھ  24 جمادی الاولیٰ 1448 ھ"</string>
+    <string name="widgetSample8">فجر</string>
+    <string name="widgetSample9">4:42</string>
+    <string name="widgetSample11">ظہر</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">عصر</string>
+    <string name="widgetSample14">2:38</string>
+    <string name="widgetSample15">مغرب</string>
+    <string name="widgetSample16">5:00</string>
+    <string name="widgetSample17">عشاء</string>
+    <string name="widgetSample18">6:18</string>
+    <string name="widgetSample19">بدھ</string>
+    <string name="widgetSample20">24 جمادی الاولیٰ 1448 ھ</string>
+    <string name="widgetSample21">4 نومبر 2026</string>
+    <string name="widgetSample22">"ماہِ رمضان المبارک  96 دن بعد"</string>
+    <string name="widgetSample23">میرا ختم</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">صفحہ 231 / 604</string>
+    <string name="widgetSample26">آج کا ورد 20 صفحات</string>
+    <string name="widgetSample27">اگلی نماز</string>
+    <string name="widgetSample28">⁦2:38 PM⁩</string>
+</resources>

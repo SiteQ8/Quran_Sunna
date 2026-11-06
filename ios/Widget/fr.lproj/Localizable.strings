@@ -1,0 +1,14 @@
+/* The widgets as the iPhone's gallery lists them, keyed by the Arabic the
+   widget code writes. Written with the Android picker names, from one list. */
+"الصلاة القادمة" = "Prochaine prière";
+"الصلاة القادمة والوقت الباقي عليها فوق سماء الساعة" = "La prochaine prière et le temps qui reste, sur le ciel de l'heure";
+"صلوات اليوم" = "Les prières du jour";
+"صلوات اليوم الخمس بأوقاتها، والقادمة منها بارزة" = "Les cinq prières du jour et leurs horaires, la prochaine mise en avant";
+"التاريخ الهجري" = "Date hégirienne";
+"التاريخ الهجري اليوم والمناسبة القادمة" = "La date hégirienne du jour et la prochaine date marquante";
+"آية اليوم" = "Verset du jour";
+"آية كل يوم من المصحف، تفتح صفحتها بلمسة" = "Un verset du Coran chaque jour, sa page à portée de doigt";
+"ختمتي" = "Ma khatma";
+"ما قرأته من ختمتك وورد اليوم" = "Ce que vous avez lu de votre khatma, et votre wird du jour";
+"الأذكار" = "Invocations";
+"أذكار الوقت وما أتممته منها اليوم" = "Les invocations du moment et celles que vous avez faites aujourd'hui";

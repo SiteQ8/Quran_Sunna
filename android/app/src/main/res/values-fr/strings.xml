@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">Coran</string>
+    <string name="shortcutAzkar">Invocations</string>
+    <string name="shortcutQibla">Qibla</string>
+    <string name="shortcutTimetable">Horaires du mois</string>
+    <string name="shortcutAdhan">Activer ou couper l\'alerte de l\'adhan</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">Prochaine prière</string>
+    <string name="widgetDescription">La prochaine prière et le temps qui reste, sur le ciel de l\'heure</string>
+    <string name="widgetDayName">Les prières du jour</string>
+    <string name="widgetDayDescription">Les cinq prières du jour et leurs horaires, la prochaine mise en avant</string>
+    <string name="widgetHijriName">Date hégirienne</string>
+    <string name="widgetHijriDescription">La date hégirienne du jour et la prochaine date marquante</string>
+    <string name="widgetAyahName">Verset du jour</string>
+    <string name="widgetAyahDescription">Un verset du Coran chaque jour, sa page à portée de doigt</string>
+    <string name="widgetKhatmaName">Ma khatma</string>
+    <string name="widgetKhatmaDescription">Ce que vous avez lu de votre khatma, et votre wird du jour</string>
+    <string name="widgetAdhkarName">Invocations</string>
+    <string name="widgetAdhkarDescription">Les invocations du moment et celles que vous avez faites aujourd\'hui</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">Invocations</string>
+    <string name="widgetSample2">Invocations du matin</string>
+    <string name="widgetSample3">9 sur 25</string>
+    <string name="widgetSample4">Verset du jour</string>
+    <string name="widgetSample5">Sourate Al-Baqara, verset 286</string>
+    <string name="widgetSample7">"mercredi  24 Joumada al-oula 1448 H."</string>
+    <string name="widgetSample8">Fajr</string>
+    <string name="widgetSample9">04:42</string>
+    <string name="widgetSample11">Dhohr</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">Asr</string>
+    <string name="widgetSample14">14:38</string>
+    <string name="widgetSample15">Maghrib</string>
+    <string name="widgetSample16">17:00</string>
+    <string name="widgetSample17">Icha</string>
+    <string name="widgetSample18">18:18</string>
+    <string name="widgetSample19">mercredi</string>
+    <string name="widgetSample20">24 Joumada al-oula 1448 H.</string>
+    <string name="widgetSample21">4 novembre 2026</string>
+    <string name="widgetSample22">"Le mois béni de Ramadan  Dans 96 jours"</string>
+    <string name="widgetSample23">Ma khatma</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">Page 231 sur 604</string>
+    <string name="widgetSample26">Votre wird du jour 20 pages</string>
+    <string name="widgetSample27">Prochaine prière</string>
+    <string name="widgetSample28">14:38</string>
+</resources>

@@ -77,7 +77,7 @@ test('the wrapper owns its page: a web view with a bridge, no browser helper', (
   const sched = fs.readFileSync(path.join(root, 'android/app/src/main/java/com/eworldq8/sunnati/AdhanScheduler.java'), 'utf8');
   assert.ok(sched.indexOf('public static void setTimes(') !== -1 && sched.indexOf('builtIn(') !== -1, "the page's times first, الكويت's table when nothing else is known");
   const strings = fs.readFileSync(path.join(root, 'android/app/src/main/res/values/strings.xml'), 'utf8');
-  assert.ok(/<string name="appName">سُنّتي<\/string>/.test(strings));
+  assert.ok(/<string name="appName"[^>]*>سُنّتي<\/string>/.test(strings), 'the app keeps its name in every language');
 });
 
 test('the package targets the level the store requires, and keeps the bridge through R8', () => {
