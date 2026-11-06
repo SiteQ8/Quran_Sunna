@@ -28,6 +28,10 @@ public final class AdhanScheduler {
     public static final String KEY_ENABLED = "adhan_enabled";
     public static final String KEY_TIMES = "adhan_times";
     public static final String EXTRA_NAME = "name";
+    /* the notification's words in the reader's language, as the page wrote
+       them; a list from an older page has none and the Arabic is used */
+    public static final String EXTRA_TITLE = "title";
+    public static final String EXTRA_BODY = "body";
     static final String[] KEYS = { "fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha" };
     static final String[] NAMES = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
     /* the sunrise is a time, not a prayer, so it does not ring */
@@ -62,23 +66,53 @@ public final class AdhanScheduler {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /** The next prayer after now: epoch millis and its name. */
+    /** The next prayer after now: epoch millis, its name, and the page's
+     *  title and body for its notification (null when it gave none). */
     public static Object[] next(Context context, long nowMillis) {
         /* first the page's list, if it reaches past now */
         try {
             String stored = prefs(context).getString(KEY_TIMES, null);
             if (stored != null) {
                 JSONArray list = new JSONArray(stored);
-                long best = Long.MAX_VALUE; String name = null;
+                long best = Long.MAX_VALUE; String name = null; String title = null; String body = null;
                 for (int i = 0; i < list.length(); i++) {
                     JSONObject o = list.getJSONObject(i);
                     long at = o.getLong("at");
-                    if (at > nowMillis && at < best) { best = at; name = o.optString("name", "الصلاة"); }
+                    if (at > nowMillis && at < best) {
+                        best = at;
+                        name = o.optString("name", "الصلاة");
+                        title = o.optString("title", "");
+                        body = o.optString("body", "");
+                    }
                 }
-                if (name != null) return new Object[] { best, name };
+                if (name != null) return new Object[] { best, name, title.isEmpty() ? null : title, body.isEmpty() ? null : body };
+                /* The handed days have run out, a week after the app was last
+                   opened. The times of الكويت go on only for a reader whose
+                   handed times were الكويت's: anyone else would be called to
+                   prayer at another country's hours, so nothing rings until
+                   the app is opened and hands the days ahead. */
+                if (list.length() > 0 && !kuwaiti(context, list.getJSONObject(list.length() - 1))) return null;
             }
         } catch (Exception ignored) { /* fall through to the built in times */ }
         return builtIn(context, nowMillis);
+    }
+
+    /** Whether a handed prayer falls within a few minutes of الكويت's own
+     *  time for it, by the table and the formula. */
+    static boolean kuwaiti(Context context, JSONObject o) {
+        int index = -1;
+        String key = o.optString("key", "");
+        for (int i = 0; i < KEYS.length; i++) if (KEYS[i].equals(key)) index = i;
+        long at = o.optLong("at", 0);
+        if (index < 0 || at <= 0) return false;
+        TimeZone zone = TimeZone.getTimeZone("Asia/Kuwait");
+        Calendar day = Calendar.getInstance(zone);
+        day.setTimeInMillis(at);
+        int[] times = PrayerTimes.forDate(day.get(Calendar.YEAR), day.get(Calendar.MONTH) + 1,
+            day.get(Calendar.DAY_OF_MONTH), new OjeiriTable(context));
+        if (times == null || index >= times.length) return false;
+        int minute = day.get(Calendar.HOUR_OF_DAY) * 60 + day.get(Calendar.MINUTE);
+        return Math.abs(minute - times[index]) <= 5;
     }
 
     /** الكويت from the table and the formula, when nothing else is known. */
@@ -96,7 +130,7 @@ public final class AdhanScheduler {
                 at.set(y, m - 1, d, 0, 0, 0);
                 at.set(Calendar.MILLISECOND, 0);
                 at.add(Calendar.MINUTE, times[i]);
-                if (at.getTimeInMillis() > nowMillis) return new Object[] { at.getTimeInMillis(), NAMES[i] };
+                if (at.getTimeInMillis() > nowMillis) return new Object[] { at.getTimeInMillis(), NAMES[i], null, null };
             }
             day.add(Calendar.DATE, 1);
         }
@@ -109,7 +143,7 @@ public final class AdhanScheduler {
         if (next == null) return;
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
-        PendingIntent pending = pending(context, (String) next[1]);
+        PendingIntent pending = pending(context, (String) next[1], (String) next[2], (String) next[3]);
         long at = (Long) next[0];
         boolean exact = Build.VERSION.SDK_INT < 31 || alarms.canScheduleExactAlarms();
         if (exact) alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
@@ -118,13 +152,15 @@ public final class AdhanScheduler {
 
     public static void cancel(Context context) {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-        if (alarms != null) alarms.cancel(pending(context, ""));
+        if (alarms != null) alarms.cancel(pending(context, "", null, null));
     }
 
-    private static PendingIntent pending(Context context, String name) {
+    private static PendingIntent pending(Context context, String name, String title, String body) {
         Intent intent = new Intent(context, AdhanReceiver.class);
         intent.setAction("com.eworldq8.sunnati.ADHAN");
         intent.putExtra(EXTRA_NAME, name);
+        if (title != null) intent.putExtra(EXTRA_TITLE, title);
+        if (body != null) intent.putExtra(EXTRA_BODY, body);
         /* one request code, so a new alarm replaces the old rather than joining it */
         return PendingIntent.getBroadcast(context, REQUEST, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }

@@ -49,7 +49,7 @@ public final class HijriWidget extends AppWidgetProvider {
         for (int id : ids) {
             /* one cell high draws one row; anything taller, the whole card */
             manager.updateAppWidget(id, WidgetStore.sized(manager, id, 170f, 170f, size -> fill(context,
-                WidgetStore.oneRow(size) ? R.layout.widget_hijri_row : R.layout.widget_hijri, size, d, h, c, occ, all)));
+                WidgetStore.oneRow(size, 130) ? R.layout.widget_hijri_row : R.layout.widget_hijri, size, d, h, c, occ, all)));
         }
     }
 

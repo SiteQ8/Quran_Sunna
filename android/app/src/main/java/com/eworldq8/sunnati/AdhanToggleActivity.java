@@ -13,7 +13,7 @@ public final class AdhanToggleActivity extends Activity {
         if (on) {
             /* turning the adhan on harms nobody, so the shortcut stays one tap */
             AdhanScheduler.setEnabled(this, true);
-            Toast.makeText(this, "تنبيهات الأذان تعمل", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.adhanAlertsOn, Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -23,16 +23,16 @@ public final class AdhanToggleActivity extends Activity {
            started, with no word to the person. Now nothing is silenced but by
            a finger on «نعم». */
         new android.app.AlertDialog.Builder(this)
-            .setTitle("إيقاف تنبيهات الأذان؟")
-            .setMessage("لن يرنّ الأذان حتى تعيد تشغيله من هنا أو من الإعدادات.")
-            .setPositiveButton("نعم، أوقفه", new android.content.DialogInterface.OnClickListener() {
+            .setTitle(R.string.adhanStopAsk)
+            .setMessage(R.string.adhanStopWhy)
+            .setPositiveButton(R.string.adhanStopYes, new android.content.DialogInterface.OnClickListener() {
                 @Override public void onClick(android.content.DialogInterface d, int which) {
                     AdhanScheduler.setEnabled(AdhanToggleActivity.this, false);
-                    Toast.makeText(AdhanToggleActivity.this, "أوقفت تنبيهات الأذان", Toast.LENGTH_LONG).show();
+                    Toast.makeText(AdhanToggleActivity.this, R.string.adhanStopped, Toast.LENGTH_LONG).show();
                     finish();
                 }
             })
-            .setNegativeButton("لا", new android.content.DialogInterface.OnClickListener() {
+            .setNegativeButton(R.string.answerNo, new android.content.DialogInterface.OnClickListener() {
                 @Override public void onClick(android.content.DialogInterface d, int which) { finish(); }
             })
             .setOnCancelListener(new android.content.DialogInterface.OnCancelListener() {

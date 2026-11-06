@@ -92,10 +92,10 @@ public final class AudioService extends Service {
             .setVisibility(Notification.VISIBILITY_PUBLIC);
         b.addAction(new Notification.Action.Builder(
             Icon(host, playing ? android.R.drawable.ic_media_pause : android.R.drawable.ic_media_play),
-            playing ? "إيقاف مؤقت" : "تشغيل",
+            host.getString(playing ? R.string.playerPause : R.string.playerPlay),
             command(host, ACTION_TOGGLE)).build());
         b.addAction(new Notification.Action.Builder(
-            Icon(host, android.R.drawable.ic_menu_close_clear_cancel), "إيقاف", command(host, ACTION_CLOSE)).build());
+            Icon(host, android.R.drawable.ic_menu_close_clear_cancel), host.getString(R.string.playerStop), command(host, ACTION_CLOSE)).build());
         if (Build.VERSION.SDK_INT >= 31) b.setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE);
         return b.build();
     }

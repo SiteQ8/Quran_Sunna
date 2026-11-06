@@ -27,17 +27,17 @@ public final class CrashActivity extends Activity {
         column.setPadding(pad, pad * 2, pad, pad);
 
         TextView title = new TextView(this);
-        title.setText("توقف سُنّتي، وهذا سبب التوقف");
+        title.setText(R.string.crashTitle);
         title.setTextSize(20);
         title.setTextColor(Color.BLACK);
         column.addView(title);
 
         Button copy = new Button(this);
-        copy.setText("انسخ");
+        copy.setText(R.string.crashCopy);
         copy.setOnClickListener((v) -> {
             ClipboardManager clip = (ClipboardManager) getSystemService(CLIPBOARD_SERVICE);
             if (clip != null) clip.setPrimaryClip(ClipData.newPlainText("sunnati crash", trace));
-            Toast.makeText(this, "نُسخ", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.crashCopied, Toast.LENGTH_SHORT).show();
         });
         column.addView(copy);
 

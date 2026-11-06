@@ -73,6 +73,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     let languages = Locale.preferredLanguages
       .map { $0.filter { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" } }
       .joined(separator: ",")
+    let adhanOn = UserDefaults.standard.object(forKey: "adhanEnabled") as? Bool ?? true
     let bridge = """
     (function () {
       function send(name, args) {
@@ -82,10 +83,13 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       function call(name) { return function () { return send(name, Array.prototype.slice.call(arguments)); }; }
       window.SunnatiApp = {
         __canNotify: true,
+        __adhanOn: \(adhanOn ? "true" : "false"),
         platform: function () { return 'ios'; },
         version: function () { return '\(version)'; },
         languages: function () { return '\(languages)'; },
         canNotify: function () { return window.SunnatiApp.__canNotify !== false; },
+        isAdhanEnabled: function () { return window.SunnatiApp.__adhanOn !== false; },
+        setAdhanEnabled: function (on) { window.SunnatiApp.__adhanOn = !!on; return send('setAdhanEnabled', [!!on]); },
         setReminders: call('setReminders'),
         setQiyamTimes: call('setQiyamTimes'),
         setPrayerTimes: call('setPrayerTimes'),
@@ -93,6 +97,9 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         setAdhanSilent: call('setAdhanSilent'),
         setAdhanSound: call('setAdhanSound'),
         setQiyamSound: call('setQiyamSound'),
+        setNoticeWords: call('setNoticeWords'),
+        setSalawatEvery: call('setSalawatEvery'),
+        setSalawatSilent: call('setSalawatSilent'),
         shareText: call('shareText'),
         shareImage: call('shareImage'),
         shareImageWithText: call('shareImageWithText'),
@@ -101,7 +108,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         videoShare: call('videoShare'),
         videoAbort: call('videoAbort'),
         saveFile: call('saveFile'),
-        saveAndOpen: call('saveFile'),
+        saveAndOpen: call('saveAndOpen'),
         openMap: call('openMap'),
         addToCalendar: call('addToCalendar')
       };
@@ -234,7 +241,14 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     switch fn {
     case "setReminders":
       guard let json = args.first as? String else { return }
-      Notifier.shared.replace(parse(json), prefix: "remind-")
+      /* the word before each adhan comes five times a day, and a week of it
+         took most of the room iOS gives the reminders, so the friday call and
+         the rest never came. It keeps its next two days, as the app schedules
+         again whenever it opens. */
+      let all = parse(json)
+      let before = all.filter { $0.kind == "preAdhan" && $0.at > Date() }.sorted { $0.at < $1.at }
+      let cutoff = before.count > 10 ? before[9].at : Date.distantFuture
+      Notifier.shared.replace(all.filter { $0.kind != "preAdhan" || $0.at <= cutoff }, prefix: "remind-")
 
     case "setQiyamTimes":
       /* qiyam comes as a bare list of times, as android reads it, and the
@@ -247,6 +261,45 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       qiyamChime = Chime(rawValue: args.first as? String ?? "device") ?? .device
       Notifier.shared.replace(qiyamReminders(), prefix: "qiyam-")
 
+    case "setNoticeWords":
+      /* the words of the call to the night prayer and of the salawat in the
+         reader's language, {qiyam:{t,b}, salawat:{t,b}}; each is scheduled
+         again with them */
+      guard let json = args.first as? String, json.utf8.count < 4000,
+            let words = (try? JSONSerialization.jsonObject(with: Data(json.utf8))) as? [String: Any]
+      else { return }
+      if let qiyam = words["qiyam"] as? [String: Any] {
+        if let t = qiyam["t"] as? String, !t.isEmpty { qiyamTitle = t }
+        if let b = qiyam["b"] as? String, !b.isEmpty { qiyamText = b }
+        if !qiyamTimes.isEmpty { Notifier.shared.replace(qiyamReminders(), prefix: "qiyam-") }
+      }
+      if let salawat = words["salawat"] as? [String: Any],
+         let t = salawat["t"] as? String, !t.isEmpty,
+         let b = salawat["b"] as? String, !b.isEmpty {
+        let d = UserDefaults.standard
+        let changed = d.string(forKey: "salawatTitle") != t || d.string(forKey: "salawatText") != b
+        d.set(t, forKey: "salawatTitle")
+        d.set(b, forKey: "salawatText")
+        if changed { scheduleSalawat(force: true) }
+      }
+
+    /* how often to remind the reader to send prayers upon the Prophet ﷺ, in
+       minutes, or zero for never; handed over every time the page opens, so
+       only a change makes the reminder again */
+    case "setSalawatEvery":
+      let minutes = (args.first as? Int) ?? Int((args.first as? Double) ?? 0)
+      let d = UserDefaults.standard
+      let changed = d.integer(forKey: "salawatEvery") != minutes
+      d.set(minutes, forKey: "salawatEvery")
+      scheduleSalawat(force: changed)
+
+    case "setSalawatSilent":
+      let hush = (args.first as? Bool) ?? ((args.first as? Int) == 1)
+      let d = UserDefaults.standard
+      let changed = d.bool(forKey: "salawatSilent") != hush
+      d.set(hush, forKey: "salawatSilent")
+      if changed { scheduleSalawat(force: true) }
+
     case "setPrayerTimes":
       guard let json = args.first as? String else { return }
       /* prayer times come as {at, name}, not the {at, t, b, s} a reminder uses:
@@ -254,8 +307,16 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
          adhan on the default sound */
       prayerRows = parsePrayers(json)
       let times = prayerReminders()
-      Notifier.shared.replace(times, prefix: "adhan-")
+      /* the widgets keep the times whether or not the adhan rings */
+      Notifier.shared.replace(adhanEnabled ? times : [], prefix: "adhan-")
       shareWithWidget(times, raw: json)
+
+    case "setAdhanEnabled":
+      /* the reader's own switch for the adhan: off clears every one waiting,
+         on schedules them again from the times already handed */
+      let on = (args.first as? Bool) ?? ((args.first as? Int) == 1)
+      UserDefaults.standard.set(on, forKey: "adhanEnabled")
+      Notifier.shared.replace(on ? prayerReminders() : [], prefix: "adhan-")
 
     case "setWidgetData":
       /* everything the widgets show besides the times, in the reader's
@@ -270,7 +331,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       /* The times were scheduled before this arrived, so they are rebuilt with
          the sound the reader actually chose. They used to be put back exactly
          as they were made, so the change of sound never reached them. */
-      Notifier.shared.replace(prayerReminders(), prefix: "adhan-")
+      Notifier.shared.replace(adhanEnabled ? prayerReminders() : [], prefix: "adhan-")
 
     case "setAdhanSound":
       /* the address of the ordinary adhan and of the fajr, or two empty ones
@@ -280,7 +341,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       guard plain != adhanClip || fajr != fajrClip else { return }
       adhanClip = plain
       fajrClip = fajr
-      Notifier.shared.replace(prayerReminders(), prefix: "adhan-")
+      Notifier.shared.replace(adhanEnabled ? prayerReminders() : [], prefix: "adhan-")
 
     case "shareText":
       guard let text = args.first as? String else { return }
@@ -323,12 +384,34 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       let picker = UIDocumentPickerViewController(forExporting: [url], asCopy: true)
       present(picker, animated: true)
 
-    /* directions in Apple Maps, from the coordinates the page passes */
+    /* a file the page wrote, a calendar entry, opened in the system's
+       preview, which offers what to do with it: name, type, text */
+    case "saveAndOpen":
+      guard args.count > 1, let name = args[0] as? String,
+            let text = (args.count > 2 ? args[2] : args[1]) as? String else { return }
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent(name)
+      do { try text.write(to: url, atomically: true, encoding: .utf8) } catch { return }
+      preview = UIDocumentInteractionController(url: url)
+      preview?.delegate = self
+      preview?.presentPreview(animated: true)
+
+    /* Apple Maps, from what the page passes: geo:<place>?q=<what>. A word is
+       a search around the reader's place, the mosques near him; the
+       coordinates of a chosen mosque are a route to it. */
     case "openMap":
+      let raw = args.first as? String ?? ""
       let coords = args.count > 1 ? (args[1] as? String ?? "") : ""
+      let query = URLComponents(string: raw.replacingOccurrences(of: "geo:", with: "geo://"))?
+        .queryItems?.first(where: { $0.name == "q" })?.value ?? ""
       var target: URL?
-      if !coords.isEmpty, let u = URL(string: "maps://?daddr=\(coords)&dirflg=d") { target = u }
-      else if let raw = args.first as? String, let u = URL(string: raw) { target = u }
+      if !coords.isEmpty, !query.isEmpty, !query.hasPrefix(coords) {
+        var search = URLComponents()
+        search.scheme = "maps"
+        search.host = ""
+        search.queryItems = [URLQueryItem(name: "q", value: query), URLQueryItem(name: "sll", value: coords)]
+        target = search.url
+      } else if !coords.isEmpty, let u = URL(string: "maps://?daddr=\(coords)&dirflg=d") { target = u }
+      else if let u = URL(string: raw) { target = u }
       if let u = target { UIApplication.shared.open(u) }
 
     /* an .ics previewed by the system, whose sheet offers «Add to Calendar»
@@ -337,7 +420,13 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       guard args.count > 3, let name = args[0] as? String,
             let start = args[2] as? Double, let end = args[3] as? Double else { return }
       let note = (args[1] as? String ?? "").replacingOccurrences(of: "\n", with: "\\n")
-      let f = DateFormatter(); f.dateFormat = "yyyyMMdd"; f.timeZone = TimeZone(identifier: "UTC")
+      /* the page hands its local midnight, so the day is read on the phone's
+         own clock, in Gregorian figures whatever calendar the phone shows */
+      let f = DateFormatter()
+      f.calendar = Calendar(identifier: .gregorian)
+      f.locale = Locale(identifier: "en_US_POSIX")
+      f.timeZone = TimeZone.current
+      f.dateFormat = "yyyyMMdd"
       let s = f.string(from: Date(timeIntervalSince1970: start / 1000))
       let e = f.string(from: Date(timeIntervalSince1970: end / 1000))
       let ics = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//sunnati//ar", "BEGIN:VEVENT",
@@ -371,12 +460,16 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
   }
 
   private var adhanSilent = false
+  private var adhanEnabled: Bool { UserDefaults.standard.object(forKey: "adhanEnabled") as? Bool ?? true }
   /* the muadhin's clips for the ordinary adhan and the fajr, nil for the tone */
   private var adhanClip: String?
   private var fajrClip: String?
-  private var prayerRows: [(at: Date, name: String)] = []
+  private var prayerRows: [(at: Date, name: String, title: String?, body: String?)] = []
   private var qiyamTimes: [Date] = []
   private var qiyamChime: Chime = .device
+  /* the call to the night prayer, in Arabic until the page gives its words */
+  private var qiyamTitle = "قيام الليل"
+  private var qiyamText = "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى"
   private var preview: UIDocumentInteractionController?
 
   /* The video being handed over: the file it is written into in the
@@ -508,15 +601,20 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     }
   }
 
-  /* The prayer list is its own shape: {at, name}. It is kept as it came, and
-     the notifications are made from it whenever the sound changes. */
-  private func parsePrayers(_ json: String) -> [(at: Date, name: String)] {
+  /* The prayer list is its own shape: {at, name, title, body}. name is the
+     Arabic the adhan goes by; title and body are the notification's words in
+     the reader's language. It is kept as it came, and the notifications are
+     made from it whenever the sound changes. */
+  private func parsePrayers(_ json: String) -> [(at: Date, name: String, title: String?, body: String?)] {
     guard let data = json.data(using: .utf8),
           let rows = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]]
     else { return [] }
     return rows.compactMap { row in
       guard let ms = row["at"] as? Double else { return nil }
-      return (at: Date(timeIntervalSince1970: ms / 1000), name: row["name"] as? String ?? "الصلاة")
+      let title = row["title"] as? String
+      let body = row["body"] as? String
+      return (at: Date(timeIntervalSince1970: ms / 1000), name: row["name"] as? String ?? "الصلاة",
+              title: title?.isEmpty == false ? title : nil, body: body?.isEmpty == false ? body : nil)
     }
   }
 
@@ -528,8 +626,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       let clip = row.name.contains("الفجر") ? fajrClip : adhanClip
       return Reminder(
         at: row.at,
-        title: row.name,
-        text: "حان وقت الصلاة",
+        title: row.title ?? row.name,
+        text: row.body ?? "حان وقت الصلاة",
         chime: adhanSilent ? .silent : .device,
         kind: "adhan",
         sound: adhanSilent ? nil : clip)
@@ -543,9 +641,18 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     return list.map { Date(timeIntervalSince1970: $0 / 1000) }
   }
 
+  private func scheduleSalawat(force: Bool) {
+    let d = UserDefaults.standard
+    Notifier.shared.repeating("salawat", every: d.integer(forKey: "salawatEvery"),
+                              title: d.string(forKey: "salawatTitle") ?? "صلِّ على النبي ﷺ",
+                              text: d.string(forKey: "salawatText") ?? "اللهم صلِّ وسلِّم على نبينا محمد",
+                              chime: d.bool(forKey: "salawatSilent") ? .silent : .device,
+                              kind: "salawat", force: force)
+  }
+
   private func qiyamReminders() -> [Reminder] {
     qiyamTimes.map {
-      Reminder(at: $0, title: "قيام الليل", text: "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى",
+      Reminder(at: $0, title: qiyamTitle, text: qiyamText,
                chime: qiyamChime, kind: "qiyam")
     }
   }
@@ -575,6 +682,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
        and the heading as head; the adhan keeps its own Arabic name */
     let rows = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [[String: Any]] ?? []
     var labels: [Double: String] = [:]
+    var names: [Double: String] = [:]
     var days: [Double: String] = [:]
     var hijris: [Double: String] = [:]
     var head: String? = nil
@@ -582,6 +690,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       guard let ms = row["at"] as? Double else { continue }
       let key = (ms / 1000).rounded()
       if let label = row["label"] as? String, !label.isEmpty { labels[key] = label }
+      if let name = row["name"] as? String, !name.isEmpty { names[key] = name }
       if let d = row["day"] as? String { days[key] = d }
       if let h = row["hijri"] as? String { hijris[key] = h }
       if head == nil, let h = row["head"] as? String, !h.isEmpty { head = h }
@@ -589,7 +698,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     /* the day and its hijri date ride with each prayer, so the hijri widget
        shows the reader's own nudge for the moon of his town */
     var payload = [
-      "names": times.map { labels[$0.at.timeIntervalSince1970.rounded()] ?? $0.title },
+      "names": times.map { labels[$0.at.timeIntervalSince1970.rounded()] ?? names[$0.at.timeIntervalSince1970.rounded()] ?? $0.title },
       "at": times.map { $0.at.timeIntervalSince1970 },
       "days": times.map { days[$0.at.timeIntervalSince1970.rounded()] ?? "" },
       "hijris": times.map { hijris[$0.at.timeIntervalSince1970.rounded()] ?? "" }
@@ -599,6 +708,13 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       store.set(data, forKey: "times")
       WidgetCentre.reload()
     }
+  }
+
+  /* iOS may end the page's process to free memory while the app sits in the
+     background, and the web view is left white until the app is closed and
+     opened again. The page is loaded again instead. */
+  func webViewWebContentProcessDidTerminate(_ w: WKWebView) {
+    w.reload()
   }
 
   /* links to other sites open in the phone's browser, not inside the app */

@@ -703,7 +703,7 @@ test('android keeps the pair it fetched, and its player rings no tone', () => {
   assert.ok(service.indexOf('AdhanReceiver.CHANNEL_PLAYING') !== -1, 'the player has its own channel');
   assert.ok(service.indexOf('.setOnlyAlertOnce(true)') !== -1, 'and it alerts once at most');
   const receiver = java('AdhanReceiver.java');
-  const made = /getNotificationChannel\(CHANNEL_PLAYING\) == null\) \{([\s\S]*?)\n        \}/.exec(receiver)[1];
+  const made = /missing\(manager, CHANNEL_PLAYING, name, about\)\) \{([\s\S]*?)\n        \}/.exec(receiver)[1];
   assert.ok(made.indexOf('IMPORTANCE_LOW') !== -1 && made.indexOf('setSound(null, null)') !== -1 && made.indexOf('enableVibration(false)') !== -1,
     'a channel that never sounds or buzzes');
 });

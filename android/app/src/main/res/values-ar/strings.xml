@@ -55,4 +55,32 @@
     <string name="widgetSample27">الصلاة القادمة</string>
     <string name="widgetSample28">2:38 م</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">أوقات الصلاة</string>
+    <string name="channelAdhanAbout">تنبيه عند دخول وقت كل صلاة</string>
+    <string name="channelAdhanVoice">أوقات الصلاة، بصوت الأذان</string>
+    <string name="channelAdhanVoiceAbout">التنبيه صامت لأن التطبيق يرفع الأذان بنفسه</string>
+    <string name="channelAdhanHush">أوقات الصلاة، بلا صوت</string>
+    <string name="channelAdhanHushAbout">التنبيه يصل بلا صوت ولا اهتزاز، كما اخترت</string>
+    <string name="channelReminders">تذكيرات</string>
+    <string name="channelRemindersAbout">الصلاة على النبي وما تطلبه من التطبيق</string>
+    <string name="channelChime">تذكيرات بنغمة هادئة</string>
+    <string name="channelChimeAbout">التذكيرات التي اخترت لها النغمة الهادئة</string>
+    <string name="channelQuiet">تذكيرات صامتة</string>
+    <string name="channelQuietAbout">التذكيرات التي اخترت أن تصل بلا صوت</string>
+    <string name="channelPlaying">ما يُسمع الآن</string>
+    <string name="channelPlayingAbout">التلاوة والإذاعة والذكر وهي تُسمع، بأزرار الإيقاف ومن غير صوت للإشعار نفسه</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">تنبيهات الأذان تعمل</string>
+    <string name="adhanStopAsk">إيقاف تنبيهات الأذان؟</string>
+    <string name="adhanStopWhy">لن يرنّ الأذان حتى تعيد تشغيله من هنا أو من الإعدادات.</string>
+    <string name="adhanStopYes">نعم، أوقفه</string>
+    <string name="adhanStopped">أوقفت تنبيهات الأذان</string>
+    <string name="answerNo">لا</string>
+    <string name="playerPause">إيقاف مؤقت</string>
+    <string name="playerPlay">تشغيل</string>
+    <string name="playerStop">إيقاف</string>
+    <string name="crashTitle">توقف سُنّتي، وهذا سبب التوقف</string>
+    <string name="crashCopy">انسخ</string>
+    <string name="crashCopied">نُسخ</string>
 </resources>

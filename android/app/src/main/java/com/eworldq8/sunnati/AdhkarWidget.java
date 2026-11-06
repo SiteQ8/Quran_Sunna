@@ -48,7 +48,7 @@ public final class AdhkarWidget extends AppWidgetProvider {
         String count = total > 0 && done >= total ? WidgetStore.word(all, "done", context.getString(R.string.widgetDone))
             : WidgetStore.figures(all, String.valueOf(done)) + " " + WidgetStore.word(all, "of", context.getString(R.string.widgetOf)) + " "
                 + WidgetStore.figures(all, String.valueOf(total));
-        WidgetText.put(context, views, R.id.adhkar_count, now == null ? WidgetStore.word(all, "open", context.getString(R.string.widgetOpenApp)) : count,
+        WidgetText.put(context, views, R.id.adhkar_count, now == null ? WidgetStore.word(all, "openApp", context.getString(R.string.widgetOpenApp)) : count,
             WidgetText.PAPER_COUNT, all, 0);
         return views;
     }

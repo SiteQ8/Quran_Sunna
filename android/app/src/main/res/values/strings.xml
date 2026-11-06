@@ -66,4 +66,32 @@
     <string name="widgetSample29">1:52:14</string>
     <!-- the same in every language: the ayah stays as it was revealed -->
     <string name="widgetSample6" translatable="false">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Prayer times</string>
+    <string name="channelAdhanAbout">An alert as each prayer\'s time begins</string>
+    <string name="channelAdhanVoice">Prayer times, with the adhan</string>
+    <string name="channelAdhanVoiceAbout">The alert itself is silent because the app sounds the adhan</string>
+    <string name="channelAdhanHush">Prayer times, silent</string>
+    <string name="channelAdhanHushAbout">The alert arrives with no sound or vibration, as you chose</string>
+    <string name="channelReminders">Reminders</string>
+    <string name="channelRemindersAbout">Salawat upon the Prophet and the reminders you ask the app for</string>
+    <string name="channelChime">Reminders with a soft tone</string>
+    <string name="channelChimeAbout">The reminders you chose the soft tone for</string>
+    <string name="channelQuiet">Silent reminders</string>
+    <string name="channelQuietAbout">The reminders you chose to arrive without sound</string>
+    <string name="channelPlaying">Now playing</string>
+    <string name="channelPlayingAbout">Recitation, radio and dhikr while they play, with stop buttons and no sound of its own</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Adhan alerts are on</string>
+    <string name="adhanStopAsk">Turn off adhan alerts?</string>
+    <string name="adhanStopWhy">The adhan won\'t sound until you turn it back on here or in Settings.</string>
+    <string name="adhanStopYes">Yes, turn it off</string>
+    <string name="adhanStopped">Adhan alerts are off</string>
+    <string name="answerNo">No</string>
+    <string name="playerPause">Pause</string>
+    <string name="playerPlay">Play</string>
+    <string name="playerStop">Stop</string>
+    <string name="crashTitle">Sunnati stopped, and this is why</string>
+    <string name="crashCopy">Copy</string>
+    <string name="crashCopied">Copied</string>
 </resources>

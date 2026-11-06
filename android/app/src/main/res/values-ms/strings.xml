@@ -55,4 +55,32 @@
     <string name="widgetSample27">Solat seterusnya</string>
     <string name="widgetSample28">2:38 PTG</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Waktu solat</string>
+    <string name="channelAdhanAbout">Peringatan apabila masuk waktu setiap solat</string>
+    <string name="channelAdhanVoice">Waktu solat, dengan azan</string>
+    <string name="channelAdhanVoiceAbout">Peringatan ini senyap kerana aplikasi melaungkan azan sendiri</string>
+    <string name="channelAdhanHush">Waktu solat, senyap</string>
+    <string name="channelAdhanHushAbout">Peringatan tiba tanpa bunyi dan getaran, seperti yang anda pilih</string>
+    <string name="channelReminders">Peringatan</string>
+    <string name="channelRemindersAbout">Selawat ke atas Nabi dan peringatan yang anda minta daripada aplikasi</string>
+    <string name="channelChime">Peringatan dengan nada lembut</string>
+    <string name="channelChimeAbout">Peringatan yang anda pilih nada lembut untuknya</string>
+    <string name="channelQuiet">Peringatan senyap</string>
+    <string name="channelQuietAbout">Peringatan yang anda pilih untuk tiba tanpa bunyi</string>
+    <string name="channelPlaying">Sedang dimainkan</string>
+    <string name="channelPlayingAbout">Bacaan al-Quran, radio dan zikir semasa dimainkan, dengan butang berhenti dan tanpa bunyi pemberitahuan</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Peringatan azan dihidupkan</string>
+    <string name="adhanStopAsk">Matikan peringatan azan?</string>
+    <string name="adhanStopWhy">Azan tidak akan berbunyi sehingga anda menghidupkannya semula di sini atau dalam Tetapan.</string>
+    <string name="adhanStopYes">Ya, matikan</string>
+    <string name="adhanStopped">Peringatan azan dimatikan</string>
+    <string name="answerNo">Tidak</string>
+    <string name="playerPause">Jeda</string>
+    <string name="playerPlay">Main</string>
+    <string name="playerStop">Henti</string>
+    <string name="crashTitle">Sunnati terhenti, dan ini sebabnya</string>
+    <string name="crashCopy">Salin</string>
+    <string name="crashCopied">Disalin</string>
 </resources>

@@ -114,6 +114,16 @@ public final class Bridge {
         else QiyamScheduler.setTimes(host, json);
     }
 
+    /** The words of the notices the app rings by itself, the night prayer
+     *  and the salawat, in the reader's language: {qiyam:{t,b}, salawat:{t,b}}. */
+    @JavascriptInterface
+    public void setNoticeWords(String json) {
+        if (json == null || json.length() > 4000) return;
+        try { new org.json.JSONObject(json); } catch (Exception e) { return; }
+        host.getSharedPreferences(AdhanScheduler.PREFS, android.content.Context.MODE_PRIVATE)
+            .edit().putString(AdhanReceiver.KEY_WORDS, json).apply();
+    }
+
     /** Reminders the page works out: the daily portion, the friday call, and
      *  whatever comes after. A list of when, title and words. */
     @JavascriptInterface

@@ -55,4 +55,32 @@
     <string name="widgetSample27">نماز بعدی</string>
     <string name="widgetSample28">۱۴:۳۸</string>
     <string name="widgetSample29">۱:۵۲:۱۴</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">اوقات نماز</string>
+    <string name="channelAdhanAbout">اعلانی با رسیدن وقت هر نماز</string>
+    <string name="channelAdhanVoice">اوقات نماز، با اذان</string>
+    <string name="channelAdhanVoiceAbout">اعلان بی‌صداست چون برنامه خودش اذان را پخش می‌کند</string>
+    <string name="channelAdhanHush">اوقات نماز، بی‌صدا</string>
+    <string name="channelAdhanHushAbout">اعلان بی‌صدا و بی‌لرزش می‌رسد، همان‌طور که انتخاب کردید</string>
+    <string name="channelReminders">یادآوری‌ها</string>
+    <string name="channelRemindersAbout">درود بر پیامبر و یادآوری‌هایی که از برنامه می‌خواهید</string>
+    <string name="channelChime">یادآوری‌ها با آوای آرام</string>
+    <string name="channelChimeAbout">یادآوری‌هایی که برایشان آوای آرام را برگزیدید</string>
+    <string name="channelQuiet">یادآوری‌های بی‌صدا</string>
+    <string name="channelQuietAbout">یادآوری‌هایی که خواستید بی‌صدا برسند</string>
+    <string name="channelPlaying">در حال پخش</string>
+    <string name="channelPlayingAbout">تلاوت، رادیو و اذکار هنگام پخش، با دکمه‌های توقف و بدون صدای خود اعلان</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">اعلان‌های اذان روشن است</string>
+    <string name="adhanStopAsk">اعلان‌های اذان خاموش شود؟</string>
+    <string name="adhanStopWhy">تا وقتی آن را از اینجا یا از تنظیمات دوباره روشن نکنید، اذان پخش نمی‌شود.</string>
+    <string name="adhanStopYes">بله، خاموش شود</string>
+    <string name="adhanStopped">اعلان‌های اذان خاموش شد</string>
+    <string name="answerNo">نه</string>
+    <string name="playerPause">مکث</string>
+    <string name="playerPlay">پخش</string>
+    <string name="playerStop">توقف</string>
+    <string name="crashTitle">سُنّتی متوقف شد و این دلیل آن است</string>
+    <string name="crashCopy">کپی</string>
+    <string name="crashCopied">کپی شد</string>
 </resources>

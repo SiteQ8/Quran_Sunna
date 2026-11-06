@@ -70,8 +70,11 @@ public final class PrayerDayWidget extends AppWidgetProvider {
             return views;
         }
         String title = (day.optString("day") + "  " + day.optString("hijri")).trim();
-        WidgetText.put(context, views, R.id.day_title, title, WidgetText.SKY_TITLE, all, 0);
-        WidgetText.put(context, views, R.id.day_place, place, WidgetText.SKY_PLACE, all, 0);
+        /* two rows of a phone on its side are too low for the heading over
+           the five columns: the place goes first, then the day itself */
+        float high = size.getHeight();
+        WidgetText.put(context, views, R.id.day_title, high < 140 ? "" : title, WidgetText.SKY_TITLE, all, 0);
+        WidgetText.put(context, views, R.id.day_place, high < 160 ? "" : place, WidgetText.SKY_PLACE, all, 0);
         boolean lifted = false;
         for (int i = 0; i < COLS.length; i++) {
             JSONObject p = five.optJSONObject(i);

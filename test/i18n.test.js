@@ -263,6 +263,57 @@ test('on a Friday the noon prayer is named as the prayer, and the day keeps its 
   });
 });
 
+test('on a Friday the prayer keeps its name off the home card too: widgets, the app\'s rows, reminders and the tracker', async () => {
+  const friday = new Date(2026, 9, 16, 9, 30);
+  const handed = [];
+  const reminders = [];
+  const { win, doc } = boot({
+    languages: ['en-US'], file: 'en', now: friday,
+    storage: { 'sunnati.lang': 'en', 'sunnati.settings': '{"preAdhan":10,"jumuahBefore":30}' },
+    bridge: {
+      setPrayerTimes: function (j) { handed.push(JSON.parse(j)); },
+      setWidgetData: function () {},
+      setReminders: function (j) { reminders.push(JSON.parse(j)); }
+    }
+  });
+  await tick();
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('الجمعة'), 'Friday', 'the word alone is the day');
+  assert.strictEqual(tx('الجمعة', 'prayer'), "Jumu'ah", 'and the prayer when it is said to be one');
+  assert.strictEqual(tx('إقامة الجمعة', 'prayer'), "Jumu'ah iqamah");
+  assert.strictEqual(tx('أذان الجمعة بعد عشر دقائق', 'prayer'), "Jumu'ah adhan in ten minutes");
+  assert.strictEqual(tx('سورة الكهف\nالجمعة', 'prayer'), "Surah Al-Kahf\nJumu'ah", 'every line of it, not the first alone');
+
+  const day = win.App.helpers.widgetData().days[0];
+  const noon = day.five.filter(function (p) { return p.key === 'dhuhr'; })[0];
+  assert.strictEqual(noon.label, "Jumu'ah", 'the widgets name the prayer');
+  assert.strictEqual(day.day, 'Friday', 'and the day keeps its own name');
+
+  win.App.helpers.handTimesToApp();
+  const rows = handed[handed.length - 1] || [];
+  const friNoon = rows.filter(function (r) { return r.key === 'dhuhr' && new win.Date(r.at).getDay() === 5; })[0];
+  assert.ok(friNoon, 'the app is handed the day\'s noon');
+  assert.strictEqual(friNoon.label, "Jumu'ah");
+
+  win.App.helpers.handRemindersToApp();
+  const list = reminders[reminders.length - 1] || [];
+  const call = list.filter(function (r) { return r.k === 'jumuahBefore'; })[0];
+  assert.ok(call, 'the call before the jumuah is planned');
+  assert.strictEqual(call.t, "Jumu'ah");
+  const pre = list.filter(function (r) { return r.k === 'preAdhan' && /Jumu/.test(r.t); });
+  assert.ok(pre.length, 'the word before the adhan names the prayer: ' + list.filter(function (r) { return r.k === 'preAdhan'; }).map(function (r) { return r.t; }).join(' | '));
+  assert.ok(!list.some(function (r) { return /Friday adhan/.test(r.t); }));
+
+  /* the page's own rows of the day's prayers */
+  win.App.go('prayers');
+  await tick();
+  win.I18n.apply();
+  const titles = Array.from(doc.querySelectorAll('#prayers-today .row-title')).map(function (n) { return n.textContent; });
+  assert.ok(titles.indexOf("Jumu'ah") !== -1, 'the tracker names the prayer: ' + titles.join(', '));
+  const heads = Array.from(doc.querySelectorAll('#prayers-grid [role="columnheader"]')).map(function (n) { return n.textContent; });
+  assert.ok(heads.indexOf("Jumu'ah") !== -1, 'and so does the grid: ' + heads.join(', '));
+});
+
 test('a month over its timetable is said the way a heading says it', async () => {
   const { win, doc } = boot({ languages: ['ru-RU'], file: 'ru' });
   win.App.go('timetable');

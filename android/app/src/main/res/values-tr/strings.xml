@@ -55,4 +55,32 @@
     <string name="widgetSample27">Sıradaki namaz</string>
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Namaz vakitleri</string>
+    <string name="channelAdhanAbout">Her namaz vakti girdiğinde bir uyarı</string>
+    <string name="channelAdhanVoice">Namaz vakitleri, ezanla</string>
+    <string name="channelAdhanVoiceAbout">Uygulama ezanı kendisi okuttuğu için uyarı sessizdir</string>
+    <string name="channelAdhanHush">Namaz vakitleri, sessiz</string>
+    <string name="channelAdhanHushAbout">Uyarı, seçtiğiniz gibi sessiz ve titreşimsiz gelir</string>
+    <string name="channelReminders">Hatırlatmalar</string>
+    <string name="channelRemindersAbout">Peygamberimize salavat ve uygulamadan istediğiniz hatırlatmalar</string>
+    <string name="channelChime">Sakin tonlu hatırlatmalar</string>
+    <string name="channelChimeAbout">Sakin tonu seçtiğiniz hatırlatmalar</string>
+    <string name="channelQuiet">Sessiz hatırlatmalar</string>
+    <string name="channelQuietAbout">Sessiz gelmesini seçtiğiniz hatırlatmalar</string>
+    <string name="channelPlaying">Şimdi çalan</string>
+    <string name="channelPlayingAbout">Çalarken tilavet, radyo ve zikirler, durdurma düğmeleriyle ve bildirimin kendi sesi olmadan</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Ezan uyarıları açık</string>
+    <string name="adhanStopAsk">Ezan uyarıları kapatılsın mı?</string>
+    <string name="adhanStopWhy">Ezan, buradan ya da Ayarlar\'dan yeniden açana kadar okunmayacak.</string>
+    <string name="adhanStopYes">Evet, kapat</string>
+    <string name="adhanStopped">Ezan uyarıları kapatıldı</string>
+    <string name="answerNo">Hayır</string>
+    <string name="playerPause">Duraklat</string>
+    <string name="playerPlay">Oynat</string>
+    <string name="playerStop">Durdur</string>
+    <string name="crashTitle">Sunnati durdu, sebebi bu</string>
+    <string name="crashCopy">Kopyala</string>
+    <string name="crashCopied">Kopyalandı</string>
 </resources>

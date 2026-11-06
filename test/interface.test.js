@@ -12275,3 +12275,86 @@ test('widgets: the phone lists them in its own language, with Arabic and the nin
   });
   assert.ok(/CFBundleDevelopmentRegion<\/key><string>en</.test(read('ios/Widget/Info.plist')), 'and English for a phone set to none of them');
 });
+
+/* ---------------- what the release review found ---------------- */
+
+test('the times of the day the clocks move are read with that day\'s own offset', () => {
+  const { win } = boot({ now: new Date(2027, 2, 13, 9, 0) });
+  win.App.helpers.setPlace({ n: 'نيويورك', lat: 40.7128, lng: -74.006, tz: -5, z: 'America/New_York', method: 'MWL' }, true);
+  const before = win.App.computeTimes(new Date(2027, 2, 13));
+  const changed = win.App.computeTimes(new Date(2027, 2, 14));
+  assert.ok(before.dhuhr > 715 && before.dhuhr < 740, 'the noon of the day before, on standard time: ' + before.dhuhr);
+  assert.ok(changed.dhuhr > 775 && changed.dhuhr < 800, 'an hour later by the clock on the day it moves: ' + changed.dhuhr);
+});
+
+test('an iqama set past half an hour is counted to its end', () => {
+  const day = new Date(2026, 10, 3, 12, 0, 0);
+  const t = boot({ now: day }).win.App.computeTimes(day);
+  const { win, doc } = boot({ now: new Date(2026, 10, 3, 0, Math.ceil(t.fajr) + 31, 0) });
+  win.Store.set('iqama', { fajr: 40, dhuhr: 20, asr: 20, maghrib: 10, isha: 20 });
+  win.App.go('home');
+  assert.ok(doc.getElementById('arc-name').textContent.indexOf('إقامة') === 0,
+    'thirty one minutes after the fajr adhan its iqama of forty is still counted: ' + doc.getElementById('arc-name').textContent);
+});
+
+test('zakat names the metal whose price it still wants', () => {
+  const z = boot().win.App.helpers.zakatFigures;
+  assert.strictEqual(z({ nisab: 'silver', silverPrice: 0.5, g21: 100 }).missing, 'gold', 'gold is owned and has no price');
+  assert.strictEqual(z({ goldPrice: 30, silver: 200 }).missing, 'silver', 'silver is owned and has no price');
+  assert.strictEqual(z({ goldPrice: 30, cash: 100 }).missing, '', 'nothing is wanted');
+});
+
+test('the taraweeh is offered on the eve of the first day, and not on the night of the eid', async () => {
+  const eve = boot({ now: new Date(2027, 1, 7, 20, 30) });
+  eve.win.App.go('ramadan');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.ok(eve.doc.querySelector('#ramadan-today [data-check="ramadan:taraweeh"]'), 'the first night of ramadan has its taraweeh');
+  const eid = boot({ now: new Date(2027, 2, 8, 20, 30) });
+  eid.win.App.go('ramadan');
+  await new Promise((r) => setTimeout(r, 0));
+  assert.ok(!eid.doc.querySelector('#ramadan-today [data-check="ramadan:taraweeh"]'), 'the night of the eid has none');
+});
+
+test('in ramadan the word before the maghrib gives way to the reminder of the iftar it would ring with', () => {
+  const { win } = boot({ now: new Date(2027, 1, 15, 9, 0) });
+  win.Store.set('preAdhan', 15);
+  win.Store.set('iftar', true);
+  const list = win.App.helpers.reminderList();
+  const minutes = {};
+  list.forEach(function (r) { minutes[r.at] = (minutes[r.at] || 0) + 1; });
+  assert.ok(list.some(function (r) { return r.k === 'iftar'; }), 'the iftar is reminded');
+  assert.ok(!Object.keys(minutes).some(function (at) { return minutes[at] > 1; }), 'and no two reminders share a minute');
+});
+
+test('the home card and the widgets read the same ayah of the day, one short enough for a widget', () => {
+  const { win, doc } = boot({ now: new Date(2026, 10, 6, 1, 30) });
+  win.App.go('home');
+  const home = doc.getElementById('daily-ayah').textContent;
+  const widget = win.App.helpers.widgetData().days[0].ayah;
+  assert.strictEqual(widget.t, home, 'one verse on both');
+  assert.ok(widget.t.length <= 270, 'and short enough to be read on a widget');
+});
+
+test('the phones say their own words in the reader\'s language: channels, the adhan, the night prayer and the salawat', () => {
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const res = 'android/app/src/main/res/';
+  ['values', 'values-ar', 'values-fr', 'values-in', 'values-ms', 'values-tr', 'values-ru', 'values-bn', 'values-ur', 'values-fa', 'values-ha'].forEach(function (dir) {
+    const xml = read(res + dir + '/strings.xml');
+    ['channelAdhan', 'channelReminders', 'channelPlaying', 'adhanStopAsk', 'playerPause', 'crashTitle'].forEach(function (name) {
+      assert.ok(xml.indexOf('name="' + name + '"') !== -1, dir + ' names ' + name);
+    });
+  });
+  const receiver = read('android/app/src/main/java/com/eworldq8/sunnati/AdhanReceiver.java');
+  assert.ok(!/new NotificationChannel\([A-Z_]+, "/.test(receiver), 'no channel is named in Arabic in the code');
+  assert.ok(receiver.indexOf('AdhanScheduler.EXTRA_TITLE') !== -1, 'the adhan takes the title the page wrote');
+  const swift = read('ios/Sunnati/ReaderController.swift');
+  ['setNoticeWords', 'setAdhanEnabled', 'isAdhanEnabled', 'setSalawatEvery'].forEach(function (fn) {
+    assert.ok(swift.indexOf(fn) !== -1, 'the iPhone answers ' + fn);
+  });
+  const sent = [];
+  const { win } = boot({ bridge: { setPrayerTimes: function (j) { sent.push(JSON.parse(j)); }, setWidgetData: function () {} } });
+  win.App.helpers.handTimesToApp();
+  const rows = sent[sent.length - 1];
+  assert.ok(rows.length && rows.every(function (r) { return r.title && r.body; }), 'every adhan is handed its words');
+  assert.ok(/^حان وقت /.test(rows[0].title));
+});

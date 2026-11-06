@@ -38,23 +38,49 @@ public final class AdhanReceiver extends BroadcastReceiver {
        sat on the reminders channel, which rings, so it rang over the sound it
        named; this one never sounds or buzzes. */
     public static final String CHANNEL_PLAYING = "playing";
+    /* the page's words for the notices rung here, in the reader's language */
+    static final String KEY_WORDS = "notice_words";
+
+    /* A reminder the page planned, on the channel of the sound the reader
+       chose for it, under its own kind so a tap lands on its subject: every
+       scheduled reminder used to be posted as "note", and the page fell back
+       to opening wherever it last was. */
+    private static void note(Context context, String title, String body, String sound, String kind) {
+        if (title == null || title.isEmpty()) return;
+        String channel = "chime".equals(sound) ? CHANNEL_CHIME
+            : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
+        post(context, title, body, kind == null || kind.isEmpty() ? "note" : kind, channel);
+    }
+
+    /** The page's word for a notice, or the Arabic when it gave none. */
+    static String word(Context context, String notice, String part, String arabic) {
+        try {
+            String stored = context.getSharedPreferences(AdhanScheduler.PREFS, Context.MODE_PRIVATE)
+                .getString(KEY_WORDS, null);
+            if (stored == null) return arabic;
+            org.json.JSONObject one = new org.json.JSONObject(stored).optJSONObject(notice);
+            String got = one == null ? "" : one.optString(part, "");
+            return got.isEmpty() ? arabic : got;
+        } catch (Exception e) {
+            return arabic;
+        }
+    }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         if ("com.eworldq8.sunnati.NOTE".equals(intent.getAction())) {
             try {
-                String title = intent.getStringExtra(NoteScheduler.EXTRA_TITLE);
-                String body = intent.getStringExtra(NoteScheduler.EXTRA_BODY);
-                String sound = intent.getStringExtra(NoteScheduler.EXTRA_SOUND);
-                /* the reader chose a sound for this reminder; the channel carries it */
-                String channel = "chime".equals(sound) ? CHANNEL_CHIME
-                    : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
-                String kind = intent.getStringExtra(NoteScheduler.EXTRA_KIND);
-                /* the reminder's own kind, so the tap lands on its subject:
-                   every scheduled reminder used to be posted as "note", and
-                   the page fell back to opening wherever it last was */
-                if (title != null && !title.isEmpty())
-                    post(context, title, body, kind == null || kind.isEmpty() ? "note" : kind, channel);
+                /* every reminder of this minute, or the one the alarm carries
+                   when the list cannot say */
+                java.util.List<org.json.JSONObject> due =
+                    NoteScheduler.dueAt(context, intent.getLongExtra(NoteScheduler.EXTRA_AT, 0));
+                if (due.isEmpty()) {
+                    note(context, intent.getStringExtra(NoteScheduler.EXTRA_TITLE), intent.getStringExtra(NoteScheduler.EXTRA_BODY),
+                        intent.getStringExtra(NoteScheduler.EXTRA_SOUND), intent.getStringExtra(NoteScheduler.EXTRA_KIND));
+                } else {
+                    for (org.json.JSONObject one : due)
+                        note(context, one.optString("t"), one.optString("b"), one.optString("s", "device"), one.optString("k", ""));
+                }
             } catch (Exception e) {
                 Log.w("sunnati", "note not shown", e);
             }
@@ -65,7 +91,8 @@ public final class AdhanReceiver extends BroadcastReceiver {
             try {
                 String qs = context.getSharedPreferences("sunnati_qiyam", Context.MODE_PRIVATE)
                     .getString("sound", "device");
-                post(context, "قيام الليل", "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى", "qiyam",
+                post(context, word(context, "qiyam", "t", "قيام الليل"),
+                    word(context, "qiyam", "b", "هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى"), "qiyam",
                     "silent".equals(qs) ? CHANNEL_QUIET : "chime".equals(qs) ? CHANNEL_CHIME : CHANNEL_REMINDERS);
             } catch (Exception e) {
                 Log.w("sunnati", "qiyam not shown", e);
@@ -77,7 +104,8 @@ public final class AdhanReceiver extends BroadcastReceiver {
             try {
                 boolean hush = context.getSharedPreferences("sunnati_salawat", Context.MODE_PRIVATE)
                     .getBoolean("silent", false);
-                post(context, "صلِّ على النبي ﷺ", "اللهم صلِّ وسلِّم على نبينا محمد", "salawat",
+                post(context, word(context, "salawat", "t", "صلِّ على النبي ﷺ"),
+                    word(context, "salawat", "b", "اللهم صلِّ وسلِّم على نبينا محمد"), "salawat",
                     hush ? CHANNEL_QUIET : CHANNEL_REMINDERS);
             } catch (Exception e) {
                 Log.w("sunnati", "salawat not shown", e);
@@ -96,7 +124,11 @@ public final class AdhanReceiver extends BroadcastReceiver {
                    neither the recording nor the channel's tone is used */
                 boolean quiet = context.getSharedPreferences("sunnati_adhan", Context.MODE_PRIVATE)
                     .getBoolean("silent", false);
-                post(context, "حان وقت " + name, "الله أكبر، حيّ على الصلاة", "adhan",
+                /* the words in the reader's language when the page gave them */
+                String title = intent.getStringExtra(AdhanScheduler.EXTRA_TITLE);
+                String body = intent.getStringExtra(AdhanScheduler.EXTRA_BODY);
+                post(context, title != null && !title.isEmpty() ? title : "حان وقت " + name,
+                    body != null && !body.isEmpty() ? body : "الله أكبر، حيّ على الصلاة", "adhan",
                     quiet ? CHANNEL_HUSH : own ? CHANNEL_SILENT : CHANNEL);
                 if (own && !quiet) AdhanSound.play(context, fajr);
             }
@@ -106,12 +138,31 @@ public final class AdhanReceiver extends BroadcastReceiver {
         try { AdhanScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next adhan not armed", e); }
     }
 
+    /* A channel is listed in the phone's settings under the name it was made
+       with, so it is named in the phone's language, and one made before is
+       renamed in place: creating it again under its id changes its name and
+       description and nothing else, neither its sound nor what the reader
+       set for it. True when there was none and it is to be made now. */
+    private static boolean missing(NotificationManager manager, String id, String name, String about) {
+        NotificationChannel had = manager.getNotificationChannel(id);
+        if (had == null) return true;
+        CharSequence was = had.getName();
+        if (!name.contentEquals(was == null ? "" : was) || !about.equals(had.getDescription())) {
+            NotificationChannel again = new NotificationChannel(id, name, had.getImportance());
+            again.setDescription(about);
+            manager.createNotificationChannel(again);
+        }
+        return false;
+    }
+
     static void ensureChannels(Context context) {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager == null) return;
-        if (manager.getNotificationChannel(CHANNEL) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL, "أوقات الصلاة", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("تنبيه عند دخول وقت كل صلاة");
+        String name = context.getString(R.string.channelAdhan);
+        String about = context.getString(R.string.channelAdhanAbout);
+        if (missing(manager, CHANNEL, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL, name, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(about);
             Uri sound = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
             channel.setSound(sound, new AudioAttributes.Builder()
                 .setUsage(AudioAttributes.USAGE_NOTIFICATION)
@@ -119,45 +170,57 @@ public final class AdhanReceiver extends BroadcastReceiver {
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_SILENT) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_SILENT, "أوقات الصلاة، بصوت الأذان", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("التنبيه صامت لأن التطبيق يرفع الأذان بنفسه");
+        name = context.getString(R.string.channelAdhanVoice);
+        about = context.getString(R.string.channelAdhanVoiceAbout);
+        if (missing(manager, CHANNEL_SILENT, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_SILENT, name, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(about);
             channel.setSound(null, null);
             channel.enableVibration(true);
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_HUSH) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_HUSH, "أوقات الصلاة، بلا صوت", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("التنبيه يصل بلا صوت ولا اهتزاز، كما اخترت");
+        name = context.getString(R.string.channelAdhanHush);
+        about = context.getString(R.string.channelAdhanHushAbout);
+        if (missing(manager, CHANNEL_HUSH, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_HUSH, name, NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription(about);
             channel.setSound(null, null);
             channel.enableVibration(false);
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_REMINDERS) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_REMINDERS, "تذكيرات", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("الصلاة على النبي وما تطلبه من التطبيق");
+        name = context.getString(R.string.channelReminders);
+        about = context.getString(R.string.channelRemindersAbout);
+        if (missing(manager, CHANNEL_REMINDERS, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_REMINDERS, name, NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription(about);
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_CHIME) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_CHIME, "تذكيرات بنغمة هادئة", NotificationManager.IMPORTANCE_DEFAULT);
-            channel.setDescription("التذكيرات التي اخترت لها النغمة الهادئة");
+        name = context.getString(R.string.channelChime);
+        about = context.getString(R.string.channelChimeAbout);
+        if (missing(manager, CHANNEL_CHIME, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_CHIME, name, NotificationManager.IMPORTANCE_DEFAULT);
+            channel.setDescription(about);
             android.net.Uri chime = android.net.Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.chime);
             channel.setSound(chime, new android.media.AudioAttributes.Builder()
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_QUIET) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_QUIET, "تذكيرات صامتة", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("التذكيرات التي اخترت أن تصل بلا صوت");
+        name = context.getString(R.string.channelQuiet);
+        about = context.getString(R.string.channelQuietAbout);
+        if (missing(manager, CHANNEL_QUIET, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_QUIET, name, NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription(about);
             channel.setSound(null, null);
             /* silence means silence: a buzz is a sound to anyone holding the phone */
             channel.enableVibration(false);
             manager.createNotificationChannel(channel);
         }
-        if (manager.getNotificationChannel(CHANNEL_PLAYING) == null) {
-            NotificationChannel channel = new NotificationChannel(CHANNEL_PLAYING, "ما يُسمع الآن", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("التلاوة والإذاعة والذكر وهي تُسمع، بأزرار الإيقاف ومن غير صوت للإشعار نفسه");
+        name = context.getString(R.string.channelPlaying);
+        about = context.getString(R.string.channelPlayingAbout);
+        if (missing(manager, CHANNEL_PLAYING, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_PLAYING, name, NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription(about);
             channel.setSound(null, null);
             channel.enableVibration(false);
             channel.setShowBadge(false);

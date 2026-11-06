@@ -213,10 +213,15 @@ final class WidgetText {
             float last = layout.getLineBaseline(lines - 1);
             String t = text.toString();
             android.graphics.Rect ink = new android.graphics.Rect();
-            paint.getTextBounds(t, layout.getLineStart(0), Math.max(layout.getLineStart(0) + 1, layout.getLineEnd(0)), ink);
-            float inkTop = first + ink.top;
-            paint.getTextBounds(t, layout.getLineStart(lines - 1), Math.max(layout.getLineStart(lines - 1) + 1, layout.getLineEnd(lines - 1)), ink);
-            float inkBottom = last + ink.bottom;
+            float inkTop = first, inkBottom = last;
+            /* a last line that is empty, after a closing line break, has no
+               ink, and reading one letter past the end would throw */
+            int s0 = Math.min(layout.getLineStart(0), t.length());
+            int e0 = Math.min(Math.max(s0 + 1, layout.getLineEnd(0)), t.length());
+            if (e0 > s0) { paint.getTextBounds(t, s0, e0, ink); inkTop = first + ink.top; }
+            int s1 = Math.min(layout.getLineStart(lines - 1), t.length());
+            int e1 = Math.min(Math.max(s1 + 1, layout.getLineEnd(lines - 1)), t.length());
+            if (e1 > s1) { paint.getTextBounds(t, s1, e1, ink); inkBottom = last + ink.bottom; }
             float boxTop = first - (arabicScript ? 0.95f : 0.86f) * em;
             float boxBottom = last + (arabicScript ? 0.40f : 0.25f) * em;
             top = Math.max(top, Math.min(boxTop, inkTop));
