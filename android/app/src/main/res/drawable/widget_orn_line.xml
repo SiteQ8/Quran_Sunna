@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the same stars in a single line, for the painted skies, where bands
+     would be too heavy; white, faint, turning itself for a page read from
+     the right -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/widget_orn_line_mask" android:autoMirrored="true"/>

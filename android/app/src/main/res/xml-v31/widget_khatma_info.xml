@@ -6,7 +6,7 @@
     android:minResizeHeight="110dp"
     android:targetCellWidth="2"
     android:targetCellHeight="2"
-    android:previewLayout="@layout/widget_khatma"
+    android:previewLayout="@layout/widget_khatma_preview"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="1800000"

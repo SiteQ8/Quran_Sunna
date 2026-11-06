@@ -25,6 +25,11 @@ public final class PrayerDayWidget extends AppWidgetProvider {
         PrayerWidget.refresh(context);
     }
 
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, android.os.Bundle options) {
+        PrayerWidget.refresh(context);
+    }
+
     public static void refresh(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, PrayerDayWidget.class));
@@ -34,48 +39,54 @@ public final class PrayerDayWidget extends AppWidgetProvider {
     private static void draw(Context context, AppWidgetManager manager, int[] ids) {
         long now = System.currentTimeMillis();
         JSONObject all = WidgetStore.all(context);
-        JSONObject day = WidgetStore.day(all, now);
-        JSONArray five = day == null ? null : day.optJSONArray("five");
+        JSONObject found = WidgetStore.day(all, now);
+        JSONArray five0 = found == null ? null : found.optJSONArray("five");
         /* once the isha is gone the day that matters is the next one */
-        if (five != null && five.length() > 0 && five.optJSONObject(five.length() - 1).optLong("at") < now) {
+        if (five0 != null && five0.length() > 0 && five0.optJSONObject(five0.length() - 1).optLong("at") < now) {
             JSONObject next = WidgetStore.day(all, now + 86400000L);
-            if (next != null) { day = next; five = next.optJSONArray("five"); }
+            if (next != null) { found = next; five0 = next.optJSONArray("five"); }
         }
-        String place = all == null ? WidgetData.place(context) : all.optString("place", WidgetData.place(context));
-        int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
+        final JSONObject day = found;
+        final JSONArray five = five0;
+        final String place = all == null ? WidgetData.place(context) : all.optString("place", WidgetData.place(context));
+        final int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
         for (int id : ids) {
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_day);
-            views.setOnClickPendingIntent(R.id.day_root, WidgetStore.open(context, "widgetDay", 7401));
-            WidgetStore.direct(views, R.id.day_root, all);
-            views.setImageViewResource(R.id.day_sky, sky);
-            if (day == null || five == null || five.length() == 0) {
-                views.setTextViewText(R.id.day_title, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)));
-                views.setTextViewText(R.id.day_place, "");
-                for (int c : COLS) views.setViewVisibility(c, View.INVISIBLE);
-                manager.updateAppWidget(id, views);
-                continue;
-            }
-            String title = (day.optString("day") + "  " + day.optString("hijri")).trim();
-            views.setTextViewText(R.id.day_title, title);
-            views.setTextViewText(R.id.day_place, place);
-            boolean lifted = false;
-            for (int i = 0; i < COLS.length; i++) {
-                JSONObject p = five.optJSONObject(i);
-                if (p == null) { views.setViewVisibility(COLS[i], View.INVISIBLE); continue; }
-                views.setViewVisibility(COLS[i], View.VISIBLE);
-                boolean gone = p.optLong("at") <= now;
-                boolean next = !gone && !lifted;
-                if (next) lifted = true;
-                views.setTextViewText(NAMES[i], p.optString("label"));
-                /* five narrow columns: the time without its ص or م */
-                views.setTextViewText(TIMES[i], p.optString("short", p.optString("clock")));
-                int colour = gone ? 0x99FFFFFF : 0xFFFFFFFF;
-                views.setTextColor(NAMES[i], colour);
-                views.setTextColor(TIMES[i], colour);
-                views.setInt(COLS[i], "setBackgroundResource", next ? R.drawable.widget_pill : 0);
-                views.setViewVisibility(MARKS[i], p.optBoolean("prayed") ? View.VISIBLE : View.INVISIBLE);
-            }
-            manager.updateAppWidget(id, views);
+            manager.updateAppWidget(id, WidgetStore.sized(manager, id, 340f, 170f,
+                size -> fill(context, size, day, five, place, sky, now, all)));
         }
+    }
+
+    private static RemoteViews fill(Context context, android.util.SizeF size, JSONObject day, JSONArray five, String place,
+                                    int sky, long now, JSONObject all) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_day);
+        views.setOnClickPendingIntent(R.id.day_root, WidgetStore.open(context, "widgetDay", 7401));
+        WidgetStore.direct(views, android.R.id.background, all);
+        views.setImageViewResource(R.id.day_sky, sky);
+        if (day == null || five == null || five.length() == 0) {
+            WidgetText.put(context, views, R.id.day_title, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)),
+                WidgetText.SKY_OPEN, all, WidgetText.px(context, size.getWidth() - 24));
+            views.setViewVisibility(R.id.day_place, View.GONE);
+            for (int c : COLS) views.setViewVisibility(c, View.INVISIBLE);
+            return views;
+        }
+        String title = (day.optString("day") + "  " + day.optString("hijri")).trim();
+        WidgetText.put(context, views, R.id.day_title, title, WidgetText.SKY_TITLE, all, 0);
+        WidgetText.put(context, views, R.id.day_place, place, WidgetText.SKY_PLACE, all, 0);
+        boolean lifted = false;
+        for (int i = 0; i < COLS.length; i++) {
+            JSONObject p = five.optJSONObject(i);
+            if (p == null) { views.setViewVisibility(COLS[i], View.INVISIBLE); continue; }
+            views.setViewVisibility(COLS[i], View.VISIBLE);
+            boolean gone = p.optLong("at") <= now;
+            boolean next = !gone && !lifted;
+            if (next) lifted = true;
+            /* the ones gone fainter; five narrow columns, so the time without its ص or م */
+            int colour = gone ? 0x99FFFFFF : 0xFFFFFFFF;
+            WidgetText.put(context, views, NAMES[i], p.optString("label"), WidgetText.SKY_COLUMN.colored(colour), all, 0);
+            WidgetText.put(context, views, TIMES[i], p.optString("short", p.optString("clock")), WidgetText.SKY_COLUMN_TIME.colored(colour), all, 0);
+            views.setInt(COLS[i], "setBackgroundResource", next ? R.drawable.widget_pill : 0);
+            views.setViewVisibility(MARKS[i], p.optBoolean("prayed") ? View.VISIBLE : View.INVISIBLE);
+        }
+        return views;
     }
 }

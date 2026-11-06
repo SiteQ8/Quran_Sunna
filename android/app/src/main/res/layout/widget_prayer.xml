@@ -1,12 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- the next prayer over the painted sky of the hour: a heading, the prayer,
      a line under it in ramadan, its time, the time left, the bar of the time
-     gone since the prayer before, the place. The sample words are what the
-     widget picker shows; the widget writes its own the moment it is placed. -->
+     gone since the prayer before, the place. The words are pictures drawn in
+     the app's own face by WidgetText, since a launcher loads no font of
+     another app; only the time left, which counts by itself, is the
+     launcher's. The picker shows widget_prayer_preview. -->
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@android:id/background"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@drawable/widget_bg">
+    android:background="@drawable/widget_bg" android:layoutDirection="locale">
 
     <ImageView android:id="@+id/widget_sky"
         android:layout_width="match_parent" android:layout_height="match_parent"
@@ -14,44 +19,33 @@
         android:importantForAccessibility="no"/>
     <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="fitXY" android:src="@drawable/widget_scrim" android:importantForAccessibility="no"/>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_line" android:tint="@color/widgetOrnamentSky" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
 
     <LinearLayout android:id="@+id/widget_root"
         android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="vertical" android:padding="14dp" android:layoutDirection="locale">
+        android:orientation="vertical" android:padding="12dp">
 
-        <TextView android:id="@+id/widget_head"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/widgetSample27" android:textSize="12sp" android:textColor="#D9FFFFFF"
-            android:maxLines="1" android:ellipsize="end"
-            android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
-
-        <TextView android:id="@+id/widget_name"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/widgetSample13" android:textSize="24sp" android:textStyle="bold" android:textColor="#FFFFFFFF"
-            android:maxLines="1" android:ellipsize="end"
-            android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
-
-        <TextView android:id="@+id/widget_sub"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textSize="12sp" android:textStyle="bold" android:textColor="#FFFFE2B8" android:maxLines="1"
-            android:visibility="gone"
-            android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
-
-        <TextView android:id="@+id/widget_time"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/widgetSample28" android:textSize="13sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-            android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+        <ImageView android:id="@+id/widget_head"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/widget_name"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"/>
+        <ImageView android:id="@+id/widget_sub"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter" android:visibility="gone"/>
+        <ImageView android:id="@+id/widget_time"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"/>
 
         <TextView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
 
-        <Chronometer android:id="@+id/widget_left" android:visibility="gone"
+        <Chronometer android:id="@+id/widget_left"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textSize="26sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
-            android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
-        <!-- what the picker shows in its place: a chronometer reads 00:00 until it runs -->
-        <TextView android:id="@+id/widget_left_sample" android:text="@string/widgetSample29"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textSize="26sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
+            android:fontFamily="sans-serif-medium" android:maxLines="1"
             android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
 
         <ProgressBar android:id="@+id/widget_bar"
@@ -59,10 +53,8 @@
             android:layout_width="match_parent" android:layout_height="4dp" android:layout_marginTop="6dp"
             android:max="1000" android:progress="620" android:progressDrawable="@drawable/widget_progress_sky"/>
 
-        <TextView android:id="@+id/widget_place"
-            android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textSize="11sp" android:textColor="#CCFFFFFF" android:maxLines="1" android:ellipsize="end"
-            android:layout_marginTop="6dp"
-            android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+        <ImageView android:id="@+id/widget_place"
+            android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"/>
     </LinearLayout>
 </FrameLayout>

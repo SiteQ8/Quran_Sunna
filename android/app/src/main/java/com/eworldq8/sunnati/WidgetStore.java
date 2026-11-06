@@ -77,12 +77,50 @@ final class WidgetStore {
         views.setInt(root, "setLayoutDirection", "rtl".equals(dir) ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
     }
 
-    /** One cell high, on a launcher older than Android 12 that cannot be
-     *  handed a drawing for each size: the reported height decides. */
-    static boolean oneRow(AppWidgetManager manager, int id) {
+    /** The sizes, in dp, a widget is shown at: on Android 12 each one the
+     *  launcher says it uses; before, upright and on its side from the
+     *  narrowest and widest it may be; nothing said yet, the size it was made
+     *  for. The words are drawn as pictures, so each size has its own. */
+    static java.util.List<android.util.SizeF> sizes(AppWidgetManager manager, int id, float w, float h) {
+        java.util.List<android.util.SizeF> out = new java.util.ArrayList<>();
         android.os.Bundle o = manager.getAppWidgetOptions(id);
-        int h = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
-        return h > 0 && h < 100;
+        if (o != null && android.os.Build.VERSION.SDK_INT >= 33) {
+            java.util.ArrayList<android.util.SizeF> said = o.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, android.util.SizeF.class);
+            if (said != null) for (android.util.SizeF s : said) if (s != null && s.getWidth() > 0 && s.getHeight() > 0) out.add(s);
+        } else if (o != null && android.os.Build.VERSION.SDK_INT >= 31) {
+            @SuppressWarnings("deprecation")
+            java.util.ArrayList<android.util.SizeF> said = o.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+            if (said != null) for (android.util.SizeF s : said) if (s != null && s.getWidth() > 0 && s.getHeight() > 0) out.add(s);
+        }
+        if (out.isEmpty() && o != null) {
+            int minW = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH), maxW = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
+            int minH = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT), maxH = o.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+            if (minW > 0 && maxH > 0) out.add(new android.util.SizeF(minW, maxH));
+            if (maxW > 0 && minH > 0) out.add(new android.util.SizeF(maxW, minH));
+        }
+        if (out.isEmpty()) out.add(new android.util.SizeF(w, h));
+        return out;
+    }
+
+    interface Drawer { RemoteViews draw(android.util.SizeF size); }
+
+    /** A drawing for every size the widget is shown at, and the launcher
+     *  takes the one that fits; before Android 12 the upright one and the one
+     *  on its side. */
+    static RemoteViews sized(AppWidgetManager manager, int id, float w, float h, Drawer drawer) {
+        java.util.List<android.util.SizeF> sizes = sizes(manager, id, w, h);
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            java.util.Map<android.util.SizeF, RemoteViews> map = new java.util.HashMap<>();
+            for (android.util.SizeF s : sizes) if (map.size() < 16 && !map.containsKey(s)) map.put(s, drawer.draw(s));
+            return new RemoteViews(map);
+        }
+        RemoteViews upright = drawer.draw(sizes.get(0));
+        return sizes.size() < 2 ? upright : new RemoteViews(drawer.draw(sizes.get(1)), upright);
+    }
+
+    /** One cell high: a row rather than a card. */
+    static boolean oneRow(android.util.SizeF size) {
+        return size.getHeight() < 100;
     }
 
     /** A count the widget makes itself, in the figures of the reader's

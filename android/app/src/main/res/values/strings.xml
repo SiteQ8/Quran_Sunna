@@ -66,5 +66,4 @@
     <string name="widgetSample29">1:52:14</string>
     <!-- the same in every language: the ayah stays as it was revealed -->
     <string name="widgetSample6" translatable="false">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</string>
-    <string name="widgetSample10" translatable="false">✓</string>
 </resources>
