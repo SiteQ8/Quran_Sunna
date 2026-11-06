@@ -1,30 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the ayah of the day on the app's own page, with its surah and number -->
+<!-- the ayah of the day as widget_ayah lays it out: the heading, the ayah
+     between its brackets, a short gold rule and its surah and number -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/ayah_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <!-- eight pointed stars in interlaced bands, gold and faint, rising from
-         the corner at the end of the line and fading before the words -->
-    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+    <ImageView android:layout_width="130dp" android:layout_height="130dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <ImageView android:layout_width="130dp" android:layout_height="130dp" android:layout_gravity="bottom|start"
+        android:rotation="180"
         android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
         android:importantForAccessibility="no"/>
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="vertical" android:padding="14dp"
-        android:layoutDirection="locale">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-            <TextView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/widgetSample4" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
-            <TextView android:id="@+id/ayah_ref" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-                android:layout_marginStart="8dp" android:gravity="end"
-                android:text="@string/widgetSample5" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
-        </LinearLayout>
+        android:orientation="vertical" android:gravity="center_horizontal"
+        android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="14dp" android:paddingBottom="14dp">
+        <TextView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:text="@string/widgetSample4" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
         <TextView android:id="@+id/ayah_text"
             android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-            android:layout_marginTop="6dp" android:gravity="center"
+            android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:gravity="center"
             android:text="@string/widgetSample6"
-            android:textSize="19sp" android:textColor="@color/widgetInk" android:lineSpacingMultiplier="1.35"
-            android:maxLines="5" android:ellipsize="end" android:textDirection="rtl"/>
+            android:textSize="22sp" android:textColor="@color/widgetInk" android:lineSpacingMultiplier="1.3"
+            android:maxLines="4" android:ellipsize="end" android:textDirection="rtl"
+            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="14sp" android:autoSizeMaxTextSize="26sp"/>
+        <ImageView android:layout_width="36dp" android:layout_height="1.5dp"
+            android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
+        <TextView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/widgetSample5" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
     </LinearLayout>
 </FrameLayout>

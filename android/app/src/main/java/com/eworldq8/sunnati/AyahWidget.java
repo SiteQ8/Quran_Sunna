@@ -34,20 +34,30 @@ public final class AyahWidget extends AppWidgetProvider {
     }
 
     private static RemoteViews fill(Context context, android.util.SizeF size, JSONObject ayah, JSONObject all) {
-        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_ayah);
+        /* a low widget keeps the reference beside the heading, so the ayah has the height */
+        boolean low = size.getHeight() < 150;
+        RemoteViews views = new RemoteViews(context.getPackageName(), low ? R.layout.widget_ayah_row : R.layout.widget_ayah);
         views.setOnClickPendingIntent(R.id.ayah_root, WidgetStore.open(context, "widgetAyah", 7403));
         WidgetStore.direct(views, R.id.ayah_root, all);
         WidgetText.put(context, views, R.id.ayah_head, WidgetStore.word(all, "ayah", context.getString(R.string.widgetAyahName)),
             WidgetText.PAPER_SMALL_BOLD, all, 0);
-        int wrap = WidgetText.px(context, size.getWidth() - 28);
+        int wrap = WidgetText.px(context, size.getWidth() - 32);
+        /* the room between the heading and the reference: the sides, the
+           heading, the rule and the reference with their margins */
+        int room = WidgetText.px(context, Math.max(40f, size.getHeight() - 28 - 20 - 8 - (low ? 0 : 2 + 26)));
+        /* a small widget keeps the mushaf's usual size, a tall one lets it grow */
+        float most = size.getHeight() >= 260 ? 34f : size.getHeight() >= 180 ? 27f : 22f;
+        String ref;
         if (ayah == null) {
             WidgetText.put(context, views, R.id.ayah_text, "\uFD3F \uFD3E", WidgetText.AYAH, all, wrap);
-            WidgetText.put(context, views, R.id.ayah_ref, WidgetStore.word(all, "openApp", context.getString(R.string.widgetOpenApp)),
-                WidgetText.PAPER_NOTE, all, 0);
+            ref = WidgetStore.word(all, "openApp", context.getString(R.string.widgetOpenApp));
         } else {
-            WidgetText.put(context, views, R.id.ayah_text, ayah.optString("t"), WidgetText.AYAH, all, wrap);
-            WidgetText.put(context, views, R.id.ayah_ref, ayah.optString("ref"), WidgetText.PAPER_NOTE, all, 0);
+            /* the ayah between its ornate brackets, as the mushaf sets it apart */
+            String t = ayah.optString("t").trim();
+            WidgetText.putFit(context, views, R.id.ayah_text, "\uFD3F" + t + "\uFD3E", WidgetText.AYAH, all, wrap, room, most);
+            ref = ayah.optString("ref");
         }
+        WidgetText.put(context, views, R.id.ayah_ref, ref, low ? WidgetText.PAPER_NOTE : WidgetText.PAPER_NOTE_CENTER, all, low ? 0 : wrap);
         return views;
     }
 }

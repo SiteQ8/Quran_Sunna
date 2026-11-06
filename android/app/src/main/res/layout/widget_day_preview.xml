@@ -28,6 +28,7 @@
                 android:maxLines="1" android:ellipsize="end"
                 android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_place" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/widgetSample21" android:layout_marginTop="1dp"
                 android:textSize="11sp" android:textColor="#CCFFFFFF" android:maxLines="1" android:ellipsize="end"
                 android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
         </LinearLayout>

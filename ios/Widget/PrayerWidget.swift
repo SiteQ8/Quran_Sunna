@@ -313,6 +313,8 @@ enum Palette {
   static let ink = Color("Ink")
   static let muted = Color("Muted")
   static let gold = Color(red: 1.0, green: 0.88, blue: 0.70)
+  /* the strapwork's gold, for a rule drawn on the paper */
+  static let rule = Color(red: 0.69, green: 0.53, blue: 0.20)
 }
 
 /* the app's painted sky for the hour, darkened at the top and the foot so
@@ -634,11 +636,13 @@ struct DayView: View {
     let list = day?.five ?? []
     let nextKey = list.first(where: { $0.when > now })?.key
     return VStack(alignment: .leading, spacing: 8) {
-      HStack {
-        Text("\(day?.day ?? "")  \(day?.hijri ?? "")").font(plex(data, 15, .bold, .subheadline)).lineLimit(1)
-        Spacer(minLength: 4)
-        Text(data?.place ?? "").font(plex(data, 11, .regular, .caption2)).opacity(0.85).lineLimit(1)
+      VStack(alignment: .leading, spacing: 2) {
+        Text("\(day?.day ?? "")  \(day?.hijri ?? "")").font(plex(data, 15, .bold, .subheadline)).lineLimit(1).minimumScaleFactor(0.8)
+        /* the civil date under the hijri one, and the place beside it */
+        Text([day?.civil ?? "", data?.place ?? ""].filter { !$0.isEmpty }.joined(separator: "  \u{00B7}  "))
+          .font(plex(data, 11, .regular, .caption2)).opacity(0.85).lineLimit(1)
       }
+      .frame(maxWidth: .infinity, alignment: .leading)
       Spacer(minLength: 0)
       HStack(spacing: 4) {
         ForEach(Array(list.enumerated()), id: \.offset) { _, p in
@@ -779,23 +783,26 @@ struct AyahView: View {
 
   var body: some View {
     let ayah = data?.day(entry.date)?.ayah
-    return VStack(spacing: 8) {
-      HStack {
-        Text(says(data, "ayah", "آية اليوم")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
-        Spacer(minLength: 4)
-        Text(ayah?.ref ?? "").font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
-      }
-      Spacer(minLength: 0)
-      Text(ayah?.t ?? (says(data, "openApp", "افتح التطبيق")))
-        .font(.custom("AmiriQuran-Regular", size: family == .systemLarge ? 24 : 20))
+    let large = family == .systemLarge
+    /* the heading at the top, the ayah filling the middle between its
+       ornate brackets, a short gold rule and its surah and number under it */
+    return VStack(spacing: 6) {
+      Text(says(data, "ayah", "آية اليوم")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
+        .frame(maxWidth: .infinity, alignment: .leading)
+      Text(ayah.map { "\u{FD3F}\($0.t.trimmingCharacters(in: .whitespaces))\u{FD3E}" } ?? (says(data, "openApp", "افتح التطبيق")))
+        .font(.custom("AmiriQuran-Regular", size: large ? 32 : 22))
         .foregroundStyle(Palette.ink)
         .multilineTextAlignment(.center)
-        .lineSpacing(family == .systemLarge ? 10 : 6)
-        .lineLimit(family == .systemLarge ? 9 : 4)
-        .minimumScaleFactor(0.55)
+        .lineSpacing(large ? 12 : 5)
+        .lineLimit(large ? 10 : 4)
+        .minimumScaleFactor(0.45)
         .environment(\.layoutDirection, .rightToLeft)
-        .frame(maxWidth: .infinity)
-      Spacer(minLength: 0)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+      if let ref = ayah?.ref, !ref.isEmpty {
+        Capsule().fill(Palette.rule.opacity(0.7)).frame(width: 36, height: 1.5)
+        Text(ref).font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
+          .minimumScaleFactor(0.8)
+      }
     }
     .direction(data)
     .widgetURL(widgetLink("widgetAyah"))

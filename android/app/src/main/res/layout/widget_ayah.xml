@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the ayah of the day in the mushaf's own face, with its surah and number,
-     on the app's paper with the strapwork in its corner; the picker shows
+<!-- the ayah of the day in the mushaf's own face on the app's paper: its
+     heading at the top, the ayah filling the middle between its ornate
+     brackets, a short gold rule and its surah and number centred under it,
+     the strapwork rising from two opposite corners; the picker shows
      widget_ayah_preview -->
 <!-- each picture of words is given its words to be read aloud with it, by
      WidgetText.put, so none is described here -->
@@ -9,31 +11,30 @@
     android:id="@+id/ayah_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+    <ImageView android:layout_width="130dp" android:layout_height="130dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <ImageView android:layout_width="130dp" android:layout_height="130dp" android:layout_gravity="bottom|start"
+        android:rotation="180"
         android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
         android:importantForAccessibility="no"/>
     <LinearLayout
         android:layout_width="match_parent" android:layout_height="match_parent"
-        android:orientation="vertical" android:padding="14dp">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
-            <ImageView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:adjustViewBounds="true" android:scaleType="fitCenter"
-                android:tint="@color/widgetAccent" android:tintMode="src_in"/>
-            <!-- the reference keeps to the room left beside the heading and
-                 shrinks into it, rather than being measured against the whole
-                 row and cut at its number -->
-            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
-                android:layout_marginStart="8dp" android:orientation="horizontal" android:gravity="end|center_vertical">
-                <ImageView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                    android:adjustViewBounds="true" android:scaleType="fitCenter"
-                    android:tint="@color/widgetMuted" android:tintMode="src_in"/>
-            </LinearLayout>
-        </LinearLayout>
-        <!-- the ayah takes the rest of the page, and shrinks into it when long -->
+        android:orientation="vertical" android:gravity="center_horizontal"
+        android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="14dp" android:paddingBottom="14dp">
+        <ImageView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="start"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        <!-- the ayah takes the room between, drawn as large as it fits -->
         <ImageView android:id="@+id/ayah_text"
             android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-            android:layout_marginTop="6dp" android:scaleType="centerInside"
+            android:layout_marginTop="4dp" android:layout_marginBottom="4dp" android:scaleType="centerInside"
             android:tint="@color/widgetInk" android:tintMode="src_in"/>
+        <ImageView android:id="@+id/ayah_rule" android:layout_width="36dp" android:layout_height="1.5dp"
+            android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
+        <ImageView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
     </LinearLayout>
 </FrameLayout>

@@ -12,5 +12,6 @@
     <!-- the strapwork in the corner: the app's gold, faint on paper, and white
          fainter still on the painted skies -->
     <color name="widgetOrnament">#8CB08833</color>
+    <color name="widgetOrnamentRule">#B3B08833</color>
     <color name="widgetOrnamentSky">#57FFFFFF</color>
 </resources>
