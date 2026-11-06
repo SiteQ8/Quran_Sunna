@@ -2067,7 +2067,7 @@ window.I18n && window.I18n.add({
  "أَسْتَغْفِرُ اللَّهَ": "Astaghfirullah (I seek Allah's forgiveness)",
  "يقولها فور التسليم": "Said right after the closing salam",
  "تقبّل الله": "May Allah accept it",
- "أذكار ما بعد {0}": "Adhkar after {0}",
+ "أذكار ما بعد {0:prayer}": "Adhkar after {0}",
  "افتح الباب كاملاً": "Open the full chapter",
  "لا تعرضها بعد كل صلاة": "Don't show these after every prayer",
  "{#0} م": "{0} m",

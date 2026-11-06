@@ -2067,7 +2067,7 @@ window.I18n && window.I18n.add({
  "أَسْتَغْفِرُ اللَّهَ": "Astagfirullahi (Ina neman gafarar Allah)",
  "يقولها فور التسليم": "Ana faɗinsa nan take bayan sallama",
  "تقبّل الله": "Allah Ya karɓa",
- "أذكار ما بعد {0}": "Azkar bayan sallar {0}",
+ "أذكار ما بعد {0:prayer}": "Azkar bayan sallar {0}",
  "افتح الباب كاملاً": "Buɗe babin gaba ɗaya",
  "لا تعرضها بعد كل صلاة": "Kada a nuna su bayan kowace sallah",
  "{#0} م": "mita {0}",

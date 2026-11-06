@@ -314,6 +314,36 @@ test('on a Friday the prayer keeps its name off the home card too: widgets, the 
   assert.ok(heads.indexOf("Jumu'ah") !== -1, 'and so does the grid: ' + heads.join(', '));
 });
 
+test('on a Friday the adhkar after the noon prayer, its adhan in the shade and the fallback adhan name الجمعة', async () => {
+  const friday = new Date(2026, 9, 16, 13, 5);
+  const { win, doc } = boot({ languages: ['en-US'], file: 'en', now: friday, storage: { 'sunnati.lang': 'en' } });
+  await tick();
+  const tx = win.I18n.tx;
+  assert.strictEqual(tx('أذكار ما بعد الجمعة'), "Adhkar after Jumu'ah");
+  assert.strictEqual(tx('أذكار ما بعد الظهر'), 'Adhkar after Dhuhr');
+  /* the sheet offered the moment the noon prayer is marked prayed */
+  const mark = doc.createElement('button');
+  mark.setAttribute('data-act', 'prayer-mark');
+  mark.setAttribute('data-ref', 'dhuhr:ontime:2026-10-16');
+  doc.body.appendChild(mark);
+  mark.click();
+  await new Promise((r) => setTimeout(r, 480));
+  win.I18n.apply();
+  assert.strictEqual(doc.getElementById('sheet-title').textContent, "Adhkar after Jumu'ah");
+  const CATALOG = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'tools', 'i18n', 'catalog.json'), 'utf8'));
+  assert.ok(CATALOG.some(function (e) { return e.key === 'أذكار ما بعد {0:prayer}'; }));
+
+  /* the adhan's own recording, and the browser's lock screen in the reader's language */
+  const APP = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  assert.ok(!/'أذان ' \+ PRAYER_NAMES\[/.test(APP) && !/'أذكار ما بعد ' \+ PRAYER_NAMES\[/.test(APP), 'no prayer line takes the table that has no Friday');
+  assert.ok(/title: tongue\(title\)/.test(APP), 'the media session is told the title in the reader\'s language');
+
+  /* the times the Android app keeps for الكويت when nothing is handed */
+  const JAVA = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'AdhanScheduler.java'), 'utf8');
+  assert.ok(/i == 2 && at\.get\(Calendar\.DAY_OF_WEEK\) == Calendar\.FRIDAY \? FRIDAY/.test(JAVA));
+  assert.ok(/static final String FRIDAY = "الجمعة";/.test(JAVA));
+});
+
 test('a month over its timetable is said the way a heading says it', async () => {
   const { win, doc } = boot({ languages: ['ru-RU'], file: 'ru' });
   win.App.go('timetable');

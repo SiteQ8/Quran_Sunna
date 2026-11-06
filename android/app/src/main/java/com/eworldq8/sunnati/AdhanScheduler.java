@@ -34,6 +34,7 @@ public final class AdhanScheduler {
     public static final String EXTRA_BODY = "body";
     static final String[] KEYS = { "fajr", "sunrise", "dhuhr", "asr", "maghrib", "isha" };
     static final String[] NAMES = { "الفجر", "الشروق", "الظهر", "العصر", "المغرب", "العشاء" };
+    static final String FRIDAY = "الجمعة";
     /* the sunrise is a time, not a prayer, so it does not ring */
     static final boolean[] RINGS = { true, false, true, true, true, true };
     private static final int REQUEST = 4148;
@@ -130,7 +131,10 @@ public final class AdhanScheduler {
                 at.set(y, m - 1, d, 0, 0, 0);
                 at.set(Calendar.MILLISECOND, 0);
                 at.add(Calendar.MINUTE, times[i]);
-                if (at.getTimeInMillis() > nowMillis) return new Object[] { at.getTimeInMillis(), NAMES[i], null, null };
+                /* the noon prayer of a Friday is الجمعة, as the page names it,
+                   in the notice and on the widget alike */
+                String name = i == 2 && at.get(Calendar.DAY_OF_WEEK) == Calendar.FRIDAY ? FRIDAY : NAMES[i];
+                if (at.getTimeInMillis() > nowMillis) return new Object[] { at.getTimeInMillis(), name, null, null };
             }
             day.add(Calendar.DATE, 1);
         }

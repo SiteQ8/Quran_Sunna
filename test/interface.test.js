@@ -7810,7 +7810,8 @@ test('the daily portion and the friday call are worked out here and handed to th
 });
 
 test('the adhkar of a prayer are offered the moment it is marked prayed, once, and can be stopped', () => {
-  const { win, doc } = boot();
+  /* a Wednesday, since on a Friday the noon prayer is الجمعة and its sheet says so */
+  const { win, doc } = boot({ now: new Date(2026, 9, 14, 13, 5) });
   assert.strictEqual(win.App.helpers.offerAfterPrayer('dhuhr'), true);
   assert.strictEqual(doc.getElementById('sheet-title').textContent, 'أذكار ما بعد الظهر');
   /* they are countable dhikr cards now, not static lines */

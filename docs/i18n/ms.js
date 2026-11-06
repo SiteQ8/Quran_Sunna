@@ -2067,7 +2067,7 @@ window.I18n && window.I18n.add({
  "أَسْتَغْفِرُ اللَّهَ": "Astaghfirullah (aku memohon ampun kepada Allah)",
  "يقولها فور التسليم": "Dibaca sejurus selepas salam",
  "تقبّل الله": "Semoga Allah menerimanya",
- "أذكار ما بعد {0}": "Zikir selepas {0}",
+ "أذكار ما بعد {0:prayer}": "Zikir selepas {0}",
  "افتح الباب كاملاً": "Buka bab sepenuhnya",
  "لا تعرضها بعد كل صلاة": "Jangan paparkan selepas setiap solat",
  "{#0} م": "{0} m",
