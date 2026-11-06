@@ -1,1 +1,5 @@
-Sunnati parle désormais français. Choisissez-le depuis la carte Langue en haut des Réglages, et l'application suit : horaires de prière, invocations, sunnas du quotidien et guide de la omra. Le Coran reste en arabe tel qu'il a été révélé, avec le sens de chaque verset en français en dessous, de même que les hadiths.
+Les widgets de Sunnati portent désormais la police de l'application et un entrelacs islamique dans leur coin, en plus de tailles : la prochaine prière, les prières du jour, la date hégirienne, le verset du jour, votre khatma et les invocations du moment, avec les heures écrites comme l'application les écrit dans votre langue.
+
+Les notifications de l'adhan et de la prière de la nuit arrivent désormais dans la langue de l'application. Les réglages ont un interrupteur pour couper ou rétablir l'adhan, et le rappel de la prière sur le Prophète arrive à l'heure. « Mosquées à proximité » cherche autour de vous dans Plans.
+
+Une revue indépendante a mené à des corrections : la prière du vendredi s'appelle Joumou'a partout, les récits faibles ont été retirés des mérites des sourates, l'orthographe des invocations a été corrigée, le décompte de l'iqama va jusqu'au bout et les heures sont justes le jour du changement d'heure.

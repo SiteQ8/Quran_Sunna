@@ -1,1 +1,5 @@
-Sunnati now speaks English. Choose it from the Language card at the top of Settings, and the app follows: prayer times, the adhkar, the Sunnah tracker and the Umrah guide. The Quran stays in Arabic as it was revealed, with the meaning of each verse in English beneath it, and Hisn al-Muslim and the hadith carry their English meanings too.
+Sunnati's widgets now wear the app's own typeface and an Islamic strapwork corner, in more sizes: the next prayer, today's prayers, the Hijri date, the verse of the day, your khatmah and the adhkar of the hour, with times written the way the app writes them in your language.
+
+Adhan and night prayer notifications now arrive in the app's language. Settings has a switch to turn the adhan off or on, and the reminder to send blessings upon the Prophet now arrives on time. Mosques near me now searches around you in Apple Maps.
+
+An independent review led to corrections: the Friday prayer is called Jumu'ah everywhere, weak narrations were removed from the virtues of the surahs, the spelling of the supplications was corrected, the iqama countdown runs to its end, and prayer times are right on the day the clocks change.

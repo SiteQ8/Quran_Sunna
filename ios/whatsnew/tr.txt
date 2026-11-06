@@ -1,1 +1,5 @@
-Sunnati artık Türkçe. Ayarlar'ın en üstündeki Dil kartından seçin, uygulama ona uyar: namaz vakitleri, zikirler, günlük sünnetler ve umre rehberi. Kur'an-ı Kerim indirildiği gibi Arapça kalır ve her ayetin Türkçe meali altında yer alır; hadislerin anlamı da öyle.
+Sunnati'nin widget'ları artık uygulamanın yazı tipini ve köşesinde İslami bir geçme süslemesini taşıyor, daha fazla boyutta: sıradaki namaz, bugünün namazları, hicri tarih, günün ayeti, hatminiz ve vaktin zikirleri; vakitler uygulamanın sizin dilinizde yazdığı gibi yazılıyor.
+
+Ezan ve gece namazı bildirimleri artık uygulamanın dilinde geliyor. Ayarlarda ezanı kapatıp açan bir anahtar var ve Peygamberimize salavat hatırlatması vaktinde geliyor. Yakındaki camiler artık Apple Haritalar'da çevrenizde aranıyor.
+
+Bağımsız bir inceleme düzeltmeler getirdi: cuma namazı her yerde Cuma olarak anılıyor, surelerin faziletlerinden zayıf rivayetler çıkarıldı, duaların yazımı düzeltildi, kamet geri sayımı sonuna kadar sürüyor ve saat değişikliği gününde vakitler doğru.
