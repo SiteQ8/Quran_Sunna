@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">آنچه از ختم خود خوانده‌اید، و ورد امروز</string>
     <string name="widgetAdhkarName">اذکار</string>
     <string name="widgetAdhkarDescription">اذکار این وقت از روز و آنچه امروز از آن‌ها تمام کرده‌اید</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">اقامه</string>
+    <string name="widgetWird">ورد امروز</string>
+    <string name="widgetPage">صفحه</string>
+    <string name="widgetOf">از</string>
+    <string name="widgetDone">امروز کامل شد</string>
+    <string name="widgetOpen">برای محاسبهٔ اوقات، برنامه را باز کنید</string>
+    <string name="widgetOpenApp">برنامه را باز کنید</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">اذکار</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">ورد امروز ۲۰ صفحه</string>
     <string name="widgetSample27">نماز بعدی</string>
     <string name="widgetSample28">۱۴:۳۸</string>
+    <string name="widgetSample29">۱:۵۲:۱۴</string>
 </resources>

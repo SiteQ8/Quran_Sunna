@@ -26,10 +26,11 @@ public final class AyahWidget extends AppWidgetProvider {
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_ayah);
             views.setOnClickPendingIntent(R.id.ayah_root, WidgetStore.open(context, "widgetAyah", 7403));
-            views.setTextViewText(R.id.ayah_head, WidgetStore.word(all, "ayah", "آية اليوم"));
+            WidgetStore.direct(views, R.id.ayah_root, all);
+            views.setTextViewText(R.id.ayah_head, WidgetStore.word(all, "ayah", context.getString(R.string.widgetAyahName)));
             if (ayah == null) {
                 views.setTextViewText(R.id.ayah_text, "﴿ ﴾");
-                views.setTextViewText(R.id.ayah_ref, WidgetStore.word(all, "open", "افتح التطبيق"));
+                views.setTextViewText(R.id.ayah_ref, WidgetStore.word(all, "open", context.getString(R.string.widgetOpenApp)));
             } else {
                 views.setTextViewText(R.id.ayah_text, ayah.optString("t"));
                 views.setTextViewText(R.id.ayah_ref, ayah.optString("ref"));

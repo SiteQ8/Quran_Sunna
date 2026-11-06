@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">Abin da kuka karanta na saukarku, da wirdinku na yau</string>
     <string name="widgetAdhkarName">Azkar</string>
     <string name="widgetAdhkarDescription">Azkar na wannan lokaci da yawan waɗanda kuka kammala yau</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">Iƙama</string>
+    <string name="widgetWird">Wirdinku na yau</string>
+    <string name="widgetPage">Shafi</string>
+    <string name="widgetOf">cikin</string>
+    <string name="widgetDone">An kammala yau</string>
+    <string name="widgetOpen">Buɗe manhajar domin lissafa lokutan salla</string>
+    <string name="widgetOpenApp">Buɗe manhajar</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Azkar</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">Wirdinku na yau shafuka 20</string>
     <string name="widgetSample27">Sallah mai zuwa</string>
     <string name="widgetSample28">2:38 PM</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>

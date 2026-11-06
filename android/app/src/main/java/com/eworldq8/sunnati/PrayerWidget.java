@@ -38,6 +38,11 @@ public final class PrayerWidget extends AppWidgetProvider {
     }
 
     @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, android.os.Bundle options) {
+        refresh(context);
+    }
+
+    @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
         if (intent != null && ACTION_TICK.equals(intent.getAction())) refresh(context);
@@ -125,12 +130,12 @@ public final class PrayerWidget extends AppWidgetProvider {
 
     static Now now(Context context, JSONObject all, long now) {
         Now n = new Now();
-        n.head = WidgetStore.word(all, "next", "الصلاة القادمة");
+        n.head = WidgetStore.word(all, "next", context.getString(R.string.widgetPrayerName));
         JSONObject[] around = WidgetStore.around(all, now);
         JSONObject prev = around[0], next = around[1];
         if (prev != null && prev.optLong("iqama") > now) {
             /* between the adhan and the iqama the reader counts to the iqama */
-            n.head = WidgetStore.word(all, "iqama", "الإقامة");
+            n.head = WidgetStore.word(all, "iqama", context.getString(R.string.widgetIqama));
             n.name = prev.optString("label");
             n.sub = "";
             n.to = prev.optLong("iqama");
@@ -165,14 +170,16 @@ public final class PrayerWidget extends AppWidgetProvider {
         if (all != null && all.optString("place", "").length() > 0) place = all.optString("place");
         int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
         for (int id : ids) {
-            RemoteViews tall = fill(context, R.layout.widget_prayer, n, now, place, sky, all);
-            RemoteViews views = tall;
+            RemoteViews views;
             if (Build.VERSION.SDK_INT >= 31) {
                 /* one cell high draws one row; anything taller, the full card */
                 java.util.Map<android.util.SizeF, RemoteViews> sizes = new java.util.HashMap<>();
                 sizes.put(new android.util.SizeF(110f, 40f), fill(context, R.layout.widget_prayer_small, n, now, place, sky, all));
-                sizes.put(new android.util.SizeF(110f, 100f), tall);
+                sizes.put(new android.util.SizeF(110f, 100f), fill(context, R.layout.widget_prayer, n, now, place, sky, all));
                 views = new RemoteViews(sizes);
+            } else {
+                views = fill(context, WidgetStore.oneRow(manager, id) ? R.layout.widget_prayer_small : R.layout.widget_prayer,
+                    n, now, place, sky, all);
             }
             manager.updateAppWidget(id, views);
         }
@@ -181,10 +188,12 @@ public final class PrayerWidget extends AppWidgetProvider {
     private static RemoteViews fill(Context context, int layout, Now n, long now, String place, int sky, JSONObject all) {
         RemoteViews views = new RemoteViews(context.getPackageName(), layout);
         views.setOnClickPendingIntent(R.id.widget_root, WidgetStore.open(context, "widgetPrayer", 7400));
+        WidgetStore.direct(views, R.id.widget_root, all);
         views.setImageViewResource(R.id.widget_sky, sky);
+        views.setViewVisibility(R.id.widget_left_sample, View.GONE);
         if (n == null) {
-            views.setTextViewText(R.id.widget_head, "سُنّتي");
-            views.setTextViewText(R.id.widget_name, WidgetStore.word(all, "open", "افتح التطبيق لحساب الأوقات"));
+            views.setTextViewText(R.id.widget_head, context.getString(R.string.appName));
+            views.setTextViewText(R.id.widget_name, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)));
             views.setViewVisibility(R.id.widget_left, View.GONE);
             views.setViewVisibility(R.id.widget_time, View.GONE);
             views.setViewVisibility(R.id.widget_sub, View.GONE);

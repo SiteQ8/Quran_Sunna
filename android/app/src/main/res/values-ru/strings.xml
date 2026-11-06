@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">Сколько вы прочли из хатма и ваш вирд на сегодня</string>
     <string name="widgetAdhkarName">Азкары</string>
     <string name="widgetAdhkarDescription">Азкары этого времени дня и сколько из них вы прочли сегодня</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">Икама</string>
+    <string name="widgetWird">Ваш вирд на сегодня</string>
+    <string name="widgetPage">Страница</string>
+    <string name="widgetOf">из</string>
+    <string name="widgetDone">Выполнено сегодня</string>
+    <string name="widgetOpen">Откройте приложение, чтобы рассчитать время</string>
+    <string name="widgetOpenApp">Откройте приложение</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Азкары</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">Ваш вирд на сегодня 20 страниц</string>
     <string name="widgetSample27">Следующий намаз</string>
     <string name="widgetSample28">14:38</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>

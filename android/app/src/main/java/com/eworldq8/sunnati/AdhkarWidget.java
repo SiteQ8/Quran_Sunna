@@ -29,13 +29,14 @@ public final class AdhkarWidget extends AppWidgetProvider {
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_adhkar);
             views.setOnClickPendingIntent(R.id.adhkar_root, WidgetStore.open(context, "widgetAdhkar", 7405));
-            views.setTextViewText(R.id.adhkar_head, WidgetStore.word(all, "adhkar", "الأذكار"));
-            views.setTextViewText(R.id.adhkar_title, now == null ? "سُنّتي" : now.optString("title"));
+            WidgetStore.direct(views, R.id.adhkar_root, all);
+            views.setTextViewText(R.id.adhkar_head, WidgetStore.word(all, "adhkar", context.getString(R.string.widgetAdhkarName)));
+            views.setTextViewText(R.id.adhkar_title, now == null ? context.getString(R.string.appName) : now.optString("title"));
             views.setProgressBar(R.id.adhkar_bar, Math.max(1, total), done, false);
-            String count = total > 0 && done >= total ? WidgetStore.word(all, "done", "أتممتها اليوم")
-                : WidgetStore.figures(all, String.valueOf(done)) + " " + WidgetStore.word(all, "of", "من") + " "
+            String count = total > 0 && done >= total ? WidgetStore.word(all, "done", context.getString(R.string.widgetDone))
+                : WidgetStore.figures(all, String.valueOf(done)) + " " + WidgetStore.word(all, "of", context.getString(R.string.widgetOf)) + " "
                     + WidgetStore.figures(all, String.valueOf(total));
-            views.setTextViewText(R.id.adhkar_count, now == null ? WidgetStore.word(all, "open", "افتح التطبيق") : count);
+            views.setTextViewText(R.id.adhkar_count, now == null ? WidgetStore.word(all, "open", context.getString(R.string.widgetOpenApp)) : count);
             manager.updateAppWidget(id, views);
         }
     }

@@ -12,3 +12,12 @@
 "ما قرأته من ختمتك وورد اليوم" = "Ce que vous avez lu de votre khatma, et votre wird du jour";
 "الأذكار" = "Invocations";
 "أذكار الوقت وما أتممته منها اليوم" = "Les invocations du moment et celles que vous avez faites aujourd'hui";
+
+/* the words a widget writes before the app has handed its own */
+"الإقامة" = "L'iqama";
+"وردك اليوم" = "Votre wird du jour";
+"صفحة" = "Page";
+"من" = "sur";
+"أتممتها اليوم" = "Terminées aujourd'hui";
+"افتح التطبيق لحساب الأوقات" = "Ouvrez l'application pour calculer les horaires";
+"افتح التطبيق" = "Ouvrez l'application";

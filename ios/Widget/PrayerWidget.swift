@@ -11,6 +11,14 @@ import SwiftUI
    not. A website cannot put any of this on a home screen, which is the
    clearest answer to Apple's 4.2. */
 
+/* a word of the page's, in the reader's language; before the app has handed
+   any, the phone's own, from the Localizable.strings beside this file, which
+   is keyed by the same Arabic */
+func says(_ data: WData?, _ key: String, _ arabic: String) -> String {
+  if let w = data?.words?[key], !w.isEmpty { return w }
+  return NSLocalizedString(arabic, comment: "")
+}
+
 // MARK: - what the app wrote
 
 struct Times: Codable {
@@ -308,11 +316,11 @@ struct NextLine {
     if let d = data {
       let (prev, next) = d.around(now)
       if let p = prev, let q = p.iqamaDate, q > now {
-        return NextLine(head: d.word("iqama", "الإقامة"), name: p.label, sub: "", to: q, from: p.when)
+        return NextLine(head: says(d, "iqama", "الإقامة"), name: p.label, sub: "", to: q, from: p.when)
       }
       if let n = next {
         let from = prev?.when ?? n.when.addingTimeInterval(-6 * 3600)
-        return NextLine(head: d.word("next", "الصلاة القادمة"), name: n.label, sub: n.sub ?? "", to: n.when, from: from)
+        return NextLine(head: says(d, "next", "الصلاة القادمة"), name: n.label, sub: n.sub ?? "", to: n.when, from: from)
       }
     }
     let t = now.timeIntervalSince1970
@@ -387,7 +395,7 @@ struct PrayerView: View {
       } else {
         VStack(alignment: .leading, spacing: 4) {
           Text("سُنّتي").font(.headline)
-          Text(data?.word("open", "افتح التطبيق لحساب الأوقات") ?? "افتح التطبيق لحساب الأوقات").font(.caption2)
+          Text(says(data, "open", "افتح التطبيق لحساب الأوقات")).font(.caption2)
         }
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -705,12 +713,12 @@ struct AyahView: View {
     let ayah = data?.day(entry.date)?.ayah
     return VStack(spacing: 8) {
       HStack {
-        Text(data?.word("ayah", "آية اليوم") ?? "آية اليوم").font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
+        Text(says(data, "ayah", "آية اليوم")).font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
         Spacer(minLength: 4)
         Text(ayah?.ref ?? "").font(.caption2).foregroundStyle(Palette.muted).lineLimit(1)
       }
       Spacer(minLength: 0)
-      Text(ayah?.t ?? (data?.word("open", "افتح التطبيق") ?? "افتح التطبيق"))
+      Text(ayah?.t ?? (says(data, "open", "افتح التطبيق")))
         .font(.custom("AmiriQuran-Regular", size: family == .systemLarge ? 24 : 20))
         .foregroundStyle(Palette.ink)
         .multilineTextAlignment(.center)
@@ -753,7 +761,7 @@ struct KhatmaView: View {
     return Group {
       if family == .systemSmall {
         VStack(spacing: 6) {
-          Text(data?.word("khatma", "ختمتي") ?? "ختمتي").font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
+          Text(says(data, "khatma", "ختمتي")).font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
           ZStack {
             Circle().stroke(Palette.accent.opacity(0.15), lineWidth: 8)
             Circle().trim(from: 0, to: share)
@@ -765,7 +773,7 @@ struct KhatmaView: View {
           Text(verbatim: pageLine(k?.page ?? 1, total))
             .font(.caption2).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
           if let w = k?.wird, !w.isEmpty {
-            Text(verbatim: "\(data?.word("wird", "وردك اليوم") ?? "وردك اليوم") \(w)").font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7)
+            Text(verbatim: "\(says(data, "wird", "وردك اليوم")) \(w)").font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7)
           }
         }
       } else {
@@ -778,7 +786,7 @@ struct KhatmaView: View {
 
   private func pageLine(_ page: Int, _ total: Int) -> String {
     let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
-    return "\(data?.word("page", "صفحة") ?? "صفحة") \(f(page)) \(data?.word("of", "من") ?? "من") \(f(total))"
+    return "\(says(data, "page", "صفحة")) \(f(page)) \(says(data, "of", "من")) \(f(total))"
   }
 
   /* on the lock screen, the system's own ring */
@@ -821,12 +829,12 @@ struct AdhkarView: View {
     let done = min(total, max(0, a?.done ?? 0))
     let finished = a != nil && done >= total
     let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
-    let count = finished ? (data?.word("done", "أتممتها اليوم") ?? "أتممتها اليوم")
-      : "\(f(done)) \(data?.word("of", "من") ?? "من") \(f(total))"
+    let count = finished ? (says(data, "done", "أتممتها اليوم"))
+      : "\(f(done)) \(says(data, "of", "من")) \(f(total))"
     return Group {
       if family == .systemSmall {
         VStack(alignment: .leading, spacing: 6) {
-          Text(verbatim: data?.word("adhkar", "الأذكار") ?? "الأذكار").font(.caption).foregroundStyle(Palette.muted)
+          Text(verbatim: says(data, "adhkar", "الأذكار")).font(.caption).foregroundStyle(Palette.muted)
           Text(a?.title ?? "سُنّتي").font(.system(.title3, design: .rounded).weight(.bold)).foregroundStyle(Palette.accent)
             .lineLimit(2).minimumScaleFactor(0.7)
           Spacer(minLength: 0)

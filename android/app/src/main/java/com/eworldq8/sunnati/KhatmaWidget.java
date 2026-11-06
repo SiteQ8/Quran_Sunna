@@ -32,13 +32,14 @@ public final class KhatmaWidget extends AppWidgetProvider {
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_khatma);
             views.setOnClickPendingIntent(R.id.khatma_root, WidgetStore.open(context, "widgetKhatma", 7404));
-            views.setTextViewText(R.id.khatma_head, WidgetStore.word(all, "khatma", "ختمتي"));
+            WidgetStore.direct(views, R.id.khatma_root, all);
+            views.setTextViewText(R.id.khatma_head, WidgetStore.word(all, "khatma", context.getString(R.string.widgetKhatmaName)));
             views.setProgressBar(R.id.khatma_ring, total, read, false);
             views.setTextViewText(R.id.khatma_share,
                 WidgetStore.figures(all, String.format(Locale.US, "%d%%", Math.round(read * 100f / total))));
-            views.setTextViewText(R.id.khatma_page, WidgetStore.word(all, "page", "صفحة") + " " + WidgetStore.figures(all, String.valueOf(page))
-                + " " + WidgetStore.word(all, "of", "من") + " " + WidgetStore.figures(all, String.valueOf(total)));
-            String line = wird.length() > 0 ? WidgetStore.word(all, "wird", "وردك اليوم") + " " + wird : "";
+            views.setTextViewText(R.id.khatma_page, WidgetStore.word(all, "page", context.getString(R.string.widgetPage)) + " " + WidgetStore.figures(all, String.valueOf(page))
+                + " " + WidgetStore.word(all, "of", context.getString(R.string.widgetOf)) + " " + WidgetStore.figures(all, String.valueOf(total)));
+            String line = wird.length() > 0 ? WidgetStore.word(all, "wird", context.getString(R.string.widgetWird)) + " " + wird : "";
             views.setTextViewText(R.id.khatma_wird, line);
             views.setViewVisibility(R.id.khatma_wird, line.length() > 0 ? View.VISIBLE : View.GONE);
             manager.updateAppWidget(id, views);

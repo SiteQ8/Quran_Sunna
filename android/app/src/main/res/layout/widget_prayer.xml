@@ -44,7 +44,12 @@
 
         <TextView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
 
-        <Chronometer android:id="@+id/widget_left"
+        <Chronometer android:id="@+id/widget_left" android:visibility="gone"
+            android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:textSize="26sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
+            android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
+        <!-- what the picker shows in its place: a chronometer reads 00:00 until it runs -->
+        <TextView android:id="@+id/widget_left_sample" android:text="@string/widgetSample29"
             android:layout_width="match_parent" android:layout_height="wrap_content"
             android:textSize="26sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
             android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>

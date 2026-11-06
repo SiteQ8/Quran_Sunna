@@ -12,3 +12,12 @@
 "ما قرأته من ختمتك وورد اليوم" = "Yang telah anda baca daripada khatam, dan wirid anda hari ini";
 "الأذكار" = "Zikir";
 "أذكار الوقت وما أتممته منها اليوم" = "Zikir bagi waktu ini dan berapa yang telah anda selesaikan hari ini";
+
+/* the words a widget writes before the app has handed its own */
+"الإقامة" = "Iqamah";
+"وردك اليوم" = "Wirid anda hari ini";
+"صفحة" = "Muka surat";
+"من" = "daripada";
+"أتممتها اليوم" = "Selesai hari ini";
+"افتح التطبيق لحساب الأوقات" = "Buka aplikasi untuk mengira waktu solat";
+"افتح التطبيق" = "Buka aplikasi";

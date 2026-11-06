@@ -468,6 +468,7 @@ test('widgets: a language with its own figures hands them, and the counts are wr
   const { win } = boot({ now: new Date(2026, 10, 4, 12, 0, 0), languages: ['fa-IR'], file: 'fa', shipped: true });
   const d = win.App.helpers.widgetData();
   assert.strictEqual(d.digits, '۰۱۲۳۴۵۶۷۸۹');
+  assert.strictEqual(d.dir, 'rtl', 'Persian reads from the right');
   assert.ok(/^[۰-۹:]+$/.test(d.days[0].five[0].short), 'the short time is in Persian figures: ' + d.days[0].five[0].short);
   const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
   const java = 'android/app/src/main/java/com/eworldq8/sunnati/';

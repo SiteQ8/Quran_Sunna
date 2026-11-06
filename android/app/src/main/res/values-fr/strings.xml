@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">Ce que vous avez lu de votre khatma, et votre wird du jour</string>
     <string name="widgetAdhkarName">Invocations</string>
     <string name="widgetAdhkarDescription">Les invocations du moment et celles que vous avez faites aujourd\'hui</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">L\'iqama</string>
+    <string name="widgetWird">Votre wird du jour</string>
+    <string name="widgetPage">Page</string>
+    <string name="widgetOf">sur</string>
+    <string name="widgetDone">Terminées aujourd\'hui</string>
+    <string name="widgetOpen">Ouvrez l\'application pour calculer les horaires</string>
+    <string name="widgetOpenApp">Ouvrez l\'application</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Invocations</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">Votre wird du jour 20 pages</string>
     <string name="widgetSample27">Prochaine prière</string>
     <string name="widgetSample28">14:38</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>

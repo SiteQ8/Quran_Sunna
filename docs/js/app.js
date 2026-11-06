@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.122';
+  var VERSION = '8.87.123';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -7048,7 +7048,7 @@
     var read = Math.min(TOTAL_PAGES, Store.progress().pagesRead || 0);
     var wird = wirdFor(now);
     return {
-      v: 1, lang: (window.I18n && window.I18n.lang) || 'ar', words: widgetWords(), place: (place() && place().n) ? tongue(String(place().n)) : '',
+      v: 1, lang: (window.I18n && window.I18n.lang) || 'ar', dir: (window.I18n && window.I18n.dir) || 'rtl', words: widgetWords(), place: (place() && place().n) ? tongue(String(place().n)) : '',
       /* the figures of the reader's language, for the counts a widget makes
          itself: the share of the khatma, the page, the adhkar done */
       digits: window.I18n && window.I18n.figures ? window.I18n.figures('0123456789') : '0123456789',
