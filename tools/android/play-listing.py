@@ -134,6 +134,25 @@ def status(base, edit, tok):
                   f" | {r.get('status', '')}{' | ' + str(r['userFraction']) if 'userFraction' in r else ''}"
                   f"{' | ملاحظات ' + str(len(r['releaseNotes'])) if r.get('releaseNotes') else ''}"
                   f"{' | بلدان الإصدار ' + str(r['countryTargeting']) if r.get('countryTargeting') else ''}")
+    # The key Google signs the installed app with is not the upload key the
+    # bundle is built with, and a domain link verifies only against the
+    # first: its fingerprint must be in docs/.well-known/assetlinks.json.
+    codes = [int(c) for t in pu.call('GET', f'{base}/edits/{edit}/tracks', tok).get('tracks', [])
+             for r in t.get('releases', []) for c in (r.get('versionCodes') or [])]
+    if codes:
+        try:
+            got = pu.call('GET', f"{base.split('/edits')[0]}/generatedApks/{max(codes)}", tok)
+            for g in got.get('generatedApks', []):
+                raw = g.get('certificateSha256Hash', '')
+                print(f'  مفتاح توقيع Google للرمز {max(codes)}: {raw}')
+                try:
+                    import base64
+                    b = base64.b64decode(raw + '=' * (-len(raw) % 4))
+                    if len(b) == 32: print('    بصيغة assetlinks: ' + ':'.join('%02X' % x for x in b))
+                except Exception:
+                    pass
+        except RuntimeError as e:
+            print(f'  مفتاح توقيع Google: لا يُقرأ ({str(e)[:200]})')
     # a release in production reaches only the countries the track is offered
     # in, and a track offered nowhere reaches no one however complete it reads
     for track in ('production', 'alpha'):
