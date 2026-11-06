@@ -28,9 +28,12 @@
 #   PLAY_SERVICE_ACCOUNT        the service account json, whole, from
 #                               Play Console > Users and permissions
 #
-# The keystore is the one Play already knows: the SHA-256 in
-# docs/.well-known/assetlinks.json is its fingerprint, and a bundle signed with
-# any other key is refused as a different app. tools/ios/set-secrets.py puts
+# The keystore is the upload key Play already knows, and a bundle signed with
+# any other key is refused as a different app. Google then signs the app it
+# installs with its own key, so docs/.well-known/assetlinks.json carries both
+# fingerprints: Google's for the app from the store, which is what makes a
+# link to the site open the app, and the upload key's for a build installed
+# by hand. The play-listing status run prints Google's. tools/ios/set-secrets.py puts
 # the four in place from the files.
 
 name: Android
