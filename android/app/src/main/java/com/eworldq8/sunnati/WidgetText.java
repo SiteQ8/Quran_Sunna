@@ -88,6 +88,7 @@ final class WidgetText {
     static final Style PAPER_SMALL = new Style(REGULAR, 12, 0, 0, 0, 1, START, false);
     static final Style PAPER_SMALL_BOLD = new Style(BOLD, 12, 0, 0, 0, 1, START, false);
     static final Style PAPER_NOTE = new Style(REGULAR, 11, 0, 0, 0, 1, START, true);
+    static final Style PAPER_NOTE_CENTER = new Style(SEMIBOLD, 11.5f, 0, 0, 0, 1, CENTER, true);
     static final Style PAPER_NOTE_SEMI = new Style(SEMIBOLD, 11, 0, 0, 0, 1, START, false);
     static final Style PAPER_COUNT = new Style(REGULAR, 12, 0, 0, 0, 1, START, true);
     static final Style HIJRI_DATE = new Style(BOLD, 22, 0, 0, 0, 2, CENTER, true);
@@ -119,6 +120,32 @@ final class WidgetText {
         views.setImageViewBitmap(id, draw(c, text, s, all, wrapPx));
         views.setContentDescription(id, text);
     }
+
+    /** Draws the words as large as the box lets them be, between the style's
+     *  size and the given largest, whole and unbroken: the ayah of a tall
+     *  widget filled a third of it at one size and left the rest blank. */
+    static void putFit(Context c, RemoteViews views, int id, CharSequence text, Style s, JSONObject all,
+                       int wrapPx, int heightPx, float mostSp) {
+        if (text == null || text.length() == 0) {
+            views.setViewVisibility(id, View.GONE);
+            return;
+        }
+        float sp = mostSp;
+        Bitmap best = null;
+        while (sp >= s.sp * 0.6f) {
+            Style tried = new Style(s.weight, sp, s.color, s.shadowDp, s.shadowColor, 30, s.align, s.figures);
+            Bitmap b = draw(c, text, tried, all, wrapPx);
+            best = b;
+            if (b.getHeight() <= heightPx && !lastDrawCut) break;
+            sp *= 0.93f;
+        }
+        views.setViewVisibility(id, View.VISIBLE);
+        views.setImageViewBitmap(id, best);
+        views.setContentDescription(id, text);
+    }
+
+    /* whether the last drawing had to cut its words short */
+    private static boolean lastDrawCut;
 
     /** Whether the words read from the right: the app's language when the page
      *  has said it, and the words' own letters before it has. */
@@ -196,6 +223,7 @@ final class WidgetText {
             paint.setTextSize(paint.getTextSize() * 0.92f);
             layout = layout(text, paint, s, rtl, wrapPx, pad, maxLines);
         }
+        lastDrawCut = wrapPx > 0 && (cut(layout) || brokeWord(layout, text));
 
         /* the box of the words: as high as the letters need and no higher.
            A face's own line keeps room for the tallest mark of any language
