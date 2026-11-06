@@ -2067,7 +2067,7 @@ window.I18n && window.I18n.add({
  "أَسْتَغْفِرُ اللَّهَ": "Estağfirullah (Allah'tan bağışlanma dilerim)",
  "يقولها فور التسليم": "Selam verir vermez söylenir",
  "تقبّل الله": "Allah kabul etsin",
- "أذكار ما بعد {0}": "{0} namazından sonra zikirler",
+ "أذكار ما بعد {0:prayer}": "{0} namazından sonra zikirler",
  "افتح الباب كاملاً": "Bölümün tamamını aç",
  "لا تعرضها بعد كل صلاة": "Her namazdan sonra gösterme",
  "{#0} م": "{0} m",

@@ -83,7 +83,8 @@ const SURAH_HOLE = /\b(meta|firstMeta|lastMeta|sm|done)\.ar\b|surahMeta\([^)]*\)
    the noon prayer is الجمعة, the day's own name, and a table that calls the
    day one thing and the prayer another needs to know which it is reading */
 const PRAYER_HOLE = /^(c\.(prev|next)\.ar|PRAYER_NAMES\[\w+\]|name(\.replace\(.*\))?)$/;
-const PRAYER_LINE = /أذان|صلاة|وقت/;
+/* «أذكار ما بعد» names the prayer just prayed, الجمعة on a Friday */
+const PRAYER_LINE = /أذان|صلاة|وقت|أذكار ما بعد/;
 
 function emit(segment, kind, where) {
   let n = 0;

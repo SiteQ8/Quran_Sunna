@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.128';
+  var VERSION = '8.87.129';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2371,10 +2371,12 @@
       if (window.MediaMetadata) {
         /* android often shows no player at all when the metadata carries no
            artwork, which is why nothing appeared in the shade to stop it with */
+        /* in the reader's language, as the shade has it: the browser's lock
+           screen said «أذان الظهر» to a reader of English */
         ms.metadata = new window.MediaMetadata({
-          title: title,
-          artist: artist || 'سُنّتي',
-          album: 'سُنّتي',
+          title: tongue(title),
+          artist: tongue(artist || 'سُنّتي'),
+          album: tongue('سُنّتي'),
           artwork: [
             { src: 'icons/icon-192.png', sizes: '192x192', type: 'image/png' },
             { src: 'icons/icon-512.png', sizes: '512x512', type: 'image/png' }
@@ -4076,7 +4078,10 @@
   function soundAdhan(key) {
     var id = adhanChoice();
     if (id === 'none' || id === 'silent' || !PRAYER_NAMES[key]) return false;
-    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try', 'أذان ' + PRAYER_NAMES[key]);
+    /* the noon adhan of a Friday is الجمعة's, as every other line names it,
+       and not «أذان الظهر» in the shade and on the lock screen */
+    var name = prayerName(key, new Date());
+    return playRecording(adhanUrl(id, key === 'fajr'), 'settings-adhan-try', 'أذان ' + name);
   }
 
   /* ---------------- وضع القراءة ---------------- */
@@ -7943,7 +7948,9 @@
        showed. Now the five short ones that open the chapter, each with its
        count, in the order a person says them. */
     state.afterPrayerLeft = null;
-    openSheet('أذكار ما بعد ' + PRAYER_NAMES[key],
+    /* the prayer marked is today's, so on a Friday its noon one is الجمعة */
+    var name = prayerName(key, new Date());
+    openSheet('أذكار ما بعد ' + name,
       afterPrayerHtml() +
       '<button class="btn btn-primary btn-block" data-act="open-after-prayer" style="margin-top:10px">افتح الباب كاملاً</button>' +
       '<button class="btn btn-ghost btn-block" data-act="after-prayer-off" style="margin-top:8px">لا تعرضها بعد كل صلاة</button>');
