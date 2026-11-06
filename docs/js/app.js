@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.120';
+  var VERSION = '8.87.121';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2686,12 +2686,20 @@
     for (var d = 0; d < 7; d++) {
       var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
       var t = computeTimes(day);
+      var h = Hijri.toHijri(day, Store.get('hijriAdjust'));
       ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (k) {
         if (typeof t[k] !== 'number' || isNaN(t[k])) return;
         var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, t[k], 0, 0).getTime();
-        /* name is what the adhan says; label, clock and head are the home
-           screen widget's words, in the language the reader chose */
-        if (at > Date.now()) list.push({ at: at, name: prayerName(k, day), label: tongue(prayerName(k, day)), clock: tongue(clockText(t[k])), head: tongue('الصلاة القادمة') });
+        /* name is what the adhan says; the rest are the home screen widgets'
+           words, in the language the reader chose: the prayer, its time, the
+           heading, the day and its hijri date by the reader's own nudge, and
+           whether the day is one of ramadan, when fajr ends the suhur and
+           maghrib is the iftar */
+        if (at > Date.now()) {
+          list.push({ at: at, key: k, name: prayerName(k, day), label: tongue(prayerName(k, day)),
+            clock: tongue(clockText(t[k])), head: tongue('الصلاة القادمة'),
+            day: tongue(h.weekday), hijri: tongue(Hijri.format(h)), ramadan: h.m === 9 });
+        }
       });
     }
     try { app.setPrayerTimes(JSON.stringify(list)); return true; } catch (e) { return false; }

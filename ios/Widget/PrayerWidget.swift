@@ -11,10 +11,39 @@ struct Times: Codable {
   let at: [Double]
   /* the heading in the reader's own language, handed by the page */
   var head: String? = nil
+  /* each prayer's weekday and hijri date, in the reader's language */
+  var days: [String]? = nil
+  var hijris: [String]? = nil
 
   static let empty = Times(names: [], at: [])
 
   var heading: String { head ?? "الصلاة القادمة" }
+
+  /* today's weekday and hijri date: those of the first prayer still ahead
+     today, or nothing, and the widget falls back on the phone's calendar */
+  var today: (day: String, hijri: String)? {
+    let now = Date()
+    for (i, t) in at.enumerated() {
+      let when = Date(timeIntervalSince1970: t)
+      guard when > now else { continue }
+      guard Calendar.current.isDate(when, inSameDayAs: now),
+            let h = hijris?[safe: i], !h.isEmpty else { return nil }
+      return (days?[safe: i] ?? "", h)
+    }
+    return nil
+  }
+
+  /* the next few prayers, for the large widget */
+  var ahead: [(name: String, when: Date)] {
+    let now = Date()
+    var out: [(name: String, when: Date)] = []
+    for (i, t) in at.enumerated() where i < names.count {
+      let when = Date(timeIntervalSince1970: t)
+      if when > now { out.append((name: names[i], when: when)) }
+      if out.count == 6 { break }
+    }
+    return out
+  }
 
   /* the prayers still ahead today, for the wider widget */
   var restOfToday: [(name: String, when: Date)] {
@@ -36,6 +65,10 @@ struct Times: Codable {
     }
     return nil
   }
+}
+
+extension Array {
+  subscript(safe i: Int) -> Element? { indices.contains(i) ? self[i] : nil }
 }
 
 struct Entry: TimelineEntry {
@@ -95,6 +128,22 @@ struct PrayerView: View {
             }
           }
           .frame(maxWidth: .infinity)
+        }
+      case .systemLarge:
+        VStack(alignment: .trailing, spacing: 10) {
+          if let t = entry.times.today {
+            Text("\(t.day)  \(t.hijri)").font(.caption).foregroundStyle(.secondary)
+          }
+          nextBlock(next)
+          Divider()
+          ForEach(Array(entry.times.ahead.dropFirst().enumerated()), id: \.offset) { _, row in
+            HStack {
+              Text(row.name).font(.subheadline)
+              Spacer(minLength: 6)
+              Text(row.when, style: .time).font(.subheadline.monospacedDigit()).foregroundStyle(.secondary)
+            }
+          }
+          Spacer(minLength: 0)
         }
       default:
         if #available(iOSApplicationExtension 16.0, *) {
@@ -162,7 +211,15 @@ struct PrayerView: View {
   }
 }
 
+/* The widgets the app offers: the prayers in every size, and the hijri date. */
 @main
+struct SunnatiWidgets: WidgetBundle {
+  var body: some Widget {
+    PrayerWidget()
+    HijriWidget()
+  }
+}
+
 struct PrayerWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiPrayer", provider: Provider()) { entry in
@@ -180,8 +237,105 @@ struct PrayerWidget: Widget {
   /* the lock screen kinds arrived with iOS 16, and the app still opens on 15 */
   private var families: [WidgetFamily] {
     if #available(iOSApplicationExtension 16.0, *) {
-      return [.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline]
+      return [.systemSmall, .systemMedium, .systemLarge, .accessoryCircular, .accessoryRectangular, .accessoryInline]
     }
-    return [.systemSmall, .systemMedium]
+    return [.systemSmall, .systemMedium, .systemLarge]
+  }
+}
+
+/* Today's hijri date, as the reader's own app reckons it with his nudge for
+   the moon of his town; before the app has said anything, the phone's Umm al
+   Qura calendar. */
+struct HijriView: View {
+  let entry: Entry
+  @Environment(\.widgetFamily) private var family
+
+  private var words: (day: String, hijri: String) {
+    if let t = entry.times.today { return t }
+    let f = DateFormatter()
+    f.calendar = Calendar(identifier: .islamicUmmAlQura)
+    f.locale = Locale(identifier: "ar")
+    f.dateFormat = "d MMMM y"
+    let w = DateFormatter()
+    w.locale = Locale(identifier: "ar")
+    w.dateFormat = "EEEE"
+    return (w.string(from: entry.date), f.string(from: entry.date))
+  }
+
+  var body: some View {
+    Group {
+      if #available(iOSApplicationExtension 16.0, *) {
+        sized(words)
+      } else {
+        card(words)
+      }
+    }
+    .environment(\.layoutDirection, .rightToLeft)
+  }
+
+  private func card(_ t: (day: String, hijri: String)) -> some View {
+    VStack(spacing: 4) {
+      Text(t.day).font(.caption).foregroundStyle(.secondary)
+      Text(t.hijri)
+        .font(.title3.weight(.bold))
+        .multilineTextAlignment(.center)
+        .minimumScaleFactor(0.6)
+        .foregroundStyle(Color(red: 0.49, green: 0.12, blue: 0.12))
+      Text(entry.date, style: .date).font(.caption2).foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+  }
+
+  /* the lock screen kinds came with iOS 16 */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private func sized(_ t: (day: String, hijri: String)) -> some View {
+    switch family {
+    case .accessoryInline:
+      Text(t.hijri)
+    case .accessoryRectangular:
+      VStack(alignment: .trailing, spacing: 1) {
+        Text(t.day).font(.caption2).foregroundStyle(.secondary)
+        Text(t.hijri).font(.headline).minimumScaleFactor(0.7)
+        Text(entry.date, style: .date).font(.caption2)
+      }
+      .frame(maxWidth: .infinity, alignment: .trailing)
+    default:
+      card(t)
+    }
+  }
+}
+
+struct HijriProvider: TimelineProvider {
+  private let inner = Provider()
+  func placeholder(in context: Context) -> Entry { inner.placeholder(in: context) }
+  func getSnapshot(in context: Context, completion: @escaping (Entry) -> Void) { inner.getSnapshot(in: context, completion: completion) }
+  /* the date turns at midnight, and that is the only time it needs drawing */
+  func getTimeline(in context: Context, completion: @escaping (Timeline<Entry>) -> Void) {
+    inner.getSnapshot(in: context) { entry in
+      let midnight = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400 + 5)
+      completion(Timeline(entries: [entry], policy: .after(midnight)))
+    }
+  }
+}
+
+struct HijriWidget: Widget {
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: "SunnatiHijri", provider: HijriProvider()) { entry in
+      if #available(iOSApplicationExtension 17.0, *) {
+        HijriView(entry: entry).containerBackground(.fill.tertiary, for: .widget)
+      } else {
+        HijriView(entry: entry).padding()
+      }
+    }
+    .configurationDisplayName("التاريخ الهجري")
+    .description("التاريخ الهجري اليوم")
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) {
+      return [.systemSmall, .accessoryRectangular, .accessoryInline]
+    }
+    return [.systemSmall]
   }
 }

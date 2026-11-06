@@ -557,15 +557,24 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
        and the heading as head; the adhan keeps its own Arabic name */
     let rows = (try? JSONSerialization.jsonObject(with: Data(raw.utf8))) as? [[String: Any]] ?? []
     var labels: [Double: String] = [:]
+    var days: [Double: String] = [:]
+    var hijris: [Double: String] = [:]
     var head: String? = nil
     for row in rows {
       guard let ms = row["at"] as? Double else { continue }
-      if let label = row["label"] as? String, !label.isEmpty { labels[(ms / 1000).rounded()] = label }
+      let key = (ms / 1000).rounded()
+      if let label = row["label"] as? String, !label.isEmpty { labels[key] = label }
+      if let d = row["day"] as? String { days[key] = d }
+      if let h = row["hijri"] as? String { hijris[key] = h }
       if head == nil, let h = row["head"] as? String, !h.isEmpty { head = h }
     }
+    /* the day and its hijri date ride with each prayer, so the hijri widget
+       shows the reader's own nudge for the moon of his town */
     var payload = [
       "names": times.map { labels[$0.at.timeIntervalSince1970.rounded()] ?? $0.title },
-      "at": times.map { $0.at.timeIntervalSince1970 }
+      "at": times.map { $0.at.timeIntervalSince1970 },
+      "days": times.map { days[$0.at.timeIntervalSince1970.rounded()] ?? "" },
+      "hijris": times.map { hijris[$0.at.timeIntervalSince1970.rounded()] ?? "" }
     ] as [String: Any]
     if let head = head { payload["head"] = head }
     if let data = try? JSONSerialization.data(withJSONObject: payload) {

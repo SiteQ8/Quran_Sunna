@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- one row for a widget one cell high: the prayer, its time, the time left;
+     the heading and the place keep their ids, hidden, so one drawing fits both -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="horizontal" android:gravity="center_vertical"
+    android:paddingStart="14dp" android:paddingEnd="14dp"
+    android:background="@drawable/widget_bg" android:layoutDirection="locale">
+    <TextView android:id="@+id/widget_head" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+    <TextView android:id="@+id/widget_name"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textSize="16sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
+    <TextView android:id="@+id/widget_time"
+        android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+        android:layout_marginStart="8dp" android:textSize="13sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
+    <Chronometer android:id="@+id/widget_left"
+        android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:textSize="18sp" android:textColor="@color/widgetInk" android:fontFeatureSettings="tnum"/>
+    <TextView android:id="@+id/widget_place" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+</LinearLayout>

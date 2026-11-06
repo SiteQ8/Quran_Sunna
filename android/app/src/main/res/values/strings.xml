@@ -9,4 +9,6 @@
     <string name="shortcutTimetable">جدول الشهر</string>
     <string name="shortcutAdhan">تشغيل أو إيقاف تنبيه الأذان</string>
     <string name="widgetDescription">الصلاة القادمة والوقت الباقي عليها</string>
+    <string name="widgetDayDescription">صلوات اليوم بأوقاتها والتاريخ الهجري</string>
+    <string name="widgetHijriDescription">التاريخ الهجري اليوم</string>
 </resources>
