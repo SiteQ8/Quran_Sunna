@@ -55,4 +55,32 @@
     <string name="widgetSample27">Prochaine prière</string>
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Heures de prière</string>
+    <string name="channelAdhanAbout">Une alerte à l\'entrée de l\'heure de chaque prière</string>
+    <string name="channelAdhanVoice">Heures de prière, avec l\'adhan</string>
+    <string name="channelAdhanVoiceAbout">L\'alerte est silencieuse car l\'application fait entendre l\'adhan elle-même</string>
+    <string name="channelAdhanHush">Heures de prière, sans son</string>
+    <string name="channelAdhanHushAbout">L\'alerte arrive sans son ni vibration, comme vous l\'avez choisi</string>
+    <string name="channelReminders">Rappels</string>
+    <string name="channelRemindersAbout">La prière sur le Prophète et les rappels que vous demandez à l\'application</string>
+    <string name="channelChime">Rappels avec une tonalité douce</string>
+    <string name="channelChimeAbout">Les rappels pour lesquels vous avez choisi la tonalité douce</string>
+    <string name="channelQuiet">Rappels silencieux</string>
+    <string name="channelQuietAbout">Les rappels que vous avez choisi de recevoir sans son</string>
+    <string name="channelPlaying">En cours d\'écoute</string>
+    <string name="channelPlayingAbout">Récitation, radio et invocations pendant l\'écoute, avec des boutons d\'arrêt et sans son pour la notification</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Alertes de l\'adhan activées</string>
+    <string name="adhanStopAsk">Désactiver les alertes de l\'adhan ?</string>
+    <string name="adhanStopWhy">L\'adhan ne retentira plus jusqu\'à ce que vous le réactiviez ici ou dans les Réglages.</string>
+    <string name="adhanStopYes">Oui, désactiver</string>
+    <string name="adhanStopped">Alertes de l\'adhan désactivées</string>
+    <string name="answerNo">Non</string>
+    <string name="playerPause">Pause</string>
+    <string name="playerPlay">Lecture</string>
+    <string name="playerStop">Arrêter</string>
+    <string name="crashTitle">Sunnati s\'est arrêté, en voici la raison</string>
+    <string name="crashCopy">Copier</string>
+    <string name="crashCopied">Copié</string>
 </resources>

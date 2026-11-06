@@ -55,4 +55,32 @@
     <string name="widgetSample27">Sallah mai zuwa</string>
     <string name="widgetSample28">2:38 PM</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Lokutan sallah</string>
+    <string name="channelAdhanAbout">Faɗakarwa idan lokacin kowace sallah ya yi</string>
+    <string name="channelAdhanVoice">Lokutan sallah, tare da kiran sallah</string>
+    <string name="channelAdhanVoiceAbout">Faɗakarwar ba ta da sauti saboda manhajar da kanta tana kiran sallah</string>
+    <string name="channelAdhanHush">Lokutan sallah, shiru</string>
+    <string name="channelAdhanHushAbout">Faɗakarwa tana zuwa ba sauti ko girgiza, kamar yadda kuka zaɓa</string>
+    <string name="channelReminders">Tunatarwa</string>
+    <string name="channelRemindersAbout">Salati ga Annabi da tunatarwar da kuka nema daga manhajar</string>
+    <string name="channelChime">Tunatarwa da sauti mai taushi</string>
+    <string name="channelChimeAbout">Tunatarwar da kuka zaɓa musu sauti mai taushi</string>
+    <string name="channelQuiet">Tunatarwa shiru</string>
+    <string name="channelQuietAbout">Tunatarwar da kuka zaɓa su zo ba sauti</string>
+    <string name="channelPlaying">Ana kunnawa yanzu</string>
+    <string name="channelPlayingAbout">Karatun Alƙur\'ani, rediyo da azkar yayin da ake kunna su, tare da maɓallan tsayawa ba tare da sautin sanarwar kanta ba</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Faɗakarwar kiran sallah tana aiki</string>
+    <string name="adhanStopAsk">A kashe faɗakarwar kiran sallah?</string>
+    <string name="adhanStopWhy">Kiran sallah ba zai yi ƙara ba har sai kun sake kunna shi a nan ko a Saituna.</string>
+    <string name="adhanStopYes">Ee, a kashe</string>
+    <string name="adhanStopped">An kashe faɗakarwar kiran sallah</string>
+    <string name="answerNo">A\'a</string>
+    <string name="playerPause">Dakata</string>
+    <string name="playerPlay">Kunna</string>
+    <string name="playerStop">Tsaya</string>
+    <string name="crashTitle">Sunnati ya tsaya, ga dalilin</string>
+    <string name="crashCopy">Kwafi</string>
+    <string name="crashCopied">An kwafa</string>
 </resources>

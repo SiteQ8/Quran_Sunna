@@ -55,4 +55,32 @@
     <string name="widgetSample27">اگلی نماز</string>
     <string name="widgetSample28">⁦2:38 PM⁩</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">نماز کے اوقات</string>
+    <string name="channelAdhanAbout">ہر نماز کا وقت شروع ہونے پر اطلاع</string>
+    <string name="channelAdhanVoice">نماز کے اوقات، اذان کے ساتھ</string>
+    <string name="channelAdhanVoiceAbout">اطلاع خاموش ہے کیونکہ ایپ خود اذان سناتی ہے</string>
+    <string name="channelAdhanHush">نماز کے اوقات، بغیر آواز</string>
+    <string name="channelAdhanHushAbout">آپ کی پسند کے مطابق اطلاع بغیر آواز اور ارتعاش کے آتی ہے</string>
+    <string name="channelReminders">یاد دہانیاں</string>
+    <string name="channelRemindersAbout">نبی پر درود اور وہ یاد دہانیاں جو آپ ایپ سے چاہتے ہیں</string>
+    <string name="channelChime">پرسکون دھن والی یاد دہانیاں</string>
+    <string name="channelChimeAbout">وہ یاد دہانیاں جن کے لیے آپ نے پرسکون دھن چنی</string>
+    <string name="channelQuiet">خاموش یاد دہانیاں</string>
+    <string name="channelQuietAbout">وہ یاد دہانیاں جو آپ نے بغیر آواز کے چاہیں</string>
+    <string name="channelPlaying">ابھی چل رہا ہے</string>
+    <string name="channelPlayingAbout">تلاوت، ریڈیو اور اذکار چلتے وقت، روکنے کے بٹنوں کے ساتھ اور اطلاع کی اپنی آواز کے بغیر</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">اذان کی اطلاعات چالو ہیں</string>
+    <string name="adhanStopAsk">اذان کی اطلاعات بند کریں؟</string>
+    <string name="adhanStopWhy">اذان اس وقت تک نہیں بجے گی جب تک آپ اسے یہاں سے یا ترتیبات سے دوبارہ چالو نہ کریں۔</string>
+    <string name="adhanStopYes">جی ہاں، بند کریں</string>
+    <string name="adhanStopped">اذان کی اطلاعات بند کر دی گئیں</string>
+    <string name="answerNo">نہیں</string>
+    <string name="playerPause">وقفہ</string>
+    <string name="playerPlay">چلائیں</string>
+    <string name="playerStop">روکیں</string>
+    <string name="crashTitle">سُنّتی رک گئی، اور یہ اس کی وجہ ہے</string>
+    <string name="crashCopy">کاپی کریں</string>
+    <string name="crashCopied">کاپی ہو گیا</string>
 </resources>

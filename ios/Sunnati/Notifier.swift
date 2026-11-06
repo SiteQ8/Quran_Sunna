@@ -35,7 +35,8 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
      kind quietly eating it and the others vanishing. The nearest ones are
      kept, since the app reschedules whenever it opens. */
   private static let room = 64
-  private static let share = ["adhan-": 25, "remind-": 32, "qiyam-": 7]
+  private static let share = ["adhan-": 25, "remind-": 31, "qiyam-": 7]
+  /* and one more for the salawat, which repeats on its own under one id */
 
   /* The page hands over the whole list each time, so the old ones go first:
      rescheduling must not leave yesterday's reminders behind. Reminders and
@@ -57,6 +58,31 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
         let when = UNCalendarNotificationTrigger(dateMatching: parts, repeats: false)
         self.centre.add(UNNotificationRequest(identifier: "\(prefix)\(i)", content: body, trigger: when))
       }
+    }
+  }
+
+  /* A reminder that repeats by itself every so many minutes, under one id,
+     so it takes a single place of the sixty four. It is made again only when
+     asked (the interval, the sound or the words changed) or when none is
+     waiting, since making it again starts its count afresh, and the page
+     hands the interval over every time it opens. */
+  func repeating(_ id: String, every minutes: Int, title: String, text: String,
+                 chime: Chime, kind: String, force: Bool) {
+    centre.getPendingNotificationRequests { pending in
+      let waiting = pending.contains { $0.identifier == id }
+      if minutes <= 0 {
+        if waiting { self.centre.removePendingNotificationRequests(withIdentifiers: [id]) }
+        return
+      }
+      if waiting && !force { return }
+      self.centre.removePendingNotificationRequests(withIdentifiers: [id])
+      let body = UNMutableNotificationContent()
+      body.title = title
+      body.body = text
+      body.sound = chime.sound
+      body.userInfo = ["kind": kind]
+      let when = UNTimeIntervalNotificationTrigger(timeInterval: TimeInterval(minutes * 60), repeats: true)
+      self.centre.add(UNNotificationRequest(identifier: id, content: body, trigger: when))
     }
   }
 

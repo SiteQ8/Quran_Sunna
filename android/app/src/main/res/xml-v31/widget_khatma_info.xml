@@ -9,6 +9,6 @@
     android:previewLayout="@layout/widget_khatma_preview"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
-    android:updatePeriodMillis="1800000"
+    android:updatePeriodMillis="10800000"
     android:initialLayout="@layout/widget_khatma"
     android:description="@string/widgetKhatmaDescription"/>

@@ -55,4 +55,32 @@
     <string name="widgetSample27">পরবর্তী নামাজ</string>
     <string name="widgetSample28">২:৩৮ PM</string>
     <string name="widgetSample29">১:৫২:১৪</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">নামাজের সময়</string>
+    <string name="channelAdhanAbout">প্রতিটি নামাজের সময় শুরু হলে একটি অ্যালার্ট</string>
+    <string name="channelAdhanVoice">নামাজের সময়, আজানসহ</string>
+    <string name="channelAdhanVoiceAbout">অ্যাপ নিজেই আজান শোনায় বলে অ্যালার্টটি নীরব</string>
+    <string name="channelAdhanHush">নামাজের সময়, নীরব</string>
+    <string name="channelAdhanHushAbout">আপনার পছন্দমতো অ্যালার্ট আসে শব্দ ও কম্পন ছাড়া</string>
+    <string name="channelReminders">রিমাইন্ডার</string>
+    <string name="channelRemindersAbout">নবীর উপর দরুদ এবং অ্যাপের কাছে আপনার চাওয়া রিমাইন্ডার</string>
+    <string name="channelChime">শান্ত সুরের রিমাইন্ডার</string>
+    <string name="channelChimeAbout">যে রিমাইন্ডারগুলোর জন্য আপনি শান্ত সুর বেছে নিয়েছেন</string>
+    <string name="channelQuiet">নীরব রিমাইন্ডার</string>
+    <string name="channelQuietAbout">যে রিমাইন্ডারগুলো আপনি শব্দ ছাড়া পেতে চেয়েছেন</string>
+    <string name="channelPlaying">এখন বাজছে</string>
+    <string name="channelPlayingAbout">তিলাওয়াত, রেডিও ও জিকির বাজার সময়, থামানোর বোতামসহ এবং নোটিফিকেশনের নিজের কোনো শব্দ ছাড়া</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">আজানের অ্যালার্ট চালু আছে</string>
+    <string name="adhanStopAsk">আজানের অ্যালার্ট বন্ধ করবেন?</string>
+    <string name="adhanStopWhy">এখান থেকে বা সেটিংস থেকে আবার চালু না করা পর্যন্ত আজান বাজবে না।</string>
+    <string name="adhanStopYes">হ্যাঁ, বন্ধ করুন</string>
+    <string name="adhanStopped">আজানের অ্যালার্ট বন্ধ হয়েছে</string>
+    <string name="answerNo">না</string>
+    <string name="playerPause">বিরতি</string>
+    <string name="playerPlay">চালান</string>
+    <string name="playerStop">থামান</string>
+    <string name="crashTitle">Sunnati থেমে গেছে, এর কারণ এই</string>
+    <string name="crashCopy">কপি করুন</string>
+    <string name="crashCopied">কপি হয়েছে</string>
 </resources>

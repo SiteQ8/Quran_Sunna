@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.124';
+  var VERSION = '8.87.125';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -109,8 +109,15 @@
   /* What the reader meets off the page, a notification, a spoken line, a
      picture or words handed to another app, in the language they read the
      app in. The page itself is put into it by i18n.js as it is drawn. */
-  function tongue(text) {
-    return window.I18n && typeof window.I18n.tx === 'function' ? window.I18n.tx(text) : text;
+  function tongue(text, of) {
+    return window.I18n && typeof window.I18n.tx === 'function' ? window.I18n.tx(text, of) : text;
+  }
+
+  /* A prayer's name off the page. On a Friday the noon prayer is الجمعة, the
+     day's own name, and a language that calls the day one thing and the
+     prayer another reads it as the prayer. */
+  function prayerWord(key, date) {
+    return tongue(prayerName(key, date), 'prayer');
   }
 
   /* The Quran, the hadith, the supplications and the tafsir are said as they
@@ -787,9 +794,29 @@
     return undefined;
   }
 
+  /* The offset of a day is the zone's at that day's noon on the place's own
+     clock. The day is handed in as its midnight, and on the day the clocks
+     move the midnight still has the day before's, which put every time of
+     that day an hour out. Noon is found from noon in Greenwich and the
+     offset there, so a phone far from the place still finds its noon. */
+  var noonOffsets = {};
+  var noonOffsetCount = 0;
+  function dayOffset(when) {
+    var p = place();
+    var key = (p.z || '') + '|' + p.tz + '|' + when.getFullYear() + '-' + when.getMonth() + '-' + when.getDate();
+    if (key in noonOffsets) return noonOffsets[key];
+    var guess = Date.UTC(when.getFullYear(), when.getMonth(), when.getDate(), 12);
+    var first = offsetFor(new Date(guess));
+    var got = offsetFor(typeof first === 'number' ? new Date(guess - first * 3600000) : new Date(guess));
+    if (noonOffsetCount > 400) { noonOffsets = {}; noonOffsetCount = 0; }
+    noonOffsets[key] = got;
+    noonOffsetCount++;
+    return got;
+  }
+
   function computeTimes(date) {
     var when = date || new Date();
-    return calculator().timesFor(when, offsetFor(when));
+    return calculator().timesFor(when, dayOffset(when));
   }
 
   function refreshTimes() {
@@ -1654,7 +1681,7 @@
     var fresh = sinceAdhan >= 0 && sinceAdhan < AFTER_ADHAN_MINUTES;
     /* Between the adhan and the iqama the reader is counting to the iqama,
        so that is the count shown; the jumuah has its khutbah instead. */
-    var iqamaAt = fresh ? iqamaAfter(c.prev.key, new Date()) : 0;
+    var iqamaAt = sinceAdhan >= 0 ? iqamaAfter(c.prev.key, new Date()) : 0;
     if (iqamaAt && sinceAdhan < iqamaAt) {
       var left = Math.max(0, Math.round((iqamaAt - sinceAdhan) * 60));
       $('arc-count').textContent = ar(pad(Math.floor(left / 3600)) + ':' + pad(Math.floor((left % 3600) / 60)) + ':' + pad(left % 60));
@@ -2004,7 +2031,7 @@
     var title = Hijri.WEEKDAYS[date.getDay()] + ' ' + ar(date.getDate()) + ' ' + GREG_MONTHS[date.getMonth()];
     openSheet(title,
       PRAYER_ORDER.map(function (k) {
-        return '<div class="setting"><span class="setting-label">' + esc(prayerName(k, date)) + '</span>' +
+        return '<div class="setting" data-tr="prayer"><span class="setting-label">' + esc(prayerName(k, date)) + '</span>' +
           '<select class="select" data-day-prayer="' + k + '" data-date="' + stamp + '" aria-label="' + esc(prayerName(k, date)) + '">' +
           '<option value=""' + (!rec[k] ? ' selected' : '') + '>بلا علامة</option>' +
           ['jamaah', 'ontime', 'late', 'missed'].map(function (st) {
@@ -2047,12 +2074,13 @@
     }
     var grid = $('prayers-grid');
     if (grid) {
-      var rows = '<div class="pg-row pg-head" role="row"><span role="columnheader"></span>' +
+      /* each row names prayers, and on a Friday the noon is الجمعة, the prayer */
+      var rows = '<div class="pg-row pg-head" role="row" data-tr="prayer"><span role="columnheader"></span>' +
         PRAYER_ORDER.map(function (k) { return '<span role="columnheader">' + esc(prayerName(k, now).replace('أذان ', '')) + '</span>'; }).join('') + '</div>';
       for (var i = 29; i >= 0; i--) {
         var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
         var rec = Store.prayersOf(d);
-        rows += '<div class="pg-row' + (i === 0 ? ' is-today' : '') + '" role="row"><span class="pg-day" role="rowheader">' + ar(d.getDate()) + '</span>' +
+        rows += '<div class="pg-row' + (i === 0 ? ' is-today' : '') + '" role="row" data-tr="prayer"><span class="pg-day" role="rowheader">' + ar(d.getDate()) + '</span>' +
           PRAYER_ORDER.map(function (k) {
             var st = rec[k] || '';
             return '<span class="pg ' + (st || 'none') + '" role="cell" aria-label="' +
@@ -2092,8 +2120,8 @@
      for a desktop browser without one. */
   /* quiet: raised without the phone's sound, for a reminder the reader set
      to silence or to the app's own bells, which the page sounds itself */
-  function notify(title, body, tag, quiet) {
-    title = tongue(title);
+  function notify(title, body, tag, quiet, of) {
+    title = tongue(title, of);
     body = tongue(body);
     var app = bridge();
     if (app && app.notify) {
@@ -2696,7 +2724,9 @@
            whether the day is one of ramadan, when fajr ends the suhur and
            maghrib is the iftar */
         if (at > Date.now()) {
-          list.push({ at: at, key: k, name: prayerName(k, day), label: tongue(prayerName(k, day)),
+          var name = prayerName(k, day);
+          list.push({ at: at, key: k, name: name, label: prayerWord(k, day),
+            title: tongue('حان وقت ' + name, 'prayer'), body: tongue('الله أكبر، حيّ على الصلاة'),
             clock: tongue(clockText(t[k])), head: tongue('الصلاة القادمة'),
             day: tongue(h.weekday), hijri: tongue(Hijri.format(h)), ramadan: h.m === 9 });
         }
@@ -3224,8 +3254,7 @@
     var host = $('daily-ayah');
     if (!host) return;
     if (!Mushaf.ready()) { host.innerHTML = skeleton(2); return; }
-    var seed = Math.floor(Date.now() / 86400000) % 6236;
-    var pos = Mushaf.fromGlobalIndex(seed + 1) || { s: 1, a: 1 };
+    var pos = ayahOfDay(new Date());
     state.dailyAyah = pos;
     host.textContent = Mushaf.ayah(pos.s, pos.a);
     /* the widgets carry the ayah too, once the mushaf is there to give it */
@@ -5524,9 +5553,25 @@
   /* the app keeps the chosen adhan beside it, so it sounds with the app closed */
   /* A web page is only woken by periodic sync, which a web view never fires,
      so the reminder is handed to the app, which keeps its own alarm for it. */
+  /* The words of the notices the app rings by itself, with no page open: the
+     call to the night prayer and the reminder of the salawat. An older
+     package without the call writes them in Arabic. */
+  function handNoticeWords() {
+    var app = bridge();
+    if (!app || !app.setNoticeWords) return false;
+    try {
+      app.setNoticeWords(JSON.stringify({
+        qiyam: { t: tongue('قيام الليل'), b: tongue('هذا الثلث الأخير، وفيه ينزل ربنا تبارك وتعالى') },
+        salawat: { t: tongue('صلِّ على النبي ﷺ'), b: tongue('اللهم صلِّ وسلِّم على نبينا محمد') }
+      }));
+      return true;
+    } catch (e) { return false; }
+  }
+
   function handSalawatToApp() {
     var app = bridge();
     if (!app || !app.setSalawatEvery) return false;
+    handNoticeWords();
     try {
       app.setSalawatEvery(+Store.get('salawat') || 0);
       /* «صامت» must reach the wrapper: the notification was always posted on
@@ -5914,8 +5959,10 @@
       var pre = +Store.get('preAdhan') || 0;
       if (pre && PRE_ADHAN_WORDS[pre]) {
         var pt = computeTimes(day);
+        var ramadanDay = Hijri.toHijri(day, Store.get('hijriAdjust')).m === 9;
         IQAMA_KEYS.forEach(function (k) {
           if (typeof pt[k] !== 'number' || !isFinite(pt[k])) return;
+          if (k === 'maghrib' && pre === 15 && ramadanDay && Store.get('iftar')) return;
           var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, pt[k] - pre, 0, 0);
           if (at.getTime() > Date.now()) {
             out.push({ at: at.getTime(), t: 'أذان ' + prayerName(k, day) + ' ' + PRE_ADHAN_WORDS[pre],
@@ -5961,6 +6008,12 @@
     return out;
   }
 
+  /* a reminder whose title names a prayer, the word before an adhan and the
+     call before the jumuah, reads الجمعة as the prayer and not the day */
+  function reminderKind(r) {
+    return r.k === 'preAdhan' || r.k === 'jumuahBefore' ? 'prayer' : null;
+  }
+
   function handRemindersToApp() {
     /* a browser rings from its own plan, which is drawn again with the change */
     webPlan.made = 0;
@@ -5971,7 +6024,7 @@
     var list = reminderList().map(function (r) {
       var copy = {};
       for (var k in r) if (Object.prototype.hasOwnProperty.call(r, k)) copy[k] = r[k];
-      copy.t = tongue(r.t);
+      copy.t = tongue(r.t, reminderKind(r));
       copy.b = tongue(r.b);
       return copy;
     });
@@ -6040,7 +6093,7 @@
      bells, the reciter, or none */
   function ringReminder(r) {
     var recited = soundFor(r.k) === 'buhendi' && RECITED_SOUND[r.k];
-    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime');
+    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime', reminderKind(r));
     if (r.s === 'chime') playChime();
     else if (recited) playRecording('audio/dua/' + recited.f, document.querySelector('.try-sound[data-try="' + r.k + '"]'), recited.n);
   }
@@ -6066,6 +6119,7 @@
     var app = bridge();
     if (!app || !app.setQiyamTimes) return false;
     if (!Store.get('qiyam')) { try { app.setQiyamTimes('[]'); } catch (e) { /* older package */ } return true; }
+    handNoticeWords();
     var out = [];
     var now = new Date();
     for (var d = 0; d < 7; d++) {
@@ -6982,7 +7036,9 @@
   function widgetWords() {
     var w = {
       next: 'الصلاة القادمة', iqama: 'الإقامة', ayah: 'آية اليوم', khatma: 'ختمتي', wird: 'وردك اليوم',
-      page: 'صفحة', of: 'من', adhkar: 'الأذكار', done: 'أتممتها اليوم', open: 'افتح التطبيق لحساب الأوقات'
+      page: 'صفحة', of: 'من', adhkar: 'الأذكار', done: 'أتممتها اليوم', open: 'افتح التطبيق لحساب الأوقات',
+      /* a widget with no times to work out asks only that the app be opened */
+      openApp: 'افتح التطبيق'
     };
     Object.keys(w).forEach(function (k) { w[k] = tongue(w[k]); });
     return w;
@@ -6995,12 +7051,24 @@
     return { name: tongue(u.name), when: tongue(u.days === 0 ? 'اليوم' : u.days === 1 ? 'غداً' : 'بعد ' + daysOf(u.days, true)), days: u.days };
   }
 
-  function widgetAyah(day) {
-    if (typeof Mushaf === 'undefined' || !Mushaf.ready()) return null;
-    /* the ayah the home card shows that day, chosen by the same count */
+  /* The ayah of a day, one for the home card and the widgets: counted from
+     the reader's own calendar day, and a verse too long to be read on a
+     widget gives way to the nearest one after it that can be, since a widget
+     drew the longest verses in letters too small to read. */
+  var AYAH_OF_DAY_LONGEST = 270;
+  function ayahOfDay(day) {
     var noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
     var seed = Math.floor(noon.getTime() / 86400000) % 6236;
-    var pos = Mushaf.fromGlobalIndex(seed + 1) || { s: 1, a: 1 };
+    for (var step = 0; step < 60; step++) {
+      var pos = Mushaf.fromGlobalIndex(((seed + step) % 6236) + 1);
+      if (pos && Mushaf.ayah(pos.s, pos.a).length <= AYAH_OF_DAY_LONGEST) return pos;
+    }
+    return Mushaf.fromGlobalIndex(seed + 1) || { s: 1, a: 1 };
+  }
+
+  function widgetAyah(day) {
+    if (typeof Mushaf === 'undefined' || !Mushaf.ready()) return null;
+    var pos = ayahOfDay(day);
     var meta = surahMeta(pos.s);
     return { t: Mushaf.ayah(pos.s, pos.a), ref: tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a)), page: Mushaf.pageOf(pos.s, pos.a) };
   }
@@ -7024,15 +7092,18 @@
         var clock = clockText(t[k]);
         /* the day's row has five narrow columns, and read from fajr to isha
            the time needs no ص or م beside it */
-        five.push({ key: k, label: tongue(prayerName(k, day)), clock: tongue(clock), short: tongue(clock.replace(/\s*[صم]$/, '')),
-          at: at(t[k]), sub: sub ? tongue(sub) : '', iqama: iq ? at(t[k] + iq) : 0,
+        five.push({ key: k, label: prayerWord(k, day), clock: tongue(clock), short: tongue(clock.replace(/\s*[صم]$/, '')),
+          at: at(t[k]), sub: sub ? tongue(sub) : '', iqama: iq ? at(t[k] + iq) : 0, iqclock: iq ? tongue(clockText(t[k] + iq)) : '',
           prayed: !!marks[k] && marks[k] !== 'missed' });
       });
       var adhkar = [];
       WIDGET_ADHKAR.forEach(function (w) {
         var def = typeof AZKAR_DB !== 'undefined' ? AZKAR_DB[w[0]] : null;
-        if (!def || typeof t[w[1]] !== 'number') return;
+        /* far north in summer a time can have no value at all, and a window
+           without its two ends is left out rather than handed as nothing */
+        if (!def || typeof t[w[1]] !== 'number' || !isFinite(t[w[1]])) return;
         var end = w[2] ? t[w[2]] : null;
+        if (end !== null && (typeof end !== 'number' || !isFinite(end))) return;
         var p = d === 0 ? Store.azkarProgress(w[0], def.items.length, day) : { done: 0 };
         adhkar.push({ key: w[0], title: tongue(def.title), from: at(t[w[1]]), to: end === null ? at(24 * 60 + (t.fajr || 300)) : at(end),
           done: p.done, total: def.items.length });
@@ -7178,7 +7249,11 @@
 
   function zakatNumber(n) {
     var r = Math.round(n * 100) / 100;
-    try { return r.toLocaleString('en-US', { maximumFractionDigits: 2 }); } catch (e) { return String(r); }
+    /* grouped and with the decimal mark of the reader's language, so a French
+       card does not write the comma two ways; the figures themselves are put
+       into the language's own as the page is drawn */
+    var tag = window.I18n && window.I18n.lang !== 'ar' && window.I18n.speech ? window.I18n.speech : 'en-US';
+    try { return r.toLocaleString(tag, { maximumFractionDigits: 2, numberingSystem: 'latn' }); } catch (e) { return String(r); }
   }
 
   function zakatFigures(v) {
@@ -7188,8 +7263,12 @@
     var total = num('cash') + pure * gold + num('silver') * silver + num('trade') + num('owed') - num('debts');
     var by = v.nisab === 'silver' ? 'silver' : 'gold';
     var price = by === 'silver' ? silver : gold;
+    /* the price still wanted, by the metal it is wanted for: the gold owned
+       or the gold of the nisab, then the silver owned or of the nisab */
+    var missing = (pure && !gold) || (by === 'gold' && !gold) ? 'gold'
+      : (num('silver') && !silver) || (by === 'silver' && !silver) ? 'silver' : '';
     return { total: Math.max(0, total), nisab: price ? NISAB_GRAMS[by] * price : 0, by: by,
-      missing: (pure && !gold) || (num('silver') && !silver) || !price, people: Math.floor(num('people')) };
+      missing: missing, people: Math.floor(num('people')) };
   }
 
   function renderZakatResult() {
@@ -7199,7 +7278,7 @@
     if (!host) return;
     var body;
     if (f.missing) {
-      body = '<p class="setting-note">' + esc(f.by === 'silver' ? 'اكتب سعر غرام الفضة ليُحسب النصاب' : 'اكتب سعر غرام الذهب ليُحسب النصاب') + '</p>';
+      body = '<p class="setting-note">' + esc(f.missing === 'silver' ? 'اكتب سعر غرام الفضة ليُحسب النصاب' : 'اكتب سعر غرام الذهب ليُحسب النصاب') + '</p>';
     } else if (f.total < f.nisab) {
       body = '<p class="setting-note">' + esc('مالك ' + zakatNumber(f.total) + ' دون النصاب ' + zakatNumber(f.nisab) + '، فلا زكاة عليه') + '</p>';
     } else {
@@ -7362,6 +7441,16 @@
     return '';
   }
 
+  var TARAWEEH_ROW = { ticks: ['ramadan:taraweeh'], label: 'صلاة التراويح', note: 'من قام رمضان إيماناً واحتساباً غُفر له ما تقدم من ذنبه' };
+
+  /* Whether tonight's taraweeh is prayed: the night that follows the day a
+     tick is kept on belongs to the next day, so it is a night of ramadan from
+     the eve of its first day, and the night after its last day is the eid's. */
+  function taraweehTonight() {
+    var sd = sunnahDay();
+    return Hijri.toHijri(new Date(sd.getFullYear(), sd.getMonth(), sd.getDate() + 1), Store.get('hijriAdjust')).m === 9;
+  }
+
   /* Today in the month, on the screen in full and on the home card short:
      the day, the hours that bound the fast, and the ticks of the day. */
   function ramadanTodayHtml(full) {
@@ -7377,7 +7466,10 @@
         (owed && full ? '<div class="row"><span class="row-mark">' + ar(owed) + '</span><span class="row-body">' +
           '<span class="row-title">عليك ' + esc(daysOf(owed)) + ' من القضاء</span>' +
           '<span class="row-note">اقضها قبل أن يدخل الشهر</span></span>' +
-          '<button class="btn btn-ghost" data-go="qada">القضاء</button></div>' : '');
+          '<button class="btn btn-ghost" data-go="qada">القضاء</button></div>' : '') +
+        /* the first taraweeh is prayed on the eve of the first day */
+        (taraweehTonight() ? '<div class="ramadan-ticks" data-sunnah-day="' + Store.dayKey(sunnahDay()) + '">' +
+          checkRow(TARAWEEH_ROW, Store.day(sunnahDay())) + '</div>' : '');
     }
     var d = m.h.d, len = m.len, left = len - d;
     var t = computeTimes(now);
@@ -7386,10 +7478,11 @@
       '<div class="meter"><span style="width:' + Math.round(d / len * 100) + '%"></span></div>';
     var tonight = ramadanTonight(d, len);
     var ticks = [
-      { ticks: ['ramadan:taraweeh'], label: 'صلاة التراويح', note: 'من قام رمضان إيماناً واحتساباً غُفر له ما تقدم من ذنبه' },
       { ticks: ['wird:quran'], label: 'ورد من القرآن', note: '' },
       { ticks: ['wird:sadaqah'], label: 'صدقة ولو يسيرة', note: '' }
     ];
+    /* the night after the last day is the eid's, with no taraweeh in it */
+    if (taraweehTonight()) ticks.unshift(TARAWEEH_ROW);
     var record = Store.day(sunnahDay());
     return head +
       (typeof t.fajr === 'number' && typeof t.maghrib === 'number' ? ramadanTimes(t) : '') +
@@ -8248,7 +8341,7 @@
       rows.push({ n: 'منتصف الليل', v: clockText(marks.midnight), night: true });
       rows.push({ n: 'الثلث الأخير', v: clockText(marks.lastThird), night: true });
     }
-    rows.forEach(function (row) { row.n = tongue(row.n); row.v = tongue(row.v); });
+    rows.forEach(function (row) { row.n = tongue(row.n, 'prayer'); row.v = tongue(row.v); });
     /* the name stands where a line of the reader's language begins, and the
        time at the other end */
     var ltr = !!(window.I18n && window.I18n.dir === 'ltr');
@@ -10890,12 +10983,13 @@
       Store.set('jumuahBefore', +e.target.value);
       handRemindersToApp();
       toast(+e.target.value ? 'سيصلك نداء الجمعة قبلها' : 'أُوقف نداء الجمعة');
+      if (+e.target.value) askToRemind();
     });
 
     bind('settings-pre-adhan', 'change', function (e) {
       Store.set('preAdhan', +e.target.value || 0);
       handRemindersToApp();
-      if (+e.target.value) toast('سيصلك تنبيه قبل كل أذان');
+      if (+e.target.value) { toast('سيصلك تنبيه قبل كل أذان'); askToRemind(); }
     });
     bind('settings-iqama', 'click', iqamaSheet);
 

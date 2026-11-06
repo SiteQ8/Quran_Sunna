@@ -548,10 +548,12 @@
   /* For what never reaches the page: a notification, a line the phone
      speaks, the words that go with a shared picture, a title. Each line of it
      on its own, so a verse quoted above its reference keeps its Arabic while
-     the reference beneath it is translated. */
-  function tx(text) {
+     the reference beneath it is translated. A kind says what the words
+     name, as data-tr does on the page: «prayer» reads الجمعة as the Friday
+     prayer, not the day. */
+  function tx(text, of) {
     if (!active || text === null || text === undefined) return text;
-    return String(text).split('\n').map(line).join('\n');
+    return String(text).split('\n').map(function (one) { return line(one, of); }).join('\n');
   }
 
   /* ---------------- the page ---------------- */

@@ -42,7 +42,7 @@ public final class AyahWidget extends AppWidgetProvider {
         int wrap = WidgetText.px(context, size.getWidth() - 28);
         if (ayah == null) {
             WidgetText.put(context, views, R.id.ayah_text, "\uFD3F \uFD3E", WidgetText.AYAH, all, wrap);
-            WidgetText.put(context, views, R.id.ayah_ref, WidgetStore.word(all, "open", context.getString(R.string.widgetOpenApp)),
+            WidgetText.put(context, views, R.id.ayah_ref, WidgetStore.word(all, "openApp", context.getString(R.string.widgetOpenApp)),
                 WidgetText.PAPER_NOTE, all, 0);
         } else {
             WidgetText.put(context, views, R.id.ayah_text, ayah.optString("t"), WidgetText.AYAH, all, wrap);

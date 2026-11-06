@@ -118,9 +118,13 @@ final class WidgetStore {
         return sizes.size() < 2 ? upright : new RemoteViews(drawer.draw(sizes.get(1)), upright);
     }
 
-    /** One cell high: a row rather than a card. */
-    static boolean oneRow(android.util.SizeF size) {
-        return size.getHeight() < 100;
+    /** Too low for the card, which needs the given height: a row instead.
+     *  A launcher's one row is about a hundred dp high and two rows of a
+     *  phone on its side about a hundred and twenty, and the card of the
+     *  next prayer needs some hundred and fifty for its name, time,
+     *  countdown and bar at the largest text the widgets allow. */
+    static boolean oneRow(android.util.SizeF size, float card) {
+        return size.getHeight() < card;
     }
 
     /** A count the widget makes itself, in the figures of the reader's

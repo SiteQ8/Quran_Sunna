@@ -50,9 +50,12 @@ struct WPrayer: Codable {
   let key: String
   let label: String
   let clock: String
+  /* the time without its half of the day, for the day's five narrow columns */
+  var short: String? = nil
   let at: Double
   var sub: String? = nil
   var iqama: Double? = nil
+  var iqclock: String? = nil
   var prayed: Bool? = nil
   var when: Date { Date(timeIntervalSince1970: at / 1000) }
   var iqamaDate: Date? { (iqama ?? 0) > 0 ? Date(timeIntervalSince1970: iqama! / 1000) : nil }
@@ -72,8 +75,8 @@ struct WAyah: Codable {
 struct WAdhkar: Codable {
   let key: String
   let title: String
-  let from: Double
-  let to: Double
+  var from: Double? = nil
+  var to: Double? = nil
   let done: Int
   let total: Int
 }
@@ -160,7 +163,7 @@ struct WData: Codable {
   func adhkar(_ now: Date) -> WAdhkar? {
     let t = now.timeIntervalSince1970 * 1000
     for back in [0.0, 86400.0] {
-      if let a = day(now.addingTimeInterval(-back))?.adhkar?.first(where: { $0.from <= t && t < $0.to }) { return a }
+      if let a = day(now.addingTimeInterval(-back))?.adhkar?.first(where: { ($0.from ?? .infinity) <= t && t < ($0.to ?? -.infinity) }) { return a }
     }
     return nil
   }
@@ -177,7 +180,7 @@ struct WData: Codable {
       if let s = d.sky, s.count > 1 {
         for i in 1..<s.count { out.append(Date(timeIntervalSince1970: (s[i - 1].at + s[i].at) / 2000)) }
       }
-      for a in d.adhkar ?? [] { out.append(Date(timeIntervalSince1970: a.to / 1000 + 1)) }
+      for a in d.adhkar ?? [] { if let to = a.to { out.append(Date(timeIntervalSince1970: to / 1000 + 1)) } }
     }
     out.append(Calendar.current.startOfDay(for: now).addingTimeInterval(86400 + 5))
     return Array(Set(out.filter { $0 > now && $0 <= end })).sorted()
@@ -262,8 +265,8 @@ func plex(_ data: WData?, _ size: CGFloat, _ face: Face = .regular, _ style: Fon
   let arabic = data?.rightToLeft ?? phoneReadsFromRight
   let name: String
   switch face {
-  case .regular: name = arabic ? "IBMPlexSansArabic-Regular" : "IBMPlexSans"
-  case .semibold: name = arabic ? "IBMPlexSansArabic-SemiBold" : "IBMPlexSans-SmBld"
+  case .regular: name = arabic ? "IBMPlexSansArabic" : "IBMPlexSans"
+  case .semibold: name = arabic ? "IBMPlexSansArabic-SmBld" : "IBMPlexSans-SmBld"
   case .bold: name = arabic ? "IBMPlexSansArabic-Bold" : "IBMPlexSans-Bold"
   }
   return .custom(name, size: size, relativeTo: style)
@@ -364,16 +367,18 @@ struct NextLine {
   let sub: String
   let to: Date
   let from: Date
+  /* the time as the app writes it, when the page gave it */
+  var clock: String? = nil
 
   static func at(_ now: Date, _ data: WData?, _ times: Times) -> NextLine? {
     if let d = data {
       let (prev, next) = d.around(now)
       if let p = prev, let q = p.iqamaDate, q > now {
-        return NextLine(head: says(d, "iqama", "الإقامة"), name: p.label, sub: "", to: q, from: p.when)
+        return NextLine(head: says(d, "iqama", "الإقامة"), name: p.label, sub: "", to: q, from: p.when, clock: p.iqclock)
       }
       if let n = next {
         let from = prev?.when ?? n.when.addingTimeInterval(-6 * 3600)
-        return NextLine(head: says(d, "next", "الصلاة القادمة"), name: n.label, sub: n.sub ?? "", to: n.when, from: from)
+        return NextLine(head: says(d, "next", "الصلاة القادمة"), name: n.label, sub: n.sub ?? "", to: n.when, from: from, clock: n.clock)
       }
     }
     let t = now.timeIntervalSince1970
@@ -403,7 +408,9 @@ struct Framed<Content: View, Back: View>: View {
   }
 
   @ViewBuilder private var legacy: some View {
-    if onHomeScreen { content.padding().background(back) } else { content }
+    if onHomeScreen {
+      content.frame(maxWidth: .infinity, maxHeight: .infinity).padding().background(back)
+    } else { content }
   }
 
   private var onHomeScreen: Bool {
@@ -420,11 +427,19 @@ extension View {
   func shadowed() -> some View { self.shadow(color: .black.opacity(0.35), radius: 3, x: 0, y: 1) }
 
   func direction(_ data: WData?) -> some View {
-    self.environment(\.layoutDirection, (data?.rightToLeft ?? true) ? .rightToLeft : .leftToRight)
+    self.environment(\.layoutDirection, (data?.rightToLeft ?? phoneReadsFromRight) ? .rightToLeft : .leftToRight)
   }
 }
 
 func widgetLink(_ kind: String) -> URL { URL(string: "sunnati://screen/" + kind)! }
+
+/* A fixed time as the app writes it: in the reader's language and figures,
+   and in twelve or twenty-four hours as chosen there. The phone's own format
+   only when the page gave none, as for the iqama. */
+func clockText(_ clock: String?, _ at: Date) -> Text {
+  if let c = clock, !c.isEmpty { return Text(verbatim: c) }
+  return Text(at, style: .time)
+}
 
 // MARK: - the next prayer
 
@@ -463,7 +478,7 @@ struct PrayerView: View {
       Text(n.head).font(plex(data, 11, .semibold, .caption2)).opacity(0.85)
       Text(n.name).font(plex(data, 22, .bold, .title2)).lineLimit(1).minimumScaleFactor(0.7)
       if !n.sub.isEmpty { Text(n.sub).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.gold) }
-      Text(n.to, style: .time).font(plex(data, 12, .regular, .caption)).opacity(0.9)
+      clockText(n.clock, n.to).font(plex(data, 12, .regular, .caption)).opacity(0.9)
       Spacer(minLength: 0)
       Text(n.to, style: .timer).font(plex(data, 20, .semibold, .title3).monospacedDigit())
       GoneBar(from: n.from, to: n.to)
@@ -523,14 +538,14 @@ struct PrayerView: View {
   @ViewBuilder private func lock(_ n: NextLine) -> some View {
     switch family {
     case .accessoryInline:
-      Text("\(n.name) ") + Text(n.to, style: .time)
+      Text("\(n.name) ") + clockText(n.clock, n.to)
     case .accessoryCircular:
       ProgressView(timerInterval: min(n.from, n.to)...n.to, countsDown: false) {
         EmptyView()
       } currentValueLabel: {
         VStack(spacing: 0) {
           Text(n.name).font(plex(data, 10, .semibold, .caption2)).lineLimit(1).minimumScaleFactor(0.5)
-          Text(n.to, style: .time).font(plex(data, 11, .regular, .caption2).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.5)
+          clockText(n.clock, n.to).font(plex(data, 11, .regular, .caption2).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.5)
         }
       }
       .progressViewStyle(.circular)
@@ -538,7 +553,7 @@ struct PrayerView: View {
       VStack(alignment: .leading, spacing: 1) {
         HStack(spacing: 4) {
           Text(n.name).font(plex(data, 17, .semibold, .headline))
-          Text(n.to, style: .time).font(plex(data, 12, .regular, .caption).monospacedDigit())
+          clockText(n.clock, n.to).font(plex(data, 12, .regular, .caption).monospacedDigit())
         }
         Text(n.to, style: .timer).font(plex(data, 17, .regular, .body).monospacedDigit())
         GoneBar(from: n.from, to: n.to, tint: .primary)
@@ -574,7 +589,7 @@ struct FiveList: View {
           Text(p.label).font(plex(data, compact ? 12 : 15, isNext ? .bold : .regular, compact ? .caption : .subheadline))
           if p.prayed == true { Image(systemName: "checkmark").font(.caption2.weight(.bold)) }
           Spacer(minLength: 4)
-          Text(p.when, style: .time).font(plex(data, compact ? 12 : 15, isNext ? .bold : .regular, compact ? .caption : .subheadline).monospacedDigit())
+          clockText(p.clock, p.when).font(plex(data, compact ? 12 : 15, isNext ? .bold : .regular, compact ? .caption : .subheadline).monospacedDigit())
         }
         .opacity(gone ? 0.6 : 1)
         .padding(.horizontal, isNext && !compact ? 8 : 0)
@@ -631,7 +646,7 @@ struct DayView: View {
           let isNext = p.key == nextKey && !gone
           VStack(spacing: 3) {
             Text(p.label).font(plex(data, 12, .regular, .caption)).lineLimit(1).minimumScaleFactor(0.7)
-            Text(p.when, style: .time).font(plex(data, 12, .bold, .caption).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7)
+            clockText(p.short ?? p.clock, p.when).font(plex(data, 12, .bold, .caption).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7)
             Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).opacity(p.prayed == true ? 1 : 0)
           }
           .frame(maxWidth: .infinity)
@@ -771,7 +786,7 @@ struct AyahView: View {
         Text(ayah?.ref ?? "").font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
       }
       Spacer(minLength: 0)
-      Text(ayah?.t ?? (says(data, "open", "افتح التطبيق")))
+      Text(ayah?.t ?? (says(data, "openApp", "افتح التطبيق")))
         .font(.custom("AmiriQuran-Regular", size: family == .systemLarge ? 24 : 20))
         .foregroundStyle(Palette.ink)
         .multilineTextAlignment(.center)

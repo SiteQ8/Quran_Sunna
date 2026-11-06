@@ -9,6 +9,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -63,15 +64,19 @@ public final class PrayerWidget extends AppWidgetProvider {
     /** Draws every placed widget again, after the page hands new times or the clock moves. */
     public static void refresh(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        int[] ids = manager.getAppWidgetIds(new ComponentName(context, PrayerWidget.class));
-        if (ids != null && ids.length > 0) draw(context, manager, ids);
-        PrayerDayWidget.refresh(context);
-        HijriWidget.refresh(context);
-        AyahWidget.refresh(context);
-        KhatmaWidget.refresh(context);
-        AdhkarWidget.refresh(context);
-        if (placed(context, manager)) wake(context);
-        else cancel(context);
+        try {
+            int[] ids = manager.getAppWidgetIds(new ComponentName(context, PrayerWidget.class));
+            if (ids != null && ids.length > 0) draw(context, manager, ids);
+        } catch (Exception e) { Log.w("sunnati", "prayer widget not drawn", e); }
+        try { PrayerDayWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "day widget not drawn", e); }
+        try { HijriWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "hijri widget not drawn", e); }
+        try { AyahWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "ayah widget not drawn", e); }
+        try { KhatmaWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "khatma widget not drawn", e); }
+        try { AdhkarWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "adhkar widget not drawn", e); }
+        try {
+            if (placed(context, manager)) wake(context);
+            else cancel(context);
+        } catch (Exception e) { Log.w("sunnati", "next widget turn not armed", e); }
     }
 
     static boolean placed(Context context, AppWidgetManager manager) {
@@ -140,7 +145,9 @@ public final class PrayerWidget extends AppWidgetProvider {
             n.sub = "";
             n.to = prev.optLong("iqama");
             n.from = prev.optLong("at");
-            n.clock = WidgetStore.clock(context, n.to);
+            /* the iqama's time as the app writes it, or the phone's own way */
+            String iq = prev.optString("iqclock", "");
+            n.clock = iq.isEmpty() ? WidgetStore.clock(context, n.to) : iq;
             return n;
         }
         if (next != null) {
@@ -151,6 +158,9 @@ public final class PrayerWidget extends AppWidgetProvider {
             n.from = prev != null ? prev.optLong("at") : n.to - 6 * 3600000L;
             return n;
         }
+        /* the times handed have run out: the app is opened to work out more,
+           rather than the times of الكويت standing for the reader's own */
+        if (all != null) return null;
         /* nothing handed for the widgets yet: the times the adhan keeps */
         Object[] adhan = AdhanScheduler.next(context, now);
         if (adhan == null) return null;
@@ -173,7 +183,7 @@ public final class PrayerWidget extends AppWidgetProvider {
         for (int id : ids) {
             /* one cell high draws one row; anything taller, the full card */
             manager.updateAppWidget(id, WidgetStore.sized(manager, id, 170f, 170f, size -> fill(context,
-                WidgetStore.oneRow(size) ? R.layout.widget_prayer_small : R.layout.widget_prayer, size, n, now, place, sky, all)));
+                WidgetStore.oneRow(size, 160) ? R.layout.widget_prayer_small : R.layout.widget_prayer, size, n, now, place, sky, all)));
         }
     }
 

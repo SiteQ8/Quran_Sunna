@@ -55,4 +55,32 @@
     <string name="widgetSample27">Следующий намаз</string>
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
+    <!-- the notification channels as the phone's settings list them -->
+    <string name="channelAdhan">Время намаза</string>
+    <string name="channelAdhanAbout">Оповещение с наступлением времени каждого намаза</string>
+    <string name="channelAdhanVoice">Время намаза, с азаном</string>
+    <string name="channelAdhanVoiceAbout">Само оповещение беззвучно, потому что приложение воспроизводит азан</string>
+    <string name="channelAdhanHush">Время намаза, без звука</string>
+    <string name="channelAdhanHushAbout">Оповещение приходит без звука и вибрации, как вы выбрали</string>
+    <string name="channelReminders">Напоминания</string>
+    <string name="channelRemindersAbout">Салават Пророку и напоминания, о которых вы просите приложение</string>
+    <string name="channelChime">Напоминания со спокойной мелодией</string>
+    <string name="channelChimeAbout">Напоминания, для которых вы выбрали спокойную мелодию</string>
+    <string name="channelQuiet">Беззвучные напоминания</string>
+    <string name="channelQuietAbout">Напоминания, которые вы решили получать без звука</string>
+    <string name="channelPlaying">Сейчас звучит</string>
+    <string name="channelPlayingAbout">Чтение Корана, радио и зикр во время воспроизведения, с кнопками остановки и без звука самого уведомления</string>
+    <!-- the adhan shortcut's words, the player's buttons and the crash screen -->
+    <string name="adhanAlertsOn">Оповещения азаном включены</string>
+    <string name="adhanStopAsk">Выключить оповещения азаном?</string>
+    <string name="adhanStopWhy">Азан не будет звучать, пока вы снова не включите его здесь или в настройках.</string>
+    <string name="adhanStopYes">Да, выключить</string>
+    <string name="adhanStopped">Оповещения азаном выключены</string>
+    <string name="answerNo">Нет</string>
+    <string name="playerPause">Пауза</string>
+    <string name="playerPlay">Воспроизвести</string>
+    <string name="playerStop">Остановить</string>
+    <string name="crashTitle">Sunnati остановилось, и вот причина</string>
+    <string name="crashCopy">Копировать</string>
+    <string name="crashCopied">Скопировано</string>
 </resources>
