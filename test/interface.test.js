@@ -6991,8 +6991,9 @@ test('no supplication carries a letter torn from its word', () => {
     });
   });
   const rizq = win.DUA_BOOK.filter(function (t) { return t.id === 'rizq'; })[0];
-  assert.ok(rizq.i.some(function (l) { return l.indexOf('ذو حظ عظيم') !== -1; }));
-  assert.ok(!rizq.i.some(function (l) { return /ذو ح ظ/.test(l); }));
+  /* «واجعلني ذا حظ عظيم», whole, and in the case its verb asks for */
+  assert.ok(rizq.i.some(function (l) { return l.indexOf('ذا حظ عظيم') !== -1; }));
+  assert.ok(!rizq.i.some(function (l) { return /ذ[وا] ح ظ|ذو حظ/.test(l); }));
 });
 
 test('the button that sends a verse sits inside its card', () => {
