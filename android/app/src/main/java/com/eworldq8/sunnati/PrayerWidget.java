@@ -25,7 +25,7 @@ public final class PrayerWidget extends AppWidgetProvider {
 
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
-        draw(context, manager, ids);
+        refresh(context);
     }
 
     @Override
@@ -36,6 +36,10 @@ public final class PrayerWidget extends AppWidgetProvider {
 
     @Override
     public void onDisabled(Context context) {
+        if (!placed(context, AppWidgetManager.getInstance(context))) cancel(context);
+    }
+
+    static void cancel(Context context) {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms != null) alarms.cancel(tick(context));
     }
@@ -45,6 +49,29 @@ public final class PrayerWidget extends AppWidgetProvider {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, PrayerWidget.class));
         if (ids != null && ids.length > 0) draw(context, manager, ids);
+        /* the wide and the hijri widgets read the same list and wake with it */
+        PrayerDayWidget.refresh(context);
+        HijriWidget.refresh(context);
+        if (placed(context, manager)) {
+            Object[] next = AdhanScheduler.next(context, System.currentTimeMillis());
+            java.util.Calendar midnight = java.util.Calendar.getInstance();
+            midnight.add(java.util.Calendar.DAY_OF_YEAR, 1);
+            midnight.set(java.util.Calendar.HOUR_OF_DAY, 0);
+            midnight.set(java.util.Calendar.MINUTE, 0);
+            midnight.set(java.util.Calendar.SECOND, 5);
+            long at = midnight.getTimeInMillis();
+            /* the next prayer moves every widget on, and midnight the date */
+            if (next != null) at = Math.min(at, (Long) next[0] + 1000);
+            wakeAt(context, at);
+        }
+    }
+
+    private static boolean placed(Context context, AppWidgetManager manager) {
+        for (Class<?> c : new Class<?>[] { PrayerWidget.class, PrayerDayWidget.class, HijriWidget.class }) {
+            int[] ids = manager.getAppWidgetIds(new ComponentName(context, c));
+            if (ids != null && ids.length > 0) return true;
+        }
+        return false;
     }
 
     private static void draw(Context context, AppWidgetManager manager, int[] ids) {
@@ -73,7 +100,23 @@ public final class PrayerWidget extends AppWidgetProvider {
             .getString(SplashView.KEY_PLACE, "");
 
         for (int id : ids) {
-            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_prayer);
+            RemoteViews tall = fill(context, R.layout.widget_prayer, next, now, head, label, clock, place);
+            RemoteViews views = tall;
+            if (Build.VERSION.SDK_INT >= 31) {
+                /* one cell high draws one row; anything taller, the full card */
+                java.util.Map<android.util.SizeF, RemoteViews> sizes = new java.util.HashMap<>();
+                sizes.put(new android.util.SizeF(110f, 40f), fill(context, R.layout.widget_prayer_small, next, now, head, label, clock, place));
+                sizes.put(new android.util.SizeF(110f, 100f), tall);
+                views = new RemoteViews(sizes);
+            }
+            manager.updateAppWidget(id, views);
+        }
+    }
+
+    private static RemoteViews fill(Context context, int layout, Object[] next, long now,
+                                    String head, String label, String clock, String place) {
+        {
+            RemoteViews views = new RemoteViews(context.getPackageName(), layout);
             Intent open = new Intent(context, MainActivity.class);
             open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
             views.setOnClickPendingIntent(R.id.widget_root,
@@ -96,11 +139,12 @@ public final class PrayerWidget extends AppWidgetProvider {
                 views.setChronometer(R.id.widget_left, SystemClock.elapsedRealtime() + (at - now), null, true);
                 views.setChronometerCountDown(R.id.widget_left, true);
             }
-            views.setTextViewText(R.id.widget_place, place);
-            views.setViewVisibility(R.id.widget_place, place.length() > 0 ? View.VISIBLE : View.GONE);
-            manager.updateAppWidget(id, views);
+            if (layout == R.layout.widget_prayer) {
+                views.setTextViewText(R.id.widget_place, place);
+                views.setViewVisibility(R.id.widget_place, place.length() > 0 ? View.VISIBLE : View.GONE);
+            }
+            return views;
         }
-        if (next != null) wakeAt(context, (Long) next[0] + 1000);
     }
 
     /* the widget wakes when the prayer it counts to comes, to count to the next */

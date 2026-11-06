@@ -12092,6 +12092,9 @@ test('the next prayer reaches the home screen on both phones, in the reader\'s l
   assert.ok(read('android/app/src/main/java/com/eworldq8/sunnati/AdhanScheduler.java').indexOf('PrayerWidget.refresh(context)') !== -1,
     'new times redraw it');
   const swift = read('ios/Widget/PrayerWidget.swift');
+  assert.ok(/receiver android:name="\.PrayerDayWidget"/.test(manifest) && /receiver android:name="\.HijriWidget"/.test(manifest),
+    'android also offers the wide prayers widget and the hijri date');
+  assert.ok(swift.indexOf('.systemLarge') !== -1 && swift.indexOf('struct HijriWidget') !== -1, 'and the iPhone a large size and the hijri date');
   ['.accessoryCircular', '.accessoryRectangular', '.accessoryInline'].forEach(function (f) {
     assert.ok(swift.indexOf(f) !== -1, 'the iPhone lock screen offers ' + f);
   });
@@ -12099,7 +12102,7 @@ test('the next prayer reaches the home screen on both phones, in the reader\'s l
   const sent = [];
   const { win } = boot({ now: new Date(2026, 10, 1, 9, 0, 0), bridge: { setPrayerTimes: function (j) { sent.push(JSON.parse(j)); } } });
   const last = sent[sent.length - 1] || [];
-  assert.ok(last.length && last.every(function (r) { return r.label && r.clock && r.head; }), 'each time carries its words');
+  assert.ok(last.length && last.every(function (r) { return r.label && r.clock && r.head && r.hijri && r.day && r.key; }), 'each time carries its words');
 });
 
 test('iqama: between the adhan and the iqama the clock counts to the iqama, and a word comes before each adhan', () => {
