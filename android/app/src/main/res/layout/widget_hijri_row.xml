@@ -1,24 +1,33 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- one cell high: the hijri date on its line, the weekday and the civil date
      under it; the occasion has no room here and waits for a taller widget -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@+id/hijri_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center_vertical"
-    android:paddingStart="14dp" android:paddingEnd="14dp" android:paddingTop="6dp" android:paddingBottom="6dp"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <TextView android:id="@+id/hijri_date" android:layout_width="match_parent" android:layout_height="34dp"
-        android:text="@string/widgetSample20" android:textSize="17sp" android:textStyle="bold" android:textColor="@color/widgetAccent"
-        android:maxLines="2" android:gravity="center_vertical|start" android:lineSpacingMultiplier="0.9"
-        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="10sp" android:autoSizeMaxTextSize="17sp"/>
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="horizontal" android:layout_marginTop="2dp" android:baselineAligned="false">
-        <TextView android:id="@+id/hijri_day" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="@string/widgetSample19" android:textSize="11sp" android:textStyle="bold" android:textColor="@color/widgetMuted" android:maxLines="1"/>
-        <TextView android:id="@+id/hijri_civil" android:layout_width="0dp" android:layout_weight="1" android:layout_height="15dp"
-            android:text="@string/widgetSample21" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1"
-            android:layout_marginStart="6dp" android:gravity="center_vertical|start"
-            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="11sp"/>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center_vertical"
+        android:paddingStart="14dp" android:paddingEnd="14dp" android:paddingTop="6dp" android:paddingBottom="6dp">
+        <ImageView android:id="@+id/hijri_date" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:layout_marginTop="2dp" android:baselineAligned="false"
+            android:gravity="center_vertical">
+            <ImageView android:id="@+id/hijri_day" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+            <ImageView android:id="@+id/hijri_civil" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="6dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        </LinearLayout>
+        <ImageView android:id="@+id/hijri_occasion" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
     </LinearLayout>
-    <TextView android:id="@+id/hijri_occasion" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
-</LinearLayout>
+</FrameLayout>

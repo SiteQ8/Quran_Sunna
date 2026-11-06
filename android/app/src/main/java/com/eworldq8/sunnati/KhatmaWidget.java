@@ -19,6 +19,11 @@ public final class KhatmaWidget extends AppWidgetProvider {
         PrayerWidget.refresh(context);
     }
 
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, android.os.Bundle options) {
+        PrayerWidget.refresh(context);
+    }
+
     public static void refresh(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, KhatmaWidget.class));
@@ -33,15 +38,16 @@ public final class KhatmaWidget extends AppWidgetProvider {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_khatma);
             views.setOnClickPendingIntent(R.id.khatma_root, WidgetStore.open(context, "widgetKhatma", 7404));
             WidgetStore.direct(views, R.id.khatma_root, all);
-            views.setTextViewText(R.id.khatma_head, WidgetStore.word(all, "khatma", context.getString(R.string.widgetKhatmaName)));
+            WidgetText.put(context, views, R.id.khatma_head, WidgetStore.word(all, "khatma", context.getString(R.string.widgetKhatmaName)),
+                WidgetText.PAPER_SMALL_BOLD, all, 0);
             views.setProgressBar(R.id.khatma_ring, total, read, false);
-            views.setTextViewText(R.id.khatma_share,
-                WidgetStore.figures(all, String.format(Locale.US, "%d%%", Math.round(read * 100f / total))));
-            views.setTextViewText(R.id.khatma_page, WidgetStore.word(all, "page", context.getString(R.string.widgetPage)) + " " + WidgetStore.figures(all, String.valueOf(page))
-                + " " + WidgetStore.word(all, "of", context.getString(R.string.widgetOf)) + " " + WidgetStore.figures(all, String.valueOf(total)));
+            WidgetText.put(context, views, R.id.khatma_share,
+                WidgetStore.figures(all, String.format(Locale.US, "%d%%", Math.round(read * 100f / total))), WidgetText.KHATMA_SHARE, all, 0);
+            String pageLine = WidgetStore.word(all, "page", context.getString(R.string.widgetPage)) + " " + WidgetStore.figures(all, String.valueOf(page))
+                + " " + WidgetStore.word(all, "of", context.getString(R.string.widgetOf)) + " " + WidgetStore.figures(all, String.valueOf(total));
+            WidgetText.put(context, views, R.id.khatma_page, pageLine, WidgetText.PAPER_COUNT, all, 0);
             String line = wird.length() > 0 ? WidgetStore.word(all, "wird", context.getString(R.string.widgetWird)) + " " + wird : "";
-            views.setTextViewText(R.id.khatma_wird, line);
-            views.setViewVisibility(R.id.khatma_wird, line.length() > 0 ? View.VISIBLE : View.GONE);
+            WidgetText.put(context, views, R.id.khatma_wird, line, WidgetText.PAPER_NOTE, all, 0);
             manager.updateAppWidget(id, views);
         }
     }

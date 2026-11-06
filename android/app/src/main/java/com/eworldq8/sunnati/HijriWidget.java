@@ -4,7 +4,6 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
-import android.os.Build;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -46,32 +45,33 @@ public final class HijriWidget extends AppWidgetProvider {
         /* the civil date in the reader's language too, beside the hijri one */
         String civil = today == null ? "" : today.optString("civil");
         if (civil.length() == 0) civil = DateFormat.getDateInstance(DateFormat.LONG).format(new Date(now));
+        final String d = day, h = hijri, c = civil, occ = occasion;
         for (int id : ids) {
-            RemoteViews views;
-            if (Build.VERSION.SDK_INT >= 31) {
-                /* one cell high draws one row; anything taller, the whole card */
-                java.util.Map<android.util.SizeF, RemoteViews> sizes = new java.util.HashMap<>();
-                sizes.put(new android.util.SizeF(110f, 40f), fill(context, R.layout.widget_hijri_row, day, hijri, civil, occasion, all));
-                sizes.put(new android.util.SizeF(110f, 100f), fill(context, R.layout.widget_hijri, day, hijri, civil, occasion, all));
-                views = new RemoteViews(sizes);
-            } else {
-                views = fill(context, WidgetStore.oneRow(manager, id) ? R.layout.widget_hijri_row : R.layout.widget_hijri,
-                    day, hijri, civil, occasion, all);
-            }
-            manager.updateAppWidget(id, views);
+            /* one cell high draws one row; anything taller, the whole card */
+            manager.updateAppWidget(id, WidgetStore.sized(manager, id, 170f, 170f, size -> fill(context,
+                WidgetStore.oneRow(size) ? R.layout.widget_hijri_row : R.layout.widget_hijri, size, d, h, c, occ, all)));
         }
     }
 
-    private static RemoteViews fill(Context context, int layout, String day, String hijri, String civil, String occasion, JSONObject all) {
+    private static RemoteViews fill(Context context, int layout, android.util.SizeF size, String day, String hijri, String civil,
+                                    String occasion, JSONObject all) {
         RemoteViews views = new RemoteViews(context.getPackageName(), layout);
+        boolean card = layout == R.layout.widget_hijri;
         views.setOnClickPendingIntent(R.id.hijri_root, WidgetStore.open(context, "widgetHijri", 7402));
         WidgetStore.direct(views, R.id.hijri_root, all);
-        views.setTextViewText(R.id.hijri_day, day);
-        views.setViewVisibility(R.id.hijri_day, day.length() > 0 ? View.VISIBLE : View.GONE);
-        views.setTextViewText(R.id.hijri_date, hijri);
-        views.setTextViewText(R.id.hijri_civil, civil);
-        views.setTextViewText(R.id.hijri_occasion, occasion);
-        views.setViewVisibility(R.id.hijri_occasion, occasion.length() > 0 && layout == R.layout.widget_hijri ? View.VISIBLE : View.GONE);
+        if (card) {
+            int wrap = WidgetText.px(context, size.getWidth() - 24);
+            WidgetText.put(context, views, R.id.hijri_day, day, WidgetText.PAPER_SMALL, all, 0);
+            WidgetText.put(context, views, R.id.hijri_date, hijri, WidgetText.HIJRI_DATE, all, wrap);
+            WidgetText.put(context, views, R.id.hijri_civil, civil, WidgetText.PAPER_NOTE, all, 0);
+            WidgetText.put(context, views, R.id.hijri_occasion, occasion, WidgetText.HIJRI_OCCASION, all, wrap);
+        } else {
+            /* one line, scaled down whole by its image when it is wider than the row */
+            WidgetText.put(context, views, R.id.hijri_date, hijri, WidgetText.HIJRI_DATE_ROW, all, 0);
+            WidgetText.put(context, views, R.id.hijri_day, day, WidgetText.PAPER_NOTE_SEMI, all, 0);
+            WidgetText.put(context, views, R.id.hijri_civil, civil, WidgetText.PAPER_NOTE, all, 0);
+            views.setViewVisibility(R.id.hijri_occasion, View.GONE);
+        }
         return views;
     }
 

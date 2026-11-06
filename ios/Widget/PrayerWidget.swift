@@ -251,6 +251,59 @@ struct Provider: TimelineProvider {
 
 // MARK: - pieces
 
+/* The app's own faces, as every screen of it is written: IBM Plex Sans Arabic
+   for a language written in Arabic letters and IBM Plex Sans for one written
+   in Latin or Cyrillic ones, each growing with the reader's text size from
+   the size it is drawn at. A letter neither has, Bengali's, comes from the
+   phone's own face. */
+enum Face { case regular, semibold, bold }
+
+func plex(_ data: WData?, _ size: CGFloat, _ face: Face = .regular, _ style: Font.TextStyle = .body) -> Font {
+  let arabic = data?.rightToLeft ?? phoneReadsFromRight
+  let name: String
+  switch face {
+  case .regular: name = arabic ? "IBMPlexSansArabic-Regular" : "IBMPlexSans"
+  case .semibold: name = arabic ? "IBMPlexSansArabic-SemiBold" : "IBMPlexSans-SmBld"
+  case .bold: name = arabic ? "IBMPlexSansArabic-Bold" : "IBMPlexSans-Bold"
+  }
+  return .custom(name, size: size, relativeTo: style)
+}
+
+/* before the app has handed anything, the phone's first language decides */
+let phoneReadsFromRight: Bool = {
+  let code = String((Locale.preferredLanguages.first ?? "ar").prefix(2)).lowercased()
+  return ["ar", "ur", "fa"].contains(code)
+}()
+
+/* Eight pointed stars in interlaced bands, the geometry of the mosques' doors
+   and windows, rising from the corner at the end of the line and fading
+   before the words: gold and faint on paper, a single white line on the
+   painted skies. Drawn by tools/android/widget-ornament.py, the same picture
+   the Android widgets wear; it turns itself for a page read from the right. */
+struct Ornament: View {
+  let onSky: Bool
+  var body: some View {
+    Image(onSky ? "ornament_line" : "ornament_band")
+      .renderingMode(.template)
+      .resizable()
+      .frame(width: 150, height: 150)
+      .foregroundStyle(onSky ? Color.white.opacity(0.34) : Color("Ornament"))
+      .flipsForRightToLeftLayoutDirection(true)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+      .accessibilityHidden(true)
+  }
+}
+
+/* the backgrounds a widget wears, turned the way the app's language reads */
+func paperBack(_ data: WData?) -> some View {
+  ZStack { Palette.paper; Ornament(onSky: false) }.direction(data)
+}
+
+func skyBack(_ data: WData?, _ name: String) -> some View {
+  ZStack { SkyBackground(name: name); Ornament(onSky: true) }.direction(data)
+}
+
+
 enum Palette {
   static let accent = Color("Accent")
   static let paper = Color("Paper")
@@ -394,8 +447,8 @@ struct PrayerView: View {
         }
       } else {
         VStack(alignment: .leading, spacing: 4) {
-          Text("سُنّتي").font(.headline)
-          Text(says(data, "open", "افتح التطبيق لحساب الأوقات")).font(.caption2)
+          Text("سُنّتي").font(plex(data, 17, .semibold, .headline))
+          Text(says(data, "open", "افتح التطبيق لحساب الأوقات")).font(plex(data, 11, .regular, .caption2))
         }
         .foregroundStyle(.white)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -407,12 +460,12 @@ struct PrayerView: View {
 
   private func small(_ n: NextLine) -> some View {
     VStack(alignment: .leading, spacing: 2) {
-      Text(n.head).font(.caption2.weight(.semibold)).opacity(0.85)
-      Text(n.name).font(.system(.title2, design: .rounded).weight(.bold)).lineLimit(1).minimumScaleFactor(0.7)
-      if !n.sub.isEmpty { Text(n.sub).font(.caption.weight(.bold)).foregroundStyle(Palette.gold) }
-      Text(n.to, style: .time).font(.caption).opacity(0.9)
+      Text(n.head).font(plex(data, 11, .semibold, .caption2)).opacity(0.85)
+      Text(n.name).font(plex(data, 22, .bold, .title2)).lineLimit(1).minimumScaleFactor(0.7)
+      if !n.sub.isEmpty { Text(n.sub).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.gold) }
+      Text(n.to, style: .time).font(plex(data, 12, .regular, .caption)).opacity(0.9)
       Spacer(minLength: 0)
-      Text(n.to, style: .timer).font(.system(.title3, design: .rounded).weight(.semibold).monospacedDigit())
+      Text(n.to, style: .timer).font(plex(data, 20, .semibold, .title3).monospacedDigit())
       GoneBar(from: n.from, to: n.to)
     }
     .foregroundStyle(.white)
@@ -433,18 +486,18 @@ struct PrayerView: View {
     return VStack(alignment: .leading, spacing: 10) {
       if let t = today {
         HStack {
-          Text("\(t.day)  \(t.hijri)").font(.caption.weight(.semibold))
+          Text("\(t.day)  \(t.hijri)").font(plex(data, 12, .semibold, .caption))
           Spacer(minLength: 4)
-          Text(data?.place ?? "").font(.caption2).opacity(0.85)
+          Text(data?.place ?? "").font(plex(data, 11, .regular, .caption2)).opacity(0.85)
         }
       }
       VStack(alignment: .leading, spacing: 2) {
-        Text(n.head).font(.caption.weight(.semibold)).opacity(0.85)
+        Text(n.head).font(plex(data, 12, .semibold, .caption)).opacity(0.85)
         HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text(n.name).font(.system(.largeTitle, design: .rounded).weight(.bold))
-          if !n.sub.isEmpty { Text(n.sub).font(.subheadline.weight(.bold)).foregroundStyle(Palette.gold) }
+          Text(n.name).font(plex(data, 34, .bold, .largeTitle))
+          if !n.sub.isEmpty { Text(n.sub).font(plex(data, 15, .bold, .subheadline)).foregroundStyle(Palette.gold) }
           Spacer(minLength: 4)
-          Text(n.to, style: .timer).font(.system(.title2, design: .rounded).weight(.semibold).monospacedDigit())
+          Text(n.to, style: .timer).font(plex(data, 22, .semibold, .title2).monospacedDigit())
         }
         GoneBar(from: n.from, to: n.to)
       }
@@ -453,9 +506,9 @@ struct PrayerView: View {
       if let o = today?.occasion {
         HStack {
           Image(systemName: "moon.stars.fill").font(.caption)
-          Text(o.name).font(.caption.weight(.semibold))
+          Text(o.name).font(plex(data, 12, .semibold, .caption))
           Spacer(minLength: 4)
-          Text(o.when).font(.caption)
+          Text(o.when).font(plex(data, 12, .regular, .caption))
         }
         .opacity(0.9)
       }
@@ -476,18 +529,18 @@ struct PrayerView: View {
         EmptyView()
       } currentValueLabel: {
         VStack(spacing: 0) {
-          Text(n.name).font(.system(size: 10, weight: .semibold)).lineLimit(1).minimumScaleFactor(0.5)
-          Text(n.to, style: .time).font(.system(size: 11).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.5)
+          Text(n.name).font(plex(data, 10, .semibold, .caption2)).lineLimit(1).minimumScaleFactor(0.5)
+          Text(n.to, style: .time).font(plex(data, 11, .regular, .caption2).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.5)
         }
       }
       .progressViewStyle(.circular)
     case .accessoryRectangular:
       VStack(alignment: .leading, spacing: 1) {
         HStack(spacing: 4) {
-          Text(n.name).font(.headline)
-          Text(n.to, style: .time).font(.caption.monospacedDigit())
+          Text(n.name).font(plex(data, 17, .semibold, .headline))
+          Text(n.to, style: .time).font(plex(data, 12, .regular, .caption).monospacedDigit())
         }
-        Text(n.to, style: .timer).font(.body.monospacedDigit())
+        Text(n.to, style: .timer).font(plex(data, 17, .regular, .body).monospacedDigit())
         GoneBar(from: n.from, to: n.to, tint: .primary)
       }
       .frame(maxWidth: .infinity, alignment: .leading)
@@ -518,10 +571,10 @@ struct FiveList: View {
         let gone = p.when <= now
         let isNext = p.key == nextKey && !gone
         HStack(spacing: 6) {
-          Text(p.label).font(compact ? .caption : .subheadline).fontWeight(isNext ? .bold : .regular)
+          Text(p.label).font(plex(data, compact ? 12 : 15, isNext ? .bold : .regular, compact ? .caption : .subheadline))
           if p.prayed == true { Image(systemName: "checkmark").font(.caption2.weight(.bold)) }
           Spacer(minLength: 4)
-          Text(p.when, style: .time).font((compact ? Font.caption : Font.subheadline).monospacedDigit()).fontWeight(isNext ? .bold : .regular)
+          Text(p.when, style: .time).font(plex(data, compact ? 12 : 15, isNext ? .bold : .regular, compact ? .caption : .subheadline).monospacedDigit())
         }
         .opacity(gone ? 0.6 : 1)
         .padding(.horizontal, isNext && !compact ? 8 : 0)
@@ -536,7 +589,7 @@ struct FiveList: View {
 struct PrayerWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiPrayer", provider: Provider()) { entry in
-      PrayerView(entry: entry).widgetBackground(SkyBackground(name: entry.data?.sky(entry.date) ?? Sky.byHour(entry.date)))
+      PrayerView(entry: entry).widgetBackground(skyBack(entry.data, entry.data?.sky(entry.date) ?? Sky.byHour(entry.date)))
     }
     .configurationDisplayName("الصلاة القادمة")
     .description("الصلاة القادمة والوقت الباقي عليها فوق سماء الساعة")
@@ -567,9 +620,9 @@ struct DayView: View {
     let nextKey = list.first(where: { $0.when > now })?.key
     return VStack(alignment: .leading, spacing: 8) {
       HStack {
-        Text("\(day?.day ?? "")  \(day?.hijri ?? "")").font(.subheadline.weight(.bold)).lineLimit(1)
+        Text("\(day?.day ?? "")  \(day?.hijri ?? "")").font(plex(data, 15, .bold, .subheadline)).lineLimit(1)
         Spacer(minLength: 4)
-        Text(data?.place ?? "").font(.caption2).opacity(0.85).lineLimit(1)
+        Text(data?.place ?? "").font(plex(data, 11, .regular, .caption2)).opacity(0.85).lineLimit(1)
       }
       Spacer(minLength: 0)
       HStack(spacing: 4) {
@@ -577,8 +630,8 @@ struct DayView: View {
           let gone = p.when <= now
           let isNext = p.key == nextKey && !gone
           VStack(spacing: 3) {
-            Text(p.label).font(.caption).lineLimit(1).minimumScaleFactor(0.7)
-            Text(p.when, style: .time).font(.caption.weight(.bold).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7)
+            Text(p.label).font(plex(data, 12, .regular, .caption)).lineLimit(1).minimumScaleFactor(0.7)
+            Text(p.when, style: .time).font(plex(data, 12, .bold, .caption).monospacedDigit()).lineLimit(1).minimumScaleFactor(0.7)
             Image(systemName: "checkmark").font(.system(size: 9, weight: .bold)).opacity(p.prayed == true ? 1 : 0)
           }
           .frame(maxWidth: .infinity)
@@ -598,7 +651,7 @@ struct DayView: View {
 struct DayWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiDay", provider: Provider()) { entry in
-      DayView(entry: entry).widgetBackground(SkyBackground(name: entry.data?.sky(entry.date) ?? Sky.byHour(entry.date)))
+      DayView(entry: entry).widgetBackground(skyBack(entry.data, entry.data?.sky(entry.date) ?? Sky.byHour(entry.date)))
     }
     .configurationDisplayName("صلوات اليوم")
     .description("صلوات اليوم الخمس بأوقاتها، والقادمة منها بارزة")
@@ -643,18 +696,18 @@ struct HijriView: View {
   private func card(_ t: (day: String, hijri: String)) -> some View {
     let occasion = data?.day(entry.date)?.occasion
     return VStack(spacing: 4) {
-      Text(t.day).font(.caption).foregroundStyle(Palette.muted)
+      Text(t.day).font(plex(data, 12, .regular, .caption)).foregroundStyle(Palette.muted)
       Text(t.hijri)
-        .font(.system(.title3, design: .serif).weight(.bold))
+        .font(plex(data, 20, .bold, .title3))
         .multilineTextAlignment(.center)
         .minimumScaleFactor(0.6)
         .foregroundStyle(Palette.accent)
-      civil.font(.caption2).foregroundStyle(Palette.muted)
+      civil.font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted)
       if family == .systemMedium, let o = occasion {
         HStack(spacing: 6) {
           Image(systemName: "moon.stars.fill").font(.caption2)
-          Text(o.name).font(.caption.weight(.semibold))
-          Text(o.when).font(.caption)
+          Text(o.name).font(plex(data, 12, .semibold, .caption))
+          Text(o.when).font(plex(data, 12, .regular, .caption))
         }
         .foregroundStyle(Palette.ink)
         .padding(.horizontal, 10).padding(.vertical, 4)
@@ -673,9 +726,9 @@ struct HijriView: View {
       Text(t.hijri)
     case .accessoryRectangular:
       VStack(alignment: .leading, spacing: 1) {
-        Text(t.day).font(.caption2).foregroundStyle(.secondary)
-        Text(t.hijri).font(.headline).minimumScaleFactor(0.7)
-        if let o = data?.day(entry.date)?.occasion { Text("\(o.name) \(o.when)").font(.caption2).lineLimit(1) }
+        Text(t.day).font(plex(data, 11, .regular, .caption2)).foregroundStyle(.secondary)
+        Text(t.hijri).font(plex(data, 17, .semibold, .headline)).minimumScaleFactor(0.7)
+        if let o = data?.day(entry.date)?.occasion { Text("\(o.name) \(o.when)").font(plex(data, 11, .regular, .caption2)).lineLimit(1) }
       }
       .frame(maxWidth: .infinity, alignment: .leading)
     default:
@@ -687,7 +740,7 @@ struct HijriView: View {
 struct HijriWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiHijri", provider: Provider()) { entry in
-      HijriView(entry: entry).widgetBackground(Palette.paper)
+      HijriView(entry: entry).widgetBackground(paperBack(entry.data))
     }
     .configurationDisplayName("التاريخ الهجري")
     .description("التاريخ الهجري اليوم والمناسبة القادمة")
@@ -713,9 +766,9 @@ struct AyahView: View {
     let ayah = data?.day(entry.date)?.ayah
     return VStack(spacing: 8) {
       HStack {
-        Text(says(data, "ayah", "آية اليوم")).font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
+        Text(says(data, "ayah", "آية اليوم")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
         Spacer(minLength: 4)
-        Text(ayah?.ref ?? "").font(.caption2).foregroundStyle(Palette.muted).lineLimit(1)
+        Text(ayah?.ref ?? "").font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
       }
       Spacer(minLength: 0)
       Text(ayah?.t ?? (says(data, "open", "افتح التطبيق")))
@@ -737,7 +790,7 @@ struct AyahView: View {
 struct AyahWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiAyah", provider: Provider()) { entry in
-      AyahView(entry: entry).widgetBackground(Palette.paper)
+      AyahView(entry: entry).widgetBackground(paperBack(entry.data))
     }
     .configurationDisplayName("آية اليوم")
     .description("آية كل يوم من المصحف، تفتح صفحتها بلمسة")
@@ -761,19 +814,19 @@ struct KhatmaView: View {
     return Group {
       if family == .systemSmall {
         VStack(spacing: 6) {
-          Text(says(data, "khatma", "ختمتي")).font(.caption.weight(.bold)).foregroundStyle(Palette.accent)
+          Text(says(data, "khatma", "ختمتي")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
           ZStack {
             Circle().stroke(Palette.accent.opacity(0.15), lineWidth: 8)
             Circle().trim(from: 0, to: share)
               .stroke(Palette.accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
               .rotationEffect(.degrees(-90))
-            Text(verbatim: data?.figures("\(percent)%") ?? "\(percent)%").font(.system(.title3, design: .rounded).weight(.bold).monospacedDigit()).foregroundStyle(Palette.ink)
+            Text(verbatim: data?.figures("\(percent)%") ?? "\(percent)%").font(plex(data, 20, .bold, .title3).monospacedDigit()).foregroundStyle(Palette.ink)
           }
           .frame(width: 70, height: 70)
           Text(verbatim: pageLine(k?.page ?? 1, total))
-            .font(.caption2).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+            .font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
           if let w = k?.wird, !w.isEmpty {
-            Text(verbatim: "\(says(data, "wird", "وردك اليوم")) \(w)").font(.caption2).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7)
+            Text(verbatim: "\(says(data, "wird", "وردك اليوم")) \(w)").font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7)
           }
         }
       } else {
@@ -803,7 +856,7 @@ struct KhatmaView: View {
 struct KhatmaWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiKhatma", provider: Provider()) { entry in
-      KhatmaView(entry: entry).widgetBackground(Palette.paper)
+      KhatmaView(entry: entry).widgetBackground(paperBack(entry.data))
     }
     .configurationDisplayName("ختمتي")
     .description("ما قرأته من ختمتك وورد اليوم")
@@ -834,13 +887,13 @@ struct AdhkarView: View {
     return Group {
       if family == .systemSmall {
         VStack(alignment: .leading, spacing: 6) {
-          Text(verbatim: says(data, "adhkar", "الأذكار")).font(.caption).foregroundStyle(Palette.muted)
-          Text(a?.title ?? "سُنّتي").font(.system(.title3, design: .rounded).weight(.bold)).foregroundStyle(Palette.accent)
+          Text(verbatim: says(data, "adhkar", "الأذكار")).font(plex(data, 12, .regular, .caption)).foregroundStyle(Palette.muted)
+          Text(a?.title ?? "سُنّتي").font(plex(data, 20, .bold, .title3)).foregroundStyle(Palette.accent)
             .lineLimit(2).minimumScaleFactor(0.7)
           Spacer(minLength: 0)
           ProgressView(value: Double(done), total: Double(total)).tint(Palette.accent)
           HStack {
-            Text(count).font(.caption.monospacedDigit()).foregroundStyle(Palette.ink)
+            Text(count).font(plex(data, 12, .regular, .caption).monospacedDigit()).foregroundStyle(Palette.ink)
             Spacer(minLength: 0)
             if finished { Image(systemName: "checkmark.seal.fill").foregroundStyle(Palette.accent) }
           }
@@ -848,9 +901,9 @@ struct AdhkarView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
       } else {
         VStack(alignment: .leading, spacing: 2) {
-          Text(a?.title ?? "سُنّتي").font(.headline).lineLimit(1)
+          Text(a?.title ?? "سُنّتي").font(plex(data, 17, .semibold, .headline)).lineLimit(1)
           ProgressView(value: Double(done), total: Double(total))
-          Text(count).font(.caption2)
+          Text(count).font(plex(data, 11, .regular, .caption2))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
       }
@@ -863,7 +916,7 @@ struct AdhkarView: View {
 struct AdhkarWidget: Widget {
   var body: some WidgetConfiguration {
     StaticConfiguration(kind: "SunnatiAdhkar", provider: Provider()) { entry in
-      AdhkarView(entry: entry).widgetBackground(Palette.paper)
+      AdhkarView(entry: entry).widgetBackground(paperBack(entry.data))
     }
     .configurationDisplayName("الأذكار")
     .description("أذكار الوقت وما أتممته منها اليوم")

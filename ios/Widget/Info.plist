@@ -16,9 +16,20 @@
   <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
-  <!-- the mushaf's own face for the ayah of the day, the one the app reads in -->
+  <!-- the app's own faces: IBM Plex Sans Arabic for its words, IBM Plex Sans
+       for the languages written in Latin or Cyrillic letters, and the
+       mushaf's face for the ayah of the day; each as its makers ship it, with
+       their licence beside them -->
   <key>UIAppFonts</key>
-  <array><string>AmiriQuran.ttf</string></array>
+  <array>
+    <string>IBMPlexSansArabic-Regular.ttf</string>
+    <string>IBMPlexSansArabic-SemiBold.ttf</string>
+    <string>IBMPlexSansArabic-Bold.ttf</string>
+    <string>IBMPlexSans-Regular.ttf</string>
+    <string>IBMPlexSans-SemiBold.ttf</string>
+    <string>IBMPlexSans-Bold.ttf</string>
+    <string>AmiriQuran.ttf</string>
+  </array>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key><string>com.apple.widgetkit-extension</string>

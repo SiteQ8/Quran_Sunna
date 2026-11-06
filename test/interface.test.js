@@ -12174,7 +12174,7 @@ test('widgets: the page hands every widget its seven days, its words and the kha
   assert.strictEqual(d.dir, 'rtl', 'and the way the language reads, which the widget follows rather than the phone');
   const java = function (f) { return fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati', f), 'utf8'); };
   ['PrayerWidget.java', 'PrayerDayWidget.java', 'HijriWidget.java', 'AyahWidget.java', 'KhatmaWidget.java', 'AdhkarWidget.java'].forEach(function (f) {
-    assert.ok(/WidgetStore\.direct\(views, R\.id\.[a-z_]+_root, all\)/.test(java(f)), f + ' turns its root the way the app\'s language reads');
+    assert.ok(/WidgetStore\.direct\(views, (android\.)?R\.id\.([a-z_]+_root|background), all\)/.test(java(f)), f + ' turns its root the way the app\'s language reads');
   });
   assert.ok(/widget_hijri_row/.test(java('HijriWidget.java')) && /widget_prayer_small/.test(java('PrayerWidget.java')),
     'one cell high, the prayer and the hijri date each draw a single row');
@@ -12189,6 +12189,47 @@ test('widgets: the page hands every widget its seven days, its words and the kha
   const before = sent.length;
   win.App.helpers.handWidgetData();
   assert.strictEqual(sent.length, before);
+});
+
+test('widgets: the words are drawn in the app\'s own faces, with the strapwork in the corner', () => {
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const exists = function (rel) { return fs.existsSync(path.join(__dirname, '..', rel)); };
+  /* the faces, as their makers ship them, with their licence */
+  ['plex_arabic_regular', 'plex_arabic_semibold', 'plex_arabic_bold', 'plex_sans_regular', 'plex_sans_semibold', 'plex_sans_bold', 'amiri_quran'].forEach(function (f) {
+    assert.ok(exists('android/app/src/main/res/font/' + f + '.ttf'), 'android carries ' + f);
+  });
+  assert.ok(exists('android/app/src/main/assets/licenses/IBMPlex-OFL.txt') && exists('android/app/src/main/assets/licenses/Amiri-OFL.txt'));
+  const plist = read('ios/Widget/Info.plist');
+  ['IBMPlexSansArabic-Regular.ttf', 'IBMPlexSansArabic-SemiBold.ttf', 'IBMPlexSansArabic-Bold.ttf', 'IBMPlexSans-Regular.ttf',
+    'IBMPlexSans-SemiBold.ttf', 'IBMPlexSans-Bold.ttf', 'AmiriQuran.ttf'].forEach(function (f) {
+    assert.ok(plist.indexOf('<string>' + f + '</string>') !== -1 && exists('ios/Widget/' + f), 'the iPhone widget carries ' + f);
+  });
+  assert.ok(exists('ios/Widget/IBMPlex-OFL.txt') && exists('ios/Widget/Amiri-OFL.txt'));
+  /* a launcher loads no font of another app, so android draws every word itself */
+  const java = function (f) { return read('android/app/src/main/java/com/eworldq8/sunnati/' + f); };
+  ['PrayerWidget.java', 'PrayerDayWidget.java', 'HijriWidget.java', 'AyahWidget.java', 'KhatmaWidget.java', 'AdhkarWidget.java'].forEach(function (f) {
+    assert.ok(java(f).indexOf('setTextViewText') === -1 && java(f).indexOf('WidgetText.put(') !== -1, f + ' draws its words in the app\'s face');
+  });
+  assert.ok(/R\.font\.plex_arabic_bold/.test(java('WidgetText.java')) && /R\.font\.amiri_quran/.test(java('WidgetText.java')));
+  /* the picker still shows a preview it can draw, from text views */
+  ['adhkar', 'ayah', 'day', 'hijri', 'khatma', 'prayer'].forEach(function (n) {
+    const info = read('android/app/src/main/res/xml-v31/widget_' + n + '_info.xml');
+    assert.ok(info.indexOf('@layout/widget_' + n + '_preview') !== -1 && info.indexOf('initialLayout="@layout/widget_' + n + '"') !== -1, n);
+    assert.ok(read('android/app/src/main/res/layout/widget_' + n + '.xml').indexOf('<TextView android:id') === -1, n + ' writes no word in the launcher\'s face');
+  });
+  /* the strapwork, tinted by the theme, on both phones */
+  ['band', 'line'].forEach(function (k) {
+    ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'].forEach(function (d) {
+      assert.ok(exists('android/app/src/main/res/drawable-' + d + '/widget_orn_' + k + '_mask.webp'), k + ' ' + d);
+    });
+    assert.ok(exists('ios/Widget/Assets.xcassets/ornament_' + k + '.imageset/ornament_' + k + '@3x.png'));
+    assert.ok(/template/.test(read('ios/Widget/Assets.xcassets/ornament_' + k + '.imageset/Contents.json')));
+  });
+  assert.ok(/widgetOrnament/.test(read('android/app/src/main/res/values-night/colors.xml')), 'gold by night too');
+  const swift = read('ios/Widget/PrayerWidget.swift');
+  assert.ok(/func plex\(/.test(swift) && /struct Ornament: View/.test(swift) && /flipsForRightToLeftLayoutDirection/.test(swift));
+  assert.ok(!/\.font\(\.(caption|headline|body|subheadline|title|system\(\.)/.test(swift.split('\n').filter(function (l) { return l.indexOf('Image(systemName:') === -1; }).join('\n')),
+    'no word on the iPhone in the system face');
 });
 
 test('widgets: the phone lists them in its own language, with Arabic and the nine others beside English', () => {

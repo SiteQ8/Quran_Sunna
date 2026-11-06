@@ -166,55 +166,48 @@ public final class PrayerWidget extends AppWidgetProvider {
         long now = System.currentTimeMillis();
         JSONObject all = WidgetStore.all(context);
         Now n = now(context, all, now);
-        String place = WidgetData.place(context);
-        if (all != null && all.optString("place", "").length() > 0) place = all.optString("place");
+        String found = WidgetData.place(context);
+        if (all != null && all.optString("place", "").length() > 0) found = all.optString("place");
+        final String place = found;
         int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
         for (int id : ids) {
-            RemoteViews views;
-            if (Build.VERSION.SDK_INT >= 31) {
-                /* one cell high draws one row; anything taller, the full card */
-                java.util.Map<android.util.SizeF, RemoteViews> sizes = new java.util.HashMap<>();
-                sizes.put(new android.util.SizeF(110f, 40f), fill(context, R.layout.widget_prayer_small, n, now, place, sky, all));
-                sizes.put(new android.util.SizeF(110f, 100f), fill(context, R.layout.widget_prayer, n, now, place, sky, all));
-                views = new RemoteViews(sizes);
-            } else {
-                views = fill(context, WidgetStore.oneRow(manager, id) ? R.layout.widget_prayer_small : R.layout.widget_prayer,
-                    n, now, place, sky, all);
-            }
-            manager.updateAppWidget(id, views);
+            /* one cell high draws one row; anything taller, the full card */
+            manager.updateAppWidget(id, WidgetStore.sized(manager, id, 170f, 170f, size -> fill(context,
+                WidgetStore.oneRow(size) ? R.layout.widget_prayer_small : R.layout.widget_prayer, size, n, now, place, sky, all)));
         }
     }
 
-    private static RemoteViews fill(Context context, int layout, Now n, long now, String place, int sky, JSONObject all) {
+    private static RemoteViews fill(Context context, int layout, android.util.SizeF size, Now n, long now, String place, int sky, JSONObject all) {
         RemoteViews views = new RemoteViews(context.getPackageName(), layout);
+        boolean tall = layout == R.layout.widget_prayer;
+        int wrap = WidgetText.px(context, size.getWidth() - 28);
         views.setOnClickPendingIntent(R.id.widget_root, WidgetStore.open(context, "widgetPrayer", 7400));
-        WidgetStore.direct(views, R.id.widget_root, all);
+        WidgetStore.direct(views, android.R.id.background, all);
         views.setImageViewResource(R.id.widget_sky, sky);
-        views.setViewVisibility(R.id.widget_left_sample, View.GONE);
         if (n == null) {
-            views.setTextViewText(R.id.widget_head, context.getString(R.string.appName));
-            views.setTextViewText(R.id.widget_name, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)));
+            WidgetText.put(context, views, R.id.widget_head, tall ? context.getString(R.string.appName) : "", WidgetText.SKY_HEAD, all, 0);
+            WidgetText.put(context, views, R.id.widget_name, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)),
+                tall ? WidgetText.SKY_OPEN : WidgetText.SKY_OPEN_ROW, all, wrap);
             views.setViewVisibility(R.id.widget_left, View.GONE);
             views.setViewVisibility(R.id.widget_time, View.GONE);
             views.setViewVisibility(R.id.widget_sub, View.GONE);
             views.setViewVisibility(R.id.widget_bar, View.GONE);
+            views.setViewVisibility(R.id.widget_place, View.GONE);
             return views;
         }
-        views.setTextViewText(R.id.widget_head, n.head);
-        views.setTextViewText(R.id.widget_name, n.name);
-        views.setTextViewText(R.id.widget_sub, n.sub);
-        views.setViewVisibility(R.id.widget_sub, n.sub.length() > 0 && layout == R.layout.widget_prayer ? View.VISIBLE : View.GONE);
-        views.setTextViewText(R.id.widget_time, n.clock);
-        views.setViewVisibility(R.id.widget_time, View.VISIBLE);
+        WidgetText.put(context, views, R.id.widget_head, tall ? n.head : "", WidgetText.SKY_HEAD, all, 0);
+        WidgetText.put(context, views, R.id.widget_name, n.name, tall ? WidgetText.SKY_NAME : WidgetText.SKY_NAME_ROW, all, 0);
+        WidgetText.put(context, views, R.id.widget_sub, tall ? n.sub : "", WidgetText.SKY_SUB, all, 0);
+        WidgetText.put(context, views, R.id.widget_time, n.clock, tall ? WidgetText.SKY_TIME : WidgetText.SKY_TIME_ROW, all, 0);
         views.setViewVisibility(R.id.widget_left, View.VISIBLE);
         views.setChronometer(R.id.widget_left, SystemClock.elapsedRealtime() + (n.to - now), null, true);
         views.setChronometerCountDown(R.id.widget_left, true);
         long span = Math.max(1, n.to - n.from);
         int gone = (int) Math.max(0, Math.min(1000, (now - n.from) * 1000 / span));
-        views.setViewVisibility(R.id.widget_bar, layout == R.layout.widget_prayer ? View.VISIBLE : View.GONE);
+        views.setViewVisibility(R.id.widget_bar, tall ? View.VISIBLE : View.GONE);
         views.setProgressBar(R.id.widget_bar, 1000, gone, false);
-        views.setTextViewText(R.id.widget_place, place);
-        views.setViewVisibility(R.id.widget_place, place.length() > 0 && layout == R.layout.widget_prayer ? View.VISIBLE : View.GONE);
+        /* the place has room under the bar only in a card taller than two cells */
+        WidgetText.put(context, views, R.id.widget_place, tall && size.getHeight() >= 180 ? place : "", WidgetText.SKY_PLACE, all, 0);
         return views;
     }
 }

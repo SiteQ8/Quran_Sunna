@@ -1,19 +1,31 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the adhkar of this part of the day, with how many of them are done -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- the adhkar of this part of the day, with how many of them are done, on
+     the app's paper with the strapwork in its corner; the picker shows
+     widget_adhkar_preview -->
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@+id/adhkar_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center_vertical" android:padding="14dp"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <TextView android:id="@+id/adhkar_head" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/widgetSample1" android:textSize="12sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
-    <TextView android:id="@+id/adhkar_title" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/widgetSample2" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/widgetAccent"
-        android:maxLines="2" android:ellipsize="end"/>
-    <ProgressBar android:id="@+id/adhkar_bar" style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="10dp"
-        android:max="24" android:progress="9" android:progressDrawable="@drawable/widget_progress"/>
-    <TextView android:id="@+id/adhkar_count" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/widgetSample3" android:textSize="12sp" android:textColor="@color/widgetInk" android:maxLines="1"
-        android:layout_marginTop="6dp" android:fontFeatureSettings="tnum"/>
-</LinearLayout>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center_vertical" android:padding="14dp">
+        <ImageView android:id="@+id/adhkar_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        <ImageView android:id="@+id/adhkar_title" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="2dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        <ProgressBar android:id="@+id/adhkar_bar" style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="10dp"
+            android:max="24" android:progress="9" android:progressDrawable="@drawable/widget_progress"/>
+        <ImageView android:id="@+id/adhkar_count" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="6dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetInk" android:tintMode="src_in"/>
+    </LinearLayout>
+</FrameLayout>

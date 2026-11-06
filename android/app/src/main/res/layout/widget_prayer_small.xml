@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- one row for a widget one cell high: the prayer over its time, the time
-     left beside them, over the same sky; the ids the tall card fills are all here, the ones a
-     row has no room for hidden, so one drawing serves both -->
+     left beside them, over the same sky. The ids the tall card fills are all
+     here, the ones a row has no room for hidden, so one drawing serves both. -->
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@android:id/background"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:background="@drawable/widget_bg">
+    android:background="@drawable/widget_bg" android:layoutDirection="locale">
 
     <ImageView android:id="@+id/widget_sky"
         android:layout_width="match_parent" android:layout_height="match_parent"
@@ -13,37 +16,32 @@
         android:importantForAccessibility="no"/>
     <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
         android:scaleType="fitXY" android:src="@drawable/widget_scrim" android:importantForAccessibility="no"/>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_line" android:tint="@color/widgetOrnamentSky" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
 
     <LinearLayout android:id="@+id/widget_root"
         android:layout_width="match_parent" android:layout_height="match_parent"
         android:orientation="horizontal" android:gravity="center_vertical"
-        android:paddingStart="14dp" android:paddingEnd="14dp" android:layoutDirection="locale">
-        <TextView android:id="@+id/widget_head" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
-        <TextView android:id="@+id/widget_sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+        android:paddingStart="14dp" android:paddingEnd="14dp" android:baselineAligned="false">
+        <ImageView android:id="@+id/widget_head" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+        <ImageView android:id="@+id/widget_sub" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
         <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
             android:orientation="vertical">
-            <TextView android:id="@+id/widget_name"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="@string/widgetSample13" android:textSize="16sp" android:textStyle="bold" android:textColor="#FFFFFFFF"
-                android:maxLines="1" android:ellipsize="end"
-                android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
-            <TextView android:id="@+id/widget_time"
-                android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:text="@string/widgetSample28" android:textSize="12sp" android:textColor="#F2FFFFFF" android:maxLines="1"
-                android:fontFeatureSettings="tnum"
-                android:shadowColor="#80000000" android:shadowRadius="3" android:shadowDy="1"/>
+            <ImageView android:id="@+id/widget_name"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:adjustViewBounds="true" android:scaleType="fitCenter"/>
+            <ImageView android:id="@+id/widget_time"
+                android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:adjustViewBounds="true" android:scaleType="fitCenter"/>
         </LinearLayout>
-        <Chronometer android:id="@+id/widget_left" android:visibility="gone"
+        <Chronometer android:id="@+id/widget_left"
             android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginStart="10dp" android:textSize="20sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
-            android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
-        <!-- what the picker shows in its place: a chronometer reads 00:00 until it runs -->
-        <TextView android:id="@+id/widget_left_sample" android:text="@string/widgetSample29"
-            android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginStart="10dp" android:textSize="20sp" android:textColor="#FFFFFFFF" android:fontFeatureSettings="tnum"
+            android:layout_marginStart="10dp" android:textSize="20sp" android:textColor="#FFFFFFFF"
+            android:fontFeatureSettings="tnum" android:fontFamily="sans-serif-medium" android:maxLines="1"
             android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
         <ProgressBar android:id="@+id/widget_bar" style="@android:style/Widget.ProgressBar.Horizontal"
             android:layout_width="0dp" android:layout_height="0dp" android:visibility="gone"/>
-        <TextView android:id="@+id/widget_place" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
+        <ImageView android:id="@+id/widget_place" android:layout_width="wrap_content" android:layout_height="wrap_content" android:visibility="gone"/>
     </LinearLayout>
 </FrameLayout>

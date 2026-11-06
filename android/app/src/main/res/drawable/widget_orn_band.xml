@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- eight pointed stars in interlaced bands, the geometry of the mosques'
+     windows and doors, rising from the top corner at the end of the line and
+     fading before the words. Drawn by tools/android/widget-ornament.py; the
+     mask is white and the widget tints it, gold on paper by day and by night,
+     so this one picture serves both. It turns itself for a page read from
+     the right. -->
+<bitmap xmlns:android="http://schemas.android.com/apk/res/android"
+    android:src="@drawable/widget_orn_band_mask" android:autoMirrored="true"/>

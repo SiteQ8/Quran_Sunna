@@ -1,20 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the weekday, today's hijri date, the civil date, and the occasion coming -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- the weekday, today's hijri date, the civil date, and the occasion coming,
+     on the app's paper with the strapwork in its corner. The words are masks
+     drawn in the app's own face by WidgetText and tinted here with the
+     theme's colours; the picker shows widget_hijri_preview. -->
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@+id/hijri_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:gravity="center" android:padding="12dp"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <TextView android:id="@+id/hijri_day" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="@string/widgetSample19" android:textSize="12sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
-    <!-- the date takes the room the other lines leave, and its size with it -->
-    <TextView android:id="@+id/hijri_date" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-        android:text="@string/widgetSample20" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/widgetAccent"
-        android:maxLines="2" android:gravity="center"
-        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="11sp" android:autoSizeMaxTextSize="22sp"/>
-    <TextView android:id="@+id/hijri_civil" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="@string/widgetSample21" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:layout_marginTop="2dp"/>
-    <TextView android:id="@+id/hijri_occasion" android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:text="@string/widgetSample22" android:textSize="11sp" android:textStyle="bold" android:textColor="@color/widgetInk"
-        android:maxLines="2" android:ellipsize="end" android:gravity="center" android:layout_marginTop="4dp"/>
-</LinearLayout>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center_horizontal" android:padding="12dp">
+        <ImageView android:id="@+id/hijri_day" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        <!-- the date takes the room the other lines leave, and shrinks into it -->
+        <ImageView android:id="@+id/hijri_date" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:scaleType="centerInside" android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        <ImageView android:id="@+id/hijri_civil" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        <ImageView android:id="@+id/hijri_occasion" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="4dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetInk" android:tintMode="src_in"/>
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the day's five prayers over the sky of the hour, the next one lifted,
+     the ones gone faded and marked when the reader marked them prayed; the
+     day and its hijri date above, the place beside them. The colours and the
+     marks written here are the picker's preview at noon; the widget sets
+     every one of them itself -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_bg">
+    <ImageView android:id="@+id/day_sky"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="centerCrop" android:src="@drawable/widget_sky_morning" android:importantForAccessibility="no"/>
+    <ImageView android:layout_width="match_parent" android:layout_height="match_parent"
+        android:scaleType="fitXY" android:src="@drawable/widget_scrim" android:importantForAccessibility="no"/>
+    <!-- the stars of the doors and windows, faint, rising from the corner at
+         the end of the line -->
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_line" android:tint="@color/widgetOrnamentSky" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <FrameLayout android:id="@+id/day_root"
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:padding="12dp" android:layoutDirection="locale">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="top" android:orientation="vertical">
+            <TextView android:id="@+id/day_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:text="@string/widgetSample7" android:textSize="14sp" android:textStyle="bold" android:textColor="#FFFFFFFF"
+                android:maxLines="1" android:ellipsize="end"
+                android:shadowColor="#80000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_place" android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:textSize="11sp" android:textColor="#CCFFFFFF" android:maxLines="1" android:ellipsize="end"
+                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:layout_gravity="bottom" android:orientation="horizontal" android:baselineAligned="false">
+        <LinearLayout android:id="@+id/day_col_0"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
+            <TextView android:id="@+id/day_name_0" android:layout_width="match_parent" android:layout_height="18dp"
+                android:text="@string/widgetSample8" android:textSize="12sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_time_0" android:layout_width="match_parent" android:layout_height="20dp"
+                android:text="@string/widgetSample9" android:textSize="13sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <ImageView android:id="@+id/day_mark_0" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginTop="2dp"
+                android:src="@drawable/widget_check" android:importantForAccessibility="no" android:visibility="visible"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/day_col_1"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
+            <TextView android:id="@+id/day_name_1" android:layout_width="match_parent" android:layout_height="18dp"
+                android:text="@string/widgetSample11" android:textSize="12sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_time_1" android:layout_width="match_parent" android:layout_height="20dp"
+                android:text="@string/widgetSample12" android:textSize="13sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <ImageView android:id="@+id/day_mark_1" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginTop="2dp"
+                android:src="@drawable/widget_check" android:importantForAccessibility="no" android:visibility="visible"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/day_col_2"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:background="@drawable/widget_pill" android:gravity="center_horizontal"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
+            <TextView android:id="@+id/day_name_2" android:layout_width="match_parent" android:layout_height="18dp"
+                android:text="@string/widgetSample13" android:textSize="12sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_time_2" android:layout_width="match_parent" android:layout_height="20dp"
+                android:text="@string/widgetSample14" android:textSize="13sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <ImageView android:id="@+id/day_mark_2" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginTop="2dp"
+                android:src="@drawable/widget_check" android:importantForAccessibility="no" android:visibility="invisible"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/day_col_3"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
+            <TextView android:id="@+id/day_name_3" android:layout_width="match_parent" android:layout_height="18dp"
+                android:text="@string/widgetSample15" android:textSize="12sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_time_3" android:layout_width="match_parent" android:layout_height="20dp"
+                android:text="@string/widgetSample16" android:textSize="13sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <ImageView android:id="@+id/day_mark_3" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginTop="2dp"
+                android:src="@drawable/widget_check" android:importantForAccessibility="no" android:visibility="invisible"/>
+        </LinearLayout>
+        <LinearLayout android:id="@+id/day_col_4"
+            android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
+            android:orientation="vertical" android:gravity="center_horizontal"
+            android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
+            <TextView android:id="@+id/day_name_4" android:layout_width="match_parent" android:layout_height="18dp"
+                android:text="@string/widgetSample17" android:textSize="12sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <TextView android:id="@+id/day_time_4" android:layout_width="match_parent" android:layout_height="20dp"
+                android:text="@string/widgetSample18" android:textSize="13sp" android:gravity="center"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
+            <ImageView android:id="@+id/day_mark_4" android:layout_width="12dp" android:layout_height="12dp" android:layout_marginTop="2dp"
+                android:src="@drawable/widget_check" android:importantForAccessibility="no" android:visibility="invisible"/>
+        </LinearLayout>
+        </LinearLayout>
+    </FrameLayout>
+</FrameLayout>

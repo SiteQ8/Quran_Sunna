@@ -1,21 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- the ayah of the day on the app's own page, with its surah and number -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- the ayah of the day in the mushaf's own face, with its surah and number,
+     on the app's paper with the strapwork in its corner; the picker shows
+     widget_ayah_preview -->
+<!-- each picture of words is given its words to be read aloud with it, by
+     WidgetText.put, so none is described here -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
     android:id="@+id/ayah_root"
     android:layout_width="match_parent" android:layout_height="match_parent"
-    android:orientation="vertical" android:padding="14dp"
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
-        <TextView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:text="@string/widgetSample4" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
-        <TextView android:id="@+id/ayah_ref" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:layout_marginStart="8dp" android:gravity="end"
-            android:text="@string/widgetSample5" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:padding="14dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+            android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="false">
+            <ImageView android:id="@+id/ayah_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+            <TextView android:layout_width="0dp" android:layout_height="1dp" android:layout_weight="1"/>
+            <ImageView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_marginStart="8dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        </LinearLayout>
+        <!-- the ayah takes the rest of the page, and shrinks into it when long -->
+        <ImageView android:id="@+id/ayah_text"
+            android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:layout_marginTop="6dp" android:scaleType="centerInside"
+            android:tint="@color/widgetInk" android:tintMode="src_in"/>
     </LinearLayout>
-    <TextView android:id="@+id/ayah_text"
-        android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
-        android:layout_marginTop="6dp" android:gravity="center"
-        android:text="@string/widgetSample6"
-        android:textSize="19sp" android:textColor="@color/widgetInk" android:lineSpacingMultiplier="1.35"
-        android:maxLines="5" android:ellipsize="end" android:textDirection="rtl"/>
-</LinearLayout>
+</FrameLayout>
