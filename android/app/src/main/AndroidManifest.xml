@@ -75,25 +75,42 @@
                 <action android:name="com.eworldq8.sunnati.ADHAN"/>
             </intent-filter>
         </receiver>
-        <!-- the next prayer on the home screen -->
-        <receiver android:name=".PrayerWidget" android:exported="false" android:label="@string/widgetDescription">
+        <!-- the home screen widgets; PrayerWidget is the clock that moves them all -->
+        <receiver android:name=".PrayerWidget" android:exported="false" android:label="@string/widgetPrayerName">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_prayer_info"/>
         </receiver>
-        <!-- the five prayers ahead, and today's hijri date -->
-        <receiver android:name=".PrayerDayWidget" android:exported="false" android:label="@string/widgetDayDescription">
+        <receiver android:name=".PrayerDayWidget" android:exported="false" android:label="@string/widgetDayName">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_day_info"/>
         </receiver>
-        <receiver android:name=".HijriWidget" android:exported="false" android:label="@string/widgetHijriDescription">
+        <receiver android:name=".HijriWidget" android:exported="false" android:label="@string/widgetHijriName">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_hijri_info"/>
+        </receiver>
+        <receiver android:name=".AyahWidget" android:exported="false" android:label="@string/widgetAyahName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_ayah_info"/>
+        </receiver>
+        <receiver android:name=".KhatmaWidget" android:exported="false" android:label="@string/widgetKhatmaName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_khatma_info"/>
+        </receiver>
+        <receiver android:name=".AdhkarWidget" android:exported="false" android:label="@string/widgetAdhkarName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_adhkar_info"/>
         </receiver>
         <!-- a reboot or a change of the clock throws alarms away -->
         <receiver android:name=".BootReceiver" android:exported="true">

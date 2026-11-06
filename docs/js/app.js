@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.121';
+  var VERSION = '8.87.122';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -2702,6 +2702,7 @@
         }
       });
     }
+    handWidgetData();
     try { app.setPrayerTimes(JSON.stringify(list)); return true; } catch (e) { return false; }
   }
 
@@ -3227,6 +3228,8 @@
     var pos = Mushaf.fromGlobalIndex(seed + 1) || { s: 1, a: 1 };
     state.dailyAyah = pos;
     host.textContent = Mushaf.ayah(pos.s, pos.a);
+    /* the widgets carry the ayah too, once the mushaf is there to give it */
+    handWidgetData();
     var meta = surahMeta(pos.s);
     if ($('daily-ayah-ref')) {
       $('daily-ayah-ref').textContent = 'سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a);
@@ -3309,7 +3312,12 @@
     iftar: 'ramadan',
     lastTen: 'ramadan',
     fitrZakat: 'ramadan',
-    preAdhan: 'home'
+    preAdhan: 'home',
+    /* the widgets that open a screen; the ayah, the khatma and the adhkar
+       open their own page, by openFromWidget */
+    widgetPrayer: 'home',
+    widgetDay: 'timetable',
+    widgetHijri: 'calendar'
   };
 
   function cameFrom(kind) {
@@ -3321,6 +3329,7 @@
     /* the night of jumuah has a sheet of its own, and that is better than a
        screen: it carries al-Kahf, the salawat and the supplication together */
     if (kind === 'jumuahNight' || kind === 'salawat') { showDueSheets(); return; }
+    if (openFromWidget(kind)) return;
     var where = LANDINGS[kind];
     if (where) { go(where); return; }
     showDueSheets();
@@ -6958,6 +6967,120 @@
     else renderTodayMeter();
   }
 
+  /* ---------------- الويدجت ---------------- */
+
+  /* Everything the home screen widgets show, handed to the app in one piece
+     and in the reader's language: the seven days ahead, each with its five
+     prayers, its hijri date, the occasion coming, the turns of its sky and
+     its ayah, then the khatma and the adhkar of each part of the day. The
+     widgets work nothing out for themselves, so they never tell the reader
+     anything the app would not. It goes when the page opens, when the times
+     are handed, when the reader leaves the app, and only when it changed. */
+  var widgetSent = '';
+  var WIDGET_ADHKAR = [['morning', 'fajr', 'dhuhr'], ['afterprayer', 'dhuhr', 'asr'], ['evening', 'asr', 'isha'], ['sleep', 'isha', null]];
+
+  function widgetWords() {
+    var w = {
+      next: 'الصلاة القادمة', iqama: 'الإقامة', ayah: 'آية اليوم', khatma: 'ختمتي', wird: 'وردك اليوم',
+      page: 'صفحة', of: 'من', adhkar: 'الأذكار', done: 'أتممتها اليوم', open: 'افتح التطبيق لحساب الأوقات'
+    };
+    Object.keys(w).forEach(function (k) { w[k] = tongue(w[k]); });
+    return w;
+  }
+
+  function widgetOccasion(day, adjust) {
+    var list = Hijri.upcoming(day, adjust) || [];
+    var u = list[0];
+    if (!u) return null;
+    return { name: tongue(u.name), when: tongue(u.days === 0 ? 'اليوم' : u.days === 1 ? 'غداً' : 'بعد ' + daysOf(u.days, true)), days: u.days };
+  }
+
+  function widgetAyah(day) {
+    if (typeof Mushaf === 'undefined' || !Mushaf.ready()) return null;
+    /* the ayah the home card shows that day, chosen by the same count */
+    var noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
+    var seed = Math.floor(noon.getTime() / 86400000) % 6236;
+    var pos = Mushaf.fromGlobalIndex(seed + 1) || { s: 1, a: 1 };
+    var meta = surahMeta(pos.s);
+    return { t: Mushaf.ayah(pos.s, pos.a), ref: tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a)), page: Mushaf.pageOf(pos.s, pos.a) };
+  }
+
+  function widgetData() {
+    var now = new Date();
+    var adjust = Store.get('hijriAdjust');
+    var days = [];
+    for (var d = 0; d < 7; d++) {
+      var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+      var t = computeTimes(day);
+      var h = Hijri.toHijri(day, adjust);
+      var at = function (m) { return new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, m, 0, 0).getTime(); };
+      var marks = d === 0 ? (Store.day(day).prayers || {}) : {};
+      var five = [];
+      ['fajr', 'dhuhr', 'asr', 'maghrib', 'isha'].forEach(function (k) {
+        if (typeof t[k] !== 'number' || !isFinite(t[k])) return;
+        /* in ramadan the fajr ends the suhur and the maghrib is the iftar */
+        var sub = h.m === 9 ? (k === 'maghrib' ? 'الإفطار' : k === 'fajr' ? 'آخر السحور' : '') : '';
+        var iq = iqamaAfter(k, day);
+        var clock = clockText(t[k]);
+        /* the day's row has five narrow columns, and read from fajr to isha
+           the time needs no ص or م beside it */
+        five.push({ key: k, label: tongue(prayerName(k, day)), clock: tongue(clock), short: tongue(clock.replace(/\s*[صم]$/, '')),
+          at: at(t[k]), sub: sub ? tongue(sub) : '', iqama: iq ? at(t[k] + iq) : 0,
+          prayed: !!marks[k] && marks[k] !== 'missed' });
+      });
+      var adhkar = [];
+      WIDGET_ADHKAR.forEach(function (w) {
+        var def = typeof AZKAR_DB !== 'undefined' ? AZKAR_DB[w[0]] : null;
+        if (!def || typeof t[w[1]] !== 'number') return;
+        var end = w[2] ? t[w[2]] : null;
+        var p = d === 0 ? Store.azkarProgress(w[0], def.items.length, day) : { done: 0 };
+        adhkar.push({ key: w[0], title: tongue(def.title), from: at(t[w[1]]), to: end === null ? at(24 * 60 + (t.fajr || 300)) : at(end),
+          done: p.done, total: def.items.length });
+      });
+      days.push({
+        date: Store.dayKey(day), day: tongue(h.weekday), hijri: tongue(Hijri.format(h)), ramadan: h.m === 9,
+        civil: tongue(ar(day.getDate()) + ' ' + GREG_MONTHS[day.getMonth()] + ' ' + ar(day.getFullYear())),
+        occasion: widgetOccasion(day, adjust), five: five, adhkar: adhkar,
+        sky: (skyStops(t) || []).map(function (s) { return [at(s[0]), s[1]]; }),
+        ayah: widgetAyah(day)
+      });
+    }
+    var read = Math.min(TOTAL_PAGES, Store.progress().pagesRead || 0);
+    var wird = wirdFor(now);
+    return {
+      v: 1, lang: (window.I18n && window.I18n.lang) || 'ar', words: widgetWords(), place: (place() && place().n) ? tongue(String(place().n)) : '',
+      /* the figures of the reader's language, for the counts a widget makes
+         itself: the share of the khatma, the page, the adhkar done */
+      digits: window.I18n && window.I18n.figures ? window.I18n.figures('0123456789') : '0123456789',
+      days: days,
+      khatma: { read: read, total: TOTAL_PAGES, page: +Store.get('lastPage') || 1, started: !!Store.get('khatmaStart'),
+        wird: wird && wird.pages ? tongue(pages(wird.pages)) : '', from: wird && wird.from ? wird.from : 0 }
+    };
+  }
+
+  function handWidgetData() {
+    var app = bridge();
+    if (!app || !app.setWidgetData || typeof Hijri === 'undefined') return false;
+    var json;
+    try { json = JSON.stringify(widgetData()); } catch (e) { return false; }
+    if (json === widgetSent) return true;
+    widgetSent = json;
+    try { app.setWidgetData(json); return true; } catch (e) { return false; }
+  }
+
+  /* A widget tapped opens the app on its own subject. */
+  function openFromWidget(kind) {
+    if (kind === 'widgetAyah') {
+      var a = widgetAyah(new Date());
+      if (a) { openPage(a.page); return true; }
+      go('reader');
+      return true;
+    }
+    if (kind === 'widgetKhatma') { openPage(+Store.get('lastPage') || 1); return true; }
+    if (kind === 'widgetAdhkar') { openAzkar(azkarForNow()); return true; }
+    return false;
+  }
+
   /* ---------------- الحفظ ---------------- */
 
   /* A surah is memorising (1) or memorised (2). The review of the day is the
@@ -10558,6 +10681,8 @@
       }, { passive: true });
     });
     watchScrollPosition();
+    /* leaving the app is when the widgets should hear what was done in it */
+    document.addEventListener('visibilitychange', function () { if (document.hidden) handWidgetData(); });
 
     bind('page-prev', 'click', function () { turnPage(1 * -1); });
     bind('page-next', 'click', function () { turnPage(1); });
@@ -11682,6 +11807,7 @@
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter, zakatFigures: zakatFigures, setHifz: setHifz, hifzDue: hifzDue,
+      widgetData: widgetData, handWidgetData: handWidgetData, openFromWidget: openFromWidget,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,

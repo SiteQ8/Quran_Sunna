@@ -1,0 +1,40 @@
+package com.eworldq8.sunnati;
+
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProvider;
+import android.content.ComponentName;
+import android.content.Context;
+import android.widget.RemoteViews;
+
+import org.json.JSONObject;
+
+/** The ayah of the day, the one the home screen of the app shows, with its
+ *  surah and number; a tap opens the mushaf on its page. */
+public final class AyahWidget extends AppWidgetProvider {
+    @Override
+    public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
+        PrayerWidget.refresh(context);
+    }
+
+    public static void refresh(Context context) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, AyahWidget.class));
+        if (ids == null || ids.length == 0) return;
+        JSONObject all = WidgetStore.all(context);
+        JSONObject day = WidgetStore.day(all, System.currentTimeMillis());
+        JSONObject ayah = day == null ? null : day.optJSONObject("ayah");
+        for (int id : ids) {
+            RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_ayah);
+            views.setOnClickPendingIntent(R.id.ayah_root, WidgetStore.open(context, "widgetAyah", 7403));
+            views.setTextViewText(R.id.ayah_head, WidgetStore.word(all, "ayah", "آية اليوم"));
+            if (ayah == null) {
+                views.setTextViewText(R.id.ayah_text, "﴿ ﴾");
+                views.setTextViewText(R.id.ayah_ref, WidgetStore.word(all, "open", "افتح التطبيق"));
+            } else {
+                views.setTextViewText(R.id.ayah_text, ayah.optString("t"));
+                views.setTextViewText(R.id.ayah_ref, ayah.optString("ref"));
+            }
+            manager.updateAppWidget(id, views);
+        }
+    }
+}

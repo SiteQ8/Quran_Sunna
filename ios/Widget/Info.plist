@@ -7,12 +7,18 @@
        plist had it; the widget's was written without it. -->
   <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
   <key>CFBundlePackageType</key><string>XPC!</string>
-  <key>CFBundleDevelopmentRegion</key><string>ar</string>
+  <!-- The gallery lists the widgets in the phone's language, from the
+       <language>.lproj beside this file. A phone set to none of the eleven
+       reads them in English, as the page itself does. -->
+  <key>CFBundleDevelopmentRegion</key><string>en</string>
   <key>CFBundleDisplayName</key><string>أوقات الصلاة</string>
   <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
   <key>CFBundleName</key><string>$(PRODUCT_NAME)</string>
   <key>CFBundleShortVersionString</key><string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key><string>$(CURRENT_PROJECT_VERSION)</string>
+  <!-- the mushaf's own face for the ayah of the day, the one the app reads in -->
+  <key>UIAppFonts</key>
+  <array><string>AmiriQuran.ttf</string></array>
   <key>NSExtension</key>
   <dict>
     <key>NSExtensionPointIdentifier</key><string>com.apple.widgetkit-extension</string>

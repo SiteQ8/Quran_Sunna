@@ -12,7 +12,7 @@ enum WidgetCentre {
 }
 
 /* The site in a web view, plus the bridge the page already talks to. Android
-   exposes SunnatiApp with seventeen methods; the page checks for each before
+   exposes SunnatiApp with its methods; the page checks for each before
    calling it, so iOS answers the ones a phone can honour and stays quiet about
    the rest rather than pretending. */
 final class ReaderController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate, WKUIDelegate, UIDocumentInteractionControllerDelegate {
@@ -89,6 +89,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         setReminders: call('setReminders'),
         setQiyamTimes: call('setQiyamTimes'),
         setPrayerTimes: call('setPrayerTimes'),
+        setWidgetData: call('setWidgetData'),
         setAdhanSilent: call('setAdhanSilent'),
         setAdhanSound: call('setAdhanSound'),
         setQiyamSound: call('setQiyamSound'),
@@ -199,9 +200,18 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
      the store screenshots can be taken without pretending to be a finger:
      simctl has no tap command, and guessing pixel positions for a tab bar is
      the kind of thing that silently photographs the same screen six times. */
+  /* A screen asked for before the page has loaded, by a widget tapped while
+     the app was closed, waits for the page. A widget names its subject, and
+     the page opens it the way it opens a tapped reminder's. */
+  private var pendingScreen: String?
+  private var pageLoaded = false
+
   func show(_ view: String) {
     let safe = view.filter { $0.isLetter }
-    web.evaluateJavaScript("window.App && App.go && App.go('\(safe)')")
+    guard pageLoaded else { pendingScreen = safe; return }
+    web.evaluateJavaScript("(function(n){if(!window.App)return;" +
+      "if(/^widget/.test(n)&&App.helpers&&App.helpers.cameFrom)App.helpers.cameFrom(n);" +
+      "else if(App.go)App.go(n);}('\(safe)'))")
   }
 
   @objc private func refresh() {
@@ -246,6 +256,14 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
       let times = prayerReminders()
       Notifier.shared.replace(times, prefix: "adhan-")
       shareWithWidget(times, raw: json)
+
+    case "setWidgetData":
+      /* everything the widgets show besides the times, in the reader's
+         language; written whole for them to read, and they are drawn again */
+      guard let json = args.first as? String, json.utf8.count < 200_000,
+            let store = UserDefaults(suiteName: "group.com.eworldq8.sunnati") else { return }
+      store.set(Data(json.utf8), forKey: "widget")
+      WidgetCentre.reload()
 
     case "setAdhanSilent":
       adhanSilent = (args.first as? Bool) ?? ((args.first as? Int) == 1)
@@ -589,6 +607,11 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
      iOS ask "Open in سُنّتي?" first, and that dialog then sat in the middle of
      every photograph. A launch argument asks nobody. */
   func webView(_ w: WKWebView, didFinish navigation: WKNavigation!) {
+    pageLoaded = true
+    if let waiting = pendingScreen {
+      pendingScreen = nil
+      DispatchQueue.main.asyncAfter(deadline: .now() + 2) { self.show(waiting) }
+    }
     tellCanNotify()
     tellSides()
     loaded = true

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">Коран</string>
+    <string name="shortcutAzkar">Азкары</string>
+    <string name="shortcutQibla">Кибла</string>
+    <string name="shortcutTimetable">Расписание на месяц</string>
+    <string name="shortcutAdhan">Вкл. или выкл. оповещение азаном</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">Следующий намаз</string>
+    <string name="widgetDescription">Следующий намаз и время до него на фоне неба этого часа</string>
+    <string name="widgetDayName">Намазы сегодня</string>
+    <string name="widgetDayDescription">Пять намазов дня и их время, следующий выделен</string>
+    <string name="widgetHijriName">Дата по хиджре</string>
+    <string name="widgetHijriDescription">Сегодняшняя дата по хиджре и ближайшее событие</string>
+    <string name="widgetAyahName">Аят дня</string>
+    <string name="widgetAyahDescription">Аят из Корана каждый день, его страница открывается одним касанием</string>
+    <string name="widgetKhatmaName">Мой хатм</string>
+    <string name="widgetKhatmaDescription">Сколько вы прочли из хатма и ваш вирд на сегодня</string>
+    <string name="widgetAdhkarName">Азкары</string>
+    <string name="widgetAdhkarDescription">Азкары этого времени дня и сколько из них вы прочли сегодня</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">Азкары</string>
+    <string name="widgetSample2">Утренние азкары</string>
+    <string name="widgetSample3">9 из 25</string>
+    <string name="widgetSample4">Аят дня</string>
+    <string name="widgetSample5">Сура Аль-Бакара, аят 286</string>
+    <string name="widgetSample7">"Среда  24 джумада аль-уля 1448 г. х."</string>
+    <string name="widgetSample8">Фаджр</string>
+    <string name="widgetSample9">04:42</string>
+    <string name="widgetSample11">Зухр</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">Аср</string>
+    <string name="widgetSample14">14:38</string>
+    <string name="widgetSample15">Магриб</string>
+    <string name="widgetSample16">17:00</string>
+    <string name="widgetSample17">Иша</string>
+    <string name="widgetSample18">18:18</string>
+    <string name="widgetSample19">Среда</string>
+    <string name="widgetSample20">24 джумада аль-уля 1448 г. х.</string>
+    <string name="widgetSample21">4 ноября 2026</string>
+    <string name="widgetSample22">"Благословенный месяц рамадан  Через 96 дней"</string>
+    <string name="widgetSample23">Мой хатм</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">Страница 231 из 604</string>
+    <string name="widgetSample26">Ваш вирд на сегодня 20 страниц</string>
+    <string name="widgetSample27">Следующий намаз</string>
+    <string name="widgetSample28">14:38</string>
+</resources>

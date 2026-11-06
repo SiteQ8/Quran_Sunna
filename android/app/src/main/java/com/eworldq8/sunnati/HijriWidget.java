@@ -1,20 +1,19 @@
 package com.eworldq8.sunnati;
 
-import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
+import android.view.View;
 import android.widget.RemoteViews;
 
-import java.text.DateFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
+import org.json.JSONObject;
 
-/** Today's hijri date, by the reader's own nudge for the moon of his town,
- *  over the civil date: the small widget, two cells by one or by two. */
+import java.text.DateFormat;
+import java.util.Date;
+
+/** Today's hijri date by the reader's own nudge for the moon of his town,
+ *  over the civil date, with the occasion coming and how far off it is. */
 public final class HijriWidget extends AppWidgetProvider {
     /* drawn with the others, so the one alarm that moves them all is kept */
     @Override
@@ -30,29 +29,26 @@ public final class HijriWidget extends AppWidgetProvider {
 
     private static void draw(Context context, AppWidgetManager manager, int[] ids) {
         long now = System.currentTimeMillis();
-        /* the page's words for today are on the first prayer still ahead today */
-        String day = "", hijri = "";
-        Calendar today = Calendar.getInstance();
-        for (WidgetData.Row r : WidgetData.ahead(context, now)) {
-            Calendar c = Calendar.getInstance();
-            c.setTimeInMillis(r.at);
-            if (c.get(Calendar.YEAR) == today.get(Calendar.YEAR) && c.get(Calendar.DAY_OF_YEAR) == today.get(Calendar.DAY_OF_YEAR)) {
-                day = r.day;
-                hijri = r.hijri;
-            }
-            break;
-        }
+        JSONObject all = WidgetStore.all(context);
+        JSONObject today = WidgetStore.day(all, now);
+        String day = today == null ? "" : today.optString("day");
+        String hijri = today == null ? "" : today.optString("hijri");
+        String occasion = "";
+        JSONObject o = today == null ? null : today.optJSONObject("occasion");
+        if (o != null) occasion = (o.optString("name") + "  " + o.optString("when")).trim();
         if (hijri.length() == 0) hijri = platformHijri();
-        String civil = DateFormat.getDateInstance(DateFormat.LONG).format(new Date(now));
+        /* the civil date in the reader's language too, beside the hijri one */
+        String civil = today == null ? "" : today.optString("civil");
+        if (civil.length() == 0) civil = DateFormat.getDateInstance(DateFormat.LONG).format(new Date(now));
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_hijri);
-            Intent open = new Intent(context, MainActivity.class);
-            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            views.setOnClickPendingIntent(R.id.hijri_root,
-                PendingIntent.getActivity(context, 2, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+            views.setOnClickPendingIntent(R.id.hijri_root, WidgetStore.open(context, "widgetHijri", 7402));
             views.setTextViewText(R.id.hijri_day, day);
+            views.setViewVisibility(R.id.hijri_day, day.length() > 0 ? View.VISIBLE : View.GONE);
             views.setTextViewText(R.id.hijri_date, hijri);
             views.setTextViewText(R.id.hijri_civil, civil);
+            views.setTextViewText(R.id.hijri_occasion, occasion);
+            views.setViewVisibility(R.id.hijri_occasion, occasion.length() > 0 ? View.VISIBLE : View.GONE);
             manager.updateAppWidget(id, views);
         }
     }

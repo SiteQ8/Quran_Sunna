@@ -7,4 +7,5 @@
     <color name="widgetAccent">#e08a7c</color>
     <color name="widgetInk">#f1ece2</color>
     <color name="widgetMuted">#a39b8f</color>
+    <color name="widgetTrack">#33e08a7c</color>
 </resources>

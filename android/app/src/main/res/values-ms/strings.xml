@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="shortcutQuran">Al-Quran</string>
+    <string name="shortcutAzkar">Zikir</string>
+    <string name="shortcutQibla">Kiblat</string>
+    <string name="shortcutTimetable">Jadual bulanan</string>
+    <string name="shortcutAdhan">Peringatan azan: hidup atau mati</string>
+    <!-- the widgets as the phone's picker lists them -->
+    <string name="widgetPrayerName">Solat seterusnya</string>
+    <string name="widgetDescription">Solat seterusnya dan baki masanya, berlatarkan langit waktu ini</string>
+    <string name="widgetDayName">Solat hari ini</string>
+    <string name="widgetDayDescription">Lima solat hari ini beserta waktunya, dengan solat seterusnya diserlahkan</string>
+    <string name="widgetHijriName">Tarikh Hijrah</string>
+    <string name="widgetHijriDescription">Tarikh Hijrah hari ini dan peristiwa yang akan datang</string>
+    <string name="widgetAyahName">Ayat hari ini</string>
+    <string name="widgetAyahDescription">Satu ayat Al-Quran setiap hari, halamannya dibuka dengan satu sentuhan</string>
+    <string name="widgetKhatmaName">Khatam saya</string>
+    <string name="widgetKhatmaDescription">Yang telah anda baca daripada khatam, dan wirid anda hari ini</string>
+    <string name="widgetAdhkarName">Zikir</string>
+    <string name="widgetAdhkarDescription">Zikir bagi waktu ini dan berapa yang telah anda selesaikan hari ini</string>
+    <!-- what the widget picker shows before a widget writes its own words:
+         a wednesday noon in kuwait, as the page itself would write it -->
+    <string name="widgetSample1">Zikir</string>
+    <string name="widgetSample2">Zikir pagi</string>
+    <string name="widgetSample3">9 daripada 25</string>
+    <string name="widgetSample4">Ayat hari ini</string>
+    <string name="widgetSample5">Surah Al-Baqarah, ayat 286</string>
+    <string name="widgetSample7">"Rabu  24 Jamadilawal 1448 H"</string>
+    <string name="widgetSample8">Subuh</string>
+    <string name="widgetSample9">4:42</string>
+    <string name="widgetSample11">Zohor</string>
+    <string name="widgetSample12">11:32</string>
+    <string name="widgetSample13">Asar</string>
+    <string name="widgetSample14">2:38</string>
+    <string name="widgetSample15">Maghrib</string>
+    <string name="widgetSample16">5:00</string>
+    <string name="widgetSample17">Isyak</string>
+    <string name="widgetSample18">6:18</string>
+    <string name="widgetSample19">Rabu</string>
+    <string name="widgetSample20">24 Jamadilawal 1448 H</string>
+    <string name="widgetSample21">4 November 2026</string>
+    <string name="widgetSample22">"Bulan Ramadan yang diberkati  Dalam 96 hari"</string>
+    <string name="widgetSample23">Khatam saya</string>
+    <string name="widgetSample24" formatted="false">38%</string>
+    <string name="widgetSample25">Muka surat 231 daripada 604</string>
+    <string name="widgetSample26">Wirid anda hari ini 20 muka surat</string>
+    <string name="widgetSample27">Solat seterusnya</string>
+    <string name="widgetSample28">2:38 PTG</string>
+</resources>

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the khatma as a ring with the share read inside, the page reached and
+     the portion of the day under it -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/khatma_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center" android:padding="12dp"
+    android:background="@drawable/widget_paper" android:layoutDirection="locale">
+    <TextView android:id="@+id/khatma_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="@string/widgetSample23" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
+    <FrameLayout android:layout_width="76dp" android:layout_height="76dp" android:layout_marginTop="4dp">
+        <ProgressBar android:id="@+id/khatma_ring" style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:max="604" android:progress="230" android:progressDrawable="@drawable/widget_ring"/>
+        <TextView android:id="@+id/khatma_share" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_gravity="center" android:text="@string/widgetSample24" android:textSize="18sp" android:textStyle="bold"
+            android:textColor="@color/widgetInk" android:fontFeatureSettings="tnum"/>
+    </FrameLayout>
+    <TextView android:id="@+id/khatma_page" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="@string/widgetSample25" android:textSize="12sp" android:textColor="@color/widgetInk" android:maxLines="1" android:layout_marginTop="4dp"/>
+    <TextView android:id="@+id/khatma_wird" android:layout_width="wrap_content" android:layout_height="wrap_content"
+        android:text="@string/widgetSample26" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
+</LinearLayout>

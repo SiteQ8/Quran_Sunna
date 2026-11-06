@@ -1,25 +1,23 @@
 package com.eworldq8.sunnati;
 
-import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.graphics.Typeface;
-import android.text.SpannableString;
-import android.text.style.StyleSpan;
 import android.view.View;
 import android.widget.RemoteViews;
 
-import java.util.List;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
-/** The five prayers ahead, each with its time, the next one marked, under
- *  the day and its hijri date: the wide widget, four cells by two. */
+/** The day's five prayers in a row over the sky of the hour: the one coming
+ *  lifted, the ones gone faded, and a mark on each the reader marked as
+ *  prayed. After the isha it shows the day ahead. Four cells by two. */
 public final class PrayerDayWidget extends AppWidgetProvider {
+    private static final int[] COLS = { R.id.day_col_0, R.id.day_col_1, R.id.day_col_2, R.id.day_col_3, R.id.day_col_4 };
     private static final int[] NAMES = { R.id.day_name_0, R.id.day_name_1, R.id.day_name_2, R.id.day_name_3, R.id.day_name_4 };
     private static final int[] TIMES = { R.id.day_time_0, R.id.day_time_1, R.id.day_time_2, R.id.day_time_3, R.id.day_time_4 };
-    private static final int[] ROWS = { R.id.day_row_0, R.id.day_row_1, R.id.day_row_2, R.id.day_row_3, R.id.day_row_4 };
+    private static final int[] MARKS = { R.id.day_mark_0, R.id.day_mark_1, R.id.day_mark_2, R.id.day_mark_3, R.id.day_mark_4 };
 
     /* drawn with the others, so the one alarm that moves them all is kept */
     @Override
@@ -33,41 +31,48 @@ public final class PrayerDayWidget extends AppWidgetProvider {
         if (ids != null && ids.length > 0) draw(context, manager, ids);
     }
 
-    private static CharSequence bold(String text, boolean on) {
-        if (!on) return text;
-        SpannableString s = new SpannableString(text);
-        s.setSpan(new StyleSpan(Typeface.BOLD), 0, s.length(), 0);
-        return s;
-    }
-
     private static void draw(Context context, AppWidgetManager manager, int[] ids) {
-        List<WidgetData.Row> rows = WidgetData.ahead(context, System.currentTimeMillis());
-        String place = WidgetData.place(context);
+        long now = System.currentTimeMillis();
+        JSONObject all = WidgetStore.all(context);
+        JSONObject day = WidgetStore.day(all, now);
+        JSONArray five = day == null ? null : day.optJSONArray("five");
+        /* once the isha is gone the day that matters is the next one */
+        if (five != null && five.length() > 0 && five.optJSONObject(five.length() - 1).optLong("at") < now) {
+            JSONObject next = WidgetStore.day(all, now + 86400000L);
+            if (next != null) { day = next; five = next.optJSONArray("five"); }
+        }
+        String place = all == null ? WidgetData.place(context) : all.optString("place", WidgetData.place(context));
+        int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_day);
-            Intent open = new Intent(context, MainActivity.class);
-            open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
-            views.setOnClickPendingIntent(R.id.day_root,
-                PendingIntent.getActivity(context, 1, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-            if (rows.isEmpty()) {
-                views.setTextViewText(R.id.day_title, "افتح التطبيق لحساب الأوقات");
+            views.setOnClickPendingIntent(R.id.day_root, WidgetStore.open(context, "widgetDay", 7401));
+            views.setImageViewResource(R.id.day_sky, sky);
+            if (day == null || five == null || five.length() == 0) {
+                views.setTextViewText(R.id.day_title, WidgetStore.word(all, "open", "افتح التطبيق لحساب الأوقات"));
                 views.setTextViewText(R.id.day_place, "");
-                for (int r : ROWS) views.setViewVisibility(r, View.GONE);
-            } else {
-                WidgetData.Row first = rows.get(0);
-                String title = (first.day.length() > 0 ? first.day + "  " : "") + first.hijri;
-                views.setTextViewText(R.id.day_title, title.trim().length() > 0 ? title.trim() : first.head);
-                views.setTextViewText(R.id.day_place, place);
-                for (int i = 0; i < ROWS.length; i++) {
-                    if (i >= rows.size()) { views.setViewVisibility(ROWS[i], View.GONE); continue; }
-                    WidgetData.Row r = rows.get(i);
-                    views.setViewVisibility(ROWS[i], View.VISIBLE);
-                    views.setTextViewText(NAMES[i], bold(r.label, i == 0));
-                    views.setTextViewText(TIMES[i], bold(r.clock, i == 0));
-                    int color = context.getColor(i == 0 ? R.color.widgetAccent : R.color.widgetInk);
-                    views.setTextColor(NAMES[i], color);
-                    views.setTextColor(TIMES[i], color);
-                }
+                for (int c : COLS) views.setViewVisibility(c, View.INVISIBLE);
+                manager.updateAppWidget(id, views);
+                continue;
+            }
+            String title = (day.optString("day") + "  " + day.optString("hijri")).trim();
+            views.setTextViewText(R.id.day_title, title);
+            views.setTextViewText(R.id.day_place, place);
+            boolean lifted = false;
+            for (int i = 0; i < COLS.length; i++) {
+                JSONObject p = five.optJSONObject(i);
+                if (p == null) { views.setViewVisibility(COLS[i], View.INVISIBLE); continue; }
+                views.setViewVisibility(COLS[i], View.VISIBLE);
+                boolean gone = p.optLong("at") <= now;
+                boolean next = !gone && !lifted;
+                if (next) lifted = true;
+                views.setTextViewText(NAMES[i], p.optString("label"));
+                /* five narrow columns: the time without its ص or م */
+                views.setTextViewText(TIMES[i], p.optString("short", p.optString("clock")));
+                int colour = gone ? 0x99FFFFFF : 0xFFFFFFFF;
+                views.setTextColor(NAMES[i], colour);
+                views.setTextColor(TIMES[i], colour);
+                views.setInt(COLS[i], "setBackgroundResource", next ? R.drawable.widget_pill : 0);
+                views.setViewVisibility(MARKS[i], p.optBoolean("prayed") ? View.VISIBLE : View.INVISIBLE);
             }
             manager.updateAppWidget(id, views);
         }

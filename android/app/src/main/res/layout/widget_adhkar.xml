@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the adhkar of this part of the day, with how many of them are done -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/adhkar_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:orientation="vertical" android:gravity="center_vertical" android:padding="14dp"
+    android:background="@drawable/widget_paper" android:layoutDirection="locale">
+    <TextView android:id="@+id/adhkar_head" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/widgetSample1" android:textSize="12sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
+    <TextView android:id="@+id/adhkar_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/widgetSample2" android:textSize="20sp" android:textStyle="bold" android:textColor="@color/widgetAccent"
+        android:maxLines="2" android:ellipsize="end"/>
+    <ProgressBar android:id="@+id/adhkar_bar" style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent" android:layout_height="6dp" android:layout_marginTop="10dp"
+        android:max="24" android:progress="9" android:progressDrawable="@drawable/widget_progress"/>
+    <TextView android:id="@+id/adhkar_count" android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:text="@string/widgetSample3" android:textSize="12sp" android:textColor="@color/widgetInk" android:maxLines="1"
+        android:layout_marginTop="6dp" android:fontFeatureSettings="tnum"/>
+</LinearLayout>

@@ -463,3 +463,17 @@ test('a translated setting takes its list under its words when the choice or a w
   win.App.helpers.fitSettings();
   assert.ok(row.classList.contains('is-stacked'), 'a word wider than its column takes the whole row');
 });
+
+test('widgets: a language with its own figures hands them, and the counts are written in them', () => {
+  const { win } = boot({ now: new Date(2026, 10, 4, 12, 0, 0), languages: ['fa-IR'], file: 'fa', shipped: true });
+  const d = win.App.helpers.widgetData();
+  assert.strictEqual(d.digits, '۰۱۲۳۴۵۶۷۸۹');
+  assert.ok(/^[۰-۹:]+$/.test(d.days[0].five[0].short), 'the short time is in Persian figures: ' + d.days[0].five[0].short);
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const java = 'android/app/src/main/java/com/eworldq8/sunnati/';
+  ['KhatmaWidget.java', 'AdhkarWidget.java'].forEach(function (f) {
+    assert.ok(read(java + f).indexOf('WidgetStore.figures(all,') !== -1, f + ' writes its counts in the language\'s figures');
+  });
+  assert.ok(read(java + 'PrayerDayWidget.java').indexOf('optString("short"') !== -1, 'the day row takes the short time');
+  assert.ok(read('ios/Widget/PrayerWidget.swift').indexOf('func figures(') !== -1, 'and the iPhone widgets count in them too');
+});
