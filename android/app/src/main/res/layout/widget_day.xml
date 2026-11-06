@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- the day's five prayers over the sky of the hour, the next one lifted,
      the ones gone faded and marked when the reader marked them prayed; the
-     day and its hijri date above, the place beside them -->
+     day and its hijri date above, the place beside them. The colours and the
+     marks written here are the picker's preview at noon; the widget sets
+     every one of them itself -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@android:id/background"
     android:layout_width="match_parent" android:layout_height="match_parent"
@@ -32,15 +34,15 @@
             android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
             <TextView android:id="@+id/day_name_0" android:layout_width="match_parent" android:layout_height="18dp"
                 android:text="@string/widgetSample8" android:textSize="12sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_time_0" android:layout_width="match_parent" android:layout_height="20dp"
                 android:text="@string/widgetSample9" android:textSize="13sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#99FFFFFF" android:maxLines="1"
                 android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_mark_0" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="invisible"/>
+                android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="visible"/>
         </LinearLayout>
         <LinearLayout android:id="@+id/day_col_1"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
@@ -48,29 +50,29 @@
             android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
             <TextView android:id="@+id/day_name_1" android:layout_width="match_parent" android:layout_height="18dp"
                 android:text="@string/widgetSample11" android:textSize="12sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#99FFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_time_1" android:layout_width="match_parent" android:layout_height="20dp"
                 android:text="@string/widgetSample12" android:textSize="13sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#99FFFFFF" android:maxLines="1"
                 android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_mark_1" android:layout_width="wrap_content" android:layout_height="wrap_content"
-                android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="invisible"/>
+                android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="visible"/>
         </LinearLayout>
         <LinearLayout android:id="@+id/day_col_2"
             android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content"
-            android:orientation="vertical" android:gravity="center_horizontal"
+            android:orientation="vertical" android:background="@drawable/widget_pill" android:gravity="center_horizontal"
             android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
             <TextView android:id="@+id/day_name_2" android:layout_width="match_parent" android:layout_height="18dp"
                 android:text="@string/widgetSample13" android:textSize="12sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_time_2" android:layout_width="match_parent" android:layout_height="20dp"
                 android:text="@string/widgetSample14" android:textSize="13sp" android:gravity="center"
                 android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
                 android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_mark_2" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="invisible"/>
         </LinearLayout>
@@ -80,13 +82,13 @@
             android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
             <TextView android:id="@+id/day_name_3" android:layout_width="match_parent" android:layout_height="18dp"
                 android:text="@string/widgetSample15" android:textSize="12sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_time_3" android:layout_width="match_parent" android:layout_height="20dp"
                 android:text="@string/widgetSample16" android:textSize="13sp" android:gravity="center"
                 android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
                 android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_mark_3" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="invisible"/>
         </LinearLayout>
@@ -96,13 +98,13 @@
             android:paddingTop="8dp" android:paddingBottom="8dp" android:layout_marginStart="2dp" android:layout_marginEnd="2dp">
             <TextView android:id="@+id/day_name_4" android:layout_width="match_parent" android:layout_height="18dp"
                 android:text="@string/widgetSample17" android:textSize="12sp" android:gravity="center"
-                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#E6FFFFFF" android:maxLines="1"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp" android:textColor="#FFFFFFFF" android:maxLines="1"
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_time_4" android:layout_width="match_parent" android:layout_height="20dp"
                 android:text="@string/widgetSample18" android:textSize="13sp" android:gravity="center"
                 android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="13sp" android:textStyle="bold" android:textColor="#FFFFFFFF" android:maxLines="1"
                 android:fontFeatureSettings="tnum" android:layout_marginTop="2dp"
-                android:shadowColor="#66000000" android:shadowRadius="3" android:shadowDy="1"/>
+                android:shadowColor="#99000000" android:shadowRadius="4" android:shadowDy="1"/>
             <TextView android:id="@+id/day_mark_4" android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="@string/widgetSample10" android:textSize="11sp" android:textColor="#FFFFFFFF" android:visibility="invisible"/>
         </LinearLayout>

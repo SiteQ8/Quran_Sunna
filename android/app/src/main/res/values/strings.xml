@@ -27,6 +27,14 @@
     <string name="widgetKhatmaDescription">What you have read of your khatmah, and your wird today</string>
     <string name="widgetAdhkarName">Adhkar</string>
     <string name="widgetAdhkarDescription">The adhkar for this time of day and how many you have completed today</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">Iqamah</string>
+    <string name="widgetWird">Your wird today</string>
+    <string name="widgetPage">Page</string>
+    <string name="widgetOf">of</string>
+    <string name="widgetDone">Completed today</string>
+    <string name="widgetOpen">Open the app to work out the times</string>
+    <string name="widgetOpenApp">Open the app</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Adhkar</string>
@@ -55,6 +63,7 @@
     <string name="widgetSample26">Your wird today 20 pages</string>
     <string name="widgetSample27">Next prayer</string>
     <string name="widgetSample28">2:38 PM</string>
+    <string name="widgetSample29">1:52:14</string>
     <!-- the same in every language: the ayah stays as it was revealed -->
     <string name="widgetSample6" translatable="false">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</string>
     <string name="widgetSample10" translatable="false">✓</string>

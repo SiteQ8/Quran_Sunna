@@ -16,8 +16,10 @@
             android:layout_gravity="center" android:text="@string/widgetSample24" android:textSize="18sp" android:textStyle="bold"
             android:textColor="@color/widgetInk" android:fontFeatureSettings="tnum"/>
     </FrameLayout>
-    <TextView android:id="@+id/khatma_page" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="@string/widgetSample25" android:textSize="12sp" android:textColor="@color/widgetInk" android:maxLines="1" android:layout_marginTop="4dp"/>
-    <TextView android:id="@+id/khatma_wird" android:layout_width="wrap_content" android:layout_height="wrap_content"
-        android:text="@string/widgetSample26" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
+    <TextView android:id="@+id/khatma_page" android:layout_width="match_parent" android:layout_height="18dp"
+        android:text="@string/widgetSample25" android:textSize="12sp" android:textColor="@color/widgetInk" android:maxLines="1" android:layout_marginTop="4dp"
+        android:gravity="center" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="12sp"/>
+    <TextView android:id="@+id/khatma_wird" android:layout_width="match_parent" android:layout_height="16dp"
+        android:text="@string/widgetSample26" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1"
+        android:gravity="center" android:autoSizeTextType="uniform" android:autoSizeMinTextSize="8sp" android:autoSizeMaxTextSize="11sp"/>
 </LinearLayout>

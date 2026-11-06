@@ -12171,6 +12171,13 @@ test('widgets: the page hands every widget its seven days, its words and the kha
     'the day row\'s five narrow columns get the time without its ص or م');
   assert.strictEqual(today.civil, '1 مارس 2027', 'the civil date in the reader\'s language, beside the hijri');
   assert.strictEqual(d.digits, '0123456789', 'and the figures the widgets count in');
+  assert.strictEqual(d.dir, 'rtl', 'and the way the language reads, which the widget follows rather than the phone');
+  const java = function (f) { return fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati', f), 'utf8'); };
+  ['PrayerWidget.java', 'PrayerDayWidget.java', 'HijriWidget.java', 'AyahWidget.java', 'KhatmaWidget.java', 'AdhkarWidget.java'].forEach(function (f) {
+    assert.ok(/WidgetStore\.direct\(views, R\.id\.[a-z_]+_root, all\)/.test(java(f)), f + ' turns its root the way the app\'s language reads');
+  });
+  assert.ok(/widget_hijri_row/.test(java('HijriWidget.java')) && /widget_prayer_small/.test(java('PrayerWidget.java')),
+    'one cell high, the prayer and the hijri date each draw a single row');
   assert.ok(today.ramadan, 'the first of March 2027 is in ramadan');
   const maghrib = today.five.filter(function (p) { return p.key === 'maghrib'; })[0];
   assert.strictEqual(maghrib.sub, 'الإفطار', 'and its maghrib is the iftar');

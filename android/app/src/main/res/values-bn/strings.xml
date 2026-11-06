@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">আপনার খতমের কতটুকু পড়েছেন এবং আজকের ওযিফা</string>
     <string name="widgetAdhkarName">জিকির</string>
     <string name="widgetAdhkarDescription">দিনের এই সময়ের জিকির এবং আজ আপনি কতগুলো সম্পন্ন করেছেন</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">ইকামত</string>
+    <string name="widgetWird">আপনার আজকের ওযিফা</string>
+    <string name="widgetPage">পৃষ্ঠা</string>
+    <string name="widgetOf">/</string>
+    <string name="widgetDone">আজ সম্পন্ন করেছেন</string>
+    <string name="widgetOpen">সময় হিসাব করতে অ্যাপটি খুলুন</string>
+    <string name="widgetOpenApp">অ্যাপটি খুলুন</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">জিকির</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">আপনার আজকের ওযিফা ২০ পৃষ্ঠা</string>
     <string name="widgetSample27">পরবর্তী নামাজ</string>
     <string name="widgetSample28">২:৩৮ PM</string>
+    <string name="widgetSample29">১:৫২:১৪</string>
 </resources>

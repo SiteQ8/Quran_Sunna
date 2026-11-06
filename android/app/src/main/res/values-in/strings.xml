@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">Yang sudah Anda baca dari khatam, dan wirid Anda hari ini</string>
     <string name="widgetAdhkarName">Zikir</string>
     <string name="widgetAdhkarDescription">Zikir untuk waktu ini dan berapa yang sudah Anda selesaikan hari ini</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">Iqamah</string>
+    <string name="widgetWird">Wirid Anda hari ini</string>
+    <string name="widgetPage">Halaman</string>
+    <string name="widgetOf">dari</string>
+    <string name="widgetDone">Selesai hari ini</string>
+    <string name="widgetOpen">Buka aplikasi untuk menghitung waktu salat</string>
+    <string name="widgetOpenApp">Buka aplikasi</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Zikir</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">Wirid Anda hari ini 20 halaman</string>
     <string name="widgetSample27">Salat berikutnya</string>
     <string name="widgetSample28">14:38</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>

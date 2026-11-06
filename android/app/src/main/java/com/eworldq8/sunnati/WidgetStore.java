@@ -1,8 +1,11 @@
 package com.eworldq8.sunnati;
 
 import android.app.PendingIntent;
+import android.appwidget.AppWidgetManager;
 import android.content.Context;
 import android.content.Intent;
+import android.view.View;
+import android.widget.RemoteViews;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -57,6 +60,29 @@ final class WidgetStore {
         JSONObject w = all == null ? null : all.optJSONObject("words");
         String v = w == null ? null : w.optString(k, null);
         return v == null || v.length() == 0 ? fallback : v;
+    }
+
+    /** A widget reads the way the app's language reads, not the phone's:
+     *  someone who keeps the app in Arabic on a phone set to English still
+     *  reads it from the right. Before the app has handed anything, the
+     *  layout's own direction, the phone's, stands. */
+    static void direct(RemoteViews views, int root, JSONObject all) {
+        if (all == null) return;
+        String dir = all.optString("dir", "");
+        if (dir.length() == 0) {
+            String lang = all.optString("lang", "");
+            if (lang.length() == 0) return;
+            dir = lang.equals("ar") || lang.equals("ur") || lang.equals("fa") ? "rtl" : "ltr";
+        }
+        views.setInt(root, "setLayoutDirection", "rtl".equals(dir) ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LTR);
+    }
+
+    /** One cell high, on a launcher older than Android 12 that cannot be
+     *  handed a drawing for each size: the reported height decides. */
+    static boolean oneRow(AppWidgetManager manager, int id) {
+        android.os.Bundle o = manager.getAppWidgetOptions(id);
+        int h = o == null ? 0 : o.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 0);
+        return h > 0 && h < 100;
     }
 
     /** A count the widget makes itself, in the figures of the reader's

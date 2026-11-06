@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">Hatminizden okuduklarınız ve bugünkü virdiniz</string>
     <string name="widgetAdhkarName">Zikirler</string>
     <string name="widgetAdhkarDescription">Günün bu vaktinin zikirleri ve bugün kaçını tamamladığınız</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">Kamet</string>
+    <string name="widgetWird">Bugünkü virdiniz</string>
+    <string name="widgetPage">Sayfa</string>
+    <string name="widgetOf">/</string>
+    <string name="widgetDone">Bugün tamamlandı</string>
+    <string name="widgetOpen">Vakitleri hesaplamak için uygulamayı açın</string>
+    <string name="widgetOpenApp">Uygulamayı açın</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">Zikirler</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">Bugünkü virdiniz 20 sayfa</string>
     <string name="widgetSample27">Sıradaki namaz</string>
     <string name="widgetSample28">14:38</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>

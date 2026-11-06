@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- over the painted sky, so white words read on the brightest noon -->
+<!-- over the painted sky, so white words read on the brightest noon: light at
+     the top third, where the sky is, and deeper where the rows of words sit -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <gradient android:angle="270" android:startColor="#73000000" android:centerColor="#26000000" android:endColor="#8C000000"/>
+    <gradient android:angle="270" android:startColor="#73000000" android:centerColor="#1F000000" android:centerY="0.35"
+        android:endColor="#99000000"/>
 </shape>

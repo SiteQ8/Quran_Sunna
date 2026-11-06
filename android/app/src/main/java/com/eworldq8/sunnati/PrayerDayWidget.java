@@ -46,9 +46,10 @@ public final class PrayerDayWidget extends AppWidgetProvider {
         for (int id : ids) {
             RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_day);
             views.setOnClickPendingIntent(R.id.day_root, WidgetStore.open(context, "widgetDay", 7401));
+            WidgetStore.direct(views, R.id.day_root, all);
             views.setImageViewResource(R.id.day_sky, sky);
             if (day == null || five == null || five.length() == 0) {
-                views.setTextViewText(R.id.day_title, WidgetStore.word(all, "open", "افتح التطبيق لحساب الأوقات"));
+                views.setTextViewText(R.id.day_title, WidgetStore.word(all, "open", context.getString(R.string.widgetOpen)));
                 views.setTextViewText(R.id.day_place, "");
                 for (int c : COLS) views.setViewVisibility(c, View.INVISIBLE);
                 manager.updateAppWidget(id, views);

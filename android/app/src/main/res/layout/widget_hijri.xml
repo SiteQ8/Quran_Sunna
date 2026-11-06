@@ -7,13 +7,14 @@
     android:background="@drawable/widget_paper" android:layoutDirection="locale">
     <TextView android:id="@+id/hijri_day" android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:text="@string/widgetSample19" android:textSize="12sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
-    <TextView android:id="@+id/hijri_date" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    <!-- the date takes the room the other lines leave, and its size with it -->
+    <TextView android:id="@+id/hijri_date" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
         android:text="@string/widgetSample20" android:textSize="18sp" android:textStyle="bold" android:textColor="@color/widgetAccent"
         android:maxLines="2" android:gravity="center"
-        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="12sp" android:autoSizeMaxTextSize="22sp"/>
+        android:autoSizeTextType="uniform" android:autoSizeMinTextSize="11sp" android:autoSizeMaxTextSize="22sp"/>
     <TextView android:id="@+id/hijri_civil" android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:text="@string/widgetSample21" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:layout_marginTop="2dp"/>
-    <TextView android:id="@+id/hijri_occasion" android:layout_width="wrap_content" android:layout_height="wrap_content"
+    <TextView android:id="@+id/hijri_occasion" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="@string/widgetSample22" android:textSize="11sp" android:textStyle="bold" android:textColor="@color/widgetInk"
-        android:maxLines="1" android:ellipsize="end" android:layout_marginTop="6dp"/>
+        android:maxLines="2" android:ellipsize="end" android:gravity="center" android:layout_marginTop="4dp"/>
 </LinearLayout>

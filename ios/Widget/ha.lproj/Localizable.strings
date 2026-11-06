@@ -12,3 +12,12 @@
 "ما قرأته من ختمتك وورد اليوم" = "Abin da kuka karanta na saukarku, da wirdinku na yau";
 "الأذكار" = "Azkar";
 "أذكار الوقت وما أتممته منها اليوم" = "Azkar na wannan lokaci da yawan waɗanda kuka kammala yau";
+
+/* the words a widget writes before the app has handed its own */
+"الإقامة" = "Iƙama";
+"وردك اليوم" = "Wirdinku na yau";
+"صفحة" = "Shafi";
+"من" = "cikin";
+"أتممتها اليوم" = "An kammala yau";
+"افتح التطبيق لحساب الأوقات" = "Buɗe manhajar domin lissafa lokutan salla";
+"افتح التطبيق" = "Buɗe manhajar";

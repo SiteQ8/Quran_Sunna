@@ -18,6 +18,14 @@
     <string name="widgetKhatmaDescription">ما قرأته من ختمتك وورد اليوم</string>
     <string name="widgetAdhkarName">الأذكار</string>
     <string name="widgetAdhkarDescription">أذكار الوقت وما أتممته منها اليوم</string>
+    <!-- the words a widget writes before the app has handed its own -->
+    <string name="widgetIqama">الإقامة</string>
+    <string name="widgetWird">وردك اليوم</string>
+    <string name="widgetPage">صفحة</string>
+    <string name="widgetOf">من</string>
+    <string name="widgetDone">أتممتها اليوم</string>
+    <string name="widgetOpen">افتح التطبيق لحساب الأوقات</string>
+    <string name="widgetOpenApp">افتح التطبيق</string>
     <!-- what the widget picker shows before a widget writes its own words:
          a wednesday noon in kuwait, as the page itself would write it -->
     <string name="widgetSample1">الأذكار</string>
@@ -46,4 +54,5 @@
     <string name="widgetSample26">وردك اليوم 20 صفحة</string>
     <string name="widgetSample27">الصلاة القادمة</string>
     <string name="widgetSample28">2:38 م</string>
+    <string name="widgetSample29">1:52:14</string>
 </resources>
