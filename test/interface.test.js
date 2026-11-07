@@ -10480,7 +10480,10 @@ test('the page can be shown as the madinah mushaf prints it', () => {
   /* every line holds one printed line and no more, so it is squeezed to the
      width rather than wrapped onto a second row */
   const fit = /function fitPrintedLines\(body\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fit.indexOf("scaleX(") !== -1 && fit.indexOf('room / wide') !== -1);
+  assert.ok(fit.indexOf("scaleX(") !== -1 && fit.indexOf('m.room / m.wide') !== -1);
+  /* one size of letter for the page, and each line spread to both margins;
+     the close of a surah stands in the middle */
+  assert.ok(fit.indexOf("style.fontSize") !== -1 && fit.indexOf("style.wordSpacing") !== -1 && fit.indexOf("textAlign = 'center'") !== -1);
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.match(css, /\.mad-line \{[\s\S]*?white-space: nowrap/);
 

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.132';
+  var VERSION = '8.87.133';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4689,16 +4689,78 @@
         });
       }
     }
-    [].forEach.call(lines, function (line) {
-      line.style.transform = '';
-      var room = line.clientWidth;
-      var wide = line.scrollWidth;
-      if (!room || !wide) return;
-      var scale = Math.min(1, room / wide);
-      if (scale < 0.999) {
-        line.style.transform = 'scaleX(' + scale.toFixed(3) + ')';
+    /* A printed page is set at one size of letter and every line runs from
+       margin to margin. The lines were shrunk one by one where too wide and
+       left as they fell where narrower, so one line stood smaller than the
+       next and their left ends were ragged. Now the page takes the one size
+       at which its widest line fits, not below a floor where a line would be
+       left to shrink alone, and each line is spread to both margins by the
+       room between its words. A short line, the last of a surah, is not
+       pulled apart: it stands in the middle, as the mushaf sets it. */
+    lines = [].slice.call(lines);
+    lines.forEach(clearPrintedLine);
+    var measured = lines.map(function (line) {
+      var box = line.getBoundingClientRect();
+      return { line: line, room: box.width, wide: printedRun(line), zoom: line.clientWidth ? box.width / line.clientWidth : 1 };
+    }).filter(function (m) { return m.room > 0 && m.wide > 0; });
+    if (!measured.length) return;
+    /* the size most lines fit at: the page is not made small for the one
+       long line, which is drawn a little narrower on its own instead */
+    var fits = measured.map(function (m) { return m.room / m.wide; }).sort(function (x, y) { return x - y; });
+    var most = fits[Math.min(fits.length - 1, Math.floor(fits.length * PRINTED_OUTLIERS))];
+    var scale = Math.min(1, Math.max(PRINTED_FLOOR, most));
+    var size = parseFloat(window.getComputedStyle(measured[0].line).fontSize) || 0;
+    if (scale < 0.999 && size) {
+      measured.forEach(function (m) { m.line.style.fontSize = (size * scale).toFixed(2) + 'px'; });
+      measured.forEach(function (m) { m.wide = printedRun(m.line); });
+    }
+    var em = (size || 20) * scale;
+    measured.forEach(function (m) {
+      var line = m.line;
+      if (m.wide > m.room + 0.5) {
+        /* wider than the floor lets the page shrink to: this line alone */
+        line.style.transform = 'scaleX(' + (m.room / m.wide).toFixed(3) + ')';
+        return;
+      }
+      var gaps = (line.textContent.match(/ /g) || []).length;
+      var spare = (m.room - m.wide - 1) / (m.zoom || 1);
+      if (gaps && m.wide / m.room >= PRINTED_FULL && spare / gaps <= em * 1.4) {
+        line.style.wordSpacing = Math.max(0, spare / gaps).toFixed(2) + 'px';
+      } else {
+        line.style.textAlign = 'center';
       }
     });
+  }
+
+  /* below this the page keeps its size and the odd long line shrinks alone */
+  var PRINTED_FLOOR = 0.82;
+  /* the share of a page's lines, its longest, left to narrow on their own */
+  var PRINTED_OUTLIERS = 0.15;
+  /* a line shorter than this share of the page is the close of a surah */
+  var PRINTED_FULL = 0.6;
+
+  function clearPrintedLine(line) {
+    line.style.transform = '';
+    line.style.fontSize = '';
+    line.style.wordSpacing = '';
+    line.style.textAlign = '';
+  }
+
+  /* how far a line's words run, as they would without being spread */
+  function printedRun(line) {
+    var kept = line.style.wordSpacing;
+    line.style.wordSpacing = '';
+    var r = document.createRange && document.createRange();
+    var w;
+    if (r && r.getBoundingClientRect) {
+      r.selectNodeContents(line);
+      w = r.getBoundingClientRect().width;
+    } else {
+      /* where a range cannot be measured, as the line overflows */
+      w = line.scrollWidth;
+    }
+    line.style.wordSpacing = kept;
+    return w;
   }
 
   /* In the book a spread is a mushaf laid open: both pages whole between the
@@ -4788,7 +4850,7 @@
      line that closes a surah is not the measure of the page */
   function printedLineWidth(folio) {
     var widths = [].map.call(folio.querySelectorAll('.mad-line'), function (line) {
-      line.style.transform = '';
+      clearPrintedLine(line);
       var r = document.createRange();
       r.selectNodeContents(line);
       return r.getBoundingClientRect().width;
