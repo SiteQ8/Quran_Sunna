@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.133';
+  var VERSION = '8.87.134';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3625,7 +3625,7 @@
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
-        esc(text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span></span> ';
+        esc(sajda ? text.replace(SAJDA_SIGN, '') : text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span></span> ';
     });
 
     body.className = 'reader-body';
@@ -4527,7 +4527,7 @@
       var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
-        esc(v.text) + sajda + '⁠<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
+        esc(sajda ? v.text.replace(SAJDA_SIGN, '') : v.text) + sajda + '⁠<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
     });
     return '<div class="ayah-block">' + html + '</div>' + pageFoot(n);
   }
@@ -4631,6 +4631,33 @@
     fitPrintedLines(body);
   }
 
+  /* The words of an ayah as the printed layout counts them. The text sets
+     each pause mark (ۚ ۖ ۗ ۛ ۙ ۘ ۜ) and the sign of prostration between
+     spaces as a word of its own, and the hizb mark ۞ before the first word,
+     while the layout counts words only; split on the spaces, every line after
+     a pause mark was cut one word short, so the ayah lost its last words and
+     its number on 2720 of the 6236 ayat. A mark now goes with the word before
+     it, the hizb mark with the word after, and «إِلْ يَاسِينَ», two words in
+     the text, is the one word the mushaf prints. Each is joined by a space
+     that does not break or stretch, so a line spread to its margins leaves
+     a mark against its word: a narrow one, since a plain one that does not
+     break is still stretched with the spaces between words. */
+  var PAUSE_MARK = /^[\u0610-\u061A\u06D6-\u06ED\u08F0-\u08FF]+$/;
+  var SAJDA_SIGN = /\s*\u06E9/g;
+  function printedWords(s, a) {
+    var out = [], lead = '';
+    (Mushaf.ayah(s, a) || '').split(' ').forEach(function (w) {
+      if (!w) return;
+      if (w === '\u06DE') { lead = w + '\u202F'; return; }
+      if (out.length && PAUSE_MARK.test(w)) { out[out.length - 1] += '\u202F' + w; return; }
+      out.push(lead + w);
+      lead = '';
+    });
+    var ilyasin = out.indexOf('إِلْ');
+    if (ilyasin !== -1 && out[ilyasin + 1] === 'يَاسِينَ') out.splice(ilyasin, 2, 'إِلْ\u202Fيَاسِينَ');
+    return out;
+  }
+
   function printedPageMarkup(n, verses, marked) {
     var page = MADINAH_LINES[n];
     if (!page) return empty('تعذّر بناء هذه الصفحة');
@@ -4649,13 +4676,13 @@
       }
       html += '<div class="mad-line">' + line.map(function (run) {
         var s = run[0], a = run[1], from = run[2], to = run[3];
-        var words = (Mushaf.ayah(s, a) || '').split(' ');
+        var words = printedWords(s, a);
         var piece = words.slice(from - 1, to).join(' ');
         var whole = to >= words.length;
         var cls = 'ayah' + (marked[s + ':' + a] ? ' is-marked' : '');
         var sajda = whole && Mushaf.isSajda(s, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
         return '<span class="' + cls + '" data-ayah="' + s + ':' + a + '" data-a="' + a + '">' +
-          esc(piece) + sajda +
+          esc(piece.replace(SAJDA_SIGN, '')) + sajda +
           (whole ? '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span>' : '') +
           '</span>';
       }).join(' ') + '</div>';
@@ -4708,9 +4735,12 @@
        long line, which is drawn a little narrower on its own instead */
     var fits = measured.map(function (m) { return m.room / m.wide; }).sort(function (x, y) { return x - y; });
     var most = fits[Math.min(fits.length - 1, Math.floor(fits.length * PRINTED_OUTLIERS))];
-    var scale = Math.min(1, Math.max(PRINTED_FLOOR, most));
+    /* and larger than the size chosen where the lines fall short: the
+       mushaf's face is narrower than the one the printed lines were set in,
+       and at the chosen size every line was left with wide gaps to fill */
+    var scale = Math.min(PRINTED_CEILING, Math.max(PRINTED_FLOOR, most));
     var size = parseFloat(window.getComputedStyle(measured[0].line).fontSize) || 0;
-    if (scale < 0.999 && size) {
+    if (Math.abs(scale - 1) > 0.001 && size) {
       measured.forEach(function (m) { m.line.style.fontSize = (size * scale).toFixed(2) + 'px'; });
       measured.forEach(function (m) { m.wide = printedRun(m.line); });
     }
@@ -4734,6 +4764,8 @@
 
   /* below this the page keeps its size and the odd long line shrinks alone */
   var PRINTED_FLOOR = 0.82;
+  /* the most a page is enlarged to fill its lines */
+  var PRINTED_CEILING = 1.45;
   /* the share of a page's lines, its longest, left to narrow on their own */
   var PRINTED_OUTLIERS = 0.15;
   /* a line shorter than this share of the page is the close of a surah */
