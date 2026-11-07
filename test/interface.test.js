@@ -10469,7 +10469,7 @@ test('the page can be shown as the madinah mushaf prints it', () => {
   /* the printed page is built as markup, so the book can set two side by side */
   const fn = /function printedPageMarkup\(n, verses, marked\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
   /* the text is the one the app already holds; only the shape is new */
-  assert.ok(fn.indexOf('Mushaf.ayah(s, a)') !== -1, 'the words come from our own mushaf');
+  assert.ok(fn.indexOf('printedWords(s, a)') !== -1, 'the words come from our own mushaf, as the printed layout counts them');
   assert.ok(fn.indexOf('words.slice(from - 1, to)') !== -1, 'cut where the printed line cuts');
   /* a verse ending on a line gets its number; one carried over does not */
   assert.ok(fn.indexOf('var whole = to >= words.length;') !== -1);
@@ -12387,4 +12387,28 @@ test('the ayah and du\'a widgets turn to others, and the tasbih and the prayers 
   ['DuaWidget()', 'TasbihWidget()', 'LogWidget()', 'Button(intent: NextAyahIntent())', 'Button(intent: NextDuaIntent())'].forEach(function (w) { assert.ok(swift.indexOf(w) !== -1, w); });
   /* the printed page fitted again once the mushaf's face is there */
   assert.ok(/waitedForMushafFace/.test(read('docs/js/app.js')));
+});
+
+test('every ayah of the mushaf splits into the words the printed layout counts, so no line loses its end or its number', () => {
+  const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
+  const pause = /var PAUSE_MARK = (\/.*\/);/.exec(app)[1];
+  const fn = /function printedWords\(s, a\) \{[\s\S]*?\n  \}\n/.exec(app)[0];
+  const text = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'mushaf.json'), 'utf8'));
+  const Mushaf = { ayah: function (s, a) { return text.a[s - 1][a - 1]; } };
+  const printedWords = new Function('Mushaf', 'var PAUSE_MARK = ' + pause + ';\n' + fn + '\nreturn printedWords;')(Mushaf);
+  const layout = JSON.parse(fs.readFileSync(path.join(DOCS, 'data', 'madinah-lines.json'), 'utf8')).pages;
+  const most = {};
+  Object.keys(layout).forEach(function (n) {
+    (layout[n] || []).forEach(function (line) {
+      line.forEach(function (r) { const k = r[0] + ':' + r[1]; most[k] = Math.max(most[k] || 0, r[3]); });
+    });
+  });
+  const wrong = Object.keys(most).filter(function (k) {
+    const sa = k.split(':').map(Number);
+    return printedWords(sa[0], sa[1]).length !== most[k];
+  });
+  assert.strictEqual(Object.keys(most).length, 6236, 'the layout holds every ayah');
+  assert.deepStrictEqual(wrong.slice(0, 10), [], wrong.length + ' ayat would be cut short');
+  /* the sign of prostration is drawn once, by the page */
+  assert.ok(/esc\(piece\.replace\(SAJDA_SIGN, ''\)\)/.test(app));
 });
