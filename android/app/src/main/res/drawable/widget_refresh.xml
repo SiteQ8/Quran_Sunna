@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the refresh under the ayah and the du'a: another one, from another surah
+     or another topic -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="18dp" android:height="18dp" android:viewportWidth="24" android:viewportHeight="24">
+    <path android:pathData="M19.5,12a7.5,7.5 0,1 1,-2.2 -5.3" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2"
+        android:strokeLineCap="round" android:fillColor="#00000000"/>
+    <path android:pathData="M19.8,3.6v4.6h-4.6" android:strokeColor="#FFFFFFFF" android:strokeWidth="2.2"
+        android:strokeLineCap="round" android:strokeLineJoin="round" android:fillColor="#00000000"/>
+</vector>

@@ -82,4 +82,21 @@
     <string name="crashTitle">Sunnati s\'est arrêté, en voici la raison</string>
     <string name="crashCopy">Copier</string>
     <string name="crashCopied">Copié</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">Invocation du jour</string>
+    <string name="widgetDuaDescription">Une invocation chaque jour, une autre d\'un seul geste</string>
+    <string name="widgetTasbihName">Tasbih</string>
+    <string name="widgetTasbihDescription">Votre dhikr et son compte, le compteur à portée de main</string>
+    <string name="widgetLogName">Mes prières du jour</string>
+    <string name="widgetLogDescription">Les cinq prières du jour et celles que vous avez marquées</string>
+    <string name="widgetAnotherAyah">Un autre verset</string>
+    <string name="widgetAnotherDua">Une autre invocation</string>
+    <string name="widgetTarget">Objectif</string>
+    <string name="widgetToday">Total du jour</string>
+    <string name="widgetPrayed">Accomplie</string>
+    <string name="widgetAllPrayed">Les cinq prières accomplies</string>
+    <string name="widgetSample30">Subsistance</string>
+    <string name="widgetSample31">3 sur 5</string>
+    <string name="widgetSample33">Total du jour 120</string>
+    <string name="widgetSample36">21</string>
 </resources>

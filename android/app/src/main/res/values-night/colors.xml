@@ -8,6 +8,7 @@
     <color name="widgetInk">#f1ece2</color>
     <color name="widgetMuted">#a39b8f</color>
     <color name="widgetTrack">#33e08a7c</color>
+    <color name="widgetTrackStrong">#59c8bfb2</color>
     <color name="widgetOrnament">#6BD0A84F</color>
     <color name="widgetOrnamentRule">#A6D0A84F</color>
 </resources>

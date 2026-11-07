@@ -112,6 +112,24 @@
             </intent-filter>
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_adhkar_info"/>
         </receiver>
+        <receiver android:name=".DuaWidget" android:exported="false" android:label="@string/widgetDuaName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_dua_info"/>
+        </receiver>
+        <receiver android:name=".TasbihWidget" android:exported="false" android:label="@string/widgetTasbihName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_tasbih_info"/>
+        </receiver>
+        <receiver android:name=".LogWidget" android:exported="false" android:label="@string/widgetLogName">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_log_info"/>
+        </receiver>
         <!-- a reboot or a change of the clock throws alarms away -->
         <receiver android:name=".BootReceiver" android:exported="true">
             <intent-filter>

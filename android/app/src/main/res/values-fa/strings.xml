@@ -82,4 +82,21 @@
     <string name="crashTitle">سُنّتی متوقف شد و این دلیل آن است</string>
     <string name="crashCopy">کپی</string>
     <string name="crashCopied">کپی شد</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">دعای امروز</string>
+    <string name="widgetDuaDescription">هر روز یک دعا، با یک لمس دعایی دیگر</string>
+    <string name="widgetTasbihName">تسبیح</string>
+    <string name="widgetTasbihDescription">ذکر شما و شمارش آن، تسبیح با یک لمس</string>
+    <string name="widgetLogName">نمازهای امروزم</string>
+    <string name="widgetLogDescription">پنج نماز امروز و آنچه خوانده‌اید</string>
+    <string name="widgetAnotherAyah">آیه‌ای دیگر</string>
+    <string name="widgetAnotherDua">دعایی دیگر</string>
+    <string name="widgetTarget">هدف</string>
+    <string name="widgetToday">مجموع امروز</string>
+    <string name="widgetPrayed">خوانده شد</string>
+    <string name="widgetAllPrayed">هر پنج نماز خوانده شد</string>
+    <string name="widgetSample30">روزی</string>
+    <string name="widgetSample31">۳ از ۵</string>
+    <string name="widgetSample33">مجموع امروز ۱۲۰</string>
+    <string name="widgetSample36">۲۱</string>
 </resources>

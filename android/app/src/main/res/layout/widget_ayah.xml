@@ -33,8 +33,17 @@
             android:tint="@color/widgetInk" android:tintMode="src_in"/>
         <ImageView android:id="@+id/ayah_rule" android:layout_width="36dp" android:layout_height="1.5dp"
             android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
-        <ImageView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="6dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
-            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+        <!-- the reference in the middle, and at the end the refresh that
+             turns to an ayah of another surah -->
+        <FrameLayout android:layout_width="match_parent" android:layout_height="30dp" android:layout_marginTop="4dp">
+            <ImageView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center" android:layout_marginStart="38dp" android:layout_marginEnd="38dp"
+                android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+            <ImageView android:id="@+id/ayah_next" android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_gravity="end|center_vertical" android:padding="6dp"
+                android:background="@drawable/widget_round" android:src="@drawable/widget_refresh"
+                android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        </FrameLayout>
     </LinearLayout>
 </FrameLayout>

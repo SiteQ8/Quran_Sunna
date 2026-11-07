@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the tasbih as the reader left it: the count inside a ring that fills to
+     the phrase's target, the phrase under it and today's whole count; a tap
+     opens the counter; the picker shows widget_tasbih_preview -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools" tools:ignore="ContentDescription"
+    android:id="@+id/tasbih_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_paper" android:layoutDirection="locale">
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center" android:padding="12dp">
+        <ImageView android:id="@+id/tasbih_head" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetAccent" android:tintMode="src_in"/>
+        <FrameLayout android:layout_width="76dp" android:layout_height="76dp" android:layout_marginTop="4dp">
+            <ProgressBar android:id="@+id/tasbih_ring" style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:max="33" android:progress="0" android:progressDrawable="@drawable/widget_ring"/>
+            <ImageView android:id="@+id/tasbih_count" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center" android:maxWidth="60dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+                android:tint="@color/widgetInk" android:tintMode="src_in"/>
+        </FrameLayout>
+        <ImageView android:id="@+id/tasbih_phrase" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:layout_marginTop="5dp" android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetInk" android:tintMode="src_in"/>
+        <ImageView android:id="@+id/tasbih_total" android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:adjustViewBounds="true" android:scaleType="fitCenter"
+            android:tint="@color/widgetMuted" android:tintMode="src_in"/>
+    </LinearLayout>
+</FrameLayout>

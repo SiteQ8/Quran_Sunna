@@ -73,6 +73,9 @@ public final class PrayerWidget extends AppWidgetProvider {
         try { AyahWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "ayah widget not drawn", e); }
         try { KhatmaWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "khatma widget not drawn", e); }
         try { AdhkarWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "adhkar widget not drawn", e); }
+        try { DuaWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "dua widget not drawn", e); }
+        try { TasbihWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "tasbih widget not drawn", e); }
+        try { LogWidget.refresh(context); } catch (Exception e) { Log.w("sunnati", "log widget not drawn", e); }
         try {
             if (placed(context, manager)) wake(context);
             else cancel(context);

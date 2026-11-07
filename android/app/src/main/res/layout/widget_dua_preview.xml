@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the du'a of the day as widget_dua lays it out -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dua_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_paper" android:layoutDirection="locale">
+    <ImageView android:layout_width="130dp" android:layout_height="130dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center_horizontal"
+        android:paddingStart="16dp" android:paddingEnd="16dp" android:paddingTop="14dp" android:paddingBottom="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
+            <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1"
+                android:text="@string/widgetDuaName" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="@string/widgetSample30" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
+        </LinearLayout>
+        <TextView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"
+            android:layout_marginTop="6dp" android:gravity="center" android:textDirection="rtl"
+            android:text="@string/widgetSample35" android:textSize="17sp" android:textColor="@color/widgetInk"
+            android:lineSpacingMultiplier="1.25" android:maxLines="4" android:ellipsize="end"
+            android:autoSizeTextType="uniform" android:autoSizeMinTextSize="12sp" android:autoSizeMaxTextSize="19sp"/>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="30dp">
+            <ImageView android:layout_width="36dp" android:layout_height="1.5dp" android:layout_gravity="center"
+                android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
+            <ImageView android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_gravity="end|center_vertical" android:padding="6dp"
+                android:background="@drawable/widget_round" android:src="@drawable/widget_refresh"
+                android:tint="@color/widgetAccent" android:tintMode="src_in" android:importantForAccessibility="no"/>
+        </FrameLayout>
+    </LinearLayout>
+</FrameLayout>

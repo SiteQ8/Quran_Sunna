@@ -28,8 +28,14 @@
             android:autoSizeTextType="uniform" android:autoSizeMinTextSize="14sp" android:autoSizeMaxTextSize="26sp"/>
         <ImageView android:layout_width="36dp" android:layout_height="1.5dp"
             android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
-        <TextView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="@string/widgetSample5" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="30dp" android:layout_marginTop="4dp">
+            <TextView android:id="@+id/ayah_ref" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center" android:layout_marginStart="38dp" android:layout_marginEnd="38dp"
+                android:text="@string/widgetSample5" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1" android:ellipsize="end"/>
+            <ImageView android:layout_width="30dp" android:layout_height="30dp"
+                android:layout_gravity="end|center_vertical" android:padding="6dp"
+                android:background="@drawable/widget_round" android:src="@drawable/widget_refresh"
+                android:tint="@color/widgetAccent" android:tintMode="src_in" android:importantForAccessibility="no"/>
+        </FrameLayout>
     </LinearLayout>
 </FrameLayout>

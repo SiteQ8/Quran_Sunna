@@ -21,3 +21,17 @@
 "أتممتها اليوم" = "Terminées aujourd'hui";
 "افتح التطبيق لحساب الأوقات" = "Ouvrez l'application pour calculer les horaires";
 "افتح التطبيق" = "Ouvrez l'application";
+
+/* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
+"دعاء اليوم" = "Invocation du jour";
+"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Une invocation chaque jour, une autre d'un seul geste";
+"المسبحة" = "Tasbih";
+"ذكرك وعدّه، والمسبحة على بعد لمسة" = "Votre dhikr et son compte, le compteur à portée de main";
+"صلواتي اليوم" = "Mes prières du jour";
+"صلوات اليوم الخمس وما علّمته منها" = "Les cinq prières du jour et celles que vous avez marquées";
+"آية أخرى" = "Un autre verset";
+"دعاء آخر" = "Une autre invocation";
+"الهدف" = "Objectif";
+"مجموع اليوم" = "Total du jour";
+"صلّيت" = "Accomplie";
+"صلّيت الصلوات الخمس" = "Les cinq prières accomplies";

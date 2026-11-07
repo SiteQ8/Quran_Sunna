@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.130';
+  var VERSION = '8.87.131';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -1768,13 +1768,13 @@
   if (window.navigator && window.navigator.serviceWorker) {
     window.navigator.serviceWorker.addEventListener('message', function (event) {
       var d = event.data || {};
-      if (d.type === 'came-from' && d.kind) cameFrom(String(d.kind).replace(/[^a-zA-Z]/g, ''));
+      if (d.type === 'came-from' && d.kind) cameFrom(String(d.kind).replace(/[^a-zA-Z0-9]/g, ''));
     });
   }
 
   /* the wrapper opens the site with ?from=<kind> when a notification was
          tapped and the app was not already running */
-      var from = (window.location.search.match(/[?&]from=([a-zA-Z]+)/) || [])[1];
+      var from = (window.location.search.match(/[?&]from=([a-zA-Z0-9]+)/) || [])[1];
       if (from) window.setTimeout(function () { cameFrom(from); }, 1800);
       window.setTimeout(function () {
         maybeExplainChrome();
@@ -4669,6 +4669,26 @@
      which is how the printed mushaf keeps its shape. */
   function fitPrintedLines(body) {
     var lines = body.querySelectorAll('.mad-line');
+    /* A line measured before the mushaf's face has arrived is measured in
+       the wider face standing in for it, and kept that narrow once the real
+       one draws: opened cold from the ayah widget, every line of the page
+       came out short of the margin and small. So the lines are fitted again
+       the moment the face is there. */
+    var fonts = document.fonts;
+    if (lines.length && fonts && fonts.check && fonts.load && !body.waitedForMushafFace) {
+      var face = "400 20px 'Amiri Quran'";
+      /* three letters of the mushaf to ask the face for, made from their
+         numbers so they are not taken for words to be translated */
+      var letters = String.fromCharCode(0x0628, 0x0633, 0x0645);
+      var here = false;
+      try { here = fonts.check(face, letters); } catch (e) { here = true; }
+      if (!here) {
+        body.waitedForMushafFace = true;
+        fonts.load(face, letters).catch(function () {}).then(function () {
+          if (body.isConnected !== false) fitPrintedLines(body);
+        });
+      }
+    }
     [].forEach.call(lines, function (line) {
       line.style.transform = '';
       var room = line.clientWidth;
@@ -7043,7 +7063,9 @@
       next: 'الصلاة القادمة', iqama: 'الإقامة', ayah: 'آية اليوم', khatma: 'ختمتي', wird: 'وردك اليوم',
       page: 'صفحة', of: 'من', adhkar: 'الأذكار', done: 'أتممتها اليوم', open: 'افتح التطبيق لحساب الأوقات',
       /* a widget with no times to work out asks only that the app be opened */
-      openApp: 'افتح التطبيق'
+      openApp: 'افتح التطبيق',
+      dua: 'دعاء اليوم', tasbih: 'المسبحة', target: 'الهدف', today: 'مجموع اليوم', reached: 'بلغت الهدف',
+      log: 'صلواتي اليوم', prayed: 'صلّيت', allPrayed: 'صلّيت الصلوات الخمس', anotherAyah: 'آية أخرى', anotherDua: 'دعاء آخر'
     };
     Object.keys(w).forEach(function (k) { w[k] = tongue(w[k]); });
     return w;
@@ -7076,6 +7098,56 @@
     var pos = ayahOfDay(day);
     var meta = surahMeta(pos.s);
     return { t: Mushaf.ayah(pos.s, pos.a), ref: tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a)), page: Mushaf.pageOf(pos.s, pos.a) };
+  }
+
+  /* The ayat a widget turns to when its refresh is tapped: spread over the
+     whole mushaf by a stride prime to its 6236 ayat, so the next one is from
+     another surah, and each short enough to be read on a widget. The same
+     day gives the same ones, so the widget and the page agree. */
+  function moreAyat(day, count) {
+    if (typeof Mushaf === 'undefined' || !Mushaf.ready()) return [];
+    var first = ayahOfDay(day);
+    var seed = Mushaf.globalIndex ? Mushaf.globalIndex(first.s, first.a) : 0;
+    var out = [], seen = {};
+    seen[first.s] = true;
+    for (var k = 1; out.length < count && k < count * 8; k++) {
+      var pos = Mushaf.fromGlobalIndex(((seed + k * 997) % 6236) + 1);
+      if (!pos || seen[pos.s] || Mushaf.ayah(pos.s, pos.a).length > AYAH_OF_DAY_LONGEST) continue;
+      seen[pos.s] = true;
+      var meta = surahMeta(pos.s);
+      out.push({ t: Mushaf.ayah(pos.s, pos.a), ref: tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(pos.a)), page: Mushaf.pageOf(pos.s, pos.a) });
+    }
+    return out;
+  }
+
+  /* The du'a of the day from the book of du'as, the topic named with it,
+     and the ones after it a widget's refresh turns to: short enough to be
+     read on a widget, a different topic each time. */
+  var DUA_OF_DAY_LONGEST = 200;
+  function duasOfDay(day, count) {
+    var flat = [];
+    duaTopics().forEach(function (t) { t.i.forEach(function (line) { flat.push({ t: line, n: t.n, id: t.id }); }); });
+    if (!flat.length) return [];
+    var noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
+    var seed = Math.floor(noon.getTime() / 86400000);
+    var out = [], last = '';
+    for (var k = 0; out.length < count && k < count * 12; k++) {
+      var i = (seed * 7 + k * 31) % flat.length;
+      var d = flat[i];
+      if (d.t.length > DUA_OF_DAY_LONGEST || d.id === last) continue;
+      last = d.id;
+      out.push({ t: tongue(d.t), n: tongue(d.n), i: i });
+    }
+    return out;
+  }
+
+  /* the count of the tasbeeh as the reader left it, with its phrase */
+  function widgetTasbih() {
+    var list = phraseList();
+    var kept = Store.get('tasbihNow');
+    var i = kept && list[+kept.i] ? +kept.i : 0;
+    var counted = kept && kept.d === Store.dayKey() ? Math.max(0, +kept.c || 0) : 0;
+    return { t: tongue(list[i].t), count: counted, target: list[i].target, total: Math.max(0, +(Store.day().tasbih || 0)) };
   }
 
   function widgetData() {
@@ -7130,7 +7202,9 @@
       digits: window.I18n && window.I18n.figures ? window.I18n.figures('0123456789') : '0123456789',
       days: days,
       khatma: { read: read, total: TOTAL_PAGES, page: +Store.get('lastPage') || 1, started: !!Store.get('khatmaStart'),
-        wird: wird && wird.pages ? tongue(pages(wird.pages)) : '', from: wird && wird.from ? wird.from : 0 }
+        wird: wird && wird.pages ? tongue(pages(wird.pages)) : '', from: wird && wird.from ? wird.from : 0 },
+      /* what the refresh of the ayah and du'a widgets turns to, today's */
+      ayat: moreAyat(now, 24), duas: duasOfDay(now, 25), tasbih: widgetTasbih()
     };
   }
 
@@ -7152,6 +7226,20 @@
       go('reader');
       return true;
     }
+    /* the ayah a widget turned to after its refresh, by its page */
+    var page = /^widgetPage(\d{1,3})$/.exec(kind);
+    if (page) { openPage(+page[1]); return true; }
+    var dua = /^widgetDua(\d{1,4})?$/.exec(kind);
+    if (dua) {
+      var all = [];
+      duaTopics().forEach(function (t) { t.i.forEach(function () { all.push(t.id); }); });
+      var topic = dua[1] !== undefined ? all[+dua[1]] : null;
+      go('dua');
+      if (topic) openDuaTheme(topic);
+      return true;
+    }
+    if (kind === 'widgetTasbih') { go('tasbih'); return true; }
+    if (kind === 'widgetLog') { go('prayers'); return true; }
     if (kind === 'widgetKhatma') { openPage(+Store.get('lastPage') || 1); return true; }
     if (kind === 'widgetAdhkar') { openAzkar(azkarForNow()); return true; }
     return false;
@@ -11851,7 +11939,11 @@
     var homeFit = 0;
     window.addEventListener('resize', function () {
       window.clearTimeout(homeFit);
-      homeFit = window.setTimeout(refitHome, 120);
+      homeFit = window.setTimeout(function () {
+        refitHome();
+        /* a phone turned on its side gives the printed lines another width */
+        if (state.view === 'page' && !isBook() && $('page-body')) fitPrintedLines($('page-body'));
+      }, 120);
     });
     if (document.fonts && document.fonts.ready) document.fonts.ready.then(refitHome);
     /* a face is fetched only when a page first writes in its script, after
