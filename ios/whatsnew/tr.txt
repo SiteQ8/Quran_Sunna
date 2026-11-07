@@ -1,5 +1,5 @@
-Sunnati'nin widget'ları artık uygulamanın yazı tipini ve köşesinde İslami bir geçme süslemesini taşıyor, daha fazla boyutta: sıradaki namaz, bugünün namazları, hicri tarih, günün ayeti, hatminiz ve vaktin zikirleri; vakitler uygulamanın sizin dilinizde yazdığı gibi yazılıyor.
+Üç yeni widget: Kur'an'dan ve Sünnetten kaynağıyla günün duası, sayısı ve hedefiyle tesbihiniz ve kıldıklarınızla bugünkü namazlarınız. Günün ayetinde başka bir sureden ayete geçen bir düğme var, bugünkü namazlar Hicri tarihin altında Miladi tarihi gösteriyor ve mushaf artık widget'tan doğru boyutta açılıyor.
 
-Ezan ve gece namazı bildirimleri artık uygulamanın dilinde geliyor. Ayarlarda ezanı kapatıp açan bir anahtar var ve Peygamberimize salavat hatırlatması vaktinde geliyor. Yakındaki camiler artık Apple Haritalar'da çevrenizde aranıyor.
+Tüm widget'lar uygulamanın yazı tipini ve köşesinde İslami bir süslemeyi taşıyor, daha fazla boyutta. Ezan ve gece namazı bildirimleri uygulamanın dilinde geliyor, Ayarlar'da ezanı kapatıp açan bir anahtar var ve Peygamber'e salavat hatırlatması vaktinde geliyor.
 
-Bağımsız bir inceleme düzeltmeler getirdi: cuma namazı her yerde Cuma olarak anılıyor, surelerin faziletlerinden zayıf rivayetler çıkarıldı, duaların yazımı düzeltildi, kamet geri sayımı sonuna kadar sürüyor ve saat değişikliği gününde vakitler doğru.
+Bağımsız bir inceleme düzeltmelere yol açtı: Cuma namazı her yerde Cuma olarak anılıyor, surelerin faziletlerinden zayıf rivayetler çıkarıldı, duaların yazımı düzeltildi, kamet geri sayımı sonuna kadar işliyor ve namaz vakitleri saat değişimi gününde doğru.

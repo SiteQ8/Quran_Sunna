@@ -84,7 +84,7 @@
     <string name="crashCopied">An kwafa</string>
     <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
     <string name="widgetDuaName">Addu\'ar yau</string>
-    <string name="widgetDuaDescription">Addu\'a kowace rana, wata kuma da taɓawa ɗaya</string>
+    <string name="widgetDuaDescription">Addu\'a daga Alƙur\'ani ko Sunna kowace rana tare da tushenta, wata kuma da taɓawa ɗaya</string>
     <string name="widgetTasbihName">Carbi</string>
     <string name="widgetTasbihDescription">Zikirinka da adadinsa, carbin kuma da taɓawa ɗaya</string>
     <string name="widgetLogName">Sallolina na yau</string>
@@ -92,11 +92,13 @@
     <string name="widgetAnotherAyah">Wata aya</string>
     <string name="widgetAnotherDua">Wata addu\'a</string>
     <string name="widgetTarget">Manufa</string>
+    <string name="widgetReached">Kun cim ma buri</string>
     <string name="widgetToday">Jimillar yau</string>
     <string name="widgetPrayed">Na yi</string>
     <string name="widgetAllPrayed">Na yi salloli biyar</string>
-    <string name="widgetSample30">Arziki</string>
+    <string name="widgetSample30">Addu\'o\'i daga Alƙur\'ani</string>
     <string name="widgetSample31">3 cikin 5</string>
     <string name="widgetSample33">Jimillar yau 120</string>
+    <string name="widgetSample37">Al-Baqara 201</string>
     <string name="widgetSample36">21</string>
 </resources>

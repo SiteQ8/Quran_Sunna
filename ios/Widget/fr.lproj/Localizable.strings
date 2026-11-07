@@ -24,7 +24,7 @@
 
 /* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
 "دعاء اليوم" = "Invocation du jour";
-"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Une invocation chaque jour, une autre d'un seul geste";
+"دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة" = "Une invocation du Coran ou de la Sunna chaque jour, avec sa source, une autre d'un seul geste";
 "المسبحة" = "Tasbih";
 "ذكرك وعدّه، والمسبحة على بعد لمسة" = "Votre dhikr et son compte, le compteur à portée de main";
 "صلواتي اليوم" = "Mes prières du jour";
@@ -35,3 +35,4 @@
 "مجموع اليوم" = "Total du jour";
 "صلّيت" = "Accomplie";
 "صلّيت الصلوات الخمس" = "Les cinq prières accomplies";
+"بلغت الهدف" = "Objectif atteint";

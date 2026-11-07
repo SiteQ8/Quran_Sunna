@@ -84,7 +84,7 @@
     <string name="crashCopied">Kopyalandı</string>
     <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
     <string name="widgetDuaName">Günün duası</string>
-    <string name="widgetDuaDescription">Her gün bir dua, bir dokunuşla başkası</string>
+    <string name="widgetDuaDescription">Her gün Kur\'an\'dan veya Sünnetten kaynağıyla bir dua, bir dokunuşla başkası</string>
     <string name="widgetTasbihName">Tesbih</string>
     <string name="widgetTasbihDescription">Zikriniz ve sayısı, sayaç bir dokunuş uzakta</string>
     <string name="widgetLogName">Bugünkü namazlarım</string>
@@ -92,11 +92,13 @@
     <string name="widgetAnotherAyah">Başka bir ayet</string>
     <string name="widgetAnotherDua">Başka bir dua</string>
     <string name="widgetTarget">Hedef</string>
+    <string name="widgetReached">Hedefe ulaştınız</string>
     <string name="widgetToday">Bugünün toplamı</string>
     <string name="widgetPrayed">Kılındı</string>
     <string name="widgetAllPrayed">Beş vakit kılındı</string>
-    <string name="widgetSample30">Rızık</string>
+    <string name="widgetSample30">Kur\'an\'dan dualar</string>
     <string name="widgetSample31">3 / 5</string>
     <string name="widgetSample33">Bugünün toplamı 120</string>
+    <string name="widgetSample37">Bakara 201</string>
     <string name="widgetSample36">21</string>
 </resources>

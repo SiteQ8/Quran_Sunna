@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.131';
+  var VERSION = '8.87.132';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -7120,23 +7120,28 @@
     return out;
   }
 
-  /* The du'a of the day from the book of du'as, the topic named with it,
-     and the ones after it a widget's refresh turns to: short enough to be
-     read on a widget, a different topic each time. */
+  /* The du'a of the day, and the ones after it a widget's refresh turns to,
+     from the du'as of the Quran and the Sunnah the du'a page lists, each with
+     its source: the surah and ayah, or the book of hadith. The du'as of an
+     occasion (a wedding, a funeral) are left to their moment, and the book of
+     du'as, which names no source for its lines, is not drawn on. */
   var DUA_OF_DAY_LONGEST = 200;
   function duasOfDay(day, count) {
-    var flat = [];
-    duaTopics().forEach(function (t) { t.i.forEach(function (line) { flat.push({ t: line, n: t.n, id: t.id }); }); });
-    if (!flat.length) return [];
+    if (typeof DUAS === 'undefined') return [];
+    var pool = [];
+    DUAS.forEach(function (g, gi) {
+      if (/مناسبات/.test(g.cat)) return;
+      g.items.forEach(function (d, di) {
+        if (d.r && d.t.length <= DUA_OF_DAY_LONGEST) pool.push({ t: d.t, n: g.cat, r: d.r, i: gi * 100 + di });
+      });
+    });
+    if (!pool.length) return [];
     var noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
-    var seed = Math.floor(noon.getTime() / 86400000);
-    var out = [], last = '';
-    for (var k = 0; out.length < count && k < count * 12; k++) {
-      var i = (seed * 7 + k * 31) % flat.length;
-      var d = flat[i];
-      if (d.t.length > DUA_OF_DAY_LONGEST || d.id === last) continue;
-      last = d.id;
-      out.push({ t: tongue(d.t), n: tongue(d.n), i: i });
+    var start = Math.floor(noon.getTime() / 86400000) % pool.length;
+    var out = [];
+    for (var k = 0; k < Math.min(count, pool.length); k++) {
+      var d = pool[(start + k) % pool.length];
+      out.push({ t: d.t, n: tongue(d.n), r: tongue(d.r), i: d.i });
     }
     return out;
   }
@@ -7229,15 +7234,8 @@
     /* the ayah a widget turned to after its refresh, by its page */
     var page = /^widgetPage(\d{1,3})$/.exec(kind);
     if (page) { openPage(+page[1]); return true; }
-    var dua = /^widgetDua(\d{1,4})?$/.exec(kind);
-    if (dua) {
-      var all = [];
-      duaTopics().forEach(function (t) { t.i.forEach(function () { all.push(t.id); }); });
-      var topic = dua[1] !== undefined ? all[+dua[1]] : null;
-      go('dua');
-      if (topic) openDuaTheme(topic);
-      return true;
-    }
+    /* the du'a page, where the du'a of the day is listed with its source */
+    if (/^widgetDua\d{0,4}$/.test(kind)) { go('dua'); return true; }
     if (kind === 'widgetTasbih') { go('tasbih'); return true; }
     if (kind === 'widgetLog') { go('prayers'); return true; }
     if (kind === 'widgetKhatma') { openPage(+Store.get('lastPage') || 1); return true; }

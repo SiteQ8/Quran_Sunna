@@ -1,5 +1,5 @@
-Widget Sunnati kini memakai huruf aplikasi dan hiasan geometris Islam di sudutnya, dengan lebih banyak ukuran: salat berikutnya, salat hari ini, tanggal Hijriah, ayat hari ini, khatam Anda, dan zikir waktu ini, dengan jam yang ditulis seperti aplikasi menulisnya dalam bahasa Anda.
+Tiga widget baru: doa hari ini dari Al-Qur'an dan Sunnah beserta sumbernya, tasbih Anda dengan hitungan dan targetnya, serta salat Anda hari ini dengan yang sudah ditunaikan. Ayat hari ini punya tombol untuk beralih ke ayat dari surah lain, salat hari ini menampilkan tanggal Masehi di bawah tanggal Hijriah, dan mushaf kini terbuka dari widget dengan ukuran yang tepat.
 
-Notifikasi azan dan salat malam kini datang dalam bahasa aplikasi. Pengaturan memiliki sakelar untuk mematikan atau menyalakan azan, dan pengingat selawat kepada Nabi kini datang tepat waktu. Masjid terdekat kini dicari di sekitar Anda di Apple Maps.
+Semua widget memakai huruf aplikasi dan hiasan Islami di sudutnya, dalam lebih banyak ukuran. Notifikasi azan dan salat malam tiba dalam bahasa aplikasi, Pengaturan punya sakelar untuk mematikan atau menyalakan azan, dan pengingat selawat kepada Nabi tiba tepat waktu.
 
-Tinjauan independen menghasilkan perbaikan: salat Jumat disebut Jumat di semua tempat, riwayat lemah dihapus dari keutamaan surah, ejaan doa diperbaiki, hitungan mundur iqamah berjalan sampai habis, dan jadwal salat tepat pada hari pergantian jam.
+Tinjauan independen menghasilkan perbaikan: salat hari Jumat disebut Jumat di semua tempat, riwayat lemah dihapus dari keutamaan surah, ejaan doa diperbaiki, hitung mundur ikamah berjalan sampai akhir, dan waktu salat tepat pada hari pergantian jam.

@@ -24,7 +24,7 @@
 
 /* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
 "دعاء اليوم" = "Doa hari ini";
-"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Doa setiap hari dari kumpulan doa aplikasi, doa lain dengan satu ketukan";
+"دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة" = "Doa dari Al-Qur'an atau Sunnah setiap hari beserta sumbernya, doa lain dengan satu ketukan";
 "المسبحة" = "Tasbih";
 "ذكرك وعدّه، والمسبحة على بعد لمسة" = "Zikir Anda dan hitungannya, penghitung satu ketukan saja";
 "صلواتي اليوم" = "Salatku hari ini";
@@ -35,3 +35,4 @@
 "مجموع اليوم" = "Total hari ini";
 "صلّيت" = "Sudah salat";
 "صلّيت الصلوات الخمس" = "Lima salat sudah ditunaikan";
+"بلغت الهدف" = "Target tercapai";
