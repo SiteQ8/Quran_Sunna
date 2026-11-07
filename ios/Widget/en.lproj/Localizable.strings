@@ -23,15 +23,16 @@
 "افتح التطبيق" = "Open the app";
 
 /* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
-"دعاء اليوم" = "Du'a of the day";
-"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "A du'a each day from the app's book of du'as, another one a tap away";
+"دعاء اليوم" = "Dua of the day";
+"دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة" = "A dua from the Quran or the Sunnah each day, with its source, another one a tap away";
 "المسبحة" = "Tasbih";
 "ذكرك وعدّه، والمسبحة على بعد لمسة" = "Your dhikr and its count, the counter a tap away";
 "صلواتي اليوم" = "My prayers today";
 "صلوات اليوم الخمس وما علّمته منها" = "Today's five prayers and the ones you have marked prayed";
 "آية أخرى" = "Another ayah";
-"دعاء آخر" = "Another du'a";
+"دعاء آخر" = "Another dua";
 "الهدف" = "Target";
 "مجموع اليوم" = "Today's total";
 "صلّيت" = "Prayed";
 "صلّيت الصلوات الخمس" = "All five prayed";
+"بلغت الهدف" = "Target reached";

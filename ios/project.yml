@@ -11,8 +11,8 @@ options:
   # project; the workflow chooses the real Xcode by looking at the machine.
   xcodeVersion: "26.0"
 settings:
-  MARKETING_VERSION: "8.87.131"
-  CURRENT_PROJECT_VERSION: "417"
+  MARKETING_VERSION: "8.87.132"
+  CURRENT_PROJECT_VERSION: "418"
   DEVELOPMENT_TEAM: $(DEVELOPMENT_TEAM)
   SWIFT_VERSION: "5.0"
 targets:
@@ -65,6 +65,9 @@ targets:
     dependencies:
       - sdk: WidgetKit.framework
       - sdk: SwiftUI.framework
+      # the refresh buttons are iOS 17's; linked weakly so iOS 15 still opens the widget
+      - sdk: AppIntents.framework
+        weak: true
     entitlements:
       path: Widget/Widget.entitlements
       properties:

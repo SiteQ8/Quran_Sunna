@@ -84,7 +84,7 @@
     <string name="crashCopied">کاپی ہو گیا</string>
     <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
     <string name="widgetDuaName">آج کی دعا</string>
-    <string name="widgetDuaDescription">ہر دن ایک دعا، ایک لمس سے دوسری</string>
+    <string name="widgetDuaDescription">ہر دن قرآن یا سنت سے ایک دعا اس کے حوالے کے ساتھ، ایک لمس سے دوسری</string>
     <string name="widgetTasbihName">تسبیح</string>
     <string name="widgetTasbihDescription">آپ کا ذکر اور اس کی گنتی، تسبیح ایک لمس پر</string>
     <string name="widgetLogName">آج میری نمازیں</string>
@@ -92,11 +92,13 @@
     <string name="widgetAnotherAyah">دوسری آیت</string>
     <string name="widgetAnotherDua">دوسری دعا</string>
     <string name="widgetTarget">ہدف</string>
+    <string name="widgetReached">ہدف پورا ہو گیا</string>
     <string name="widgetToday">آج کا مجموعہ</string>
     <string name="widgetPrayed">ادا کی</string>
     <string name="widgetAllPrayed">پانچوں نمازیں ادا ہو گئیں</string>
-    <string name="widgetSample30">رزق</string>
+    <string name="widgetSample30">قرآنی دعائیں</string>
     <string name="widgetSample31">3 / 5</string>
     <string name="widgetSample33">آج کا مجموعہ 120</string>
+    <string name="widgetSample37">البقرہ 201</string>
     <string name="widgetSample36">21</string>
 </resources>

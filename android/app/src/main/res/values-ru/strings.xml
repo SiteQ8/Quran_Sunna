@@ -84,7 +84,7 @@
     <string name="crashCopied">Скопировано</string>
     <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
     <string name="widgetDuaName">Дуа дня</string>
-    <string name="widgetDuaDescription">Дуа на каждый день, другое одним касанием</string>
+    <string name="widgetDuaDescription">Дуа из Корана или Сунны на каждый день с источником, другое одним касанием</string>
     <string name="widgetTasbihName">Тасбих</string>
     <string name="widgetTasbihDescription">Ваш зикр и его счёт, счётчик в одно касание</string>
     <string name="widgetLogName">Мои намазы сегодня</string>
@@ -92,11 +92,13 @@
     <string name="widgetAnotherAyah">Другой аят</string>
     <string name="widgetAnotherDua">Другое дуа</string>
     <string name="widgetTarget">Цель</string>
+    <string name="widgetReached">Цель достигнута</string>
     <string name="widgetToday">Всего за сегодня</string>
     <string name="widgetPrayed">Совершён</string>
     <string name="widgetAllPrayed">Все пять намазов совершены</string>
-    <string name="widgetSample30">Пропитание</string>
+    <string name="widgetSample30">Дуа из Корана</string>
     <string name="widgetSample31">3 из 5</string>
     <string name="widgetSample33">Всего за сегодня 120</string>
+    <string name="widgetSample37">Аль-Бакара 201</string>
     <string name="widgetSample36">21</string>
 </resources>

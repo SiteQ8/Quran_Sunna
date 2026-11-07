@@ -11,9 +11,9 @@ import android.widget.RemoteViews;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/** The du'a of the day from the app's book of du'as, with its topic; the
- *  refresh turns to a du'a of another topic, round to the day's own, and a
- *  tap opens the topic of the one shown. */
+/** The du'a of the day from the Quran and the Sunnah, with its kind and its
+ *  source under it, the surah and ayah or the book of hadith; the refresh
+ *  turns to another, round to the day's own, and a tap opens the du'as. */
 public final class DuaWidget extends AppWidgetProvider {
     static final String ACTION_NEXT = "com.eworldq8.sunnati.DUA_NEXT";
 
@@ -62,12 +62,13 @@ public final class DuaWidget extends AppWidgetProvider {
             WidgetText.PAPER_SMALL_BOLD, all, 0);
         int wrap = WidgetText.px(context, size.getWidth() - 32);
         WidgetText.put(context, views, R.id.dua_topic, dua == null ? "" : dua.optString("n"), WidgetText.PAPER_NOTE_SEMI, all, 0);
+        WidgetText.put(context, views, R.id.dua_ref, dua == null ? "" : dua.optString("r"), WidgetText.PAPER_NOTE_CENTER, all, wrap - WidgetText.px(context, 76));
         if (dua == null) {
             WidgetText.put(context, views, R.id.dua_text, WidgetStore.word(all, "openApp", context.getString(R.string.widgetOpenApp)),
                 WidgetText.PAPER_NOTE_CENTER, all, wrap);
         } else {
             /* the room between the heading and the rule */
-            int room = WidgetText.px(context, Math.max(40f, size.getHeight() - 26 - 20 - 10 - 30));
+            int room = WidgetText.px(context, Math.max(40f, size.getHeight() - 26 - 20 - 10 - 2 - 34));
             float most = size.getHeight() >= 260 ? 24f : size.getHeight() >= 180 ? 20f : 17f;
             WidgetText.putFit(context, views, R.id.dua_text, dua.optString("t"), WidgetText.DUA, all, wrap, room, most);
         }

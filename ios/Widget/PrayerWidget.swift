@@ -99,6 +99,8 @@ struct WDay: Codable {
 struct WDua: Codable {
   let t: String
   let n: String
+  /* its source: the surah and ayah, or the book of hadith */
+  var r: String? = nil
   var i: Int? = nil
 }
 
@@ -805,8 +807,8 @@ struct AyahView: View {
     /* the day's own ayah, then the others the page handed, as far round as
        the refresh has been tapped today */
     let own = data?.day(entry.date)?.ayah
-    let pool = own == nil ? [] : [own!] + (data?.ayat ?? [])
-    let turn = pool.isEmpty ? 0 : Turn.count("ayah") % pool.count
+    let pool: [WAyah] = own.map { [$0] + (data?.ayat ?? []) } ?? []
+    let turn = pool.isEmpty ? 0 : Turn.count("ayah", on: entry.date) % pool.count
     let ayah = pool.isEmpty ? nil : pool[turn]
     let page = ayah?.page ?? 0
     let large = family == .systemLarge
@@ -994,22 +996,24 @@ enum Turn {
   /* read afresh each time: a shared object kept in a static would not be safe across threads */
   private static var store: UserDefaults? { UserDefaults(suiteName: "group.com.eworldq8.sunnati") }
 
-  private static func today() -> String {
+  private static func day(_ at: Date) -> String {
     let f = DateFormatter()
     f.calendar = Calendar(identifier: .gregorian)
     f.locale = Locale(identifier: "en_US_POSIX")
     f.dateFormat = "yyyy-MM-dd"
-    return f.string(from: Date())
+    return f.string(from: at)
   }
 
-  static func count(_ key: String) -> Int {
-    guard let s = store, s.string(forKey: "turnDay_" + key) == today() else { return 0 }
+  /* by the entry's own date: an entry drawn ahead for after midnight opens
+     the new day on its own ayah, not on the one turned to the day before */
+  static func count(_ key: String, on at: Date) -> Int {
+    guard let s = store, s.string(forKey: "turnDay_" + key) == day(at) else { return 0 }
     return max(0, s.integer(forKey: "turn_" + key))
   }
 
   static func next(_ key: String) {
-    let now = count(key) + 1
-    store?.set(today(), forKey: "turnDay_" + key)
+    let now = count(key, on: Date()) + 1
+    store?.set(day(Date()), forKey: "turnDay_" + key)
     store?.set(now, forKey: "turn_" + key)
   }
 }
@@ -1052,7 +1056,7 @@ struct DuaView: View {
 
   var body: some View {
     let pool = data?.duas ?? []
-    let dua = pool.isEmpty ? nil : pool[Turn.count("dua") % pool.count]
+    let dua = pool.isEmpty ? nil : pool[Turn.count("dua", on: entry.date) % pool.count]
     let large = family == .systemLarge
     return VStack(spacing: 6) {
       HStack {
@@ -1069,8 +1073,11 @@ struct DuaView: View {
         .minimumScaleFactor(0.6)
         .environment(\.layoutDirection, .rightToLeft)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+      Capsule().fill(Palette.rule.opacity(0.7)).frame(width: 36, height: 1.5)
+      /* its source in the middle, and at the end the refresh */
       ZStack(alignment: .trailing) {
-        Capsule().fill(Palette.rule.opacity(0.7)).frame(width: 36, height: 1.5).frame(maxWidth: .infinity)
+        Text(dua?.r ?? "").font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
+          .minimumScaleFactor(0.8).padding(.horizontal, 38).frame(maxWidth: .infinity)
         if dua != nil {
           if #available(iOSApplicationExtension 17.0, *) {
             Button(intent: NextDuaIntent()) { RefreshMark() }.buttonStyle(.plain)
@@ -1091,7 +1098,7 @@ struct DuaWidget: Widget {
       DuaView(entry: entry).widgetBackground(paperBack(entry.data))
     }
     .configurationDisplayName("دعاء اليوم")
-    .description("دعاء كل يوم من أدعية التطبيق، وغيره بلمسة")
+    .description("دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة")
     .supportedFamilies([.systemMedium, .systemLarge])
   }
 }
@@ -1110,7 +1117,7 @@ struct TasbihView: View {
     let count = today ? max(0, t?.count ?? 0) : 0
     let total = today ? max(0, t?.total ?? 0) : 0
     let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
-    let under = total > count ? "\(says(data, "today", "مجموع اليوم")) \(f(total))"
+    let under: String = total > count ? "\(says(data, "today", "مجموع اليوم")) \(f(total))"
       : count >= target ? says(data, "reached", "بلغت الهدف")
       : "\(says(data, "target", "الهدف")) \(f(target))"
     return VStack(spacing: 5) {
@@ -1158,7 +1165,7 @@ struct LogView: View {
     let next = five.firstIndex { !(marked && ($0.prayed ?? false)) && $0.when > entry.date }
     let prayed = done.filter { $0 }.count
     let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
-    let count = five.isEmpty ? says(data, "openApp", "افتح التطبيق")
+    let count: String = five.isEmpty ? says(data, "openApp", "افتح التطبيق")
       : prayed >= 5 ? says(data, "allPrayed", "صلّيت الصلوات الخمس")
       : "\(f(prayed)) \(says(data, "of", "من")) \(f(5))"
     return VStack(spacing: 10) {
@@ -1186,13 +1193,20 @@ struct LogView: View {
           }
           .frame(maxWidth: .infinity)
           .accessibilityElement(children: .ignore)
-          .accessibilityLabel(done[i] ? "\(p.label)، \(says(data, "prayed", "صلّيت"))" : p.label)
+          .accessibilityLabel(spoken(p.label, done[i]))
         }
       }
       .frame(maxHeight: .infinity)
     }
     .direction(data)
     .widgetURL(widgetLink("widgetLog"))
+  }
+}
+
+extension LogView {
+  /* a prayer's name, and that it is prayed */
+  func spoken(_ name: String, _ prayed: Bool) -> String {
+    prayed ? name + "، " + says(data, "prayed", "صلّيت") : name
   }
 }
 

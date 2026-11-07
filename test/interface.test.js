@@ -12366,8 +12366,9 @@ test('the ayah and du\'a widgets turn to others, and the tasbih and the prayers 
   const h = win.App.helpers;
   const d = h.widgetData();
   assert.ok(Array.isArray(d.ayat) && Array.isArray(d.duas), 'the refresh has others to turn to');
-  assert.ok(d.duas.length >= 10 && d.duas.every(function (x) { return x.t.length <= 200 && typeof x.i === 'number'; }));
-  assert.ok(d.duas.every(function (x, i) { return i === 0 || x.n !== d.duas[i - 1].n; }), 'each turn is another topic');
+  assert.ok(d.duas.every(function (x) { return !/occasion|مناسبات/i.test(x.n); }), 'no du\'a of an occasion');
+  assert.ok(d.duas.length >= 10 && d.duas.every(function (x) { return x.t.length <= 200 && x.r && typeof x.i === 'number'; }), 'each du\'a with its source');
+  assert.ok(new Set(d.duas.map(function (x) { return x.t; })).size === d.duas.length, 'each turn is another du\'a');
   assert.deepStrictEqual(Object.keys(d.tasbih).sort(), ['count', 't', 'target', 'total']);
   ['dua', 'tasbih', 'log', 'anotherAyah', 'anotherDua', 'allPrayed', 'target', 'today', 'reached', 'prayed'].forEach(function (k) { assert.ok(d.words[k], k); });
   /* a link may carry the page or the du'a it shows */

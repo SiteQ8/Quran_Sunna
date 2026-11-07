@@ -49,7 +49,7 @@ public final class TasbihWidget extends AppWidgetProvider {
         String phrase = t == null ? context.getString(R.string.widgetSample34) : t.optString("t");
         WidgetText.put(context, views, R.id.tasbih_phrase, phrase, WidgetText.TASBIH_PHRASE, all, 0);
         String under = count >= target
-            ? WidgetStore.word(all, "reached", context.getString(R.string.widgetTarget))
+            ? WidgetStore.word(all, "reached", context.getString(R.string.widgetReached))
             : WidgetStore.word(all, "target", context.getString(R.string.widgetTarget)) + " " + WidgetStore.figures(all, String.valueOf(target));
         if (total > count) under = WidgetStore.word(all, "today", context.getString(R.string.widgetToday)) + " " + WidgetStore.figures(all, String.valueOf(total));
         WidgetText.put(context, views, R.id.tasbih_total, under, WidgetText.PAPER_NOTE, all, 0);

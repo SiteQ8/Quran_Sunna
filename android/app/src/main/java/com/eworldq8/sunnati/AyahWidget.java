@@ -83,7 +83,7 @@ public final class AyahWidget extends AppWidgetProvider {
             WidgetText.putFit(context, views, R.id.ayah_text, "\uFD3F" + t + "\uFD3E", WidgetText.AYAH, all, wrap, room, most);
             ref = ayah.optString("ref");
         }
-        WidgetText.put(context, views, R.id.ayah_ref, ref, low ? WidgetText.PAPER_NOTE : WidgetText.PAPER_NOTE_CENTER, all, low ? 0 : wrap);
+        WidgetText.put(context, views, R.id.ayah_ref, ref, low ? WidgetText.PAPER_NOTE : WidgetText.PAPER_NOTE_CENTER, all, low ? 0 : wrap - WidgetText.px(context, 76));
         return views;
     }
 }

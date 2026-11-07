@@ -84,7 +84,7 @@
     <string name="crashCopied">Disalin</string>
     <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
     <string name="widgetDuaName">Doa hari ini</string>
-    <string name="widgetDuaDescription">Doa setiap hari dari kumpulan doa aplikasi, doa lain dengan satu ketukan</string>
+    <string name="widgetDuaDescription">Doa dari Al-Qur\'an atau Sunnah setiap hari beserta sumbernya, doa lain dengan satu ketukan</string>
     <string name="widgetTasbihName">Tasbih</string>
     <string name="widgetTasbihDescription">Zikir Anda dan hitungannya, penghitung satu ketukan saja</string>
     <string name="widgetLogName">Salatku hari ini</string>
@@ -92,11 +92,13 @@
     <string name="widgetAnotherAyah">Ayat lain</string>
     <string name="widgetAnotherDua">Doa lain</string>
     <string name="widgetTarget">Target</string>
+    <string name="widgetReached">Target tercapai</string>
     <string name="widgetToday">Total hari ini</string>
     <string name="widgetPrayed">Sudah salat</string>
     <string name="widgetAllPrayed">Lima salat sudah ditunaikan</string>
-    <string name="widgetSample30">Rezeki</string>
+    <string name="widgetSample30">Doa-doa dari Al-Qur\'an</string>
     <string name="widgetSample31">3 dari 5</string>
     <string name="widgetSample33">Total hari ini 120</string>
+    <string name="widgetSample37">Al-Baqara 201</string>
     <string name="widgetSample36">21</string>
 </resources>

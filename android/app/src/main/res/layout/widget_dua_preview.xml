@@ -22,9 +22,12 @@
             android:text="@string/widgetSample35" android:textSize="17sp" android:textColor="@color/widgetInk"
             android:lineSpacingMultiplier="1.25" android:maxLines="4" android:ellipsize="end"
             android:autoSizeTextType="uniform" android:autoSizeMinTextSize="12sp" android:autoSizeMaxTextSize="19sp"/>
-        <FrameLayout android:layout_width="match_parent" android:layout_height="30dp">
-            <ImageView android:layout_width="36dp" android:layout_height="1.5dp" android:layout_gravity="center"
-                android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
+        <ImageView android:layout_width="36dp" android:layout_height="1.5dp"
+            android:background="@color/widgetOrnamentRule" android:importantForAccessibility="no"/>
+        <FrameLayout android:layout_width="match_parent" android:layout_height="30dp" android:layout_marginTop="4dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:layout_gravity="center" android:layout_marginStart="38dp" android:layout_marginEnd="38dp"
+                android:text="@string/widgetSample37" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
             <ImageView android:layout_width="30dp" android:layout_height="30dp"
                 android:layout_gravity="end|center_vertical" android:padding="6dp"
                 android:background="@drawable/widget_round" android:src="@drawable/widget_refresh"

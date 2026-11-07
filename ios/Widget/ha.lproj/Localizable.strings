@@ -24,7 +24,7 @@
 
 /* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
 "دعاء اليوم" = "Addu'ar yau";
-"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Addu'a kowace rana, wata kuma da taɓawa ɗaya";
+"دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة" = "Addu'a daga Alƙur'ani ko Sunna kowace rana tare da tushenta, wata kuma da taɓawa ɗaya";
 "المسبحة" = "Carbi";
 "ذكرك وعدّه، والمسبحة على بعد لمسة" = "Zikirinka da adadinsa, carbin kuma da taɓawa ɗaya";
 "صلواتي اليوم" = "Sallolina na yau";
@@ -35,3 +35,4 @@
 "مجموع اليوم" = "Jimillar yau";
 "صلّيت" = "Na yi";
 "صلّيت الصلوات الخمس" = "Na yi salloli biyar";
+"بلغت الهدف" = "Kun cim ma buri";
