@@ -28,6 +28,10 @@
                     android:adjustViewBounds="true" android:scaleType="fitCenter"
                     android:tint="@color/widgetMuted" android:tintMode="src_in"/>
             </LinearLayout>
+            <ImageView android:id="@+id/ayah_next" android:layout_width="28dp" android:layout_height="28dp"
+                android:layout_marginStart="8dp" android:padding="6dp"
+                android:background="@drawable/widget_round" android:src="@drawable/widget_refresh"
+                android:tint="@color/widgetAccent" android:tintMode="src_in"/>
         </LinearLayout>
         <!-- the ayah takes the rest of the page, and shrinks into it when long -->
         <ImageView android:id="@+id/ayah_text"

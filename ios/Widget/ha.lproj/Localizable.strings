@@ -21,3 +21,17 @@
 "أتممتها اليوم" = "An kammala yau";
 "افتح التطبيق لحساب الأوقات" = "Buɗe manhajar domin lissafa lokutan salla";
 "افتح التطبيق" = "Buɗe manhajar";
+
+/* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
+"دعاء اليوم" = "Addu'ar yau";
+"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Addu'a kowace rana, wata kuma da taɓawa ɗaya";
+"المسبحة" = "Carbi";
+"ذكرك وعدّه، والمسبحة على بعد لمسة" = "Zikirinka da adadinsa, carbin kuma da taɓawa ɗaya";
+"صلواتي اليوم" = "Sallolina na yau";
+"صلوات اليوم الخمس وما علّمته منها" = "Salloli biyar na yau da waɗanda ka yi alama";
+"آية أخرى" = "Wata aya";
+"دعاء آخر" = "Wata addu'a";
+"الهدف" = "Manufa";
+"مجموع اليوم" = "Jimillar yau";
+"صلّيت" = "Na yi";
+"صلّيت الصلوات الخمس" = "Na yi salloli biyar";

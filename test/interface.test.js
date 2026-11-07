@@ -12266,7 +12266,7 @@ test('widgets: the phone lists them in its own language, with Arabic and the nin
   const swift = read('ios/Widget/PrayerWidget.swift');
   const keys = [];
   swift.replace(/\.(?:configurationDisplayName|description)\("([^"]+)"\)/g, function (all, k) { keys.push(k); return all; });
-  assert.strictEqual(keys.length, 12, 'six widgets, each with a name and a description');
+  assert.strictEqual(keys.length, 18, 'nine widgets, each with a name and a description');
   ['ar', 'en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn', 'ur', 'fa'].forEach(function (lang) {
     const file = read('ios/Widget/' + lang + '.lproj/Localizable.strings');
     keys.forEach(function (k) {
@@ -12359,4 +12359,28 @@ test('the phones say their own words in the reader\'s language: channels, the ad
   const rows = sent[sent.length - 1];
   assert.ok(rows.length && rows.every(function (r) { return r.title && r.body; }), 'every adhan is handed its words');
   assert.ok(/^حان وقت /.test(rows[0].title));
+});
+
+test('the ayah and du\'a widgets turn to others, and the tasbih and the prayers of the day have widgets of their own', () => {
+  const { win } = boot();
+  const h = win.App.helpers;
+  const d = h.widgetData();
+  assert.ok(Array.isArray(d.ayat) && Array.isArray(d.duas), 'the refresh has others to turn to');
+  assert.ok(d.duas.length >= 10 && d.duas.every(function (x) { return x.t.length <= 200 && typeof x.i === 'number'; }));
+  assert.ok(d.duas.every(function (x, i) { return i === 0 || x.n !== d.duas[i - 1].n; }), 'each turn is another topic');
+  assert.deepStrictEqual(Object.keys(d.tasbih).sort(), ['count', 't', 'target', 'total']);
+  ['dua', 'tasbih', 'log', 'anotherAyah', 'anotherDua', 'allPrayed', 'target', 'today', 'reached', 'prayed'].forEach(function (k) { assert.ok(d.words[k], k); });
+  /* a link may carry the page or the du'a it shows */
+  assert.strictEqual(h.openFromWidget('widgetPage285'), true);
+  assert.strictEqual(h.openFromWidget('widgetDua' + d.duas[0].i), true);
+  assert.strictEqual(h.openFromWidget('widgetTasbih'), true);
+  assert.strictEqual(h.openFromWidget('widgetLog'), true);
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const manifest = read('android/app/src/main/AndroidManifest.xml');
+  ['DuaWidget', 'TasbihWidget', 'LogWidget'].forEach(function (c) { assert.ok(manifest.indexOf('android:name=".' + c + '"') !== -1, c); });
+  assert.ok(/kind\.replaceAll\("\[\^a-zA-Z0-9\]", ""\)/.test(read('android/app/src/main/java/com/eworldq8/sunnati/MainActivity.java')));
+  const swift = read('ios/Widget/PrayerWidget.swift');
+  ['DuaWidget()', 'TasbihWidget()', 'LogWidget()', 'Button(intent: NextAyahIntent())', 'Button(intent: NextDuaIntent())'].forEach(function (w) { assert.ok(swift.indexOf(w) !== -1, w); });
+  /* the printed page fitted again once the mushaf's face is there */
+  assert.ok(/waitedForMushafFace/.test(read('docs/js/app.js')));
 });

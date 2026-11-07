@@ -9,6 +9,7 @@
     <color name="widgetInk">#1d1a16</color>
     <color name="widgetMuted">#6b645a</color>
     <color name="widgetTrack">#1F9c2b2b</color>
+    <color name="widgetTrackStrong">#4D6b645a</color>
     <!-- the strapwork in the corner: the app's gold, faint on paper, and white
          fainter still on the painted skies -->
     <color name="widgetOrnament">#8CB08833</color>

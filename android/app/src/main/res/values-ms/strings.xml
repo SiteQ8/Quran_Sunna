@@ -82,4 +82,21 @@
     <string name="crashTitle">Sunnati terhenti, dan ini sebabnya</string>
     <string name="crashCopy">Salin</string>
     <string name="crashCopied">Disalin</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">Doa hari ini</string>
+    <string name="widgetDuaDescription">Doa setiap hari daripada kumpulan doa aplikasi, doa lain dengan satu sentuhan</string>
+    <string name="widgetTasbihName">Tasbih</string>
+    <string name="widgetTasbihDescription">Zikir anda dan kiraannya, pengira satu sentuhan sahaja</string>
+    <string name="widgetLogName">Solatku hari ini</string>
+    <string name="widgetLogDescription">Lima solat hari ini dan yang telah anda tanda</string>
+    <string name="widgetAnotherAyah">Ayat lain</string>
+    <string name="widgetAnotherDua">Doa lain</string>
+    <string name="widgetTarget">Sasaran</string>
+    <string name="widgetToday">Jumlah hari ini</string>
+    <string name="widgetPrayed">Sudah solat</string>
+    <string name="widgetAllPrayed">Lima solat telah ditunaikan</string>
+    <string name="widgetSample30">Rezeki</string>
+    <string name="widgetSample31">3 daripada 5</string>
+    <string name="widgetSample33">Jumlah hari ini 120</string>
+    <string name="widgetSample36">21</string>
 </resources>

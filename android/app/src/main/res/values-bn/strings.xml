@@ -82,4 +82,21 @@
     <string name="crashTitle">Sunnati থেমে গেছে, এর কারণ এই</string>
     <string name="crashCopy">কপি করুন</string>
     <string name="crashCopied">কপি হয়েছে</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">আজকের দোয়া</string>
+    <string name="widgetDuaDescription">প্রতিদিন একটি দোয়া, এক স্পর্শে আরেকটি</string>
+    <string name="widgetTasbihName">তাসবিহ</string>
+    <string name="widgetTasbihDescription">আপনার জিকির ও তার গণনা, এক স্পর্শে গণনাযন্ত্র</string>
+    <string name="widgetLogName">আজ আমার নামাজ</string>
+    <string name="widgetLogDescription">আজকের পাঁচ ওয়াক্ত ও যেগুলো আদায় চিহ্নিত করেছেন</string>
+    <string name="widgetAnotherAyah">অন্য আয়াত</string>
+    <string name="widgetAnotherDua">অন্য দোয়া</string>
+    <string name="widgetTarget">লক্ষ্য</string>
+    <string name="widgetToday">আজকের মোট</string>
+    <string name="widgetPrayed">আদায় করেছি</string>
+    <string name="widgetAllPrayed">পাঁচ ওয়াক্ত আদায় হয়েছে</string>
+    <string name="widgetSample30">রিজিক</string>
+    <string name="widgetSample31">৩ / ৫</string>
+    <string name="widgetSample33">আজকের মোট ১২০</string>
+    <string name="widgetSample36">২১</string>
 </resources>

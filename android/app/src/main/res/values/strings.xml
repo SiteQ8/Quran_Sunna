@@ -93,4 +93,24 @@
     <string name="crashTitle">Sunnati stopped, and this is why</string>
     <string name="crashCopy">Copy</string>
     <string name="crashCopied">Copied</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">Du\'a of the day</string>
+    <string name="widgetDuaDescription">A du\'a each day from the app\'s book of du\'as, another one a tap away</string>
+    <string name="widgetTasbihName">Tasbih</string>
+    <string name="widgetTasbihDescription">Your dhikr and its count, the counter a tap away</string>
+    <string name="widgetLogName">My prayers today</string>
+    <string name="widgetLogDescription">Today\'s five prayers and the ones you have marked prayed</string>
+    <string name="widgetAnotherAyah">Another ayah</string>
+    <string name="widgetAnotherDua">Another du\'a</string>
+    <string name="widgetTarget">Target</string>
+    <string name="widgetToday">Today\'s total</string>
+    <string name="widgetPrayed">Prayed</string>
+    <string name="widgetAllPrayed">All five prayed</string>
+    <string name="widgetSample30">Provision</string>
+    <string name="widgetSample31">3 of 5</string>
+    <string name="widgetSample33">Today\'s total 120</string>
+    <string name="widgetSample36">21</string>
+    <!-- the same in every language: a du'a and a dhikr as they are said -->
+    <string name="widgetSample34" translatable="false">سبحان الله</string>
+    <string name="widgetSample35" translatable="false">اللهم إني أسألك علما نافعا، ورزقا طيبا، وعملا متقبلا</string>
 </resources>

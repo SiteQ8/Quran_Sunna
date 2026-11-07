@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the tasbih as widget_tasbih lays it out -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/tasbih_root"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="@drawable/widget_paper" android:layoutDirection="locale">
+    <ImageView android:layout_width="150dp" android:layout_height="150dp" android:layout_gravity="top|end"
+        android:src="@drawable/widget_orn_band" android:tint="@color/widgetOrnament" android:tintMode="src_in"
+        android:importantForAccessibility="no"/>
+    <LinearLayout
+        android:layout_width="match_parent" android:layout_height="match_parent"
+        android:orientation="vertical" android:gravity="center" android:padding="12dp">
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/widgetTasbihName" android:textSize="12sp" android:textStyle="bold" android:textColor="@color/widgetAccent" android:maxLines="1"/>
+        <FrameLayout android:layout_width="76dp" android:layout_height="76dp" android:layout_marginTop="4dp">
+            <ProgressBar style="@android:style/Widget.ProgressBar.Horizontal"
+                android:layout_width="match_parent" android:layout_height="match_parent"
+                android:max="33" android:progress="21" android:progressDrawable="@drawable/widget_ring"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center"
+                android:text="@string/widgetSample36" android:textSize="22sp" android:textStyle="bold" android:textColor="@color/widgetInk"/>
+        </FrameLayout>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginTop="5dp"
+            android:text="@string/widgetSample34" android:textSize="13sp" android:textStyle="bold" android:textColor="@color/widgetInk" android:maxLines="1"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/widgetSample33" android:textSize="11sp" android:textColor="@color/widgetMuted" android:maxLines="1"/>
+    </LinearLayout>
+</FrameLayout>

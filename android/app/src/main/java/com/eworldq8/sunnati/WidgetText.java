@@ -97,6 +97,10 @@ final class WidgetText {
     static final Style KHATMA_SHARE = new Style(BOLD, 18, 0, 0, 0, 1, CENTER, true);
     static final Style ADHKAR_TITLE = new Style(BOLD, 20, 0, 0, 0, 2, START, false);
     static final Style AYAH = new Style(QURAN, 21, 0, 0, 0, 7, CENTER, false);
+    static final Style DUA = new Style(SEMIBOLD, 15, 0, 0, 0, 8, CENTER, false);
+    static final Style TASBIH_COUNT = new Style(BOLD, 22, 0, 0, 0, 1, CENTER, true);
+    static final Style TASBIH_PHRASE = new Style(BOLD, 13, 0, 0, 0, 1, CENTER, false);
+    static final Style LOG_NAME = new Style(BOLD, 11, 0, 0, 0, 1, CENTER, false);
 
     /* no word is drawn larger than this share of its size, however large the
        phone's text is set: a widget's cells do not grow with the words */

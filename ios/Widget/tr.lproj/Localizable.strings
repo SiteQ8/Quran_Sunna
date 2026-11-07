@@ -21,3 +21,17 @@
 "أتممتها اليوم" = "Bugün tamamlandı";
 "افتح التطبيق لحساب الأوقات" = "Vakitleri hesaplamak için uygulamayı açın";
 "افتح التطبيق" = "Uygulamayı açın";
+
+/* the widgets of the du'a, the tasbih and the prayers of the day, and their words */
+"دعاء اليوم" = "Günün duası";
+"دعاء كل يوم من أدعية التطبيق، وغيره بلمسة" = "Her gün bir dua, bir dokunuşla başkası";
+"المسبحة" = "Tesbih";
+"ذكرك وعدّه، والمسبحة على بعد لمسة" = "Zikriniz ve sayısı, sayaç bir dokunuş uzakta";
+"صلواتي اليوم" = "Bugünkü namazlarım";
+"صلوات اليوم الخمس وما علّمته منها" = "Bugünün beş vakti ve kıldığınızı işaretledikleriniz";
+"آية أخرى" = "Başka bir ayet";
+"دعاء آخر" = "Başka bir dua";
+"الهدف" = "Hedef";
+"مجموع اليوم" = "Bugünün toplamı";
+"صلّيت" = "Kılındı";
+"صلّيت الصلوات الخمس" = "Beş vakit kılındı";

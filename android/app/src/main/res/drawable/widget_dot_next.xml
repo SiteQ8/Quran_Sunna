@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- the prayer that comes next and is not yet prayed: a ring in the red -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <size android:width="30dp" android:height="30dp"/>
+    <stroke android:width="2dp" android:color="@color/widgetAccent"/>
+    <solid android:color="@color/widgetTrack"/>
+</shape>

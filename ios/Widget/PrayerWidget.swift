@@ -1,5 +1,6 @@
 import WidgetKit
 import SwiftUI
+import AppIntents
 
 /* The widgets read what the app last wrote to the shared container: the
    times the adhan keeps ("times"), and everything else the page hands for
@@ -94,6 +95,21 @@ struct WDay: Codable {
   var ayah: WAyah? = nil
 }
 
+/* a du'a of the book, its topic, and its place in the book for the tap */
+struct WDua: Codable {
+  let t: String
+  let n: String
+  var i: Int? = nil
+}
+
+/* the tasbih as the reader left the app */
+struct WTasbih: Codable {
+  let t: String
+  let count: Int
+  let target: Int
+  let total: Int
+}
+
 struct WKhatma: Codable {
   let read: Int
   let total: Int
@@ -106,6 +122,10 @@ struct WData: Codable {
   var words: [String: String]? = nil
   var place: String? = nil
   var khatma: WKhatma? = nil
+  /* what the refresh of the ayah and du'a widgets turns to, and the tasbih */
+  var ayat: [WAyah]? = nil
+  var duas: [WDua]? = nil
+  var tasbih: WTasbih? = nil
   var lang: String? = nil
   var digits: String? = nil
 
@@ -782,7 +802,13 @@ struct AyahView: View {
   private var data: WData? { entry.data }
 
   var body: some View {
-    let ayah = data?.day(entry.date)?.ayah
+    /* the day's own ayah, then the others the page handed, as far round as
+       the refresh has been tapped today */
+    let own = data?.day(entry.date)?.ayah
+    let pool = own == nil ? [] : [own!] + (data?.ayat ?? [])
+    let turn = pool.isEmpty ? 0 : Turn.count("ayah") % pool.count
+    let ayah = pool.isEmpty ? nil : pool[turn]
+    let page = ayah?.page ?? 0
     let large = family == .systemLarge
     /* the heading at the top, the ayah filling the middle between its
        ornate brackets, a short gold rule and its surah and number under it */
@@ -800,12 +826,20 @@ struct AyahView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
       if let ref = ayah?.ref, !ref.isEmpty {
         Capsule().fill(Palette.rule.opacity(0.7)).frame(width: 36, height: 1.5)
-        Text(ref).font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
-          .minimumScaleFactor(0.8)
+        /* the reference in the middle, and at the end the refresh that
+           turns to an ayah of another surah */
+        ZStack(alignment: .trailing) {
+          Text(ref).font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
+            .minimumScaleFactor(0.8).padding(.horizontal, 38).frame(maxWidth: .infinity)
+          if #available(iOSApplicationExtension 17.0, *) {
+            Button(intent: NextAyahIntent()) { RefreshMark() }.buttonStyle(.plain)
+              .accessibilityLabel(says(data, "anotherAyah", "آية أخرى"))
+          }
+        }
       }
     }
     .direction(data)
-    .widgetURL(widgetLink("widgetAyah"))
+    .widgetURL(widgetLink(turn > 0 && page > 0 ? "widgetPage\(page)" : "widgetAyah"))
   }
 }
 
@@ -951,6 +985,228 @@ struct AdhkarWidget: Widget {
   }
 }
 
+// MARK: - turning to another
+
+/* How many times a widget's refresh has been tapped today, kept in the
+   container the app shares: the ayah and the du'a turn to the next of the
+   ones the page handed, and a new day starts on the day's own again. */
+enum Turn {
+  /* read afresh each time: a shared object kept in a static would not be safe across threads */
+  private static var store: UserDefaults? { UserDefaults(suiteName: "group.com.eworldq8.sunnati") }
+
+  private static func today() -> String {
+    let f = DateFormatter()
+    f.calendar = Calendar(identifier: .gregorian)
+    f.locale = Locale(identifier: "en_US_POSIX")
+    f.dateFormat = "yyyy-MM-dd"
+    return f.string(from: Date())
+  }
+
+  static func count(_ key: String) -> Int {
+    guard let s = store, s.string(forKey: "turnDay_" + key) == today() else { return 0 }
+    return max(0, s.integer(forKey: "turn_" + key))
+  }
+
+  static func next(_ key: String) {
+    let now = count(key) + 1
+    store?.set(today(), forKey: "turnDay_" + key)
+    store?.set(now, forKey: "turn_" + key)
+  }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct NextAyahIntent: AppIntent {
+  static let title: LocalizedStringResource = "آية أخرى"
+  func perform() async throws -> some IntentResult {
+    Turn.next("ayah")
+    return .result()
+  }
+}
+
+@available(iOSApplicationExtension 17.0, *)
+struct NextDuaIntent: AppIntent {
+  static let title: LocalizedStringResource = "دعاء آخر"
+  func perform() async throws -> some IntentResult {
+    Turn.next("dua")
+    return .result()
+  }
+}
+
+/* the round refresh drawn on the paper */
+struct RefreshMark: View {
+  var body: some View {
+    Image(systemName: "arrow.clockwise")
+      .font(.system(size: 12, weight: .bold))
+      .foregroundStyle(Palette.accent)
+      .frame(width: 30, height: 30)
+      .background(Circle().fill(Palette.accent.opacity(0.12)))
+  }
+}
+
+// MARK: - the du'a of the day
+
+struct DuaView: View {
+  let entry: Entry
+  @Environment(\.widgetFamily) private var family
+  private var data: WData? { entry.data }
+
+  var body: some View {
+    let pool = data?.duas ?? []
+    let dua = pool.isEmpty ? nil : pool[Turn.count("dua") % pool.count]
+    let large = family == .systemLarge
+    return VStack(spacing: 6) {
+      HStack {
+        Text(says(data, "dua", "دعاء اليوم")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
+        Spacer(minLength: 6)
+        Text(dua?.n ?? "").font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
+      }
+      Text(dua?.t ?? says(data, "openApp", "افتح التطبيق"))
+        .font(plex(data, large ? 22 : 16, .semibold, .body))
+        .foregroundStyle(Palette.ink)
+        .multilineTextAlignment(.center)
+        .lineSpacing(large ? 8 : 4)
+        .lineLimit(large ? 9 : 4)
+        .minimumScaleFactor(0.6)
+        .environment(\.layoutDirection, .rightToLeft)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+      ZStack(alignment: .trailing) {
+        Capsule().fill(Palette.rule.opacity(0.7)).frame(width: 36, height: 1.5).frame(maxWidth: .infinity)
+        if dua != nil {
+          if #available(iOSApplicationExtension 17.0, *) {
+            Button(intent: NextDuaIntent()) { RefreshMark() }.buttonStyle(.plain)
+              .accessibilityLabel(says(data, "anotherDua", "دعاء آخر"))
+          }
+        }
+      }
+      .frame(height: 30)
+    }
+    .direction(data)
+    .widgetURL(widgetLink(dua?.i.map { "widgetDua\($0)" } ?? "widgetDua"))
+  }
+}
+
+struct DuaWidget: Widget {
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: "SunnatiDua", provider: Provider()) { entry in
+      DuaView(entry: entry).widgetBackground(paperBack(entry.data))
+    }
+    .configurationDisplayName("دعاء اليوم")
+    .description("دعاء كل يوم من أدعية التطبيق، وغيره بلمسة")
+    .supportedFamilies([.systemMedium, .systemLarge])
+  }
+}
+
+// MARK: - the tasbih
+
+struct TasbihView: View {
+  let entry: Entry
+  private var data: WData? { entry.data }
+
+  var body: some View {
+    let t = data?.tasbih
+    /* a count kept on another day is not today's */
+    let today = data?.days.first?.date == data?.day(entry.date)?.date && data?.day(entry.date) != nil
+    let target = max(1, t?.target ?? 33)
+    let count = today ? max(0, t?.count ?? 0) : 0
+    let total = today ? max(0, t?.total ?? 0) : 0
+    let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
+    let under = total > count ? "\(says(data, "today", "مجموع اليوم")) \(f(total))"
+      : count >= target ? says(data, "reached", "بلغت الهدف")
+      : "\(says(data, "target", "الهدف")) \(f(target))"
+    return VStack(spacing: 5) {
+      Text(says(data, "tasbih", "المسبحة")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
+      ZStack {
+        Circle().stroke(Palette.accent.opacity(0.15), lineWidth: 8)
+        Circle().trim(from: 0, to: min(1, Double(count) / Double(target)))
+          .stroke(Palette.accent, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+          .rotationEffect(.degrees(-90))
+        Text(verbatim: f(count)).font(plex(data, 22, .bold, .title3).monospacedDigit()).foregroundStyle(Palette.ink)
+          .minimumScaleFactor(0.6)
+      }
+      .frame(width: 70, height: 70)
+      Text(t?.t ?? "سبحان الله").font(plex(data, 13, .bold, .footnote)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+      Text(verbatim: under).font(plex(data, 11, .regular, .caption2)).foregroundStyle(Palette.muted).lineLimit(1).minimumScaleFactor(0.7)
+    }
+    .direction(data)
+    .widgetURL(widgetLink("widgetTasbih"))
+  }
+}
+
+struct TasbihWidget: Widget {
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: "SunnatiTasbih", provider: Provider()) { entry in
+      TasbihView(entry: entry).widgetBackground(paperBack(entry.data))
+    }
+    .configurationDisplayName("المسبحة")
+    .description("ذكرك وعدّه، والمسبحة على بعد لمسة")
+    .supportedFamilies([.systemSmall])
+  }
+}
+
+// MARK: - my prayers today
+
+struct LogView: View {
+  let entry: Entry
+  private var data: WData? { entry.data }
+
+  var body: some View {
+    let day = data?.day(entry.date)
+    /* only the first day handed carries the marks of prayers prayed */
+    let marked = day != nil && day?.date == data?.days.first?.date
+    let five = day?.five ?? []
+    let done = five.map { marked && ($0.prayed ?? false) }
+    let next = five.firstIndex { !(marked && ($0.prayed ?? false)) && $0.when > entry.date }
+    let prayed = done.filter { $0 }.count
+    let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
+    let count = five.isEmpty ? says(data, "openApp", "افتح التطبيق")
+      : prayed >= 5 ? says(data, "allPrayed", "صلّيت الصلوات الخمس")
+      : "\(f(prayed)) \(says(data, "of", "من")) \(f(5))"
+    return VStack(spacing: 10) {
+      HStack {
+        Text(says(data, "log", "صلواتي اليوم")).font(plex(data, 12, .bold, .caption)).foregroundStyle(Palette.accent)
+        Spacer(minLength: 6)
+        Text(verbatim: count).font(plex(data, 11, .semibold, .caption2)).foregroundStyle(Palette.muted).lineLimit(1)
+      }
+      HStack(spacing: 0) {
+        ForEach(Array(five.enumerated()), id: \.offset) { i, p in
+          VStack(spacing: 5) {
+            ZStack {
+              if done[i] {
+                Circle().fill(Palette.accent)
+                Image(systemName: "checkmark").font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.paper)
+              } else if next == i {
+                Circle().fill(Palette.accent.opacity(0.12))
+                Circle().stroke(Palette.accent, lineWidth: 2)
+              } else {
+                Circle().stroke(Palette.muted.opacity(0.35), lineWidth: 2)
+              }
+            }
+            .frame(width: 30, height: 30)
+            Text(p.label).font(plex(data, 11, .bold, .caption2)).foregroundStyle(Palette.ink).lineLimit(1).minimumScaleFactor(0.7)
+          }
+          .frame(maxWidth: .infinity)
+          .accessibilityElement(children: .ignore)
+          .accessibilityLabel(done[i] ? "\(p.label)، \(says(data, "prayed", "صلّيت"))" : p.label)
+        }
+      }
+      .frame(maxHeight: .infinity)
+    }
+    .direction(data)
+    .widgetURL(widgetLink("widgetLog"))
+  }
+}
+
+struct LogWidget: Widget {
+  var body: some WidgetConfiguration {
+    StaticConfiguration(kind: "SunnatiLog", provider: Provider()) { entry in
+      LogView(entry: entry).widgetBackground(paperBack(entry.data))
+    }
+    .configurationDisplayName("صلواتي اليوم")
+    .description("صلوات اليوم الخمس وما علّمته منها")
+    .supportedFamilies([.systemMedium])
+  }
+}
+
 // MARK: - all of them
 
 @main
@@ -962,5 +1218,8 @@ struct SunnatiWidgets: WidgetBundle {
     AyahWidget()
     KhatmaWidget()
     AdhkarWidget()
+    DuaWidget()
+    TasbihWidget()
+    LogWidget()
   }
 }

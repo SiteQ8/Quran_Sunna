@@ -214,7 +214,7 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
   private var pageLoaded = false
 
   func show(_ view: String) {
-    let safe = view.filter { $0.isLetter }
+    let safe = view.filter { $0.isASCII && ($0.isLetter || $0.isNumber) }
     guard pageLoaded else { pendingScreen = safe; return }
     web.evaluateJavaScript("(function(n){if(!window.App)return;" +
       "if(/^widget/.test(n)&&App.helpers&&App.helpers.cameFrom)App.helpers.cameFrom(n);" +

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- a prayer prayed today: a full disc in the app's red with a tick in it -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item><shape android:shape="oval"><size android:width="30dp" android:height="30dp"/><solid android:color="@color/widgetAccent"/></shape></item>
+    <item android:drawable="@drawable/widget_check_paper" android:top="6dp" android:bottom="6dp" android:left="6dp" android:right="6dp"/>
+</layer-list>

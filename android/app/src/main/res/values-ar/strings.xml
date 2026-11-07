@@ -82,4 +82,21 @@
     <string name="crashTitle">توقف سُنّتي، وهذا سبب التوقف</string>
     <string name="crashCopy">انسخ</string>
     <string name="crashCopied">نُسخ</string>
+    <!-- the widgets added for the du'a, the tasbih and the prayers of the day -->
+    <string name="widgetDuaName">دعاء اليوم</string>
+    <string name="widgetDuaDescription">دعاء كل يوم من أدعية التطبيق، وغيره بلمسة</string>
+    <string name="widgetTasbihName">المسبحة</string>
+    <string name="widgetTasbihDescription">ذكرك وعدّه، والمسبحة على بعد لمسة</string>
+    <string name="widgetLogName">صلواتي اليوم</string>
+    <string name="widgetLogDescription">صلوات اليوم الخمس وما علّمته منها</string>
+    <string name="widgetAnotherAyah">آية أخرى</string>
+    <string name="widgetAnotherDua">دعاء آخر</string>
+    <string name="widgetTarget">الهدف</string>
+    <string name="widgetToday">مجموع اليوم</string>
+    <string name="widgetPrayed">صلّيت</string>
+    <string name="widgetAllPrayed">صلّيت الصلوات الخمس</string>
+    <string name="widgetSample30">الرزق</string>
+    <string name="widgetSample31">3 من 5</string>
+    <string name="widgetSample33">مجموع اليوم 120</string>
+    <string name="widgetSample36">21</string>
 </resources>

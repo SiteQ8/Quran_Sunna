@@ -193,7 +193,7 @@ public class MainActivity extends Activity {
             if (kind != null && kind.length() > 0) {
                 web.evaluateJavascript(
                     "window.App && App.helpers && App.helpers.cameFrom && App.helpers.cameFrom('"
-                    + kind.replaceAll("[^a-zA-Z]", "") + "')", null);
+                    + kind.replaceAll("[^a-zA-Z0-9]", "") + "')", null);
             }
         }
         /* the buttons in the shade come back here, and are passed to the page,

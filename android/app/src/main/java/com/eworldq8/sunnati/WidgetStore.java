@@ -56,6 +56,13 @@ final class WidgetStore {
         return null;
     }
 
+    /** The first day the page handed, the one it handed on: only it carries
+     *  the marks of prayers prayed and the count of the tasbih. */
+    static JSONObject firstDay(JSONObject all) {
+        JSONArray days = all == null ? null : all.optJSONArray("days");
+        return days == null || days.length() == 0 ? null : days.optJSONObject(0);
+    }
+
     static String word(JSONObject all, String k, String fallback) {
         JSONObject w = all == null ? null : all.optJSONObject("words");
         String v = w == null ? null : w.optString(k, null);
@@ -237,6 +244,31 @@ final class WidgetStore {
         open.putExtra("kind", kind);
         open.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         return PendingIntent.getActivity(context, request, open, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+    }
+
+    /** How many times a widget's refresh has been tapped today: the ayah and
+     *  the du'a turn to the next of the ones the page handed, and a new day
+     *  starts again on the day's own. */
+    static int turned(Context context, String key) {
+        android.content.SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        return today().equals(p.getString("turnDay_" + key, "")) ? Math.max(0, p.getInt("turn_" + key, 0)) : 0;
+    }
+
+    static void turn(Context context, String key) {
+        int now = turned(context, key) + 1;
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+            .putString("turnDay_" + key, today()).putInt("turn_" + key, now).apply();
+    }
+
+    private static String today() {
+        Calendar c = Calendar.getInstance();
+        return String.format(Locale.ROOT, "%04d-%02d-%02d", c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
+    }
+
+    /** A tap that tells a widget's own receiver to turn to the next one. */
+    static PendingIntent turnIntent(Context context, Class<?> widget, String action, int request) {
+        Intent next = new Intent(context, widget).setAction(action);
+        return PendingIntent.getBroadcast(context, request, next, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     static String clock(Context context, long at) {
