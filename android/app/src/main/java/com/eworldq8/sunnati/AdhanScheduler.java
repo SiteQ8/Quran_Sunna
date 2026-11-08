@@ -56,6 +56,8 @@ public final class AdhanScheduler {
             JSONArray list = new JSONArray(json);
             prefs(context).edit().putString(KEY_TIMES, list.toString()).apply();
             scheduleNext(context);
+            /* and the next prayer on the lock screen, for whoever asked for it */
+            try { NextNotice.show(context); } catch (Exception ignored) { }
             /* the home screen widget reads the same list */
             PrayerWidget.refresh(context);
         } catch (Exception ignored) {

@@ -55,6 +55,8 @@
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Salat berikutnya di layar kunci</string>
+    <string name="channelNextAbout">Salat berikutnya dan sisa waktunya, tanpa suara, bagi yang menyalakannya di pengaturan aplikasi</string>
     <string name="channelAdhan">Waktu salat</string>
     <string name="channelAdhanAbout">Pengingat saat masuk waktu setiap salat</string>
     <string name="channelAdhanVoice">Waktu salat, dengan azan</string>

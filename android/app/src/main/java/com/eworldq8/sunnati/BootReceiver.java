@@ -18,6 +18,7 @@ public final class BootReceiver extends BroadcastReceiver {
             SalawatScheduler.scheduleNext(context);
             QiyamScheduler.scheduleNext(context);
             NoteScheduler.scheduleNext(context);
+            NextNotice.show(context);
             PrayerWidget.refresh(context); } catch (Exception e) { /* the next open arms it */ }
     }
 }

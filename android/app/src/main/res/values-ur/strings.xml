@@ -55,6 +55,8 @@
     <string name="widgetSample28">⁦2:38 PM⁩</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">لاک اسکرین پر اگلی نماز</string>
+    <string name="channelNextAbout">اگلی نماز اور اس تک باقی وقت، بغیر آواز کے، ان کے لیے جو اسے ایپ کی ترتیبات میں چالو کریں</string>
     <string name="channelAdhan">نماز کے اوقات</string>
     <string name="channelAdhanAbout">ہر نماز کا وقت شروع ہونے پر اطلاع</string>
     <string name="channelAdhanVoice">نماز کے اوقات، اذان کے ساتھ</string>

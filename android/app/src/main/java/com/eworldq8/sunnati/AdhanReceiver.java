@@ -68,6 +68,10 @@ public final class AdhanReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
+        if (NextNotice.ACTION.equals(intent.getAction())) {
+            try { NextNotice.show(context); } catch (Exception e) { Log.w("sunnati", "next prayer not shown", e); }
+            return;
+        }
         if ("com.eworldq8.sunnati.NOTE".equals(intent.getAction())) {
             try {
                 /* every reminder of this minute, or the one the alarm carries
@@ -136,6 +140,7 @@ public final class AdhanReceiver extends BroadcastReceiver {
             Log.w("sunnati", "adhan not shown", e);
         }
         try { AdhanScheduler.scheduleNext(context); } catch (Exception e) { Log.w("sunnati", "next adhan not armed", e); }
+        try { NextNotice.show(context); } catch (Exception e) { Log.w("sunnati", "next prayer not shown", e); }
     }
 
     /* A channel is listed in the phone's settings under the name it was made

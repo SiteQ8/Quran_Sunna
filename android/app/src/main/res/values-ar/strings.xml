@@ -55,6 +55,8 @@
     <string name="widgetSample28">2:38 م</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">الصلاة القادمة على شاشة القفل</string>
+    <string name="channelNextAbout">الصلاة القادمة والوقت الباقي عليها بلا صوت، لمن يشغّلها من إعدادات التطبيق</string>
     <string name="channelAdhan">أوقات الصلاة</string>
     <string name="channelAdhanAbout">تنبيه عند دخول وقت كل صلاة</string>
     <string name="channelAdhanVoice">أوقات الصلاة، بصوت الأذان</string>

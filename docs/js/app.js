@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.135';
+  var VERSION = '8.87.136';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4654,7 +4654,7 @@
       lead = '';
     });
     var ilyasin = out.indexOf('إِلْ');
-    if (ilyasin !== -1 && out[ilyasin + 1] === 'يَاسِينَ') out.splice(ilyasin, 2, 'إِلْ\u202Fيَاسِينَ');
+    if (ilyasin !== -1 && out[ilyasin + 1] === 'يَاسِينَ') out.splice(ilyasin, 2, out[ilyasin] + '\u202F' + out[ilyasin + 1]);
     return out;
   }
 
@@ -6451,7 +6451,14 @@
     }
     var on = false;
     try { on = !!app.isAdhanEnabled(); } catch (e) { on = true; }
-    setSwitch($('settings-adhan'), on);
+    setSwitch($('settings-adhan'), on);    /* the next prayer on the lock screen, where the app can put it there */
+    var lock = $('settings-lock-row');
+    if (lock) {
+      lock.hidden = !app.setNextNotice;
+      var shown = false;
+      try { shown = !!(app.isNextNotice && app.isNextNotice()); } catch (e) { shown = false; }
+      setSwitch($('settings-lock'), shown);
+    }
   }
 
   function renderSavedAudio() {
@@ -10917,6 +10924,15 @@
       setSwitch($('settings-adhan'), on);
       if (on) handTimesToApp();
       toast(on ? 'يرنّ الأذان في وقته' : 'أوقفت تنبيه الأذان');
+    });
+    bind('settings-lock', 'click', function () {
+      var app = bridge();
+      if (!app || !app.setNextNotice) return;
+      var on = $('settings-lock').getAttribute('aria-checked') !== 'true';
+      try { app.setNextNotice(on); } catch (e) { /* the app will say */ }
+      setSwitch($('settings-lock'), on);
+      if (on) handTimesToApp();
+      toast(on ? 'تظهر الصلاة القادمة على شاشة القفل' : 'أزلت الصلاة القادمة من شاشة القفل');
     });
     window.addEventListener('sunnati:permission', function () { if (state.view === 'settings') renderAdhanRow(); });
 

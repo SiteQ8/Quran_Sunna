@@ -7359,7 +7359,8 @@ test('every reminder switch actually turns its reminder on', () => {
   win.SunnatiApp = {
     isAdhanEnabled: function () { return true; }, canNotify: function () { return true; },
     setAdhanEnabled: function () {}, setAdhanSound: function () {}, setAdhanSilent: function () {},
-    setSalawatEvery: function () {}, setSalawatSilent: function () {}, setReminders: function () {}
+    setSalawatEvery: function () {}, setSalawatSilent: function () {}, setReminders: function () {},
+    isNextNotice: function () { return false; }, setNextNotice: function () {}
   };
   win.App.go('reminders');
   const dead = [];
@@ -12429,5 +12430,26 @@ test('the lock screen has the ayah, the du\'a, the tasbih, the prayers prayed an
   ['DayView', 'AyahView', 'DuaView', 'TasbihView', 'LogView'].forEach(function (v) {
     const body = swift.slice(swift.indexOf('struct ' + v + ': View {'));
     assert.ok(/if #available\(iOSApplicationExtension 16\.0, \*\) \{ lockOrHome \} else \{ home \}/.test(body.slice(0, 600)), v);
+  });
+});
+
+test('on Android the next prayer can sit on the lock screen, off until the reader asks, silent, and gone at its minute', () => {
+  const { win, doc } = boot();
+  win.App.go('reminders');
+  let asked = null;
+  win.SunnatiApp = {
+    isAdhanEnabled: function () { return true; }, canNotify: function () { return true; }, setAdhanEnabled: function () {},
+    isNextNotice: function () { return false; }, setNextNotice: function (on) { asked = on; }, setPrayerTimes: function () {}
+  };
+  win.App.go('settings');
+  win.App.go('reminders');
+  const row = doc.getElementById('settings-lock-row');
+  assert.ok(row && !row.hidden, 'shown where the app can do it');
+  click(win, doc.getElementById('settings-lock'));
+  assert.strictEqual(asked, true);
+  const java = fs.readFileSync(path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'NextNotice.java'), 'utf8');
+  assert.ok(/getBoolean\(KEY_ON, false\)/.test(java), 'off until asked');
+  ['setChronometerCountDown(true)', 'VISIBILITY_PUBLIC', 'setTimeoutAfter', 'channel.setSound(null, null)', 'setOngoing(true)'].forEach(function (k) {
+    assert.ok(java.indexOf(k) !== -1, k);
   });
 });

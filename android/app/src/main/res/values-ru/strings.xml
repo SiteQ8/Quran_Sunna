@@ -55,6 +55,8 @@
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Следующий намаз на экране блокировки</string>
+    <string name="channelNextAbout">Следующий намаз и оставшееся до него время, без звука, для тех, кто включил это в настройках приложения</string>
     <string name="channelAdhan">Время намаза</string>
     <string name="channelAdhanAbout">Оповещение с наступлением времени каждого намаза</string>
     <string name="channelAdhanVoice">Время намаза, с азаном</string>
