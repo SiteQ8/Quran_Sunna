@@ -650,7 +650,39 @@ struct DayView: View {
   let entry: Entry
   private var data: WData? { entry.data }
 
+  @Environment(\.widgetFamily) private var family
   var body: some View {
+    if #available(iOSApplicationExtension 16.0, *) { lockOrHome } else { home }
+  }
+
+  /* on the lock screen: the day's five with their times, the one coming in
+     bold, in the system's one tint */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private var lockOrHome: some View {
+    switch family {
+    case .accessoryRectangular:
+      let now = entry.date
+      let list = data?.day(now)?.five ?? []
+      let next = list.first(where: { $0.when > now })?.key
+      HStack(spacing: 2) {
+        ForEach(Array(list.enumerated()), id: \.offset) { _, p in
+          VStack(spacing: 1) {
+            Text(p.label).font(plex(data, 10, p.key == next ? .bold : .regular, .caption2)).lineLimit(1).minimumScaleFactor(0.6)
+            clockText(p.short ?? p.clock, p.when).font(plex(data, 11, p.key == next ? .bold : .regular, .caption2).monospacedDigit())
+              .lineLimit(1).minimumScaleFactor(0.6)
+          }
+          .frame(maxWidth: .infinity)
+          .opacity(p.when <= now ? 0.55 : 1)
+        }
+      }
+      .direction(data)
+      .widgetURL(widgetLink("widgetDay"))
+    default:
+      home
+    }
+  }
+
+  private var home: some View {
     let now = entry.date
     let today = data?.day(now)
     let showTomorrow = (today?.five.last?.when ?? .distantFuture) <= now
@@ -696,7 +728,12 @@ struct DayWidget: Widget {
     }
     .configurationDisplayName("صلوات اليوم")
     .description("صلوات اليوم الخمس بأوقاتها، والقادمة منها بارزة")
-    .supportedFamilies([.systemMedium])
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) { return [.systemMedium, .accessoryRectangular] }
+    return [.systemMedium]
   }
 }
 
@@ -804,6 +841,33 @@ struct AyahView: View {
   private var data: WData? { entry.data }
 
   var body: some View {
+    if #available(iOSApplicationExtension 16.0, *) { lockOrHome } else { home }
+  }
+
+  /* on the lock screen: the day's ayah in the mushaf's face, as much as the
+     space holds, and the whole of it a tap away */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private var lockOrHome: some View {
+    switch family {
+    case .accessoryRectangular:
+      let ayah = data?.day(entry.date)?.ayah
+      VStack(alignment: .leading, spacing: 0) {
+        Text(ayah?.ref ?? says(data, "ayah", "آية اليوم")).font(plex(data, 10, .semibold, .caption2)).lineLimit(1).opacity(0.75)
+        Text(ayah.map { "\u{FD3F}\($0.t.trimmingCharacters(in: .whitespaces))\u{FD3E}" } ?? says(data, "openApp", "افتح التطبيق"))
+          .font(.custom("AmiriQuran-Regular", size: 14))
+          .lineLimit(2).minimumScaleFactor(0.6)
+          .environment(\.layoutDirection, .rightToLeft)
+          .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .direction(data)
+      .widgetURL(widgetLink("widgetAyah"))
+    default:
+      home
+    }
+  }
+
+  private var home: some View {
     /* the day's own ayah, then the others the page handed, as far round as
        the refresh has been tapped today */
     let own = data?.day(entry.date)?.ayah
@@ -852,7 +916,12 @@ struct AyahWidget: Widget {
     }
     .configurationDisplayName("آية اليوم")
     .description("آية كل يوم من المصحف، تفتح صفحتها بلمسة")
-    .supportedFamilies([.systemMedium, .systemLarge])
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) { return [.systemMedium, .systemLarge, .accessoryRectangular] }
+    return [.systemMedium, .systemLarge]
   }
 }
 
@@ -1055,6 +1124,31 @@ struct DuaView: View {
   private var data: WData? { entry.data }
 
   var body: some View {
+    if #available(iOSApplicationExtension 16.0, *) { lockOrHome } else { home }
+  }
+
+  /* on the lock screen: the du'a of the day and its source */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private var lockOrHome: some View {
+    switch family {
+    case .accessoryRectangular:
+      let dua = data?.duas?.first
+      VStack(alignment: .leading, spacing: 1) {
+        Text(dua?.r ?? says(data, "dua", "دعاء اليوم")).font(plex(data, 10, .semibold, .caption2)).lineLimit(1).opacity(0.75)
+        Text(dua?.t ?? says(data, "openApp", "افتح التطبيق")).font(plex(data, 12, .semibold, .caption))
+          .lineLimit(3).minimumScaleFactor(0.6)
+          .environment(\.layoutDirection, .rightToLeft)
+          .frame(maxWidth: .infinity, alignment: .trailing)
+      }
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .direction(data)
+      .widgetURL(widgetLink(dua?.i.map { "widgetDua\($0)" } ?? "widgetDua"))
+    default:
+      home
+    }
+  }
+
+  private var home: some View {
     let pool = data?.duas ?? []
     let dua = pool.isEmpty ? nil : pool[Turn.count("dua", on: entry.date) % pool.count]
     let large = family == .systemLarge
@@ -1099,7 +1193,12 @@ struct DuaWidget: Widget {
     }
     .configurationDisplayName("دعاء اليوم")
     .description("دعاء كل يوم من القرآن والسنة بمصدره، وغيره بلمسة")
-    .supportedFamilies([.systemMedium, .systemLarge])
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) { return [.systemMedium, .systemLarge, .accessoryRectangular] }
+    return [.systemMedium, .systemLarge]
   }
 }
 
@@ -1109,7 +1208,34 @@ struct TasbihView: View {
   let entry: Entry
   private var data: WData? { entry.data }
 
+  @Environment(\.widgetFamily) private var family
   var body: some View {
+    if #available(iOSApplicationExtension 16.0, *) { lockOrHome } else { home }
+  }
+
+  /* on the lock screen: the system's ring filling to the target, the count
+     in it */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private var lockOrHome: some View {
+    switch family {
+    case .accessoryCircular:
+      let t = data?.tasbih
+      let today = data?.days.first?.date == data?.day(entry.date)?.date && data?.day(entry.date) != nil
+      let target = max(1, t?.target ?? 33)
+      let count = today ? max(0, t?.count ?? 0) : 0
+      Gauge(value: Double(min(count, target)), in: 0...Double(target)) {
+        Image(systemName: "circle.hexagongrid")
+      } currentValueLabel: {
+        Text(verbatim: data?.figures(String(count)) ?? String(count)).font(plex(data, 14, .bold, .body).monospacedDigit())
+      }
+      .gaugeStyle(.accessoryCircularCapacity)
+      .widgetURL(widgetLink("widgetTasbih"))
+    default:
+      home
+    }
+  }
+
+  private var home: some View {
     let t = data?.tasbih
     /* a count kept on another day is not today's */
     let today = data?.days.first?.date == data?.day(entry.date)?.date && data?.day(entry.date) != nil
@@ -1146,7 +1272,12 @@ struct TasbihWidget: Widget {
     }
     .configurationDisplayName("المسبحة")
     .description("ذكرك وعدّه، والمسبحة على بعد لمسة")
-    .supportedFamilies([.systemSmall])
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) { return [.systemSmall, .accessoryCircular] }
+    return [.systemSmall]
   }
 }
 
@@ -1156,7 +1287,54 @@ struct LogView: View {
   let entry: Entry
   private var data: WData? { entry.data }
 
+  @Environment(\.widgetFamily) private var family
   var body: some View {
+    if #available(iOSApplicationExtension 16.0, *) { lockOrHome } else { home }
+  }
+
+  /* on the lock screen: how many of the five are prayed, in the system's
+     ring, a row of the five, or one line */
+  @available(iOSApplicationExtension 16.0, *)
+  @ViewBuilder private var lockOrHome: some View {
+    let day = data?.day(entry.date)
+    let marked = day != nil && day?.date == data?.days.first?.date
+    let five = day?.five ?? []
+    let prayed = five.filter { marked && ($0.prayed ?? false) }.count
+    let f = { (n: Int) -> String in data?.figures(String(n)) ?? String(n) }
+    switch family {
+    case .accessoryCircular:
+      Gauge(value: Double(prayed), in: 0...5) {
+        Image(systemName: "checkmark")
+      } currentValueLabel: {
+        Text(verbatim: "\(f(prayed))/\(f(5))").font(plex(data, 13, .bold, .body).monospacedDigit()).minimumScaleFactor(0.6)
+      }
+      .gaugeStyle(.accessoryCircularCapacity)
+      .widgetURL(widgetLink("widgetLog"))
+    case .accessoryRectangular:
+      VStack(alignment: .leading, spacing: 3) {
+        Text(says(data, "log", "صلواتي اليوم")).font(plex(data, 11, .semibold, .caption2)).lineLimit(1)
+        HStack(spacing: 2) {
+          ForEach(Array(five.enumerated()), id: \.offset) { _, p in
+            let done = marked && (p.prayed ?? false)
+            VStack(spacing: 2) {
+              Image(systemName: done ? "checkmark.circle.fill" : "circle").font(.system(size: 13, weight: .semibold))
+              Text(p.label).font(plex(data, 9, .regular, .caption2)).lineLimit(1).minimumScaleFactor(0.6)
+            }
+            .frame(maxWidth: .infinity)
+          }
+        }
+      }
+      .direction(data)
+      .widgetURL(widgetLink("widgetLog"))
+    case .accessoryInline:
+      Text(verbatim: "\(says(data, "log", "صلواتي اليوم")) \(f(prayed))/\(f(5))")
+        .widgetURL(widgetLink("widgetLog"))
+    default:
+      home
+    }
+  }
+
+  private var home: some View {
     let day = data?.day(entry.date)
     /* only the first day handed carries the marks of prayers prayed */
     let marked = day != nil && day?.date == data?.days.first?.date
@@ -1217,7 +1395,12 @@ struct LogWidget: Widget {
     }
     .configurationDisplayName("صلواتي اليوم")
     .description("صلوات اليوم الخمس وما علّمته منها")
-    .supportedFamilies([.systemMedium])
+    .supportedFamilies(families)
+  }
+
+  private var families: [WidgetFamily] {
+    if #available(iOSApplicationExtension 16.0, *) { return [.systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline] }
+    return [.systemMedium]
   }
 }
 
