@@ -55,6 +55,8 @@
     <string name="widgetSample28">2:38 PM</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Salla mai zuwa a allon kulle</string>
+    <string name="channelNextAbout">Salla mai zuwa da lokacin da ya rage, babu sauti, ga wanda ya kunna shi a saitunan manhaja</string>
     <string name="channelAdhan">Lokutan sallah</string>
     <string name="channelAdhanAbout">Faɗakarwa idan lokacin kowace sallah ya yi</string>
     <string name="channelAdhanVoice">Lokutan sallah, tare da kiran sallah</string>

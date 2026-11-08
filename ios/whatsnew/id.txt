@@ -1,4 +1,4 @@
-Tiga widget baru: doa hari ini dari Al-Qur'an dan Sunnah beserta sumbernya, tasbih Anda dengan hitungan dan targetnya, serta salat Anda hari ini dengan yang sudah ditunaikan. Ayat hari ini punya tombol untuk beralih ke ayat dari surah lain, salat hari ini menampilkan tanggal Masehi di bawah tanggal Hijriah, dan mushaf kini terbuka dari widget dengan ukuran yang tepat.
+Tiga widget baru: doa hari ini dari Al-Qur'an dan Sunnah beserta sumbernya, tasbih Anda dengan hitungan dan targetnya, serta salat Anda hari ini dengan yang sudah ditunaikan. Ayat hari ini punya tombol untuk beralih ke ayat dari surah lain, salat hari ini menampilkan tanggal Masehi di bawah tanggal Hijriah, dan mushaf kini terbuka dari widget dengan ukuran yang tepat. Layar kunci kini punya widget untuk salat berikutnya, salat hari ini, ayat dan doa hari ini, tasbih, serta salat Anda hari ini.
 
 Semua widget memakai huruf aplikasi dan hiasan Islami di sudutnya, dalam lebih banyak ukuran. Notifikasi azan dan salat malam tiba dalam bahasa aplikasi, Pengaturan punya sakelar untuk mematikan atau menyalakan azan, dan pengingat selawat kepada Nabi tiba tepat waktu.
 

@@ -1,4 +1,4 @@
-Three new widgets: the dua of the day from the Quran and the Sunnah with its source, your tasbih with its count and target, and your prayers today with the ones you have prayed. The verse of the day has a button that turns to a verse from another surah, today's prayers show the Gregorian date under the Hijri one, and the mushaf now opens from a widget at its proper size.
+Three new widgets: the dua of the day from the Quran and the Sunnah with its source, your tasbih with its count and target, and your prayers today with the ones you have prayed. The verse of the day has a button that turns to a verse from another surah, today's prayers show the Gregorian date under the Hijri one, and the mushaf now opens from a widget at its proper size. The lock screen now has widgets for the next prayer, today's prayers, the verse and dua of the day, the tasbih and your prayers today.
 
 Every widget wears the app's own typeface and an Islamic strapwork corner, in more sizes. Adhan and night prayer notifications arrive in the app's language, Settings has a switch to turn the adhan off or on, and the reminder to send blessings upon the Prophet arrives on time.
 

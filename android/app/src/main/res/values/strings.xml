@@ -66,6 +66,8 @@
     <!-- the same in every language: the ayah stays as it was revealed -->
     <string name="widgetSample6" translatable="false">لَا يُكَلِّفُ ٱللَّهُ نَفْسًا إِلَّا وُسْعَهَا</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Next prayer on the lock screen</string>
+    <string name="channelNextAbout">The next prayer and the time left until it, silent, for those who turn it on in the app\'s settings</string>
     <string name="channelAdhan">Prayer times</string>
     <string name="channelAdhanAbout">An alert as each prayer\'s time begins</string>
     <string name="channelAdhanVoice">Prayer times, with the adhan</string>

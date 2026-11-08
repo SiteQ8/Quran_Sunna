@@ -55,6 +55,8 @@
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Kilit ekranında sıradaki namaz</string>
+    <string name="channelNextAbout">Sıradaki namaz ve kalan süre, sessiz, uygulama ayarlarından açanlar için</string>
     <string name="channelAdhan">Namaz vakitleri</string>
     <string name="channelAdhanAbout">Her namaz vakti girdiğinde bir uyarı</string>
     <string name="channelAdhanVoice">Namaz vakitleri, ezanla</string>

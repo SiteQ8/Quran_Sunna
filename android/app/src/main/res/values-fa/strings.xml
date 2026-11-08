@@ -55,6 +55,8 @@
     <string name="widgetSample28">۱۴:۳۸</string>
     <string name="widgetSample29">۱:۵۲:۱۴</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">نماز بعدی روی صفحه قفل</string>
+    <string name="channelNextAbout">نماز بعدی و زمان مانده تا آن، بی‌صدا، برای کسی که آن را در تنظیمات برنامه روشن کند</string>
     <string name="channelAdhan">اوقات نماز</string>
     <string name="channelAdhanAbout">اعلانی با رسیدن وقت هر نماز</string>
     <string name="channelAdhanVoice">اوقات نماز، با اذان</string>

@@ -55,6 +55,8 @@
     <string name="widgetSample28">২:৩৮ PM</string>
     <string name="widgetSample29">১:৫২:১৪</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">লক স্ক্রিনে পরবর্তী নামাজ</string>
+    <string name="channelNextAbout">পরবর্তী নামাজ ও বাকি সময়, শব্দহীন, যাঁরা অ্যাপের সেটিংসে চালু করেন তাঁদের জন্য</string>
     <string name="channelAdhan">নামাজের সময়</string>
     <string name="channelAdhanAbout">প্রতিটি নামাজের সময় শুরু হলে একটি অ্যালার্ট</string>
     <string name="channelAdhanVoice">নামাজের সময়, আজানসহ</string>

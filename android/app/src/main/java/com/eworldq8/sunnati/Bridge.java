@@ -74,6 +74,13 @@ public final class Bridge {
     @JavascriptInterface
     public void setAdhanEnabled(boolean on) { AdhanScheduler.setEnabled(host, on); }
 
+    /** The next prayer on the lock screen, which the reader switches on. */
+    @JavascriptInterface
+    public boolean isNextNotice() { return NextNotice.on(host); }
+
+    @JavascriptInterface
+    public void setNextNotice(boolean on) { NextNotice.setOn(host, on); }
+
     /** Whether the call to prayer should arrive with no sound at all: neither
      *  a recorded adhan nor the phone's own notification tone. */
     @JavascriptInterface

@@ -55,6 +55,8 @@
     <string name="widgetSample28">14:38</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Prochaine prière sur l\'écran verrouillé</string>
+    <string name="channelNextAbout">La prochaine prière et le temps qui reste, sans son, pour qui l\'active dans les réglages de l\'application</string>
     <string name="channelAdhan">Heures de prière</string>
     <string name="channelAdhanAbout">Une alerte à l\'entrée de l\'heure de chaque prière</string>
     <string name="channelAdhanVoice">Heures de prière, avec l\'adhan</string>

@@ -55,6 +55,8 @@
     <string name="widgetSample28">2:38 PTG</string>
     <string name="widgetSample29">1:52:14</string>
     <!-- the notification channels as the phone's settings list them -->
+    <string name="channelNext">Solat seterusnya di skrin kunci</string>
+    <string name="channelNextAbout">Solat seterusnya dan baki masanya, tanpa bunyi, bagi yang menghidupkannya dalam tetapan aplikasi</string>
     <string name="channelAdhan">Waktu solat</string>
     <string name="channelAdhanAbout">Peringatan apabila masuk waktu setiap solat</string>
     <string name="channelAdhanVoice">Waktu solat, dengan azan</string>
