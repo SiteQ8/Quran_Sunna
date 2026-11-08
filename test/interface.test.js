@@ -12412,3 +12412,22 @@ test('every ayah of the mushaf splits into the words the printed layout counts, 
   /* the sign of prostration is drawn once, by the page */
   assert.ok(/esc\(piece\.replace\(SAJDA_SIGN, ''\)\)/.test(app));
 });
+
+test('the lock screen has the ayah, the du\'a, the tasbih, the prayers prayed and the day\'s five', () => {
+  const swift = fs.readFileSync(path.join(__dirname, '..', 'ios', 'Widget', 'PrayerWidget.swift'), 'utf8');
+  const lock = function (kind) {
+    const i = swift.indexOf('StaticConfiguration(kind: "' + kind + '"');
+    const fam = /private var families: \[WidgetFamily\] \{\n    if #available\(iOSApplicationExtension 16\.0, \*\) \{ return (\[[^\]]*\]) \}/.exec(swift.slice(i));
+    return fam ? fam[1] : '';
+  };
+  assert.ok(/accessoryRectangular/.test(lock('SunnatiAyah')), 'ayah');
+  assert.ok(/accessoryRectangular/.test(lock('SunnatiDua')), 'dua');
+  assert.ok(/accessoryCircular/.test(lock('SunnatiTasbih')), 'tasbih');
+  assert.ok(/accessoryCircular.*accessoryRectangular.*accessoryInline/.test(lock('SunnatiLog')), 'log');
+  assert.ok(/accessoryRectangular/.test(lock('SunnatiDay')), 'day');
+  /* each draws its own lock face, and the home screen one elsewhere */
+  ['DayView', 'AyahView', 'DuaView', 'TasbihView', 'LogView'].forEach(function (v) {
+    const body = swift.slice(swift.indexOf('struct ' + v + ': View {'));
+    assert.ok(/if #available\(iOSApplicationExtension 16\.0, \*\) \{ lockOrHome \} else \{ home \}/.test(body.slice(0, 600)), v);
+  });
+});
