@@ -8,7 +8,7 @@
     android:targetCellHeight="2"
     android:previewLayout="@layout/widget_dua_preview"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
+    android:widgetCategory="home_screen|keyguard"
     android:updatePeriodMillis="10800000"
     android:initialLayout="@layout/widget_dua"
     android:description="@string/widgetDuaDescription"/>

@@ -12453,3 +12453,14 @@ test('on Android the next prayer can sit on the lock screen, off until the reade
     assert.ok(java.indexOf(k) !== -1, k);
   });
 });
+
+test('every Android widget offers itself to the lock screen as well as the home screen', () => {
+  const dir = path.join(__dirname, '..', 'android', 'app', 'src', 'main', 'res');
+  const infos = [];
+  ['xml', 'xml-v31'].forEach(function (d) {
+    fs.readdirSync(path.join(dir, d)).filter(function (f) { return /^widget_.*_info\.xml$/.test(f); })
+      .forEach(function (f) { infos.push(fs.readFileSync(path.join(dir, d, f), 'utf8')); });
+  });
+  assert.strictEqual(infos.length, 18, 'nine widgets, each in both folders');
+  infos.forEach(function (x) { assert.ok(/android:widgetCategory="home_screen\|keyguard"/.test(x)); });
+});

@@ -8,7 +8,7 @@
     android:targetCellHeight="1"
     android:previewLayout="@layout/widget_hijri_preview"
     android:resizeMode="horizontal|vertical"
-    android:widgetCategory="home_screen"
+    android:widgetCategory="home_screen|keyguard"
     android:updatePeriodMillis="10800000"
     android:initialLayout="@layout/widget_hijri"
     android:description="@string/widgetHijriDescription"/>
