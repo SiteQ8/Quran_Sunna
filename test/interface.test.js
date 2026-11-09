@@ -4009,6 +4009,13 @@ test('the countdown says باقٍ على أذان العصر, as it is actually 
   /* within the half hour after an adhan the clock counts up from it instead,
      so which of the two is shown depends on the hour the test runs at */
   const since = c.prev && c.prev.key !== 'sunrise' ? c.now - c.prev.at : -1;
+  /* and before that prayer's iqama, it counts down to the iqama */
+  const iqama = since >= 0 ? win.App.helpers.iqamaAfter(c.prev.key, new win.Date()) : 0;
+  if (iqama && since < iqama) {
+    assert.strictEqual(label, 'باقٍ على');
+    assert.strictEqual(name, 'إقامة ' + c.prev.ar, 'got ' + name);
+    return;
+  }
   if (since >= 0 && since < 30) {
     assert.strictEqual(label, 'مضى على');
     assert.strictEqual(name, 'أذان ' + c.prev.ar, 'got ' + name);
