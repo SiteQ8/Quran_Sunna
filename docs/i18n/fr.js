@@ -1048,6 +1048,7 @@ window.I18n && window.I18n.add({
  "سُنّة": "sunnas",
  "الأقسام": "Rubriques",
  "آية اليوم": "Verset du jour",
+ "هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن": "Voici les mosquées trouvées autour de vous la dernière fois, car les serveurs de cartes sont occupés",
  "الصلاة القادمة على شاشة القفل": "Prochaine prière sur l'écran verrouillé",
  "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة": "Une notification silencieuse qui décompte jusqu'à la prochaine prière",
  "تظهر الصلاة القادمة على شاشة القفل": "La prochaine prière s'affiche sur l'écran verrouillé",

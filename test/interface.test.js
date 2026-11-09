@@ -10056,7 +10056,8 @@ test('the retry button stands clear of the line above it', () => {
   assert.ok(again.className.indexOf('btn-primary') !== -1);
   /* both the empty answer and the failed one offer it the same way */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
-  assert.strictEqual((app.match(/btn-block mosque-again/g) || []).length, 2);
+  /* and so does the list kept from last time, shown when every server is busy */
+  assert.strictEqual((app.match(/btn-block mosque-again/g) || []).length, 3);
 });
 
 test('the app links file carries only real fingerprints', () => {

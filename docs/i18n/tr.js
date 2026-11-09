@@ -1048,6 +1048,7 @@ window.I18n && window.I18n.add({
  "سُنّة": "sünnet",
  "الأقسام": "Bölümler",
  "آية اليوم": "Günün ayeti",
+ "هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن": "Harita sunucuları şu an meşgul olduğu için, bunlar son kez çevrenizde bulunan camiler",
  "الصلاة القادمة على شاشة القفل": "Kilit ekranında sıradaki namaz",
  "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة": "Sıradaki namaza kalan süreyi sayan sessiz bir bildirim",
  "تظهر الصلاة القادمة على شاشة القفل": "Sıradaki namaz kilit ekranında görünüyor",

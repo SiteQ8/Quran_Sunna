@@ -1048,6 +1048,7 @@ window.I18n && window.I18n.add({
  "سُنّة": "na sunnoni",
  "الأقسام": "Sassa",
  "آية اليوم": "Ayar yau",
+ "هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن": "Waɗannan masallatan da aka samu kusa da kai a karo na ƙarshe ne, saboda sabobin taswira suna da aiki yanzu",
  "الصلاة القادمة على شاشة القفل": "Salla mai zuwa a allon kulle",
  "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة": "Sanarwa marar sauti mai ƙirga lokaci zuwa salla mai zuwa",
  "تظهر الصلاة القادمة على شاشة القفل": "Salla mai zuwa tana bayyana a allon kulle",

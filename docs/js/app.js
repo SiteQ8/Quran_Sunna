@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.137';
+  var VERSION = '8.87.138';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -8382,7 +8382,9 @@
         '<button class="row-body" data-act="mosque-look" data-ref="' + at + '"><span class="row-title" translate="no">' + esc(m.n) + '</span>' +
         '<span class="row-note mosque-far">' + farLabel(m.far) + '</span></button>' +
         '<button class="btn btn-ghost" data-act="mosque-go" data-ref="' + m.lat + ',' + m.lng + '|' + esc(m.n) + '">الطريق</button></div>';
-    }).join('');
+    }).join('') + (state.mosquesKept ?
+      '<p class="setting-note">هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن</p>' +
+      '<button class="btn btn-primary btn-block mosque-again" data-act="mosques-again">تحديث</button>' : '');
   }
 
   /* Overpass is answered by several servers and any one of them may be down,
@@ -8430,6 +8432,47 @@
     });
   }
 
+  /* When every Overpass server is busy, the mosques are asked of Photon, a
+     search over the same OpenStreetMap data that is run apart from them. It
+     searches by words, so it is asked for «مسجد» and «mosque» near the place
+     and kept to the houses of prayer whose name says mosque, within the same
+     three kilometres. Its answer is turned into the shape Overpass gives. */
+  var MOSQUE_NAME = /مسجد|جامع|مصلى|mosque|masjid|mesjid|masjed|cami|mosqu|мечеть|মসজিদ|مسجد/i;
+  function askPhoton(eye) {
+    var ask = function (word) {
+      return fetch('https://photon.komoot.io/api/?q=' + encodeURIComponent(word) + '&lat=' + eye.lat + '&lon=' + eye.lng +
+        '&limit=50&osm_tag=amenity:place_of_worship').then(function (r) { return r.json(); })
+        .then(function (d) { return (d && d.features) || []; }).catch(function () { return []; });
+    };
+    return Promise.all([ask('مسجد'), ask('mosque')]).then(function (lists) {
+      var seen = {};
+      var elements = [];
+      lists[0].concat(lists[1]).forEach(function (f) {
+        var p = f.properties || {}, c = (f.geometry || {}).coordinates || [];
+        if (typeof c[0] !== 'number' || !p.name || !MOSQUE_NAME.test(p.name)) return;
+        if (metresBetween(eye, { lat: c[1], lng: c[0] }) > 3000) return;
+        var key = p.osm_type + p.osm_id;
+        if (seen[key]) return;
+        seen[key] = true;
+        elements.push({ lat: c[1], lon: c[0], tags: { name: p.name } });
+      });
+      if (!elements.length) throw new Error('photon found none');
+      return { elements: elements };
+    });
+  }
+
+  /* the mosques last found near a place, kept so that busy servers show
+     them rather than an empty screen */
+  var MOSQUES_KEPT_NEAR = 1500;
+  function keptMosques(where) {
+    var kept = Store.get('mosquesKept');
+    if (!kept || !Array.isArray(kept.list) || !kept.list.length) return null;
+    if (metresBetween(where, { lat: kept.lat, lng: kept.lng }) > MOSQUES_KEPT_NEAR) return null;
+    return kept.list.map(function (m) {
+      return { n: m.n, lat: m.lat, lng: m.lng, far: metresBetween(where, { lat: m.lat, lng: m.lng }) };
+    }).sort(function (a, b) { return a.far - b.far; });
+  }
+
   function findMosques(around) {
     var where = place();
     var eye = around || where;
@@ -8437,7 +8480,11 @@
     var query = '[out:json][timeout:20];(node(around:3000,' + eye.lat + ',' + eye.lng +
       ')["amenity"="place_of_worship"]["religion"="muslim"];way(around:3000,' + eye.lat + ',' + eye.lng +
       ')["amenity"="place_of_worship"]["religion"="muslim"];);out center 40;';
-    askOverpass(query).then(function (data) {
+    /* only the latest search draws: an older one that ends later, for the
+       place the screen opened on, must not write over the one asked after it */
+    var ask = state.mosqueAsk = (state.mosqueAsk || 0) + 1;
+    askOverpass(query).catch(function () { return askPhoton(eye); }).then(function (data) {
+      if (ask !== state.mosqueAsk) return;
       var found = (data.elements || []).map(function (el) {
         var lat = typeof el.lat === 'number' ? el.lat : (el.center || {}).lat;
         var lng = typeof el.lon === 'number' ? el.lon : (el.center || {}).lon;
@@ -8460,8 +8507,13 @@
         return true;
       }).slice(0, 20);
       state.mosqueRetried = false;
+      state.mosquesKept = false;
+      if (state.mosques.length) {
+        Store.set('mosquesKept', { lat: eye.lat, lng: eye.lng, list: state.mosques.map(function (m) { return { n: m.n, lat: m.lat, lng: m.lng }; }) });
+      }
       if (state.view === 'mosques') renderMosques();
     }).catch(function () {
+      if (ask !== state.mosqueAsk) return;
       /* the servers were busy, not empty. One quiet retry after a moment
          catches the common case where a mirror freed up; only then is the
          reader shown the button to try again himself. */
@@ -8472,6 +8524,14 @@
         return;
       }
       state.mosqueRetried = false;
+      /* the mosques found here before, said to be so, with the way to look again */
+      var kept = keptMosques(eye);
+      if (kept) {
+        state.mosques = kept.slice(0, 20);
+        state.mosquesKept = true;
+        if (state.view === 'mosques') renderMosques();
+        return;
+      }
       state.mosques = [];
       if ($('mosque-list')) {
         $('mosque-list').innerHTML = '<p class="setting-note">خوادم الخرائط مشغولة الآن، وليس معناه أن لا مساجد حولك، فجرّب بعد قليل</p>' +

@@ -1048,6 +1048,7 @@ window.I18n && window.I18n.add({
  "سُنّة": "sunnah",
  "الأقسام": "Bahagian",
  "آية اليوم": "Ayat hari ini",
+ "هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن": "Ini masjid yang ditemui di sekitar anda kali terakhir, kerana pelayan peta sedang sibuk",
  "الصلاة القادمة على شاشة القفل": "Solat seterusnya di skrin kunci",
  "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة": "Pemberitahuan senyap yang mengira detik ke solat seterusnya",
  "تظهر الصلاة القادمة على شاشة القفل": "Solat seterusnya dipaparkan di skrin kunci",

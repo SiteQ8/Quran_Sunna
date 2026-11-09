@@ -1048,6 +1048,7 @@ window.I18n && window.I18n.add({
  "سُنّة": "Sunnahs",
  "الأقسام": "Sections",
  "آية اليوم": "Verse of the day",
+ "هذه المساجد التي وُجدت حولك آخر مرة، لأن خوادم الخرائط مشغولة الآن": "These are the mosques found around you last time, as the map servers are busy now",
  "الصلاة القادمة على شاشة القفل": "Next prayer on the lock screen",
  "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة": "A silent notification counting down to the next prayer",
  "تظهر الصلاة القادمة على شاشة القفل": "The next prayer shows on the lock screen",
