@@ -12,7 +12,7 @@ await p.evaluate(() => { const bn = document.getElementById('banner'); if (bn) b
 await p.clock.runFor(1500);
 for (const [name, script] of [['home', "App.go('home')"], ['page', "App.helpers.openPage(2)"]]) {
   await p.evaluate(script); await p.clock.runFor(600);
-  await p.screenshot({ path: '/home/claude/qs/docs/screens/social/' + name + '.png' });
+  await p.screenshot({ path: new URL('../../docs/screens/social/' + name + '.png', import.meta.url).pathname });
   console.log('shot', name, 'in sadu red');
 }
 await b.close();
