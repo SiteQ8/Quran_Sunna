@@ -1954,6 +1954,7 @@ window.I18n && window.I18n.add({
  "صلّيت الصلوات الخمس": "Na yi salloli biyar",
  "آية أخرى": "Wata aya",
  "دعاء آخر": "Wata addu'a",
+ "سورة {0:surah}، من آية {#1} إلى {#2}": "Surah {0}, aya ta {1} zuwa ta {2}",
  "آخر السحور": "Ƙarshen sahur",
  "لم أبدأ بها": "Ban fara ba",
  "أحفظها الآن": "Ina haddacewa yanzu",

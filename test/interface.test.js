@@ -7897,6 +7897,80 @@ test('the backup is a real file the reader can keep', () => {
   assert.ok(bridge.indexOf('DIRECTORY_DOWNLOADS') !== -1);
 });
 
+test('the du\'a widget draws on every sourced du\'a the app holds, a little of each in turn', () => {
+  const { win } = boot();
+  const H = win.App.helpers;
+  const pool = H.duaPool();
+  if (process.env.SHOW_DUAS) pool.forEach((d, k) => console.log(k + ' | ' + d.n + ' | ' + d.r + ' | ' + d.i + ' | ' + d.t));
+  /* far more than the fifteen of the du'a page it once read */
+  assert.ok(pool.length >= 60, 'the pool holds ' + pool.length);
+  /* the Quran, the du'a page and Hisn al-Muslim are all in it */
+  const kinds = { quran: 0, page: 0, hisn: 0 };
+  pool.forEach((d) => { if (d.i >= 1000000) kinds.quran++; else if (d.i >= 10000) kinds.hisn++; else kinds.page++; });
+  assert.ok(kinds.quran >= 25 && kinds.hisn >= 12 && kinds.page >= 10, JSON.stringify(kinds));
+  /* every du'a names where it is from, and fits the widget */
+  pool.forEach((d) => {
+    assert.ok(d.r && d.r.length > 2, 'a source for ' + d.t);
+    assert.ok(d.t.length <= 200, 'too long for a widget: ' + d.t);
+  });
+  /* no du'a comes twice, however it is written */
+  const bare = (t) => t.replace(/[ً-ٰٟۖ-ۭـ]/g, '').replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[^ء-ي]/g, '');
+  const keys = pool.map((d) => bare(d.t));
+  assert.strictEqual(new Set(keys).size, keys.length);
+  /* the occasions, the adhkar of an act and the unsourced book stay out */
+  assert.ok(!pool.some((d) => /مناسبات/.test(d.n)));
+  assert.ok(!pool.some((d) => /الخلاء|لبس الثوب|لُبْس/.test(d.n)));
+  /* a run of verses is one du'a: رب هب لي حكما with the two that follow it */
+  const run = pool.find((d) => d.i === 1000000 + 26 * 1000 + 83);
+  assert.ok(run && /من آية 83 إلى 85/.test(run.r), 'al-shu\'ara 83 to 85 together: ' + (run && run.r));
+  /* a du'a the du'a page already gives is not given again from the themes,
+     though the page writes it «طه 25-28» or «النمل 19 والأحقاف 15» */
+  [[20, 25], [20, 114], [27, 19], [46, 15], [2, 201], [25, 74]].forEach(([su, a]) => {
+    assert.ok(!pool.some((d) => d.i === 1000000 + su * 1000 + a), su + ':' + a + ' comes once');
+  });
+  /* the du'a is quoted from where it begins, the story around it left out */
+  const words = (su, a) => win.Mushaf.ayah(su, a).split(' ');
+  const musa = pool.find((d) => d.i === 1028024);
+  assert.strictEqual(musa.t, words(28, 24).slice(7).join(' '), 'from رب, the eighth word');
+  const zakariyya = pool.find((d) => d.i === 1003038);
+  assert.strictEqual(zakariyya.t, words(3, 38).slice(6).join(' '));
+  const akhira = pool.find((d) => d.i === 1007156);
+  assert.strictEqual(akhira.t, words(7, 156).slice(1, 12).join(' '), 'and an end where the du\'a ends');
+  /* and the words are the mushaf's own, in their order */
+  pool.filter((d) => d.i >= 1000000).forEach((d) => {
+    const su = Math.floor((d.i - 1000000) / 1000), a = d.i % 1000;
+    assert.ok(win.Mushaf.ayah(su, a).replace(/\s*\u06E9/g, '').indexOf(d.t.split(' ').slice(0, 3).join(' ')) !== -1, 'from the mushaf: ' + d.t);
+  });
+  /* two verses of the themes are not du'as */
+  assert.ok(!pool.some((d) => d.i === 1026080 || d.i === 1065003));
+  /* no five in a row from one topic, and Quran and Sunnah take turns */
+  for (let k = 0; k + 4 < pool.length; k++) {
+    const five = pool.slice(k, k + 5);
+    assert.ok(new Set(five.map((d) => d.n)).size > 1, 'five of one topic at ' + k);
+    assert.ok(five.some((d) => d.i >= 1000000) || five.some((d) => d.i < 1000000) , 'both kinds near ' + k);
+  }
+  const day = H.duasOfDay(new win.Date(2026, 10, 14), 25);
+  assert.strictEqual(day.length, 25);
+  assert.ok(new Set(day.map((d) => d.n)).size >= 10, 'a day\'s twenty five span many topics');
+  assert.ok(day.some((d) => d.i >= 1000000) && day.some((d) => d.i >= 10000 && d.i < 1000000) && day.some((d) => d.i < 10000));
+  /* the du'a of the day moves on every day, and comes back only after all */
+  const firsts = [];
+  for (let k = 0; k < pool.length; k++) firsts.push(H.duasOfDay(new win.Date(2026, 0, 1 + k), 1)[0].i);
+  assert.strictEqual(new Set(firsts).size, pool.length, 'every du\'a has its day');
+  /* a tap opens the du'a where it is kept */
+  win.App.go('home');
+  assert.strictEqual(H.openFromWidget('widgetDua1020025'), true);
+  assert.strictEqual(win.App.state.view, 'page', 'a verse opens on its page of the mushaf');
+  assert.strictEqual(win.App.state.page, win.Mushaf.pageOf(20, 25));
+  assert.strictEqual(H.openFromWidget('widgetDua13501'), true);
+  assert.strictEqual(win.App.state.view, 'hisn');
+  assert.strictEqual(win.App.state.hisn, 35);
+  assert.strictEqual(H.openFromWidget('widgetDua101'), true);
+  assert.strictEqual(win.App.state.view, 'dua');
+  assert.strictEqual(H.openFromWidget('widgetDua'), true);
+  assert.strictEqual(win.App.state.view, 'dua');
+});
+
 test('a calendar entry says what the occasion is, where it is narrated, and the hours of a fast', () => {
   const { win } = boot();
   const H = win.App.helpers;
@@ -12464,6 +12538,20 @@ test('the phones say their own words in the reader\'s language: channels, the ad
   const rows = sent[sent.length - 1];
   assert.ok(rows.length && rows.every(function (r) { return r.title && r.body; }), 'every adhan is handed its words');
   assert.ok(/^حان وقت /.test(rows[0].title));
+});
+
+test('after the isha the five prayers of the widget say they are tomorrow\'s', () => {
+  const { win } = boot();
+  const d = win.App.helpers.widgetData();
+  assert.strictEqual(d.words.tomorrow, 'غداً،', 'the word, with the comma of its language');
+  const read = function (rel) { return fs.readFileSync(path.join(__dirname, '..', rel), 'utf8'); };
+  const day = read('android/app/src/main/java/com/eworldq8/sunnati/PrayerDayWidget.java');
+  assert.ok(day.indexOf('ahead0 = true;') !== -1 && day.indexOf('String soon = ahead ? WidgetStore.word(all, "tomorrow", "") : "";') !== -1);
+  assert.ok(day.indexOf('title = soon + " " + title;') !== -1);
+  const swift = read('ios/Widget/PrayerWidget.swift');
+  assert.ok(swift.indexOf('let soon = showTomorrow && day?.date != today?.date ? (data?.words?["tomorrow"] ?? "") : ""') !== -1);
+  /* and the lock screen turns to the day ahead too, as the home screen does */
+  assert.ok(swift.indexOf('let ahead = (today?.five.last?.when ?? .distantFuture) <= now') !== -1);
 });
 
 test('the ayah and du\'a widgets turn to others, and the tasbih and the prayers of the day have widgets of their own', () => {

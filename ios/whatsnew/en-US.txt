@@ -1,3 +1,5 @@
 Occasions you add to your calendar now say more. A fast runs from Fajr to Maghrib for your city, with its virtue, where it is narrated, and the times of suhoor and iftar, a reminder the evening before and another before Fajr for suhoor, and it never shows you as busy.
 
 The monthly timetable names the weekday over every date, marks Fridays and the next prayer, and sums up how Fajr, Maghrib and the length of the day shift over the month. The spacing around verse numbers in the mushaf is now even, no line starts with a verse number alone, and the wording of the Sunnah lists has been corrected.
+
+The du'a widget now draws on every du'a of the Quran, the Sunnah and Hisn al-Muslim, each with its source, moving across their topics instead of staying in one part, and after Isha the prayers widget says that it shows tomorrow's times.

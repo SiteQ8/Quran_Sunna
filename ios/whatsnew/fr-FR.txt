@@ -1,3 +1,5 @@
 Les occasions ajoutées à votre calendrier en disent plus : un jeûne va du Fajr au Maghrib selon votre ville, avec son mérite, sa source et les heures du sahour et de la rupture, un rappel la veille au soir et un autre avant le Fajr pour le sahour, sans vous marquer occupé.
 
 Le calendrier du mois indique le jour de la semaine, signale le vendredi et la prochaine prière, et résume l'évolution du Fajr, du Maghrib et de la durée du jour. Les espaces autour des numéros de versets du mushaf sont désormais réguliers.
+
+Le widget de l'invocation puise désormais dans toutes les invocations du Coran, de la Sunna et de la Citadelle du musulman, chacune avec sa source, et après l'Isha le widget des prières indique qu'il affiche les horaires du lendemain.

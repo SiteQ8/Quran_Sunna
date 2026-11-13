@@ -559,3 +559,33 @@ test('widgets: a language with its own figures hands them, and the counts are wr
   assert.ok(read(java + 'PrayerDayWidget.java').indexOf('optString("short"') !== -1, 'the day row takes the short time');
   assert.ok(read('ios/Widget/PrayerWidget.swift').indexOf('func figures(') !== -1, 'and the iPhone widgets count in them too');
 });
+
+test('the widgets speak English too: tomorrow with its own comma, and each du\'a\'s source', () => {
+  const { win } = boot({ languages: ['en-US'], file: 'en', storage: { 'sunnati.lang': 'en' } });
+  const data = win.App.helpers.widgetData();
+  assert.strictEqual(data.words.tomorrow, 'Tomorrow,');
+  const pool = win.App.helpers.duaPool();
+  const run = pool.find((d) => d.i === 1026083);
+  assert.ok(run, 'the run of al-Shu\'ara is there');
+  const shown = win.App.helpers.duasOfDay(new win.Date(2026, 10, 14), 25);
+  shown.forEach((d) => {
+    assert.ok(!/[ء-ي]/.test(d.r), 'the source in English: ' + d.r);
+    assert.ok(!/[ء-ي]/.test(d.n), 'the topic in English: ' + d.n);
+  });
+  const range = win.App.helpers.duasOfDay(new win.Date(2026, 10, 14), pool.length).find((d) => d.i === 1026083);
+  assert.ok(/^Surah .+, verses 83 to 85$/.test(range.r), range.r);
+});
+
+test('every du\'a a widget can show names its topic and source in the reader\'s language', () => {
+  ['en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn'].forEach((lang) => {
+    const { win } = boot({ languages: [lang], file: lang, storage: { 'sunnati.lang': lang } });
+    const all = win.App.helpers.duasOfDay(new win.Date(2026, 10, 14), 500);
+    assert.ok(all.length >= 60, lang + ' has the whole pool');
+    all.forEach((d) => {
+      assert.ok(!/[ء-ي]{2,}/.test(d.r.replace(/ﷺ/g, '')), lang + ' source: ' + d.r);
+      assert.ok(!/[ء-ي]{2,}/.test(d.n), lang + ' topic: ' + d.n);
+    });
+    const w = win.App.helpers.widgetData().words;
+    assert.ok(/,$/.test(w.tomorrow) && !/[ء-ي]/.test(w.tomorrow), lang + ' tomorrow: ' + w.tomorrow);
+  });
+});

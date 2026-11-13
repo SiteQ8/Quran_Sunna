@@ -42,22 +42,24 @@ public final class PrayerDayWidget extends AppWidgetProvider {
         JSONObject found = WidgetStore.day(all, now);
         JSONArray five0 = found == null ? null : found.optJSONArray("five");
         /* once the isha is gone the day that matters is the next one */
+        boolean ahead0 = false;
         if (five0 != null && five0.length() > 0 && five0.optJSONObject(five0.length() - 1).optLong("at") < now) {
             JSONObject next = WidgetStore.day(all, now + 86400000L);
-            if (next != null) { found = next; five0 = next.optJSONArray("five"); }
+            if (next != null) { found = next; five0 = next.optJSONArray("five"); ahead0 = true; }
         }
         final JSONObject day = found;
         final JSONArray five = five0;
+        final boolean ahead = ahead0;
         final String place = all == null ? WidgetData.place(context) : all.optString("place", WidgetData.place(context));
         final int sky = WidgetStore.skyDrawable(WidgetStore.skyName(WidgetStore.day(all, now), now));
         for (int id : ids) {
             manager.updateAppWidget(id, WidgetStore.sized(manager, id, 340f, 170f,
-                size -> fill(context, size, day, five, place, sky, now, all)));
+                size -> fill(context, size, day, five, place, sky, now, all, ahead)));
         }
     }
 
     private static RemoteViews fill(Context context, android.util.SizeF size, JSONObject day, JSONArray five, String place,
-                                    int sky, long now, JSONObject all) {
+                                    int sky, long now, JSONObject all, boolean ahead) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_day);
         views.setOnClickPendingIntent(R.id.day_root, WidgetStore.open(context, "widgetDay", 7401));
         WidgetStore.direct(views, android.R.id.background, all);
@@ -70,6 +72,10 @@ public final class PrayerDayWidget extends AppWidgetProvider {
             return views;
         }
         String title = (day.optString("day") + "  " + day.optString("hijri")).trim();
+        /* the day ahead says it is tomorrow: «السبت» on a friday evening, with
+           nothing before it, reads as a wrong date */
+        String soon = ahead ? WidgetStore.word(all, "tomorrow", "") : "";
+        if (soon.length() > 0) title = soon + " " + title;
         /* the civil date under the hijri one, and the place beside it */
         String civil = day.optString("civil");
         String under = civil.length() == 0 ? place : place == null || place.length() == 0 ? civil : civil + "  ·  " + place;

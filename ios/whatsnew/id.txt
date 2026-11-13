@@ -1,3 +1,5 @@
 Acara yang Anda tambahkan ke kalender kini lebih lengkap: puasa berlangsung dari Subuh hingga Magrib menurut kota Anda, dengan keutamaannya, sumbernya, serta waktu sahur dan berbuka, pengingat pada malam sebelumnya dan sebelum Subuh untuk sahur, tanpa menandai Anda sibuk.
 
 Jadwal bulanan menampilkan nama hari, menandai Jumat dan salat berikutnya, serta merangkum pergeseran Subuh, Magrib, dan panjang siang. Jarak di sekitar nomor ayat dalam mushaf kini rata.
+
+Widget doa kini mengambil dari semua doa Al-Qur'an, Sunnah, dan Hisnul Muslim, masing-masing dengan sumbernya, dan setelah Isya widget salat menyebut bahwa yang ditampilkan adalah waktu esok hari.

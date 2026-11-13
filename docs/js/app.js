@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.144';
+  var VERSION = '8.87.145';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -7274,6 +7274,12 @@
       log: 'صلواتي اليوم', prayed: 'صلّيت', allPrayed: 'صلّيت الصلوات الخمس', anotherAyah: 'آية أخرى', anotherDua: 'دعاء آخر'
     };
     Object.keys(w).forEach(function (k) { w[k] = tongue(w[k]); });
+    /* after the isha the day's five turn to the day ahead, and the heading
+       says so, or «السبت» at eight on a friday evening reads as a mistake.
+       It comes with the comma of its own language, since the widgets only
+       set it before the day. */
+    var lang = window.I18n && window.I18n.lang ? window.I18n.lang : 'ar';
+    w.tomorrow = tongue('غداً') + (/^(ar|ur|fa)/.test(lang) ? '،' : ',');
     return w;
   }
 
@@ -7327,23 +7333,160 @@
   }
 
   /* The du'a of the day, and the ones after it a widget's refresh turns to,
-     from the du'as of the Quran and the Sunnah the du'a page lists, each with
-     its source: the surah and ayah, or the book of hadith. The du'as of an
-     occasion (a wedding, a funeral) are left to their moment, and the book of
-     du'as, which names no source for its lines, is not drawn on. */
+     from every du'a of the Quran and the Sunnah the app holds, each with its
+     source: the du'as of the du'a page, the Quranic du'as of its themes read
+     from the mushaf itself, and the du'as of Hisn al-Muslim that are made at
+     any hour. They take turns, a du'a of the Quran and one of the Sunnah, and
+     the topics take turns within each, so a day's du'as and every refresh come
+     from across the whole collection. They once came in the order the du'a
+     page lists them, so a day and all its refreshes stayed in one category.
+     The du'as of an occasion (a wedding, a funeral), the adhkar of an act
+     (the washroom, a garment) and the book of du'as, which names no source for
+     its lines, are left to their own pages. */
   var DUA_OF_DAY_LONGEST = 200;
-  function duasOfDay(day, count) {
-    if (typeof DUAS === 'undefined') return [];
-    var pool = [];
-    DUAS.forEach(function (g, gi) {
-      if (/مناسبات/.test(g.cat)) return;
-      g.items.forEach(function (d, di) {
-        if (d.r && d.t.length <= DUA_OF_DAY_LONGEST) pool.push({ t: d.t, n: g.cat, r: d.r, i: gi * 100 + di });
+  /* the du'as of Hisn al-Muslim fit for any day, by chapter and place: its
+     chapters also hold hadiths and instructions, which are not du'as */
+  var HISN_DUAS = [[35, 1], [24, 2], [43, 0], [19, 5], [41, 0], [24, 4], [92, 0], [20, 1],
+    [24, 0], [35, 0], [24, 6], [19, 6], [24, 5], [35, 3], [24, 10], [34, 1]];
+  /* Where the du'a begins in a verse of the themes, by word, and where it
+     ends when it does not end with the verse, as the books of du'a quote it:
+     «رب إني لما أنزلت إلي من خير فقير» without «فسقى لهما ثم تولى إلى الظل».
+     The words are the mushaf's own, so nothing of the Quran is written twice.
+     Two verses of the themes are not du'as at all and stay on their page. */
+  var QURAN_DUA_FROM = {
+    '5:114': [4], '28:24': [7], '23:29': [1], '25:74': [2], '20:25': [1], '2:250': [5], '3:147': [6],
+    '2:201': [3], '3:26': [1], '3:16': [2], '66:11': [9], '17:24': [7], '46:15': [24], '3:38': [6],
+    '7:156': [1, 11], '21:83': [5], '21:87': [14], '21:89': [4], '23:118': [1], '7:23': [1],
+    '2:286': [14], '23:109': [6], '18:10': [6], '3:173': [13], '60:4': [46], '9:129': [3], '11:88': [30],
+    '12:101': [11], '7:126': [11], '59:10': [5], '20:114': [16], '7:143': [38], '27:19': [5],
+    '7:151': [1], '7:155': [37]
+  };
+  var QURAN_NOT_DUA = { '26:80': true, '65:3': true };
+
+  /* a du'a's letters alone, so the same du'a written twice is told apart from
+     two du'as: no marks, no stops, one shape of each letter */
+  function bareDua(t) {
+    return String(t).replace(/[ً-ٰٟۖ-ۭـ]/g, '')
+      .replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[^ء-ي]/g, '');
+  }
+
+  /* lists woven in turn, the first of each, then the second of each */
+  function weaveLists(lists) {
+    var out = [];
+    for (var k = 0; ; k++) {
+      var any = false;
+      lists.forEach(function (l) { if (k < l.length) { out.push(l[k]); any = true; } });
+      if (!any) return out;
+    }
+  }
+
+  /* two lists merged evenly, whatever their lengths */
+  function evenly(a, b) {
+    var out = [], i = 0, j = 0;
+    while (i < a.length || j < b.length) {
+      if (j >= b.length || (i < a.length && (i + 0.5) / a.length <= (j + 0.5) / b.length)) out.push(a[i++]);
+      else out.push(b[j++]);
+    }
+    return out;
+  }
+
+  function duaPool() {
+    var quran = [], sunnah = [], seen = {}, verses = {};
+    var keep = function (list, d) {
+      var key = bareDua(d.t);
+      if (!key || seen[key] || d.t.length > DUA_OF_DAY_LONGEST) return;
+      seen[key] = true;
+      list.push(d);
+    };
+    /* the du'a page's own, and the verses its Quranic du'as already give */
+    var surahOf = {};
+    for (var n = 1; n <= 114; n++) { var m = surahMeta(n); if (m) surahOf[m.ar] = n; }
+    if (typeof DUAS !== 'undefined') {
+      DUAS.forEach(function (g, gi) {
+        if (/مناسبات/.test(g.cat)) return;
+        var list = [];
+        g.items.forEach(function (d, di) {
+          if (!d.r) return;
+          /* «البقرة 201», «طه 25-28», «النمل 19 والأحقاف 15» */
+          Object.keys(surahOf).forEach(function (name) {
+            var at = new RegExp(name + '\\s+(\\d+)(?:-(\\d+))?', 'g'), hit;
+            while ((hit = at.exec(d.r))) {
+              for (var v = +hit[1]; v <= +(hit[2] || hit[1]); v++) verses[surahOf[name] + ':' + v] = true;
+            }
+          });
+          keep(list, { t: d.t, n: g.cat, r: d.r, i: gi * 100 + di });
+        });
+        (/قرآن/.test(g.cat) ? quran : sunnah).push(list);
       });
-    });
+    }
+    /* Hisn al-Muslim, chapter by chapter */
+    if (typeof HISN !== 'undefined') {
+      var chapters = {}, order = [];
+      HISN.forEach(function (c) { chapters[c.id] = c; });
+      var byChapter = {};
+      HISN_DUAS.forEach(function (p) {
+        var c = chapters[p[0]], item = c && c.i[p[1]];
+        if (!item) return;
+        if (!byChapter[p[0]]) { byChapter[p[0]] = []; order.push(p[0]); }
+        keep(byChapter[p[0]], { t: item.t, n: c.t, r: 'حصن المسلم', i: 10000 + p[0] * 100 + p[1] });
+      });
+      order.forEach(function (id) { sunnah.push(byChapter[id]); });
+    }
+    /* the Quranic du'as of the themes, from the mushaf: verses that follow one
+       another in a theme are one du'a, «رب اشرح لي صدري» and what follows it,
+       and a run too long for a widget gives its verses one by one */
+    if (typeof DUA_THEMES !== 'undefined' && typeof Mushaf !== 'undefined' && Mushaf.ready()) {
+      DUA_THEMES.forEach(function (theme) {
+        var runs = [];
+        String(theme.v).split(',').forEach(function (x) {
+          var p = x.split(':'), su = +p[0], a = +p[1];
+          var last = runs[runs.length - 1];
+          if (last && last.s === su && last.to + 1 === a) last.to = a; else runs.push({ s: su, from: a, to: a });
+        });
+        var list = [];
+        var add = function (su, from, to) {
+          for (var a = from; a <= to; a++) if (verses[su + ':' + a] || QURAN_NOT_DUA[su + ':' + a]) return false;
+          var words = [];
+          for (var b = from; b <= to; b++) {
+            var cut = QURAN_DUA_FROM[su + ':' + b];
+            var verse = Mushaf.ayah(su, b).replace(SAJDA_SIGN, '').split(' ');
+            /* a cut applies to the verse that opens the du'a, and an end to
+               the one that closes it */
+            if (cut && b === from) verse = verse.slice(cut[0], cut[1] === undefined ? verse.length : cut[1] + 1);
+            words.push(verse.join(' '));
+          }
+          var meta = surahMeta(su);
+          var before = list.length;
+          keep(list, {
+            t: words.join(' '), n: theme.n,
+            r: from === to ? tongue('سورة ' + (meta ? meta.ar : '') + '، آية ' + ar(from))
+              : tongue('سورة ' + (meta ? meta.ar : '') + '، من آية ' + ar(from) + ' إلى ' + ar(to)),
+            i: 1000000 + su * 1000 + from
+          });
+          if (list.length > before) for (var c2 = from; c2 <= to; c2++) verses[su + ':' + c2] = true;
+          return list.length > before;
+        };
+        runs.forEach(function (run) {
+          if (add(run.s, run.from, run.to) || run.from === run.to) return;
+          for (var a = run.from; a <= run.to; a++) add(run.s, a, a);
+        });
+        quran.push(list);
+      });
+    }
+    return evenly(weaveLists(quran), weaveLists(sunnah));
+  }
+
+  function duasOfDay(day, count) {
+    var pool = duaPool();
     if (!pool.length) return [];
+    /* each day begins a few du'as further on, by a step that shares nothing
+       with the length of the pool, so the du'a of the day walks through all
+       of them before one comes back */
+    var step = 7;
+    var gcd = function (a, b) { return b ? gcd(b, a % b) : a; };
+    while (pool.length > 1 && gcd(step, pool.length) !== 1) step++;
     var noon = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 12);
-    var start = Math.floor(noon.getTime() / 86400000) % pool.length;
+    var start = (Math.floor(noon.getTime() / 86400000) * step) % pool.length;
     var out = [];
     for (var k = 0; k < Math.min(count, pool.length); k++) {
       var d = pool[(start + k) % pool.length];
@@ -7440,8 +7583,22 @@
     /* the ayah a widget turned to after its refresh, by its page */
     var page = /^widgetPage(\d{1,3})$/.exec(kind);
     if (page) { openPage(+page[1]); return true; }
-    /* the du'a page, where the du'a of the day is listed with its source */
-    if (/^widgetDua\d{0,4}$/.test(kind)) { go('dua'); return true; }
+    /* the du'a where it is kept: the verse in the mushaf, the chapter of Hisn
+       al-Muslim, or the du'a page, by the number the widget was handed */
+    var dua = /^widgetDua(\d{0,7})$/.exec(kind);
+    if (dua) {
+      var at = +dua[1];
+      if (at >= 1000000 && typeof Mushaf !== 'undefined' && Mushaf.ready()) {
+        var su = Math.floor((at - 1000000) / 1000), ay = at % 1000;
+        if (su >= 1 && su <= 114 && Mushaf.ayah(su, ay)) { openPage(Mushaf.pageOf(su, ay)); return true; }
+      }
+      if (at >= 10000 && at < 1000000 && typeof HISN !== 'undefined') {
+        var id = Math.floor((at - 10000) / 100);
+        if (HISN.some(function (c) { return c.id === id; })) { state.hisn = id; go('hisn'); return true; }
+      }
+      go('dua');
+      return true;
+    }
     if (kind === 'widgetTasbih') { go('tasbih'); return true; }
     if (kind === 'widgetLog') { go('prayers'); return true; }
     if (kind === 'widgetKhatma') { openPage(+Store.get('lastPage') || 1); return true; }
@@ -12321,7 +12478,7 @@
       renderQada: renderQada, searchTexts: searchTexts, todaySunanLines: todaySunanLines, fastToday: fastToday, isPlaceDua: isPlaceDua, renderDuaPlaces: renderDuaPlaces, loadMadinahLines: loadMadinahLines, renderPrintedPage: renderPrintedPage, fitPrintedLines: fitPrintedLines, surahsNamed: surahsNamed, surahAudioUrl: surahAudioUrl, playSurah: playSurah, playWholeSurah: playWholeSurah, askHowToListen: askHowToListen, reciteFrom: reciteFrom, reciteVerse: reciteVerse, playVerse: playVerse, verseUrl: verseUrl, verseAudioUrl: verseAudioUrl, rateOf: rateOf, bytesPerVerse: bytesPerVerse, dropSilentSaves: dropSilentSaves, cardColours: cardColours, dismissBootSplash: dismissBootSplash, appDrawsSplash: appDrawsSplash, tellSun: tellSun, splashLand: splashLand, warmSplash: warmSplash, warmNextVerse: warmNextVerse, tellAppSounding: tellAppSounding, showInShade: showInShade, togglePlay: togglePlay, stopAudio: function () { stopAudio(); },
       renderMosques: renderMosques, renderMosqueList: renderMosqueList, findMosques: findMosques, lookAtMosque: lookAtMosque, drawMap: drawMap, fromTile: fromTile, lookAround: lookAround, askOverpass: askOverpass, metresBetween: metresBetween, farLabel: farLabel, toTile: toTile, mosqueRoute: mosqueRoute, offerAfterPrayer: offerAfterPrayer,
       ramadanMonth: ramadanMonth, setRamadanFast: setRamadanFast, iqamaAfter: iqamaAfter, zakatFigures: zakatFigures, setHifz: setHifz, hifzDue: hifzDue,
-      widgetData: widgetData, handWidgetData: handWidgetData, openFromWidget: openFromWidget,
+      widgetData: widgetData, handWidgetData: handWidgetData, openFromWidget: openFromWidget, duaPool: duaPool, duasOfDay: duasOfDay,
       reminderList: reminderList, handRemindersToApp: handRemindersToApp, inJumuahNight: inJumuahNight, nightKey: nightKey, maybeJumuahNightSheet: maybeJumuahNightSheet, showDueSheets: showDueSheets, shareJumuahNight: shareJumuahNight, listCard: listCard, snoozeJumuahNight: snoozeJumuahNight, wirdFor: wirdFor,
       ar: ar, esc: esc, icon: icon, highlight: highlight, hexToWash: hexToWash,
       tabOwner: tabOwner, prayerName: prayerName, nameForPlace: nameForPlace, coordsLabel: coordsLabel, count: count,

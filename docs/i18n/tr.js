@@ -1954,6 +1954,7 @@ window.I18n && window.I18n.add({
  "صلّيت الصلوات الخمس": "Beş vakit kılındı",
  "آية أخرى": "Başka bir ayet",
  "دعاء آخر": "Başka bir dua",
+ "سورة {0:surah}، من آية {#1} إلى {#2}": "{0} suresi, ayet {1} ile {2} arası",
  "آخر السحور": "Sahurun sonu",
  "لم أبدأ بها": "Başlamadım",
  "أحفظها الآن": "Şu an ezberliyorum",

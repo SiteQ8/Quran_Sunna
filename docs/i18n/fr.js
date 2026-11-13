@@ -1957,6 +1957,7 @@ window.I18n && window.I18n.add({
  "صلّيت الصلوات الخمس": "Les cinq prières accomplies",
  "آية أخرى": "Un autre verset",
  "دعاء آخر": "Une autre invocation",
+ "سورة {0:surah}، من آية {#1} إلى {#2}": "Sourate {0}, versets {1} à {2}",
  "آخر السحور": "Fin du suhour",
  "لم أبدأ بها": "Pas commencée",
  "أحفظها الآن": "En cours de mémorisation",

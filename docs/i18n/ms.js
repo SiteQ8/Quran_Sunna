@@ -1954,6 +1954,7 @@ window.I18n && window.I18n.add({
  "صلّيت الصلوات الخمس": "Lima solat telah ditunaikan",
  "آية أخرى": "Ayat lain",
  "دعاء آخر": "Doa lain",
+ "سورة {0:surah}، من آية {#1} إلى {#2}": "Surah {0}, ayat {1} hingga {2}",
  "آخر السحور": "Akhir sahur",
  "لم أبدأ بها": "Belum mula",
  "أحفظها الآن": "Sedang menghafal",

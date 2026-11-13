@@ -1,3 +1,5 @@
 Takviminize eklediğiniz günler artık daha ayrıntılı: oruç, şehrinizin vakitlerine göre sabahtan akşama kadar görünür, fazileti, kaynağı, sahur ve iftar vakitleriyle birlikte; bir akşam önce ve sahur için sabahtan önce hatırlatma gelir ve sizi meşgul göstermez.
 
 Aylık vakit çizelgesi her tarihin üstünde günü yazar, cumayı ve sıradaki namazı belirtir, sabah ve akşam vaktiyle gün uzunluğunun ay boyunca nasıl değiştiğini özetler. Mushafta ayet numaralarının çevresindeki boşluklar artık eşit.
+
+Dua widget'ı artık Kur'an, Sünnet ve Hısnu'l Müslim'deki duaların tamamından, her biri kaynağıyla seçiyor; yatsıdan sonra namaz widget'ı yarının vakitlerini gösterdiğini belirtiyor.

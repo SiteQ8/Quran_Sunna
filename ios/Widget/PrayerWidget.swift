@@ -662,7 +662,10 @@ struct DayView: View {
     switch family {
     case .accessoryRectangular:
       let now = entry.date
-      let list = data?.day(now)?.five ?? []
+      /* after the isha, the day ahead, as on the home screen */
+      let today = data?.day(now)
+      let ahead = (today?.five.last?.when ?? .distantFuture) <= now
+      let list = (ahead ? data?.day(now.addingTimeInterval(86400)) ?? today : today)?.five ?? []
       let next = list.first(where: { $0.when > now })?.key
       HStack(spacing: 2) {
         ForEach(Array(list.enumerated()), id: \.offset) { _, p in
@@ -691,7 +694,11 @@ struct DayView: View {
     let nextKey = list.first(where: { $0.when > now })?.key
     return VStack(alignment: .leading, spacing: 8) {
       VStack(alignment: .leading, spacing: 2) {
-        Text("\(day?.day ?? "")  \(day?.hijri ?? "")").font(plex(data, 15, .bold, .subheadline)).lineLimit(1).minimumScaleFactor(0.8)
+        /* the day ahead says it is tomorrow: «السبت» on a friday evening,
+           with nothing before it, reads as a wrong date */
+        let soon = showTomorrow && day?.date != today?.date ? (data?.words?["tomorrow"] ?? "") : ""
+        Text((soon.isEmpty ? "" : soon + " ") + "\(day?.day ?? "")  \(day?.hijri ?? "")")
+          .font(plex(data, 15, .bold, .subheadline)).lineLimit(1).minimumScaleFactor(0.8)
         /* the civil date under the hijri one, and the place beside it */
         Text([day?.civil ?? "", data?.place ?? ""].filter { !$0.isEmpty }.joined(separator: "  \u{00B7}  "))
           .font(plex(data, 11, .regular, .caption2)).opacity(0.85).lineLimit(1)
