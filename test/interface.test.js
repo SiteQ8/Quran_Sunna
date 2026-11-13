@@ -3373,6 +3373,31 @@ test('the hijri month is named where it turns over, never cut in half', () => {
   });
 });
 
+test('the table names each weekday, marks friday and the prayer still to come, and sums up the month', () => {
+  const { win, doc } = boot();
+  win.App.go('timetable');
+  const rows = [...doc.querySelectorAll('#tt-table tbody tr')];
+  /* every date carries its weekday, a friday row says الجمعة */
+  rows.forEach((r) => assert.ok(r.querySelector('.tt-week').textContent.trim().length > 0));
+  const friday = rows.find((r) => r.getAttribute('data-friday') === '1');
+  assert.strictEqual(friday.querySelector('.tt-week').textContent, 'الجمعة');
+  /* at most one prayer is picked out, on today's row, and its cell still reads as a time */
+  const next = doc.querySelectorAll('#tt-table td.is-next');
+  assert.ok(next.length <= 1);
+  if (next.length) {
+    assert.ok(next[0].closest('tr').classList.contains('is-today'));
+    assert.match(next[0].textContent, /^\d{1,2}:\d{2}[ ⁠][صم]$/);
+  }
+  /* days gone by step back, and none of them is today */
+  doc.querySelectorAll('#tt-table tr.is-past').forEach((r) => assert.ok(!r.classList.contains('is-today')));
+  /* three figures for the month: fajr, maghrib and the length of the day */
+  const tiles = [...doc.querySelectorAll('#tt-trend .tt-move')];
+  assert.strictEqual(tiles.length, 3);
+  assert.match(tiles[0].textContent, /الفجر/);
+  assert.match(tiles[1].textContent, /المغرب/);
+  assert.match(tiles[2].textContent, /النهار/);
+});
+
 test('the table walks month by month and finds its way back', () => {
   const { win, doc } = boot();
   win.App.go('timetable');

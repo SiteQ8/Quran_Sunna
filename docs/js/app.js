@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.141';
+  var VERSION = '8.87.142';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -9408,25 +9408,69 @@
        it changes and the days between carry their number alone. Cutting the
        name to fit would break it mid word, and ربيع ا is not a month. */
     var lastMonth = null;
+    /* the day of the week heads each date, as a wall calendar prints it, in
+       full in Arabic and in the phone's own short form in another language */
+    var other = window.I18n && window.I18n.lang !== 'ar' ? window.I18n.speech : null;
+    var shortDay = null;
+    if (other) {
+      try { shortDay = new Intl.DateTimeFormat(other, { weekday: 'short' }); } catch (e) { shortDay = null; }
+    }
+    /* on today's row the prayer still to come stands out, so the table answers
+       at a glance what the home screen answers */
+    var now = nowMinutes(today);
+    var startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     var body = rows.map(function (row) {
       var isToday = sameDay(row.date, today);
+      var isPast = !isToday && row.date < startOfToday;
       var showName = row.hijri.monthName !== lastMonth;
       lastMonth = row.hijri.monthName;
-      return '<tr' + (isToday ? ' class="is-today"' : '') + (row.friday ? ' data-friday="1"' : '') + '>' +
-        '<th scope="row"><span class="tt-day">' + ar(row.date.getDate()) + '</span>' +
+      var next = null;
+      if (isToday) {
+        for (var i = 0; i < TABLE_KEYS.length; i++) {
+          if (row.times[TABLE_KEYS[i]] > now) { next = TABLE_KEYS[i]; break; }
+        }
+      }
+      var week = shortDay ? '<span class="tt-week" translate="no">' + esc(shortDay.format(row.date)) + '</span>'
+        : '<span class="tt-week">' + esc(Hijri.WEEKDAYS[row.date.getDay()]) + '</span>';
+      var cls = isToday ? 'is-today' : (isPast ? 'is-past' : '');
+      return '<tr' + (cls ? ' class="' + cls + '"' : '') + (row.friday ? ' data-friday="1"' : '') + '>' +
+        '<th scope="row">' + week + '<span class="tt-day">' + ar(row.date.getDate()) + '</span>' +
         '<span class="tt-hijri">' + ar(row.hijri.d) +
         (showName ? ' ' + esc(row.hijri.monthName) : '') + '</span></th>' +
         (ramadan ? '<td>' + (row.hijri.m === 9 ? clockMarkup(row.times.fajr - 10) : '') + '</td>' : '') +
         TABLE_KEYS.map(function (k) {
-          return '<td>' + clockMarkup(row.times[k]) + '</td>';
+          return k === next ? '<td class="is-next"><span class="tt-pill">' + clockMarkup(row.times[k]) + '</span></td>'
+            : '<td>' + clockMarkup(row.times[k]) + '</td>';
         }).join('') + '</tr>';
     }).join('');
 
     table.innerHTML = head + '<tbody>' + body + '</tbody>';
+    renderTimetableTrend(rows);
     fitTimetable(table);
 
     var current = table.querySelector('tr.is-today');
     if (current && current.scrollIntoView) current.scrollIntoView({ block: 'center' });
+  }
+
+  /* The month in three figures, from its first day to its last: how far the
+     fajr and the maghrib move, and how much the day between sunrise and sunset
+     grows or shrinks, so the drift a printed table hides is read at once. */
+  function renderTimetableTrend(rows) {
+    var host = $('tt-trend');
+    if (!host) return;
+    if (!rows || rows.length < 2) { host.innerHTML = ''; return; }
+    var first = rows[0].times, last = rows[rows.length - 1].times;
+    var shift = function (a, b) { return Math.round(b) - Math.round(a); };
+    var tile = function (n, later, earlier, still, mark) {
+      var word = n > 0 ? later : (n < 0 ? earlier : still);
+      return '<div class="prayer-stat tt-move" data-move="' + (n > 0 ? 'up' : (n < 0 ? 'down' : 'still')) + '">' +
+        icon(mark) + '<b>' + (n ? esc(minutesOf(Math.abs(n))) : '&mdash;') + '</b><span>' + esc(word) + '</span></div>';
+    };
+    host.innerHTML =
+      tile(shift(first.fajr, last.fajr), 'يتأخر الفجر', 'يتقدّم الفجر', 'الفجر ثابت', 'sunrise') +
+      tile(shift(first.maghrib, last.maghrib), 'يتأخر المغرب', 'يتقدّم المغرب', 'المغرب ثابت', 'sunset') +
+      tile(shift(first.maghrib - first.sunrise, last.maghrib - last.sunrise), 'يطول النهار', 'يقصر النهار', 'النهار ثابت', 'sun');
+    if (window.I18n && window.I18n.apply) window.I18n.apply(host);
   }
 
   /* Seven columns of times fit a phone, until the phone's own text size or a

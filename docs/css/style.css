@@ -964,6 +964,33 @@ html:not([lang='ar']) .tt.is-tighter .tt-hijri { overflow-wrap: anywhere; hyphen
 .tt tbody tr[data-friday='1'] { background: var(--sunken); }
 .tt tbody tr.is-today { background: var(--accent-wash); }
 .tt tbody tr.is-today th, .tt tbody tr.is-today td { color: var(--accent-ink); font-weight: 700; }
+/* the half of the day is told by the column, so its mark steps back */
+.tt td .ampm { color: var(--ink-3); font-weight: 400; }
+.tt tbody tr.is-today td .ampm { color: inherit; opacity: .7; }
+/* the day of the week over its date, and friday called out in the accent
+   with a bar along the row's start */
+.tt-week { display: block; font-size: calc(var(--step--2) * .9 * var(--tt-fit, 1)); color: var(--ink-3); font-weight: 500; margin-bottom: 1px; }
+.tt tbody tr[data-friday='1'] .tt-week { color: var(--accent-ink); font-weight: 700; }
+.tt tbody tr[data-friday='1'] th { position: relative; }
+.tt tbody tr[data-friday='1'] th::before {
+  content: ''; position: absolute; inset-block: 8px; inset-inline-start: 0;
+  width: 3px; border-radius: 3px; background: var(--accent-solid);
+}
+/* days gone by step back so the eye lands on today and what follows */
+.tt tbody tr.is-past td, .tt tbody tr.is-past .tt-day { color: var(--ink-3); }
+/* the prayer still to come today, as the home screen names it */
+.tt td.is-next .tt-pill {
+  display: inline-block; padding: 3px 7px; border-radius: 999px;
+  background: var(--accent-solid); color: var(--on-accent);
+}
+.tt td.is-next .tt-pill .ampm { color: inherit; opacity: .85; }
+/* the month in three figures above the table */
+.prayer-stats.tt-trend { grid-template-columns: repeat(3, 1fr); margin: var(--s3) 0 var(--s2); }
+.tt-trend .prayer-stat { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.tt-trend .prayer-stat .icon { width: 18px; height: 18px; color: var(--accent-ink); }
+.tt-trend .prayer-stat b { font-size: var(--step-0); }
+.tt-trend .prayer-stat span { font-size: var(--step--2); color: var(--ink-2); line-height: 1.3; }
+.tt-trend:empty { display: none; }
 
 /* ---------- turning a date ---------- */
 
