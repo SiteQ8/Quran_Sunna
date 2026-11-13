@@ -6,7 +6,7 @@
 
   var MONTHS = ['محرم', 'صفر', 'ربيع الأول', 'ربيع الآخر', 'جمادى الأولى', 'جمادى الآخرة',
     'رجب', 'شعبان', 'رمضان', 'شوال', 'ذو القعدة', 'ذو الحجة'];
-  var WEEKDAYS = ['الأحد', 'الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+  var WEEKDAYS = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
 
   /* Kept under its old name so nothing that calls it breaks, but the app now
      writes every number with the same figures rather than two sets at once. */
@@ -133,20 +133,20 @@
     var day = date.getDay();
 
     if (day === 5) list.push({ key: 'jumuah', name: 'يوم الجمعة', note: 'أكثر من الصلاة على النبي ﷺ وقراءة سورة الكهف', kind: 'weekly' });
-    if (day === 1 || day === 4) list.push({ key: 'mondayThursday', name: day === 1 ? 'صيام الإثنين' : 'صيام الخميس', note: 'كان النبي ﷺ يتحرى صيام الإثنين والخميس', kind: 'fast' });
-    if (h.d === 13 || h.d === 14 || h.d === 15) list.push({ key: 'white', name: 'الأيام البيض', note: 'صيام ثلاثة أيام من كل شهر يعدل صيام الدهر', kind: 'fast' });
+    if (day === 1 || day === 4) list.push({ key: 'mondayThursday', name: day === 1 ? 'صيام الاثنين' : 'صيام الخميس', note: 'كان النبي ﷺ يتحرى صيام الاثنين والخميس', source: 'رواه الترمذي والنسائي', kind: 'fast' });
+    if (h.d === 13 || h.d === 14 || h.d === 15) list.push({ key: 'white', name: 'الأيام البيض', note: 'صيام ثلاثة أيام من كل شهر يعدل صيام الدهر', source: 'متفق عليه', kind: 'fast' });
 
-    if (h.m === 1 && h.d === 9) list.push({ key: 'tasua', name: 'يوم تاسوعاء', note: 'يستحب صيامه مع عاشوراء مخالفة لأهل الكتاب', kind: 'fast' });
-    if (h.m === 1 && h.d === 10) list.push({ key: 'ashura', name: 'يوم عاشوراء', note: 'صيامه يكفر السنة الماضية', kind: 'fast' });
-    if (h.m === 8 && h.d === 15) list.push({ key: 'shaban', name: 'منتصف شعبان', note: 'كان النبي ﷺ يكثر الصيام في شعبان', kind: 'fast' });
+    if (h.m === 1 && h.d === 9) list.push({ key: 'tasua', name: 'يوم تاسوعاء', note: 'يستحب صيامه مع عاشوراء مخالفة لأهل الكتاب', source: 'رواه مسلم', kind: 'fast' });
+    if (h.m === 1 && h.d === 10) list.push({ key: 'ashura', name: 'يوم عاشوراء', note: 'صيامه يكفر السنة الماضية', source: 'رواه مسلم', kind: 'fast' });
+    if (h.m === 8 && h.d === 15) list.push({ key: 'shaban', name: 'منتصف شعبان', note: 'كان النبي ﷺ يكثر الصيام في شعبان', source: 'متفق عليه', kind: 'fast' });
     if (h.m === 9) list.push({ key: 'ramadan', name: 'شهر رمضان المبارك', note: 'شهر الصيام والقيام ونزول القرآن', kind: 'month' });
-    if (h.m === 9 && h.d >= 21 && h.d % 2 === 1) list.push({ key: 'laylatQadr', name: 'ليلة وترية في العشر الأواخر', note: 'تحرّوا ليلة القدر في الوتر من العشر الأواخر', kind: 'night' });
+    if (h.m === 9 && h.d >= 21 && h.d % 2 === 1) list.push({ key: 'laylatQadr', name: 'ليلة وترية في العشر الأواخر', note: 'تحرّوا ليلة القدر في الوتر من العشر الأواخر', source: 'رواه البخاري', kind: 'night' });
     if (h.m === 10 && h.d === 1) list.push({ key: 'eidFitr', name: 'عيد الفطر', note: 'يحرم صيامه وتسن صلاة العيد', kind: 'eid' });
-    if (h.m === 10 && h.d >= 2 && h.d <= 8) list.push({ key: 'sixShawwal', name: 'ست من شوال', note: 'من صامها بعد رمضان فكأنما صام الدهر', kind: 'fast' });
-    if (h.m === 12 && h.d <= 9) list.push({ key: 'tenDhulHijjah', name: 'العشر من ذي الحجة', note: 'ما من أيام العمل الصالح فيهن أحب إلى الله من هذه الأيام', kind: 'season' });
-    if (h.m === 12 && h.d === 9) list.push({ key: 'arafah', name: 'يوم عرفة', note: 'صيامه يكفر سنتين ماضية وباقية لغير الحاج', kind: 'fast' });
+    if (h.m === 10 && h.d >= 2 && h.d <= 8) list.push({ key: 'sixShawwal', name: 'ست من شوال', note: 'من صامها بعد رمضان فكأنما صام الدهر', source: 'رواه مسلم', kind: 'fast' });
+    if (h.m === 12 && h.d <= 9) list.push({ key: 'tenDhulHijjah', name: 'العشر من ذي الحجة', note: 'ما من أيام العمل الصالح فيهن أحب إلى الله من هذه الأيام', source: 'رواه البخاري', kind: 'season' });
+    if (h.m === 12 && h.d === 9) list.push({ key: 'arafah', name: 'يوم عرفة', note: 'صيامه يكفر سنتين ماضية وباقية لغير الحاج', source: 'رواه مسلم', kind: 'fast' });
     if (h.m === 12 && h.d === 10) list.push({ key: 'eidAdha', name: 'عيد الأضحى', note: 'يوم النحر وأعظم أيام الحج', kind: 'eid' });
-    if (h.m === 12 && h.d >= 11 && h.d <= 13) list.push({ key: 'tashreeq', name: 'أيام التشريق', note: 'أيام أكل وشرب وذكر لله عز وجل', kind: 'eid' });
+    if (h.m === 12 && h.d >= 11 && h.d <= 13) list.push({ key: 'tashreeq', name: 'أيام التشريق', note: 'أيام أكل وشرب وذكر لله عز وجل', source: 'رواه مسلم', kind: 'eid' });
 
     return list;
   }

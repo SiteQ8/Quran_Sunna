@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.143';
+  var VERSION = '8.87.144';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -5787,29 +5787,121 @@
     return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate());
   }
 
-  function addToCalendar(name, date) {
-    var next = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    name = tongue(name);
-    var note = tongue('من تطبيق سُنّتي');
-    var app = bridge();
-    if (app && app.addToCalendar) {
-      var ok = false;
-      try { ok = app.addToCalendar(name, note, date.getTime(), next.getTime()); } catch (e) { ok = false; }
-      if (ok) { toast('افتح تقويمك لتحفظه'); return true; }
+  /* What a calendar entry says, worked out once for every way it leaves the
+     app. A fast is held from the fajr to the maghrib of that day and of the
+     reader's place, so the calendar shows the hours one fasts rather than a
+     whole day, and it tells when the suhoor ends and when the fast is broken.
+     Every occasion carries its virtue and where that is narrated, and the
+     entry is marked free, since a fast or an eid does not take the reader's
+     time from anyone who looks at the calendar to find it. */
+  function calendarEntry(name, date) {
+    var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    var next = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+    var all = Hijri.occasions(day, Store.get('hijriAdjust'));
+    /* the occasions the name stands for, whether it is one of them, two
+       joined by و, or the short name the list of what is coming uses */
+    var mine = all.filter(function (o) {
+      return name.indexOf(o.name) !== -1 || o.name.indexOf(name) !== -1;
+    });
+    var fasting = mine.some(function (o) { return o.kind === 'fast' || o.key === 'ramadan'; });
+    var title = name;
+    if (mine.length === 1 && mine[0].key === 'ramadan') title = 'أول يوم من شهر رمضان المبارك';
+    else if (fasting && mine.length === 1 && mine[0].name.indexOf('صيام') !== 0) title = 'صيام ' + mine[0].name;
+    var lines = mine.map(function (o) {
+      return tongue(o.note) + (o.source ? '، ' + tongue(o.source) : '');
+    });
+    var t = computeTimes(day);
+    var where = place().n;
+    var begin = day, finish = next;
+    if (fasting && t) {
+      begin = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, Math.round(t.fajr), 0, 0);
+      finish = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, Math.round(t.maghrib), 0, 0);
+      lines.push(tongue('السحور قبل الفجر ' + clockText(t.fajr)));
+      lines.push(tongue('والإفطار عند المغرب ' + clockText(t.maghrib)));
+      lines.push(tongue('بحسب مواقيت ' + where));
     }
-    var ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//sunnati//ar', 'BEGIN:VEVENT',
-      'UID:' + icsStamp(date) + '-sunnati@3li.info',
-      'DTSTAMP:' + icsStamp(new Date()) + 'T000000Z',
-      'DTSTART;VALUE=DATE:' + icsStamp(date),
-      'DTEND;VALUE=DATE:' + icsStamp(next),
-      'SUMMARY:' + name, 'DESCRIPTION:' + note,
-      'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + name, 'END:VALARM',
-      'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+    lines.push(tongue('من تطبيق سُنّتي') + ' sunnati.3li.info');
+    return {
+      title: tongue(title), note: lines.join('\n'), start: begin.getTime(), end: finish.getTime(),
+      allDay: !(fasting && t), location: fasting && t ? where : '', fajr: fasting && t ? Math.round(t.fajr) : null
+    };
+  }
+
+  /* The entry as an .ics file. Text is escaped and long lines folded as the
+     format asks, so a calendar reads the Arabic whole and does not cut a
+     letter in two at the seventy fifth byte. */
+  function icsText(s) {
+    return String(s).replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n');
+  }
+
+  function icsFold(line) {
+    var out = [], piece = '', bytes = 0;
+    for (var i = 0; i < line.length; i++) {
+      var c = line.charAt(i), code = line.charCodeAt(i);
+      var size = code < 0x80 ? 1 : code < 0x800 ? 2 : (code >= 0xd800 && code <= 0xdbff ? 4 : 3);
+      if (size === 4) { c += line.charAt(++i); }
+      if (bytes + size > (out.length ? 74 : 75)) { out.push(piece); piece = ''; bytes = 0; }
+      piece += c; bytes += size;
+    }
+    out.push(piece);
+    return out.join('\r\n ');
+  }
+
+  function icsTime(ms) {
+    var d = new Date(ms), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    return icsStamp(d) + 'T' + p(d.getHours()) + p(d.getMinutes()) + '00';
+  }
+
+  function icsOf(e) {
+    var utc = new Date(), p = function (n) { return (n < 10 ? '0' : '') + n; };
+    var stamp = utc.getUTCFullYear() + p(utc.getUTCMonth() + 1) + p(utc.getUTCDate()) + 'T' +
+      p(utc.getUTCHours()) + p(utc.getUTCMinutes()) + p(utc.getUTCSeconds()) + 'Z';
+    var id = 0;
+    for (var i = 0; i < e.title.length; i++) id = (id * 31 + e.title.charCodeAt(i)) >>> 0;
+    var lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//sunnati//ar', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+      'BEGIN:VEVENT', 'UID:' + icsStamp(new Date(e.start)) + '-' + id.toString(36) + '@sunnati.3li.info', 'DTSTAMP:' + stamp];
+    if (e.allDay) {
+      lines.push('DTSTART;VALUE=DATE:' + icsStamp(new Date(e.start)), 'DTEND;VALUE=DATE:' + icsStamp(new Date(e.end)));
+    } else {
+      lines.push('DTSTART:' + icsTime(e.start), 'DTEND:' + icsTime(e.end));
+    }
+    lines.push('SUMMARY:' + icsText(e.title), 'DESCRIPTION:' + icsText(e.note));
+    if (e.location) lines.push('LOCATION:' + icsText(e.location));
+    lines.push('URL:https://sunnati.3li.info/', 'TRANSP:TRANSPARENT', 'STATUS:CONFIRMED');
+    /* the evening before, at nine, to make the intention, and for a fast a
+       second call before the fajr to take the suhoor */
+    var before = e.allDay ? 180 : e.fajr + 180;
+    lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:-PT' + before + 'M', 'DESCRIPTION:' + icsText(e.title), 'END:VALARM');
+    if (!e.allDay) lines.push('BEGIN:VALARM', 'ACTION:DISPLAY', 'TRIGGER:-PT45M', 'DESCRIPTION:' + icsText(tongue('السحور قبل الفجر')), 'END:VALARM');
+    lines.push('END:VEVENT', 'END:VCALENDAR');
+    return lines.map(icsFold).join('\r\n') + '\r\n';
+  }
+
+  function addToCalendar(name, date) {
+    var e = calendarEntry(name, date);
+    var ics = icsOf(e);
+    var app = bridge();
+    /* the app of this version takes the whole entry: the phone's calendar on
+       android with the hours of the fast, and on the iphone the file itself,
+       its reminders with it */
+    if (app && app.addEvent) {
+      var done = false;
+      try { done = app.addEvent(JSON.stringify({ title: e.title, note: e.note, start: e.start, end: e.end, allDay: e.allDay, location: e.location, ics: ics })); } catch (err) { done = false; }
+      if (done !== false) { toast('افتح تقويمك لتحفظه'); return true; }
+    }
+    /* an older app knows a whole day only, so it is given the day and the
+       fuller words */
+    if (app && app.addToCalendar) {
+      var day = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+      var ok = false;
+      try { ok = app.addToCalendar(e.title, e.note, day.getTime(), new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1).getTime()); } catch (err) { ok = false; }
+      if (ok !== false) { toast('افتح تقويمك لتحفظه'); return true; }
+    }
     /* an older package has no calendar door, but it can still write the file
        and hand it to whatever opens a calendar entry */
     if (app && app.saveAndOpen) {
       var saved = false;
-      try { saved = app.saveAndOpen(name + '.ics', 'text/calendar', ics); } catch (e) { saved = false; }
+      try { saved = app.saveAndOpen(e.title + '.ics', 'text/calendar', ics); } catch (err) { saved = false; }
       if (saved) { toast('حُفظ الموعد، فأضفه إلى تقويمك'); return true; }
     }
     /* a web view swallows a blob download, so it is only offered where a
@@ -5822,14 +5914,14 @@
       var url = URL.createObjectURL(new window.Blob([ics], { type: 'text/calendar' }));
       var link = document.createElement('a');
       link.href = url;
-      link.download = name + '.ics';
+      link.download = e.title + '.ics';
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       window.setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
       toast('نُزّل الموعد، فافتحه ليُضاف إلى تقويمك');
       return true;
-    } catch (e) {
+    } catch (err) {
       toast('تعذّرت الإضافة إلى التقويم');
       return false;
     }
@@ -9199,7 +9291,7 @@
 
     if (!order.length) {
       host.innerHTML = '<p class="setting-note">لا موسم مخصوص في هذا الشهر، ' +
-        'وصيام الإثنين والخميس قائم فيه كما في غيره.</p>';
+        'وصيام الاثنين والخميس قائم فيه كما في غيره.</p>';
       return;
     }
 
@@ -9924,8 +10016,8 @@
        the home calendar reads too */
     var next = nextFast();
     if (next) {
-      /* «صيام الإثنين» already says which day it is, so the date does not say
-         it again: أقرب صيام الإثنين الإثنين ١٤ سبتمبر reads like a stutter */
+      /* «صيام الاثنين» already says which day it is, so the date does not say
+         it again: أقرب صيام الاثنين الاثنين ١٤ سبتمبر reads like a stutter */
       var weekday = Hijri.WEEKDAYS[next.date.getDay()];
       var dated = (next.names.indexOf(weekday) === -1 ? weekday + ' ' : '') +
         ar(next.date.getDate()) + ' ' + GREG_MONTHS[next.date.getMonth()];
@@ -12237,7 +12329,7 @@
       applyAccent: applyAccent, palettes: PALETTES,
       notify: notify, maybeSalawat: maybeSalawat, maybeNotify: maybeNotify, scheduleForWorker: scheduleForWorker, speak: speak, chime: chime, stopSpeaking: stopSpeaking, isSpeaking: isSpeaking,
       verseCard: verseCard, textCard: textCard, canMakeVideo: canMakeVideo, videoSharePath: videoSharePath, shareVerseVideo: shareVerseVideo, videoHandedOver: videoHandedOver, openPage: openPage, spreadOf: spreadOf, isBook: isBook, renderSettings: renderSettings, showsMore: showsMore, fitSettings: fitSettings, fitChips: fitChips, fitStats: fitStats, fitTiles: fitTiles, fitTimetable: fitTimetable, fitPageNav: fitPageNav, wordWider: wordWider, nextFast: nextFast, offerEid: offerEid, cameFrom: cameFrom, isFriday: isFriday, setWhenOn: setWhenOn, whenIsOn: whenIsOn, hizbLabel: hizbLabel, mushafDigits: mushafDigits, openNote: openNote, methodName: methodName, computeTimes: computeTimes,
-      maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
+      maybeAskPlace: maybeAskPlace, locateQuietly: locateQuietly, place: place, inAndroidApp: inAndroidApp, renderUmrah: renderUmrah, whenItFalls: whenItFalls, handSalawatToApp: handSalawatToApp, qiyamAt: qiyamAt, duhaWindow: duhaWindow, handQiyamToApp: handQiyamToApp, addToCalendar: addToCalendar, calendarEntry: calendarEntry, icsOf: icsOf, showQiyamTime: showQiyamTime, showDuhaTime: showDuhaTime, startAutoScroll: startAutoScroll, stopAutoScroll: stopAutoScroll, autoScrolling: autoScrolling, paceSheet: paceSheet, renderDuaThemes: renderDuaThemes, openDuaTheme: openDuaTheme, duaTopics: duaTopics, prayerSummary: prayerSummary, adhanUrl: adhanUrl, salawatText: salawatText, salawatUrl: salawatUrl, soundAdhan: soundAdhan, fillAdhanVoices: fillAdhanVoices, bridge: bridge, handTimesToApp: handTimesToApp, renderAdhanRow: renderAdhanRow, sharePicture: sharePicture, setPlace: setPlace, adoptGrantedNotifications: adoptGrantedNotifications, maybeExplainChrome: maybeExplainChrome, loadTafsirBook: loadTafsirBook, tafsirReady: tafsirReady, markPrayerSheet: markPrayerSheet, markDaySheet: markDaySheet,
       downloadSurah: downloadSurah, isSurahSaved: isSurahSaved, removeSurahAudio: removeSurahAudio, renderSavedAudio: renderSavedAudio, reciterId: reciterId, pickVoice: pickVoice, arabicVoices: arabicVoices, azkarForNow: azkarForNow, windowSunnah: windowSunnah, withLam: withLam,
  totalSunnahCount: totalSunnahCount, sunnahDay: sunnahDay, sunnahTicks: sunnahTicks, sunnahSections: sunnahSections, rowTicks: rowTicks, tickOf: tickOf, settleTicks: settleTicks, skyAt: skyAt, skyStops: skyStops, moonAt: moonAt, moonPath: moonPath, renderSky: renderSky, skyLook: skyLook, openSkyview: openSkyview, closeSkyview: closeSkyview,
       addressOf: addressOf, readAddress: readAddress, standalone: standalone,

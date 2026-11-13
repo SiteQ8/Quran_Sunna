@@ -373,7 +373,35 @@ public final class Bridge {
                 .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, true)
                 .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, startMillis)
                 .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, endMillis)
+                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_FREE)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            host.startActivity(add);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /** The whole entry as the page wrote it: a fast is held from the fajr to
+     *  the maghrib of the reader's place rather than as a whole day, it names
+     *  that place, and it is marked free, since a fast takes no one's time
+     *  from anyone who looks at the calendar. The phone's calendar opens with
+     *  it filled in and saves nothing until the reader does. */
+    @JavascriptInterface
+    public boolean addEvent(String json) {
+        try {
+            org.json.JSONObject e = new org.json.JSONObject(json);
+            Intent add = new Intent(Intent.ACTION_INSERT)
+                .setData(CalendarContract.Events.CONTENT_URI)
+                .putExtra(CalendarContract.Events.TITLE, e.optString("title", ""))
+                .putExtra(CalendarContract.Events.DESCRIPTION, e.optString("note", ""))
+                .putExtra(CalendarContract.EXTRA_EVENT_ALL_DAY, e.optBoolean("allDay", true))
+                .putExtra(CalendarContract.EXTRA_EVENT_BEGIN_TIME, e.getLong("start"))
+                .putExtra(CalendarContract.EXTRA_EVENT_END_TIME, e.getLong("end"))
+                .putExtra(CalendarContract.Events.AVAILABILITY, CalendarContract.Events.AVAILABILITY_FREE)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            String where = e.optString("location", "");
+            if (!where.isEmpty()) add.putExtra(CalendarContract.Events.EVENT_LOCATION, where);
             host.startActivity(add);
             return true;
         } catch (Exception e) {

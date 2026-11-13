@@ -1,5 +1,3 @@
-Üç yeni widget: Kur'an'dan ve Sünnetten kaynağıyla günün duası, sayısı ve hedefiyle tesbihiniz ve kıldıklarınızla bugünkü namazlarınız. Günün ayetinde başka bir sureden ayete geçen bir düğme var, bugünkü namazlar Hicri tarihin altında Miladi tarihi gösteriyor ve mushaf artık widget'tan doğru boyutta açılıyor. Kilit ekranında artık sıradaki namaz, bugünün namazları, günün ayeti ve duası, tesbih ve bugünkü namazlarınız için widget'lar var.
+Takviminize eklediğiniz günler artık daha ayrıntılı: oruç, şehrinizin vakitlerine göre sabahtan akşama kadar görünür, fazileti, kaynağı, sahur ve iftar vakitleriyle birlikte; bir akşam önce ve sahur için sabahtan önce hatırlatma gelir ve sizi meşgul göstermez.
 
-Tüm widget'lar uygulamanın yazı tipini ve köşesinde İslami bir süslemeyi taşıyor, daha fazla boyutta. Ezan ve gece namazı bildirimleri uygulamanın dilinde geliyor, Ayarlar'da ezanı kapatıp açan bir anahtar var ve Peygamber'e salavat hatırlatması vaktinde geliyor.
-
-Bağımsız bir inceleme düzeltmelere yol açtı: Cuma namazı her yerde Cuma olarak anılıyor, surelerin faziletlerinden zayıf rivayetler çıkarıldı, duaların yazımı düzeltildi, kamet geri sayımı sonuna kadar işliyor ve namaz vakitleri saat değişimi gününde doğru.
+Aylık vakit çizelgesi her tarihin üstünde günü yazar, cumayı ve sıradaki namazı belirtir, sabah ve akşam vaktiyle gün uzunluğunun ay boyunca nasıl değiştiğini özetler. Mushafta ayet numaralarının çevresindeki boşluklar artık eşit.

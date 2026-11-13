@@ -1,5 +1,3 @@
-Tiga widget baru: doa hari ini dari Al-Qur'an dan Sunnah beserta sumbernya, tasbih Anda dengan hitungan dan targetnya, serta salat Anda hari ini dengan yang sudah ditunaikan. Ayat hari ini punya tombol untuk beralih ke ayat dari surah lain, salat hari ini menampilkan tanggal Masehi di bawah tanggal Hijriah, dan mushaf kini terbuka dari widget dengan ukuran yang tepat. Layar kunci kini punya widget untuk salat berikutnya, salat hari ini, ayat dan doa hari ini, tasbih, serta salat Anda hari ini.
+Acara yang Anda tambahkan ke kalender kini lebih lengkap: puasa berlangsung dari Subuh hingga Magrib menurut kota Anda, dengan keutamaannya, sumbernya, serta waktu sahur dan berbuka, pengingat pada malam sebelumnya dan sebelum Subuh untuk sahur, tanpa menandai Anda sibuk.
 
-Semua widget memakai huruf aplikasi dan hiasan Islami di sudutnya, dalam lebih banyak ukuran. Notifikasi azan dan salat malam tiba dalam bahasa aplikasi, Pengaturan punya sakelar untuk mematikan atau menyalakan azan, dan pengingat selawat kepada Nabi tiba tepat waktu.
-
-Tinjauan independen menghasilkan perbaikan: salat hari Jumat disebut Jumat di semua tempat, riwayat lemah dihapus dari keutamaan surah, ejaan doa diperbaiki, hitung mundur ikamah berjalan sampai akhir, dan waktu salat tepat pada hari pergantian jam.
+Jadwal bulanan menampilkan nama hari, menandai Jumat dan salat berikutnya, serta merangkum pergeseran Subuh, Magrib, dan panjang siang. Jarak di sekitar nomor ayat dalam mushaf kini rata.

@@ -4344,7 +4344,7 @@ test('the converter turns a gregorian date into the hijri one the app reckons', 
   fire(win, field, 'input');
   const out = doc.getElementById('conv-greg-out').textContent;
   assert.ok(out.indexOf('1 رمضان 1448') !== -1, 'got ' + out);
-  assert.ok(out.indexOf('الإثنين') === 0, 'and names the weekday: ' + out);
+  assert.ok(out.indexOf('الاثنين') === 0, 'and names the weekday: ' + out);
 });
 
 test('the converter turns a hijri date back, and refuses a day the month lacks', () => {
@@ -7596,7 +7596,7 @@ test('the next fast says when it is in words, not only as a date', () => {
   const note = doc.querySelector('.next-fast-note');
   assert.ok(note, 'the strip is there');
   /* whichever day it lands on today, it opens with a word, never a bare date */
-  assert.match(note.textContent, /^(اليوم|غداً|بعد|الأحد|الإثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|السبت|[٠-٩])/,
+  assert.match(note.textContent, /^(اليوم|غداً|بعد|الأحد|الاثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|السبت|[٠-٩])/,
     'it opens by saying when: ' + note.textContent.slice(0, 40));
 });
 
@@ -7763,8 +7763,9 @@ test('an occasion can be put in the reader\'s own calendar, and no longer repeat
   /* in a browser it becomes a file every calendar understands */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
   const fn = /function addToCalendar\(name, date\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
-  assert.ok(fn.indexOf('BEGIN:VCALENDAR') !== -1 && fn.indexOf('DTSTART;VALUE=DATE:') !== -1);
-  assert.ok(fn.indexOf('BEGIN:VALARM') !== -1, 'with a reminder the day before');
+  const ics = /function icsOf\(e\) \{([\s\S]*?)\n  \}\n/.exec(app)[1];
+  assert.ok(ics.indexOf('BEGIN:VCALENDAR') !== -1 && ics.indexOf('DTSTART;VALUE=DATE:') !== -1);
+  assert.ok(ics.indexOf('BEGIN:VALARM') !== -1, 'with a reminder the evening before');
   assert.ok(fn.indexOf("text/calendar") !== -1);
   const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
   assert.ok(bridge.indexOf('Intent.ACTION_INSERT') !== -1, 'the reader confirms it themselves; nothing is written behind them');
@@ -7896,6 +7897,61 @@ test('the backup is a real file the reader can keep', () => {
   assert.ok(bridge.indexOf('DIRECTORY_DOWNLOADS') !== -1);
 });
 
+test('a calendar entry says what the occasion is, where it is narrated, and the hours of a fast', () => {
+  const { win } = boot();
+  const H = win.App.helpers;
+  /* a monday's fast: from the fajr to the maghrib of the reader's place */
+  const monday = new win.Date(2026, 10, 16);
+  const e = H.calendarEntry('صيام الاثنين', monday);
+  console.log(JSON.stringify(e, null, 1));
+  assert.strictEqual(e.title, 'صيام الاثنين');
+  assert.strictEqual(e.allDay, false, 'a fast is the hours one fasts, not a whole day');
+  const s = new win.Date(e.start), t = new win.Date(e.end);
+  assert.strictEqual(s.getDate(), 16);
+  assert.ok(s.getHours() >= 3 && s.getHours() <= 6, 'it begins at the fajr');
+  assert.ok(t.getHours() >= 16 && t.getHours() <= 19, 'and ends at the maghrib');
+  assert.ok(e.note.indexOf('كان النبي ﷺ يتحرى صيام الاثنين والخميس، رواه الترمذي والنسائي') !== -1, 'its virtue and where it is narrated');
+  assert.ok(/السحور قبل الفجر \d/.test(e.note) && /والإفطار عند المغرب \d/.test(e.note));
+  assert.ok(e.note.indexOf('بحسب مواقيت ' + e.location) !== -1 && e.location.length > 0);
+  assert.ok(e.note.indexOf('sunnati.3li.info') !== -1);
+  /* the file: escaped, folded, free, with the evening's call and the suhoor's */
+  const ics = H.icsOf(e);
+  console.log(ics);
+  assert.ok(/\r\nDTSTART:20261116T0\d{5}\r\n/.test(ics));
+  assert.ok(ics.indexOf('TRANSP:TRANSPARENT') !== -1, 'it takes no one\'s time');
+  assert.strictEqual((ics.match(/BEGIN:VALARM/g) || []).length, 2);
+  assert.ok(ics.indexOf('TRIGGER:-PT45M') !== -1);
+  ics.split('\r\n').forEach(function (line) {
+    assert.ok(Buffer.byteLength(line, 'utf8') <= 75, 'no line passes seventy five bytes: ' + line);
+  });
+  assert.ok(ics.indexOf('\\n') !== -1 && ics.indexOf('DESCRIPTION:') !== -1, 'lines of the note are escaped');
+  /* a fast named by its day alone is called a fast */
+  const arafah = win.Hijri.toGregorian(1448, 12, 9, 0);
+  const a = H.calendarEntry('يوم عرفة', arafah);
+  assert.strictEqual(a.title, 'صيام يوم عرفة');
+  assert.ok(a.note.indexOf('رواه مسلم') !== -1);
+  /* an eid is a whole day, and has no suhoor */
+  const eid = win.Hijri.toGregorian(1448, 10, 1, 0);
+  const f = H.calendarEntry('عيد الفطر', eid);
+  assert.strictEqual(f.title, 'عيد الفطر');
+  assert.strictEqual(f.allDay, true);
+  assert.ok(f.note.indexOf('السحور') === -1);
+  assert.ok(H.icsOf(f).indexOf('DTSTART;VALUE=DATE:') !== -1);
+  /* the app of this version is handed the whole entry */
+  const got = [];
+  win.SunnatiApp = { addEvent: function (j) { got.push(JSON.parse(j)); return true; }, addToCalendar: function () { throw new Error('the old door is not used'); } };
+  assert.strictEqual(H.addToCalendar('صيام الاثنين', monday), true);
+  assert.strictEqual(got[0].allDay, false);
+  assert.ok(got[0].ics.indexOf('BEGIN:VCALENDAR') === 0);
+  /* and the spelling is the one of the dictionaries: الاثنين, its alif one of joining */
+  assert.ok(win.Hijri.WEEKDAYS.indexOf('الاثنين') === 1);
+  const bridge = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/Bridge.java'), 'utf8');
+  assert.ok(bridge.indexOf('public boolean addEvent(String json)') !== -1);
+  assert.ok(bridge.indexOf('AVAILABILITY_FREE') !== -1);
+  const ios = fs.readFileSync(path.join(__dirname, '..', 'ios/Sunnati/ReaderController.swift'), 'utf8');
+  assert.ok(ios.indexOf("addEvent: call('addEvent')") !== -1 && ios.indexOf('case "addEvent":') !== -1);
+});
+
 test('adding to the calendar never claims a success it did not have', () => {
   const { win, doc } = boot();
   const day = new win.Date(2027, 1, 8);
@@ -7911,7 +7967,7 @@ test('adding to the calendar never claims a success it did not have', () => {
   const saved = [];
   win.SunnatiApp = { saveAndOpen: function (n, m, c) { saved.push([n, m, c]); return true; } };
   assert.strictEqual(win.App.helpers.addToCalendar('رمضان', day), true);
-  assert.strictEqual(saved[0][0], 'رمضان.ics');
+  assert.strictEqual(saved[0][0], 'أول يوم من شهر رمضان المبارك.ics');
   assert.strictEqual(saved[0][1], 'text/calendar');
   assert.ok(saved[0][2].indexOf('BEGIN:VCALENDAR') === 0);
 
@@ -10931,7 +10987,7 @@ test('the days the sunnah marks for fasting are offered, and only where a fast i
   const ticks = mon.doc.querySelectorAll('#tracker-list [data-fold="fast"] [data-check]');
   assert.strictEqual(ticks.length, 1, 'one fast, however many reasons');
   assert.strictEqual(ticks[0].getAttribute('data-check'), 'fast');
-  assert.ok(ticks[0].textContent.indexOf('صيام الإثنين') !== -1);
+  assert.ok(ticks[0].textContent.indexOf('صيام الاثنين') !== -1);
 
   /* the tick feeds the same meter as every other sunnah */
   const before = mon.doc.getElementById('tracker-done').textContent;
@@ -10965,7 +11021,7 @@ test('the eve of a fast is reminded, before the suhur and not after it', () => {
   const { win } = boot({ now: new Date(2026, 8, 13, 19, 0, 0) });
   const notes = win.App.helpers.reminderList().filter(function (r) { return r.t === 'صيام الغد'; });
   assert.ok(notes.length >= 1, 'the eve of a monday carries one');
-  assert.ok(notes[0].b.indexOf('صيام الإثنين') !== -1, 'it names the reason, got ' + notes[0].b);
+  assert.ok(notes[0].b.indexOf('صيام الاثنين') !== -1, 'it names the reason, got ' + notes[0].b);
   assert.ok(notes[0].b.indexOf('السحور') !== -1, 'and it is of the night, not the dawn');
 
   /* it falls after the maghrib of the eve, which is the whole point */

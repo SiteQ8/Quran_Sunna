@@ -110,7 +110,8 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
         saveFile: call('saveFile'),
         saveAndOpen: call('saveAndOpen'),
         openMap: call('openMap'),
-        addToCalendar: call('addToCalendar')
+        addToCalendar: call('addToCalendar'),
+        addEvent: call('addEvent')
       };
     }());
     """
@@ -433,6 +434,20 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
                  "UID:\(s)-sunnati@3li.info", "DTSTART;VALUE=DATE:\(s)", "DTEND;VALUE=DATE:\(e)",
                  "SUMMARY:\(name)", "DESCRIPTION:\(note)", "END:VEVENT", "END:VCALENDAR"].joined(separator: "\r\n")
       let url = FileManager.default.temporaryDirectory.appendingPathComponent("sunnati-\(s).ics")
+      do { try ics.write(to: url, atomically: true, encoding: .utf8) } catch { return }
+      preview = UIDocumentInteractionController(url: url)
+      preview?.delegate = self
+      preview?.presentPreview(animated: true)
+
+    /* the whole entry as the page wrote it, a fast held from the fajr to the
+       maghrib with its reminders, previewed by the system as a file so no
+       calendar permission is asked of the app itself */
+    case "addEvent":
+      guard let json = args.first as? String, let data = json.data(using: .utf8),
+            let entry = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            let ics = entry["ics"] as? String, ics.hasPrefix("BEGIN:VCALENDAR") else { return }
+      let start = (entry["start"] as? Double) ?? Date().timeIntervalSince1970 * 1000
+      let url = FileManager.default.temporaryDirectory.appendingPathComponent("sunnati-\(Int(start / 1000)).ics")
       do { try ics.write(to: url, atomically: true, encoding: .utf8) } catch { return }
       preview = UIDocumentInteractionController(url: url)
       preview?.delegate = self

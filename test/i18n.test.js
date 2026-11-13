@@ -176,7 +176,7 @@ const TABLE = {
   '{#0} أيام': '{0} days',
   'ص': 'AM',
   'م': 'PM',
-  'الإثنين': 'Monday',
+  'الاثنين': 'Monday',
   'أكتوبر': 'October',
   'الفجر': 'Fajr',
   'بلا علامة': 'not marked',
@@ -194,7 +194,7 @@ test('whole lines, composed lines, lists, names among figures and times all find
   assert.strictEqual(tx('بعد 3 أيام'), 'in 3 days', 'a count inside a line, never a line inside a count');
   /* a time keeps its mark and a day its month at the end of a line */
   assert.strictEqual(tx('5:30 ص'), '5:30\u00A0AM');
-  assert.strictEqual(tx('الإثنين 19 أكتوبر 2026'), 'Monday 19\u00A0October\u00A02026');
+  assert.strictEqual(tx('الاثنين 19 أكتوبر 2026'), 'Monday 19\u00A0October\u00A02026');
   assert.strictEqual(tx('الفجر 15، بلا علامة'), 'Fajr 15, not marked');
   assert.strictEqual(tx('عمر بن الخطاب رضي الله عنه، مسلم، حديث جبريل'),
     'Umar ibn al-Khattab (may Allah be pleased with him), Muslim, the hadith of Jibril');

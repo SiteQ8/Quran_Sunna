@@ -310,7 +310,7 @@
   }
 
   /* A line of names the table knows with figures among them, the way the
-     page writes a date, «الإثنين 19 أكتوبر 2026», or a reference, «البقرة
+     page writes a date, «الاثنين 19 أكتوبر 2026», or a reference, «البقرة
      201», or a prayer on a day, «الفجر 15»: each name put into the language
      where it stands, and a count with its noun, «3 أيام», as one. Only a
      short line with a figure in it, so a sentence is never put together word
