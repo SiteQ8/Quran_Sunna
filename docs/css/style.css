@@ -1614,6 +1614,16 @@ html:not([lang='ar']) .meter-head { flex-wrap: wrap; column-gap: var(--s3); row-
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cg fill='none' stroke='%23b08833' stroke-width='1.6'%3E%3Ccircle cx='20' cy='20' r='11'/%3E%3Crect x='10' y='10' width='20' height='20' rx='2'/%3E%3Crect x='10' y='10' width='20' height='20' rx='2' transform='rotate(45 20 20)'/%3E%3C/g%3E%3C/svg%3E");
   background-size: contain; background-repeat: no-repeat; background-position: center;
 }
+/* In the flowing text the number is joined to its verse by a space that does
+   not break and stretches with the line like any other, so the gap before it
+   and the gap after it are the same as between two words. Its own margins and
+   the verse's padding added to only one side made the gap after a number twice
+   a word's, and the line looked as if it had a hole in it. The padding stays
+   for the highlight and is taken back by a margin, so it moves nothing. */
+.ayah-block .ayah-num { margin-inline: 0; }
+.ayah-block .ayah { margin-inline: -2px; }
+.ayah-end { white-space: nowrap; }
+
 /* The figure is placed by its own middle, not by a baseline that shifts with
    whatever fallback font the phone picks for a digit, so it stays centred in
    the rosette on every device. */

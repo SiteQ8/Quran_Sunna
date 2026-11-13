@@ -3932,11 +3932,19 @@ test('a verse number stays on the line of the word it closes', () => {
   win.App.state.surah = 1;
   win.App.go('reader');
   const verse = doc.querySelector('.ayah[data-a="7"]');
-  const html = verse.innerHTML;
-  const at = html.indexOf('<span class="ayah-num"');
-  assert.ok(at > 0);
-  assert.strictEqual(html.charCodeAt(at - 1), 0x2060,
-    'a word joiner binds the number to the last word, or it can fall onto a line of its own');
+  /* a joiner alone did not hold it: the browser breaks before the number
+     whatever joins it, and thirteen numbers of al-kahf began a line alone */
+  const end = verse.querySelector('.ayah-end');
+  assert.ok(end, 'the last word and the number are one piece');
+  assert.ok(end.querySelector('.ayah-num'));
+  assert.ok(/^\S+\u00a0$/.test(end.textContent), 'the last word alone, then a space that does not break: ' + JSON.stringify(end.textContent));
+  /* and nothing of the verse but its last word is held in it */
+  const words = win.Mushaf.ayah(1, 7).trim().split(/\s+/);
+  assert.strictEqual(end.textContent.trim(), words[words.length - 1]);
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  assert.ok(css.indexOf('.ayah-end { white-space: nowrap; }') !== -1, 'the piece does not break');
+  /* the gap before the number is a word's gap, not the number's own margin */
+  assert.ok(css.indexOf('.ayah-block .ayah-num { margin-inline: 0; }') !== -1);
 });
 
 /* ---------------- searching beyond the mushaf ---------------- */

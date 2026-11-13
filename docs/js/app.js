@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.142';
+  var VERSION = '8.87.143';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -185,6 +185,19 @@
      which is how a clock is read here, and the figures match the rest. */
   /* The ص or م after a time is set smaller and bound to the figures with a
      joiner, so a narrow column cannot push it onto a line of its own. */
+  /* A verse of the flowing text with its number. The last word, the sajda
+     sign and the number are held in one piece that does not break, because
+     the browser may break before a number whatever joins it, and a number
+     carried alone to the start of the next line reads as the first word of
+     the verse after it. The space between the word and the number is one that
+     stretches with the line, so it is as wide as every other gap. */
+  function verseWithEnd(text, sajda, a) {
+    var words = esc(text).replace(/\s+$/, '');
+    var cut = words.lastIndexOf(' ');
+    var end = sajda + '\u00a0<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span>';
+    return words.slice(0, cut + 1) + '<span class="ayah-end">' + words.slice(cut + 1) + end + '</span>';
+  }
+
   function clockMarkup(minutes) {
     var text = clockText(minutes);
     var parts = text.split(' ');
@@ -3625,7 +3638,7 @@
       var cls = 'ayah' + (marked[a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(n, a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       return '<span class="' + cls + '" data-ayah="' + n + ':' + a + '" data-a="' + a + '">' +
-        esc(sajda ? text.replace(SAJDA_SIGN, '') : text) + sajda + '\u2060<span class="ayah-num" data-n="' + mushafDigits(a) + '" aria-label="آية ' + a + '"></span></span> ';
+        verseWithEnd(sajda ? text.replace(SAJDA_SIGN, '') : text, sajda, a) + '</span> ';
     });
 
     body.className = 'reader-body';
@@ -4527,7 +4540,7 @@
       var cls = 'ayah' + (marked[v.s + ':' + v.a] ? ' is-marked' : '');
       var sajda = Mushaf.isSajda(v.s, v.a) ? '<span class="sajda-mark" title="موضع سجدة">۩</span>' : '';
       html += '<span class="' + cls + '" data-ayah="' + v.s + ':' + v.a + '" data-a="' + v.a + '">' +
-        esc(sajda ? v.text.replace(SAJDA_SIGN, '') : v.text) + sajda + '⁠<span class="ayah-num" data-n="' + mushafDigits(v.a) + '" aria-label="آية ' + v.a + '"></span></span> ';
+        verseWithEnd(sajda ? v.text.replace(SAJDA_SIGN, '') : v.text, sajda, v.a) + '</span> ';
     });
     return '<div class="ayah-block">' + html + '</div>' + pageFoot(n);
   }
