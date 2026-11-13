@@ -1401,7 +1401,7 @@ test('every row of the hour card ticks the rows of the list it says again', () =
   const SAYS = {
     fajr: [{ 'sunnah:0:0': 'السواك عند الاستيقاظ', 'sunnah:0:1': 'أحيانا بعد ما أماتنا' },
       { 'sunnah:2:0': 'متابعة المؤذن', 'sunnah:2:1': 'دعاء الوسيلة' },
-      { 'sunnah:2:2': 'بين الأذان والإقامة' }, { 'sunnah:2:3': 'ركعتا الفجر' }, { 'sunnah:2:4': 'الاضطجاع' },
+      { 'sunnah:2:2': 'بين الأذان والإقامة' }, { 'sunnah:2:3': 'تخفيف ركعتي الفجر' }, { 'sunnah:2:4': 'الاضطجاع' },
       { 'sunnah:2:8': 'حتى تطلع الشمس' }, { 'wird:morning': 'أذكار الصباح' }],
     duha: [{ 'sunnah:5:0': 'صلاة الضحى' }, { 'sunnah:5:0': 'صلاة الضحى', 'sunnah:5:1': 'ترمض الفصال' }, { 'sunnah:5:2': 'أذكار الصباح' },
       { 'sunnah:1:7': 'ركعتان بعد كل وضوء' }],
@@ -9045,6 +9045,10 @@ test('a new version is never taken without the reader saying so', () => {
   assert.ok(fn.indexOf('window.location.reload(); return;') === -1, 'nothing reloads by itself');
   assert.ok(fn.indexOf('atRest') === -1, 'and no screen counts as idle enough');
   assert.ok(fn.indexOf("showBanner('وصل تحديث جديد للتطبيق', 'حدّث الآن'") !== -1, 'it is offered');
+  /* the first visit's worker claims the page too, and that is no update */
+  assert.ok(app.indexOf('var hadController = !!window.navigator.serviceWorker.controller;') !== -1);
+  assert.ok(fn.indexOf('if (!hadController) { hadController = true; return; }') < fn.indexOf('showBanner'));
+  assert.ok(fn.indexOf('if (!hadController)') !== -1, 'a first claim offers nothing');
 });
 
 test('the next verse is fetched while the last is still sounding', () => {

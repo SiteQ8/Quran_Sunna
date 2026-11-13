@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.140';
+  var VERSION = '8.87.141';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -11986,7 +11986,11 @@
     /* The new worker takes over on its own, so this fires while someone may be
        mid ayah. They are offered the new version rather than dropped into a
        reload they did not ask for. */
+    /* The first visit has no worker yet, and the one that installs claims the
+       page: that is the app arriving, not an update, so nothing is offered. */
+    var hadController = !!window.navigator.serviceWorker.controller;
     window.navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!hadController) { hadController = true; return; }
       if (state.updateOffered) return;
       state.updateOffered = true;
       /* Never taken by itself, wherever the reader is. A reload in the middle
