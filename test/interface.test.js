@@ -19,6 +19,9 @@ const { JSDOM } = (function () {
 }());
 
 const DOCS = path.join(__dirname, '..', 'docs');
+/* the app's contact address, from the one place it is published, so the tests
+   check every page against it without holding a copy of their own */
+const CONTACT = /^Contact: mailto:(\S+)/m.exec(fs.readFileSync(path.join(DOCS, '.well-known', 'security.txt'), 'utf8'))[1];
 const SCRIPTS = [
   'js/i18n.js', 'data/surahs.js', 'data/azkar.js', 'data/hisn.js', 'data/ojeiri.js', 'data/marks.js', 'data/adhan.js', 'data/umrah.js', 'data/dua-themes.js', 'data/duas.js', 'data/content.js', 'data/extras.js',
   'js/prayer-engine.js', 'js/hijri.js', 'js/store.js', 'js/mushaf.js', 'js/app.js'
@@ -575,6 +578,21 @@ test('the tasbih counts, tracks a target and stores a daily total', () => {
 
   click(win, doc.getElementById('tasbih-reset'));
   assert.strictEqual(doc.getElementById('tasbih-value').textContent, '0');
+});
+
+test('the circle carries the dhikr being counted, not «سبّح»', () => {
+  const { win, doc } = boot();
+  win.App.go('tasbih');
+  const btn = doc.getElementById('tasbih-tap');
+  assert.ok(btn.contains(doc.getElementById('tasbih-phrase')), 'the phrase is inside the circle');
+  assert.ok(btn.textContent.indexOf('سبّح') === -1);
+  click(win, doc.querySelector('[data-phrase="4"]'));
+  assert.strictEqual(btn.textContent.trim(), 'أستغفر الله');
+  /* a press on the words is a press on the circle */
+  click(win, doc.getElementById('tasbih-phrase'));
+  assert.strictEqual(doc.getElementById('tasbih-value').textContent, '1');
+  /* and it is said once on the page, not over the circle as well */
+  assert.strictEqual(doc.querySelectorAll('#v-tasbih .counter-phrase').length, 1);
 });
 
 /* ---------------- qibla ---------------- */
@@ -10289,7 +10307,7 @@ test('the app offers a way to reach its author that works', () => {
      the reader of something they cannot open */
   assert.ok(html.indexOf('github.com/SiteQ8/Quran_Sunna') === -1, 'a private repository is not offered');
   assert.ok(html.indexOf('برخصة MIT') === -1);
-  assert.ok(html.indexOf('mailto:Site@hotmail.com') !== -1, 'the address is a link, not words to copy');
+  assert.ok(html.indexOf('mailto:' + CONTACT) !== -1, 'the address is a link, not words to copy');
 });
 
 test('nothing a reader sees claims the source is open, because it is not', () => {
@@ -10308,7 +10326,7 @@ test('nothing a reader sees claims the source is open, because it is not', () =>
   const policy = fs.readFileSync(path.join(DOCS, 'privacy.html'), 'utf8');
   const app = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   [policy, app].forEach(function (page) {
-    assert.ok(page.indexOf('mailto:Site@hotmail.com') !== -1, 'the email is offered as a link');
+    assert.ok(page.indexOf('mailto:' + CONTACT) !== -1, 'the email is offered as a link');
   });
 });
 
@@ -10421,7 +10439,7 @@ test('the reader chooses how to listen to a surah, and the choice can be kept', 
 test('the about screen says how to reach the author once, not twice', () => {
   const html = fs.readFileSync(path.join(DOCS, 'index.html'), 'utf8');
   assert.strictEqual((html.match(/<h2>التواصل<\/h2>/g) || []).length, 1, 'one contact card, not two');
-  assert.strictEqual((html.match(/mailto:Site@hotmail\.com/g) || []).length, 1);
+  assert.strictEqual(html.split('mailto:' + CONTACT).length - 1, 1);
 });
 
 test('the notice in the shade is raised once for a sitting, not for every verse', () => {
@@ -11550,7 +11568,7 @@ test('the settings end with sharing the app, rating it, the tour again and a let
   /* the hadith under the share, as Muslim narrates it */
   assert.ok(spread.textContent.indexOf('«مَن دلّ على خيرٍ فله مثلُ أجرِ فاعله» رواه مسلم') !== -1);
   /* and the address written out, for a phone with no mail program to open */
-  assert.ok(help.textContent.indexOf('Site@hotmail.com') !== -1);
+  assert.ok(help.textContent.indexOf(CONTACT) !== -1);
   const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
   assert.ok(css.indexOf('.setting > .setting-act { align-self: center; }') !== -1);
   assert.ok(css.indexOf('#v-settings { padding-bottom: 88px; }') !== -1, 'the last button clears the one that goes to the top');
@@ -11656,7 +11674,7 @@ test('rating opens the store of the phone in hand, and the letter is addressed w
 
   /* the letter, by the window the iPhone hands to the phone */
   click(ios.win, ios.doc.querySelector('[data-act="send-feedback"]'));
-  assert.ok(opened[1].indexOf('mailto:Site@hotmail.com?subject=' + encodeURIComponent('ملاحظات على سُنّتي') + '&body=') === 0);
+  assert.ok(opened[1].indexOf('mailto:' + CONTACT + '?subject=' + encodeURIComponent('ملاحظات على سُنّتي') + '&body=') === 0);
   const body = decodeURIComponent(opened[1].split('&body=')[1]);
   assert.ok(body.indexOf('النسخة ' + ios.win.App.version + '، وحزمة آيفون 2.0') !== -1, 'which app it is about: ' + body);
   /* the about screen's address, which a followed link left dead inside the

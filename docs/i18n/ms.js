@@ -1202,7 +1202,6 @@ window.I18n && window.I18n.add({
  "حدّث موقعي": "Kemas kini lokasi saya",
  "المسبحة": "Tasbih",
  "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم": "Setiap ketikan pada bulatan dikira satu tasbih, dan jumlah hari ini disimpan untuk anda",
- "سبّح": "Bertasbih",
  "تصفير العدّاد": "Set semula pembilang",
  "أذكار الصباح والمساء وحصن المسلم كاملاً": "Zikir pagi dan petang, serta Hisnul Muslim lengkap",
  "الإذاعة": "Radio",

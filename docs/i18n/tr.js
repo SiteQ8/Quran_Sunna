@@ -1202,7 +1202,6 @@ window.I18n && window.I18n.add({
  "حدّث موقعي": "Konumumu güncelle",
  "المسبحة": "Tesbih",
  "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم": "Daireye her dokunuş bir tesbihtir; günün toplamı sizin için saklanır",
- "سبّح": "Tesbih çek",
  "تصفير العدّاد": "Sayacı sıfırla",
  "أذكار الصباح والمساء وحصن المسلم كاملاً": "Sabah ve akşam zikirleri ile Hısnü'l-Müslim'in tamamı",
  "الإذاعة": "Radyo",

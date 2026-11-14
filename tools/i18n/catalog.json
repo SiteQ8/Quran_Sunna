@@ -7243,7 +7243,7 @@
   "kind": "attr",
   "where": [
    "index.html:224",
-   "index.html:1236",
+   "index.html:1235",
    "js/app.js:2391",
    "js/app.js:2392",
    "js/app.js:4073",
@@ -7262,8 +7262,8 @@
   "kind": "attr",
   "where": [
    "index.html:319",
+   "index.html:1118",
    "index.html:1119",
-   "index.html:1120",
    "data/azkar.js AZKAR_DB.*.title"
   ]
  },
@@ -7324,7 +7324,7 @@
   "where": [
    "index.html:414",
    "index.html:691",
-   "index.html:1200",
+   "index.html:1199",
    "js/app.js:7994",
    "js/app.js:8107",
    "js/hijri.js:8"
@@ -7765,7 +7765,7 @@
   "where": [
    "index.html:549",
    "index.html:581",
-   "index.html:853",
+   "index.html:852",
    "js/app.js:3197",
    "js/app.js:7270",
    "js/app.js:8110"
@@ -7783,7 +7783,7 @@
   "kind": "text",
   "where": [
    "index.html:551",
-   "index.html:878",
+   "index.html:877",
    "js/app.js:3205",
    "js/app.js:8114"
   ]
@@ -7874,8 +7874,8 @@
   "kind": "text",
   "where": [
    "index.html:586",
-   "index.html:1126",
-   "index.html:1132",
+   "index.html:1125",
+   "index.html:1131",
    "js/app.js:6100",
    "js/app.js:11586",
    "data/azkar.js AZKAR_DB.*.title"
@@ -8015,7 +8015,7 @@
   "kind": "attr",
   "where": [
    "index.html:656",
-   "index.html:904"
+   "index.html:903"
   ]
  },
  {
@@ -8023,7 +8023,7 @@
   "kind": "attr",
   "where": [
    "index.html:658",
-   "index.html:906"
+   "index.html:905"
   ]
  },
  {
@@ -8109,7 +8109,7 @@
   "kind": "text",
   "where": [
    "index.html:694",
-   "index.html:909"
+   "index.html:908"
   ]
  },
  {
@@ -8349,7 +8349,7 @@
   "kind": "text",
   "where": [
    "index.html:749",
-   "index.html:1212",
+   "index.html:1211",
    "js/app.js:6217",
    "js/app.js:11589",
    "data/content.js RAMADAN_SUNAN[].i[].h"
@@ -8591,31 +8591,24 @@
   ]
  },
  {
-  "key": "سبّح",
-  "kind": "text",
-  "where": [
-   "index.html:844"
-  ]
- },
- {
   "key": "تصفير العدّاد",
   "kind": "text",
   "where": [
-   "index.html:848"
+   "index.html:847"
   ]
  },
  {
   "key": "أذكار الصباح والمساء وحصن المسلم كاملاً",
   "kind": "text",
   "where": [
-   "index.html:854"
+   "index.html:853"
   ]
  },
  {
   "key": "الإذاعة",
   "kind": "text",
   "where": [
-   "index.html:861",
+   "index.html:860",
    "js/app.js:8112"
   ]
  },
@@ -8623,21 +8616,21 @@
   "key": "بث مباشر، يحتاج اتصالاً بالإنترنت",
   "kind": "text",
   "where": [
-   "index.html:861"
+   "index.html:860"
   ]
  },
  {
   "key": "مؤقت الإيقاف",
   "kind": "text",
   "where": [
-   "index.html:864"
+   "index.html:863"
   ]
  },
  {
   "key": "من الأربعين النووية",
   "kind": "text",
   "where": [
-   "index.html:872",
+   "index.html:871",
    "js/app.js:8113"
   ]
  },
@@ -8645,49 +8638,49 @@
   "key": "عشرون حديثاً جامعاً لأصول الدين",
   "kind": "text",
   "where": [
-   "index.html:872"
+   "index.html:871"
   ]
  },
  {
   "key": "أدعية من الكتاب والسنة، ومواضع الدعاء في القرآن",
   "kind": "text",
   "where": [
-   "index.html:878"
+   "index.html:877"
   ]
  },
  {
   "key": "بالمواضيع",
   "kind": "text",
   "where": [
-   "index.html:880"
+   "index.html:879"
   ]
  },
  {
   "key": "اختر موضوعاً لتقرأ أدعيته، وآيات الدعاء فيه تُقرأ من المصحف",
   "kind": "text",
   "where": [
-   "index.html:881"
+   "index.html:880"
   ]
  },
  {
   "key": "أدعية المواضع",
   "kind": "text",
   "where": [
-   "index.html:886"
+   "index.html:885"
   ]
  },
  {
   "key": "دعاء كل موضع في وقته، بعدّاد يحفظ ما قرأت اليوم",
   "kind": "text",
   "where": [
-   "index.html:887"
+   "index.html:886"
   ]
  },
  {
   "key": "الرقية الشرعية",
   "kind": "text",
   "where": [
-   "index.html:895",
+   "index.html:894",
    "js/app.js:8115"
   ]
  },
@@ -8695,14 +8688,14 @@
   "key": "آيات وأدعية ثابتة للرقية",
   "kind": "text",
   "where": [
-   "index.html:895"
+   "index.html:894"
   ]
  },
  {
   "key": "التقويم الهجري",
   "kind": "text",
   "where": [
-   "index.html:901",
+   "index.html:900",
    "js/app.js:8117"
   ]
  },
@@ -8710,98 +8703,98 @@
   "key": "الشهر كاملاً ومواسم العبادة فيه",
   "kind": "text",
   "where": [
-   "index.html:901"
+   "index.html:900"
   ]
  },
  {
   "key": "ارجع إلى اليوم",
   "kind": "text",
   "where": [
-   "index.html:910"
+   "index.html:909"
   ]
  },
  {
   "key": "مواسم الشهر",
   "kind": "text",
   "where": [
-   "index.html:913"
+   "index.html:912"
   ]
  },
  {
   "key": "تحويل التاريخ",
   "kind": "text",
   "where": [
-   "index.html:921"
+   "index.html:920"
   ]
  },
  {
   "key": "ميلادي",
   "kind": "text",
   "where": [
-   "index.html:923"
+   "index.html:922"
   ]
  },
  {
   "key": "تاريخ ميلادي",
   "kind": "attr",
   "where": [
-   "index.html:924"
+   "index.html:923"
   ]
  },
  {
   "key": "هجري",
   "kind": "text",
   "where": [
-   "index.html:928"
+   "index.html:927"
   ]
  },
  {
   "key": "date:اليوم الهجري",
   "kind": "attr",
   "where": [
-   "index.html:930"
+   "index.html:929"
   ]
  },
  {
   "key": "date:اليوم",
   "kind": "attr",
   "where": [
-   "index.html:930"
+   "index.html:929"
   ]
  },
  {
   "key": "الشهر الهجري",
   "kind": "attr",
   "where": [
-   "index.html:931"
+   "index.html:930"
   ]
  },
  {
   "key": "السنة الهجرية",
   "kind": "attr",
   "where": [
-   "index.html:932"
+   "index.html:931"
   ]
  },
  {
   "key": "السنة",
   "kind": "attr",
   "where": [
-   "index.html:932"
+   "index.html:931"
   ]
  },
  {
   "key": "قادم",
   "kind": "text",
   "where": [
-   "index.html:937"
+   "index.html:936"
   ]
  },
  {
   "key": "الإعدادات",
   "kind": "text",
   "where": [
-   "index.html:943",
+   "index.html:942",
    "js/app.js:8120"
   ]
  },
@@ -8809,65 +8802,65 @@
   "key": "اضبط اللغة والحساب والمظهر ونسخة بياناتك",
   "kind": "text",
   "where": [
-   "index.html:943"
+   "index.html:942"
   ]
  },
  {
   "key": "اللغة",
   "kind": "text",
   "where": [
-   "index.html:946"
+   "index.html:945"
   ]
  },
  {
   "key": "لغة التطبيق",
   "kind": "text",
   "where": [
-   "index.html:947",
-   "index.html:948"
+   "index.html:946",
+   "index.html:947"
   ]
  },
  {
   "key": "يبقى القرآن والحديث والأذكار بالعربية، وتحتها ترجمة معانيها",
   "kind": "text",
   "where": [
-   "index.html:947"
+   "index.html:946"
   ]
  },
  {
   "key": "لغة الجهاز",
   "kind": "text",
   "where": [
-   "index.html:949"
+   "index.html:948"
   ]
  },
  {
   "key": "معاني الآيات",
   "kind": "text",
   "where": [
-   "index.html:962",
-   "index.html:963"
+   "index.html:961",
+   "index.html:962"
   ]
  },
  {
   "key": "تحت كل آية ترجمة معناها، فإن أطفأتها جرت السورة كما في المصحف",
   "kind": "text",
   "where": [
-   "index.html:962"
+   "index.html:961"
   ]
  },
  {
   "key": "الموقع والحساب",
   "kind": "text",
   "where": [
-   "index.html:967"
+   "index.html:966"
   ]
  },
  {
   "key": "موقعك",
   "kind": "text",
   "where": [
-   "index.html:968",
+   "index.html:967",
    "js/app.js:779"
   ]
  },
@@ -8875,77 +8868,77 @@
   "key": "لم يحدد بعد",
   "kind": "text",
   "where": [
-   "index.html:968"
+   "index.html:967"
   ]
  },
  {
   "key": "تحديد",
   "kind": "text",
   "where": [
-   "index.html:969"
+   "index.html:968"
   ]
  },
  {
   "key": "المدينة",
   "kind": "text",
   "where": [
-   "index.html:970"
+   "index.html:969"
   ]
  },
  {
   "key": "طريقة الحساب",
   "kind": "text",
   "where": [
-   "index.html:972"
+   "index.html:971"
   ]
  },
  {
   "key": "وقت العصر",
   "kind": "text",
   "where": [
-   "index.html:974"
+   "index.html:973"
   ]
  },
  {
   "key": "الجمهور",
   "kind": "text",
   "where": [
-   "index.html:976"
+   "index.html:975"
   ]
  },
  {
   "key": "الحنفي",
   "kind": "text",
   "where": [
-   "index.html:977"
+   "index.html:976"
   ]
  },
  {
   "key": "خطوط العرض العالية",
   "kind": "text",
   "where": [
-   "index.html:979"
+   "index.html:978"
   ]
  },
  {
   "key": "للمدن التي لا يغيب فيها الشفق",
   "kind": "text",
   "where": [
-   "index.html:979"
+   "index.html:978"
   ]
  },
  {
   "key": "نسبة الزاوية",
   "kind": "text",
   "where": [
-   "index.html:981"
+   "index.html:980"
   ]
  },
  {
   "key": "منتصف الليل",
   "kind": "text",
   "where": [
-   "index.html:982",
+   "index.html:981",
    "js/app.js:2013",
    "js/app.js:8857"
   ]
@@ -8954,22 +8947,22 @@
   "key": "سُبع الليل",
   "kind": "text",
   "where": [
-   "index.html:983"
+   "index.html:982"
   ]
  },
  {
   "key": "بلا تعديل",
   "kind": "text",
   "where": [
-   "index.html:984"
+   "index.html:983"
   ]
  },
  {
   "key": "التذكيرات",
   "kind": "text",
   "where": [
-   "index.html:990",
-   "index.html:1094",
+   "index.html:989",
+   "index.html:1093",
    "js/app.js:8119"
   ]
  },
@@ -8977,44 +8970,44 @@
   "key": "تنبيه الصلاة والأذان والسنن والورد، في صفحة وحدها",
   "kind": "text",
   "where": [
-   "index.html:991"
+   "index.html:990"
   ]
  },
  {
   "key": "سهولة الوصول",
   "kind": "text",
   "where": [
-   "index.html:994"
+   "index.html:993"
   ]
  },
  {
   "key": "التطبيق يتبع ما ضبطته في هاتفك، ولك أن تغيّره هنا",
   "kind": "text",
   "where": [
-   "index.html:995"
+   "index.html:994"
   ]
  },
  {
   "key": "تباين أعلى",
   "kind": "text",
   "where": [
-   "index.html:996",
-   "index.html:997"
+   "index.html:995",
+   "index.html:996"
   ]
  },
  {
   "key": "حدود أوضح وألوان أشد، لمن يجد النص باهتاً",
   "kind": "text",
   "where": [
-   "index.html:996"
+   "index.html:995"
   ]
  },
  {
   "key": "تقليل الحركة",
   "kind": "text",
   "where": [
+   "index.html:997",
    "index.html:998",
-   "index.html:999",
    "js/app.js:11654"
   ]
  },
@@ -9022,107 +9015,107 @@
   "key": "يسكن ما يتحرك ويظهر تدريجياً، لمن تزعجه الحركة",
   "kind": "text",
   "where": [
-   "index.html:998"
+   "index.html:997"
   ]
  },
  {
   "key": "القراءة والمظهر",
   "kind": "text",
   "where": [
-   "index.html:1003"
+   "index.html:1002"
   ]
  },
  {
   "key": "حجم النص",
   "kind": "text",
   "where": [
-   "index.html:1004",
-   "index.html:1005"
+   "index.html:1003",
+   "index.html:1004"
   ]
  },
  {
   "key": "لون التطبيق",
   "kind": "text",
   "where": [
-   "index.html:1007"
+   "index.html:1006"
   ]
  },
  {
   "key": "الزخرفة",
   "kind": "text",
   "where": [
-   "index.html:1010"
+   "index.html:1009"
   ]
  },
  {
   "key": "سماء الوقت في المحراب",
   "kind": "text",
   "where": [
-   "index.html:1013",
-   "index.html:1014"
+   "index.html:1012",
+   "index.html:1013"
   ]
  },
  {
   "key": "لوحة لساحل الخليج يتبدّل ضوؤها مع مواقيتك، والقمر فيها بطوره الحقيقي ليلاً",
   "kind": "text",
   "where": [
-   "index.html:1013"
+   "index.html:1012"
   ]
  },
  {
   "key": "شكل صفحة المصحف",
   "kind": "text",
   "where": [
-   "index.html:1015"
+   "index.html:1014"
   ]
  },
  {
   "key": "نصّاً متّصلاً، أو خمسة عشر سطراً كما طُبعت في مصحف المدينة",
   "kind": "text",
   "where": [
-   "index.html:1015"
+   "index.html:1014"
   ]
  },
  {
   "key": "نص متّصل",
   "kind": "text",
   "where": [
-   "index.html:1017"
+   "index.html:1016"
   ]
  },
  {
   "key": "كما طُبعت",
   "kind": "text",
   "where": [
-   "index.html:1018"
+   "index.html:1017"
   ]
  },
  {
   "key": "عند الاستماع لسورة",
   "kind": "text",
   "where": [
-   "index.html:1020"
+   "index.html:1019"
   ]
  },
  {
   "key": "متّصلة بلا وقفة، أو مع تعليم كل آية",
   "kind": "text",
   "where": [
-   "index.html:1020"
+   "index.html:1019"
   ]
  },
  {
   "key": "اسألني كل مرة",
   "kind": "text",
   "where": [
-   "index.html:1022"
+   "index.html:1021"
   ]
  },
  {
   "key": "استماع متّصل",
   "kind": "text",
   "where": [
-   "index.html:1023",
+   "index.html:1022",
    "js/app.js:4466"
   ]
  },
@@ -9130,7 +9123,7 @@
   "key": "تتبّع الآيات",
   "kind": "text",
   "where": [
-   "index.html:1024",
+   "index.html:1023",
    "js/app.js:4466"
   ]
  },
@@ -9138,140 +9131,140 @@
   "key": "صيغة الساعة",
   "kind": "text",
   "where": [
-   "index.html:1026"
+   "index.html:1025"
   ]
  },
  {
   "key": "اثنتا عشرة بصباح ومساء، أو أربع وعشرون",
   "kind": "text",
   "where": [
-   "index.html:1026"
+   "index.html:1025"
   ]
  },
  {
   "key": "12 ساعة",
   "kind": "text",
   "where": [
-   "index.html:1028"
+   "index.html:1027"
   ]
  },
  {
   "key": "24 ساعة",
   "kind": "text",
   "where": [
-   "index.html:1029"
+   "index.html:1028"
   ]
  },
  {
   "key": "السمة",
   "kind": "text",
   "where": [
-   "index.html:1031"
+   "index.html:1030"
   ]
  },
  {
   "key": "حسب النظام",
   "kind": "text",
   "where": [
-   "index.html:1033"
+   "index.html:1032"
   ]
  },
  {
   "key": "فاتح",
   "kind": "text",
   "where": [
-   "index.html:1034"
+   "index.html:1033"
   ]
  },
  {
   "key": "داكن",
   "kind": "text",
   "where": [
-   "index.html:1035"
+   "index.html:1034"
   ]
  },
  {
   "key": "القارئ",
   "kind": "text",
   "where": [
-   "index.html:1037"
+   "index.html:1036"
   ]
  },
  {
   "key": "التفسير",
   "kind": "text",
   "where": [
-   "index.html:1039"
+   "index.html:1038"
   ]
  },
  {
   "key": "الميسر",
   "kind": "text",
   "where": [
-   "index.html:1041"
+   "index.html:1040"
   ]
  },
  {
   "key": "الجلالين",
   "kind": "text",
   "where": [
-   "index.html:1042"
+   "index.html:1041"
   ]
  },
  {
   "key": "الاهتزاز عند العد",
   "kind": "text",
   "where": [
-   "index.html:1044"
+   "index.html:1043"
   ]
  },
  {
   "key": "الاهتزاز",
   "kind": "attr",
   "where": [
-   "index.html:1045"
+   "index.html:1044"
   ]
  },
  {
   "key": "التلاوة المحفوظة",
   "kind": "text",
   "where": [
-   "index.html:1049"
+   "index.html:1048"
   ]
  },
  {
   "key": "بياناتك",
   "kind": "text",
   "where": [
-   "index.html:1054"
+   "index.html:1053"
   ]
  },
  {
   "key": "ما تسجّله محفوظ في جهازك وحده، ولا يخرج منه إلا ما تطلبه: تلاوة، أو تفسير، أو مساجد قريبة.",
   "kind": "text",
   "where": [
-   "index.html:1055"
+   "index.html:1054"
   ]
  },
  {
   "key": "نسخة احتياطية",
   "kind": "text",
   "where": [
-   "index.html:1057"
+   "index.html:1056"
   ]
  },
  {
   "key": "استعادة",
   "kind": "text",
   "where": [
-   "index.html:1058"
+   "index.html:1057"
   ]
  },
  {
   "key": "حذف كل البيانات",
   "kind": "text",
   "where": [
-   "index.html:1061",
+   "index.html:1060",
    "js/app.js:10509"
   ]
  },
@@ -9279,14 +9272,14 @@
   "key": "العمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "index.html:1065"
+   "index.html:1064"
   ]
  },
  {
   "key": "ثبّت التطبيق على جهازك",
   "kind": "text",
   "where": [
-   "index.html:1067",
+   "index.html:1066",
    "js/app.js:10382"
   ]
  },
@@ -9294,42 +9287,42 @@
   "key": "حمّل كل شيء للعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "index.html:1068"
+   "index.html:1067"
   ]
  },
  {
   "key": "أعد تحميل التطبيق",
   "kind": "text",
   "where": [
-   "index.html:1069"
+   "index.html:1068"
   ]
  },
  {
   "key": "إذا رأيت التطبيق لا يتحدّث، أو ظهر لك شيء قديم، فاضغط هذا الزر، فهو يحذف نسخة التطبيق المحفوظة في جهازك وينزّل أحدث نسخة من الموقع، وتبقى بياناتك وأذكارك وعلاماتك كما هي.",
   "kind": "text",
   "where": [
-   "index.html:1070"
+   "index.html:1069"
   ]
  },
  {
   "key": "انشر الخير",
   "kind": "text",
   "where": [
-   "index.html:1074"
+   "index.html:1073"
   ]
  },
  {
   "key": "شارك التطبيق",
   "kind": "text",
   "where": [
-   "index.html:1075"
+   "index.html:1074"
   ]
  },
  {
   "key": "رواه مسلم",
   "kind": "text",
   "where": [
-   "index.html:1075",
+   "index.html:1074",
    "js/hijri.js:139",
    "js/hijri.js:140",
    "js/hijri.js:145",
@@ -9341,56 +9334,56 @@
   "key": "شارك",
   "kind": "text",
   "where": [
-   "index.html:1076"
+   "index.html:1075"
   ]
  },
  {
   "key": "قيّم التطبيق",
   "kind": "text",
   "where": [
-   "index.html:1077"
+   "index.html:1076"
   ]
  },
  {
   "key": "تقييمك في المتجر يدلّ غيرك عليه",
   "kind": "text",
   "where": [
-   "index.html:1077"
+   "index.html:1076"
   ]
  },
  {
   "key": "قيّم",
   "kind": "text",
   "where": [
-   "index.html:1078"
+   "index.html:1077"
   ]
  },
  {
   "key": "المساعدة",
   "kind": "text",
   "where": [
-   "index.html:1082"
+   "index.html:1081"
   ]
  },
  {
   "key": "جولة في التطبيق",
   "kind": "text",
   "where": [
-   "index.html:1083"
+   "index.html:1082"
   ]
  },
  {
   "key": "تعرّف على أقسامه في أقل من دقيقة",
   "kind": "text",
   "where": [
-   "index.html:1083"
+   "index.html:1082"
   ]
  },
  {
   "key": "ابدأ",
   "kind": "text",
   "where": [
-   "index.html:1084",
+   "index.html:1083",
    "js/app.js:3732",
    "js/app.js:11950"
   ]
@@ -9399,28 +9392,28 @@
   "key": "أرسل ملاحظاتك",
   "kind": "text",
   "where": [
-   "index.html:1085"
+   "index.html:1084"
   ]
  },
  {
   "key": "اقتراح أو خلل وجدته، يصلنا على Site@hotmail.com",
   "kind": "text",
   "where": [
-   "index.html:1085"
+   "index.html:1084"
   ]
  },
  {
   "key": "راسلنا",
   "kind": "text",
   "where": [
-   "index.html:1086"
+   "index.html:1085"
   ]
  },
  {
   "key": "ما ينبّهك، ومتى، وبأي صوت",
   "kind": "text",
   "where": [
-   "index.html:1094",
+   "index.html:1093",
    "js/app.js:8119"
   ]
  },
@@ -9428,7 +9421,7 @@
   "key": "الصلاة",
   "kind": "text",
   "where": [
-   "index.html:1097",
+   "index.html:1096",
    "js/app.js:6713",
    "data/hisn.js HISN_GROUPS[].t"
   ]
@@ -9437,185 +9430,185 @@
   "key": "تنبيه الصلاة",
   "kind": "text",
   "where": [
-   "index.html:1098",
-   "index.html:1099"
+   "index.html:1097",
+   "index.html:1098"
   ]
  },
  {
   "key": "إشعار عند دخول الوقت",
   "kind": "text",
   "where": [
-   "index.html:1098"
+   "index.html:1097"
   ]
  },
  {
   "key": "تنبيه الأذان",
   "kind": "text",
   "where": [
-   "index.html:1100",
-   "index.html:1101"
+   "index.html:1099",
+   "index.html:1100"
   ]
  },
  {
   "key": "من التطبيق نفسه في وقت كل صلاة لموقعك، ويرنّ والتطبيق مغلق",
   "kind": "text",
   "where": [
-   "index.html:1100"
+   "index.html:1099"
   ]
  },
  {
   "key": "الصلاة القادمة على شاشة القفل",
   "kind": "text",
   "where": [
-   "index.html:1102",
-   "index.html:1103"
+   "index.html:1101",
+   "index.html:1102"
   ]
  },
  {
   "key": "إشعار هادئ بلا صوت يعدّ الوقت إلى الصلاة القادمة",
   "kind": "text",
   "where": [
-   "index.html:1102"
+   "index.html:1101"
   ]
  },
  {
   "key": "صوت الأذان",
   "kind": "text",
   "where": [
-   "index.html:1104",
-   "index.html:1106"
+   "index.html:1103",
+   "index.html:1105"
   ]
  },
  {
   "key": "يُسمع عند دخول الوقت، وللفجر أذانه",
   "kind": "text",
   "where": [
-   "index.html:1104"
+   "index.html:1103"
   ]
  },
  {
   "key": "اسمع الأذان",
   "kind": "attr",
   "where": [
-   "index.html:1107"
+   "index.html:1106"
   ]
  },
  {
   "key": "قبل الأذان",
   "kind": "text",
   "where": [
-   "index.html:1109"
+   "index.html:1108"
   ]
  },
  {
   "key": "تنبيه يسبق كل صلاة لتستعد لها",
   "kind": "text",
   "where": [
-   "index.html:1109"
+   "index.html:1108"
   ]
  },
  {
   "key": "صوت التنبيه قبل الأذان",
   "kind": "attr",
   "where": [
-   "index.html:1110"
+   "index.html:1109"
   ]
  },
  {
   "key": "صوت الجهاز",
   "kind": "text",
   "where": [
-   "index.html:1110",
-   "index.html:1129",
-   "index.html:1136",
-   "index.html:1145",
-   "index.html:1152",
-   "index.html:1159"
+   "index.html:1109",
+   "index.html:1128",
+   "index.html:1135",
+   "index.html:1144",
+   "index.html:1151",
+   "index.html:1158"
   ]
  },
  {
   "key": "نغمة هادئة",
   "kind": "text",
   "where": [
-   "index.html:1110",
-   "index.html:1129",
-   "index.html:1136",
-   "index.html:1145",
-   "index.html:1152",
-   "index.html:1159"
+   "index.html:1109",
+   "index.html:1128",
+   "index.html:1135",
+   "index.html:1144",
+   "index.html:1151",
+   "index.html:1158"
   ]
  },
  {
   "key": "صامت",
   "kind": "text",
   "where": [
-   "index.html:1110",
-   "index.html:1129",
-   "index.html:1136",
-   "index.html:1145",
-   "index.html:1152",
-   "index.html:1159"
+   "index.html:1109",
+   "index.html:1128",
+   "index.html:1135",
+   "index.html:1144",
+   "index.html:1151",
+   "index.html:1158"
   ]
  },
  {
   "key": "اسمع الصوت",
   "kind": "attr",
   "where": [
-   "index.html:1110",
-   "index.html:1131",
-   "index.html:1138",
-   "index.html:1147",
-   "index.html:1154",
-   "index.html:1161"
+   "index.html:1109",
+   "index.html:1130",
+   "index.html:1137",
+   "index.html:1146",
+   "index.html:1153",
+   "index.html:1160"
   ]
  },
  {
   "key": "متى يصل التنبيه قبل الأذان",
   "kind": "attr",
   "where": [
-   "index.html:1110"
+   "index.html:1109"
   ]
  },
  {
   "key": "لا تنبيه",
   "kind": "text",
   "where": [
-   "index.html:1111"
+   "index.html:1110"
   ]
  },
  {
   "key": "قبل الأذان بخمس دقائق",
   "kind": "text",
   "where": [
-   "index.html:1112"
+   "index.html:1111"
   ]
  },
  {
   "key": "قبل الأذان بعشر دقائق",
   "kind": "text",
   "where": [
-   "index.html:1113"
+   "index.html:1112"
   ]
  },
  {
   "key": "قبل الأذان بربع ساعة",
   "kind": "text",
   "where": [
-   "index.html:1114"
+   "index.html:1113"
   ]
  },
  {
   "key": "قبل الأذان بثلث ساعة",
   "kind": "text",
   "where": [
-   "index.html:1115"
+   "index.html:1114"
   ]
  },
  {
   "key": "الإقامة بعد الأذان",
   "kind": "text",
   "where": [
-   "index.html:1117",
+   "index.html:1116",
    "js/app.js:7811"
   ]
  },
@@ -9623,57 +9616,57 @@
   "key": "يعدّ لها الحساب في الرئيسية بعد الأذان",
   "kind": "text",
   "where": [
-   "index.html:1117"
+   "index.html:1116"
   ]
  },
  {
   "key": "اضبطها",
   "kind": "text",
   "where": [
-   "index.html:1118"
+   "index.html:1117"
   ]
  },
  {
   "key": "تُعرض عند الضغط على موعد الصلاة",
   "kind": "text",
   "where": [
-   "index.html:1119"
+   "index.html:1118"
   ]
  },
  {
   "key": "الأذكار والنوم",
   "kind": "text",
   "where": [
-   "index.html:1124"
+   "index.html:1123"
   ]
  },
  {
   "key": "تذكيرات تفعّلها كما تشاء، ولكلٍّ صوتها: صوت الجهاز، أو نغمة هادئة، أو صامت.",
   "kind": "text",
   "where": [
-   "index.html:1125"
+   "index.html:1124"
   ]
  },
  {
   "key": "بعد الفجر بنصف ساعة",
   "kind": "text",
   "where": [
-   "index.html:1126"
+   "index.html:1125"
   ]
  },
  {
   "key": "صوت أذكار الصباح",
   "kind": "attr",
   "where": [
-   "index.html:1128"
+   "index.html:1127"
   ]
  },
  {
   "key": "أذكار المساء",
   "kind": "text",
   "where": [
-   "index.html:1133",
-   "index.html:1139",
+   "index.html:1132",
+   "index.html:1138",
    "js/app.js:6107",
    "js/app.js:11586",
    "data/azkar.js AZKAR_DB.*.title",
@@ -9684,37 +9677,37 @@
   "key": "بعد العصر بنصف ساعة",
   "kind": "text",
   "where": [
-   "index.html:1133"
+   "index.html:1132"
   ]
  },
  {
   "key": "صوت أذكار المساء",
   "kind": "attr",
   "where": [
-   "index.html:1135"
+   "index.html:1134"
   ]
  },
  {
   "key": "وقت النوم",
   "kind": "text",
   "where": [
-   "index.html:1140",
-   "index.html:1141"
+   "index.html:1139",
+   "index.html:1140"
   ]
  },
  {
   "key": "تصلك عنده تذكيرات ما قبل النوم التي تفعّلها تحت",
   "kind": "text",
   "where": [
-   "index.html:1140"
+   "index.html:1139"
   ]
  },
  {
   "key": "الاستغفار قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:1142",
-   "index.html:1148",
+   "index.html:1141",
+   "index.html:1147",
    "js/app.js:6115",
    "js/app.js:11587"
   ]
@@ -9723,7 +9716,7 @@
   "key": "أستغفر الله الذي لا إله إلا هو الحي القيوم وأتوب إليه",
   "kind": "text",
   "where": [
-   "index.html:1142",
+   "index.html:1141",
    "js/app.js:6116"
   ]
  },
@@ -9731,15 +9724,15 @@
   "key": "صوت الاستغفار قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:1144"
+   "index.html:1143"
   ]
  },
  {
   "key": "سورة الملك قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:1149",
-   "index.html:1155",
+   "index.html:1148",
+   "index.html:1154",
    "js/app.js:6119",
    "js/app.js:11587"
   ]
@@ -9748,22 +9741,22 @@
   "key": "كان النبي ﷺ لا ينام حتى يقرأها",
   "kind": "text",
   "where": [
-   "index.html:1149"
+   "index.html:1148"
   ]
  },
  {
   "key": "صوت سورة الملك قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:1151"
+   "index.html:1150"
   ]
  },
  {
   "key": "آية الكرسي قبل النوم",
   "kind": "text",
   "where": [
-   "index.html:1156",
-   "index.html:1162",
+   "index.html:1155",
+   "index.html:1161",
    "js/app.js:6123",
    "js/app.js:11588"
   ]
@@ -9772,35 +9765,35 @@
   "key": "لن يزال عليك من الله حافظ ولا يقربك شيطان حتى تصبح",
   "kind": "text",
   "where": [
-   "index.html:1156"
+   "index.html:1155"
   ]
  },
  {
   "key": "صوت آية الكرسي قبل النوم",
   "kind": "attr",
   "where": [
-   "index.html:1158"
+   "index.html:1157"
   ]
  },
  {
   "key": "آية الكرسي بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "index.html:1159"
+   "index.html:1158"
   ]
  },
  {
   "key": "السنن والمواسم",
   "kind": "text",
   "where": [
-   "index.html:1165"
+   "index.html:1164"
   ]
  },
  {
   "key": "ليلة الجمعة",
   "kind": "text",
   "where": [
-   "index.html:1167",
+   "index.html:1166",
    "js/app.js:6129",
    "js/app.js:6135",
    "js/app.js:6139",
@@ -9812,64 +9805,64 @@
   "key": "تذكير بعد مغرب الخميس بالإكثار من الصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1167"
+   "index.html:1166"
   ]
  },
  {
   "key": "صوت تذكير ليلة الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1168"
+   "index.html:1167"
   ]
  },
  {
   "key": "تذكير ليلة الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1168"
+   "index.html:1167"
   ]
  },
  {
   "key": "عرض ليلة الجمعة عند الفتح",
   "kind": "text",
   "where": [
-   "index.html:1169"
+   "index.html:1168"
   ]
  },
  {
   "key": "بطاقة فيها سورة الكهف والصلاة على النبي ﷺ والدعاء، تُعرض كلما فتحت التطبيق تلك الليلة",
   "kind": "text",
   "where": [
-   "index.html:1169"
+   "index.html:1168"
   ]
  },
  {
   "key": "تذكير الصيام",
   "kind": "text",
   "where": [
-   "index.html:1170",
-   "index.html:1171"
+   "index.html:1169",
+   "index.html:1170"
   ]
  },
  {
   "key": "تنبيه في ليلة اليوم الذي يُستحب صيامه، قبل السحور",
   "kind": "text",
   "where": [
-   "index.html:1170"
+   "index.html:1169"
   ]
  },
  {
   "key": "صوت تذكير الصيام",
   "kind": "attr",
   "where": [
-   "index.html:1171"
+   "index.html:1170"
   ]
  },
  {
   "key": "نداء الجمعة",
   "kind": "text",
   "where": [
-   "index.html:1172",
+   "index.html:1171",
    "js/app.js:11646"
   ]
  },
@@ -9877,66 +9870,66 @@
   "key": "تنبيه قبل صلاة الجمعة بقراءة الكهف والصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1172"
+   "index.html:1171"
   ]
  },
  {
   "key": "صوت نداء الجمعة",
   "kind": "attr",
   "where": [
-   "index.html:1173"
+   "index.html:1172"
   ]
  },
  {
   "key": "آية الجمعة بصوت خالد بوهندي",
   "kind": "text",
   "where": [
-   "index.html:1173"
+   "index.html:1172"
   ]
  },
  {
   "key": "قبل ساعة",
   "kind": "text",
   "where": [
-   "index.html:1174"
+   "index.html:1173"
   ]
  },
  {
   "key": "قبل ساعتين",
   "kind": "text",
   "where": [
-   "index.html:1175"
+   "index.html:1174"
   ]
  },
  {
   "key": "قبل ثلاث ساعات",
   "kind": "text",
   "where": [
-   "index.html:1176"
+   "index.html:1175"
   ]
  },
  {
   "key": "تشغيل التذكير",
   "kind": "attr",
   "where": [
-   "index.html:1177",
-   "index.html:1183",
-   "index.html:1226"
+   "index.html:1176",
+   "index.html:1182",
+   "index.html:1225"
   ]
  },
  {
   "key": "تذكير صلاة الضحى",
   "kind": "text",
   "where": [
-   "index.html:1178",
-   "index.html:1179"
+   "index.html:1177",
+   "index.html:1178"
   ]
  },
  {
   "key": "ركعتان فأكثر بعد ارتفاع الشمس إلى قُبيل الزوال",
   "kind": "text",
   "where": [
-   "index.html:1178",
+   "index.html:1177",
    "js/app.js:5769"
   ]
  },
@@ -9944,22 +9937,22 @@
   "key": "صوت تذكير صلاة الضحى",
   "kind": "attr",
   "where": [
-   "index.html:1179"
+   "index.html:1178"
   ]
  },
  {
   "key": "تذكير قيام الليل",
   "kind": "text",
   "where": [
-   "index.html:1180",
-   "index.html:1181"
+   "index.html:1179",
+   "index.html:1180"
   ]
  },
  {
   "key": "تنبيه عند دخول الثلث الأخير من الليل",
   "kind": "text",
   "where": [
-   "index.html:1180",
+   "index.html:1179",
    "js/app.js:5778"
   ]
  },
@@ -9967,14 +9960,14 @@
   "key": "صوت تذكير قيام الليل",
   "kind": "attr",
   "where": [
-   "index.html:1181"
+   "index.html:1180"
   ]
  },
  {
   "key": "الصلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1182",
+   "index.html:1181",
    "js/app.js:11646",
    "data/extras.js WIRD_ITEMS[].t"
   ]
@@ -9983,57 +9976,57 @@
   "key": "تذكير كل فترة تختارها",
   "kind": "text",
   "where": [
-   "index.html:1182"
+   "index.html:1181"
   ]
  },
  {
   "key": "صوت التذكير",
   "kind": "attr",
   "where": [
-   "index.html:1183"
+   "index.html:1182"
   ]
  },
  {
   "key": "تذكير بالصلاة على النبي",
   "kind": "attr",
   "where": [
-   "index.html:1183"
+   "index.html:1182"
   ]
  },
  {
   "key": "أي صلاة على النبي ﷺ",
   "kind": "text",
   "where": [
-   "index.html:1185"
+   "index.html:1184"
   ]
  },
  {
   "key": "اختر ما يُتلى، وتحته نصّه ومصدره",
   "kind": "text",
   "where": [
-   "index.html:1185"
+   "index.html:1184"
   ]
  },
  {
   "key": "اختيار الصلاة على النبي",
   "kind": "attr",
   "where": [
-   "index.html:1187"
+   "index.html:1186"
   ]
  },
  {
   "key": "صوت الهاتف",
   "kind": "text",
   "where": [
-   "index.html:1191",
-   "index.html:1194"
+   "index.html:1190",
+   "index.html:1193"
   ]
  },
  {
   "key": "اختر صوتاً واضغط زر السماع",
   "kind": "text",
   "where": [
-   "index.html:1191",
+   "index.html:1190",
    "js/app.js:2616"
   ]
  },
@@ -10041,21 +10034,21 @@
   "key": "اختيار صوت الهاتف",
   "kind": "attr",
   "where": [
-   "index.html:1193"
+   "index.html:1192"
   ]
  },
  {
   "key": "تصل في أيام رمضان وحدها، على مواقيت موقعك.",
   "kind": "text",
   "where": [
-   "index.html:1201"
+   "index.html:1200"
   ]
  },
  {
   "key": "السحور",
   "kind": "text",
   "where": [
-   "index.html:1202",
+   "index.html:1201",
    "js/app.js:6206",
    "js/app.js:11588",
    "data/content.js RAMADAN_SUNAN[].i[].h"
@@ -10065,56 +10058,56 @@
   "key": "قبل أذان الفجر بالوقت الذي تختاره",
   "kind": "text",
   "where": [
-   "index.html:1202"
+   "index.html:1201"
   ]
  },
  {
   "key": "صوت تذكير السحور",
   "kind": "attr",
   "where": [
-   "index.html:1203"
+   "index.html:1202"
   ]
  },
  {
   "key": "متى يصل تذكير السحور",
   "kind": "attr",
   "where": [
-   "index.html:1203"
+   "index.html:1202"
   ]
  },
  {
   "key": "قبل الفجر بنصف ساعة",
   "kind": "text",
   "where": [
-   "index.html:1204"
+   "index.html:1203"
   ]
  },
  {
   "key": "قبل الفجر بثلاثة أرباع ساعة",
   "kind": "text",
   "where": [
-   "index.html:1205"
+   "index.html:1204"
   ]
  },
  {
   "key": "قبل الفجر بساعة",
   "kind": "text",
   "where": [
-   "index.html:1206"
+   "index.html:1205"
   ]
  },
  {
   "key": "تذكير السحور",
   "kind": "attr",
   "where": [
-   "index.html:1207"
+   "index.html:1206"
   ]
  },
  {
   "key": "قبل الإفطار",
   "kind": "text",
   "where": [
-   "index.html:1208",
+   "index.html:1207",
    "js/app.js:11588"
   ]
  },
@@ -10122,28 +10115,28 @@
   "key": "قبل المغرب بربع ساعة",
   "kind": "text",
   "where": [
-   "index.html:1208"
+   "index.html:1207"
   ]
  },
  {
   "key": "صوت تذكير الإفطار",
   "kind": "attr",
   "where": [
-   "index.html:1209"
+   "index.html:1208"
   ]
  },
  {
   "key": "تذكير قبل الإفطار",
   "kind": "attr",
   "where": [
-   "index.html:1209"
+   "index.html:1208"
   ]
  },
  {
   "key": "ليالي الوتر من العشر الأواخر",
   "kind": "text",
   "where": [
-   "index.html:1210",
+   "index.html:1209",
    "js/app.js:11589"
   ]
  },
@@ -10151,56 +10144,56 @@
   "key": "بعد المغرب في ليلة 21 و23 و25 و27 و29",
   "kind": "text",
   "where": [
-   "index.html:1210"
+   "index.html:1209"
   ]
  },
  {
   "key": "صوت تذكير ليالي الوتر",
   "kind": "attr",
   "where": [
-   "index.html:1211"
+   "index.html:1210"
   ]
  },
  {
   "key": "تذكير ليالي الوتر",
   "kind": "attr",
   "where": [
-   "index.html:1211"
+   "index.html:1210"
   ]
  },
  {
   "key": "مساء اليوم الثامن والعشرين، لتُخرجها قبل صلاة العيد",
   "kind": "text",
   "where": [
-   "index.html:1212"
+   "index.html:1211"
   ]
  },
  {
   "key": "صوت تذكير زكاة الفطر",
   "kind": "attr",
   "where": [
-   "index.html:1213"
+   "index.html:1212"
   ]
  },
  {
   "key": "تذكير زكاة الفطر",
   "kind": "attr",
   "where": [
-   "index.html:1213"
+   "index.html:1212"
   ]
  },
  {
   "key": "وردك",
   "kind": "text",
   "where": [
-   "index.html:1217"
+   "index.html:1216"
   ]
  },
  {
   "key": "ورد اليوم",
   "kind": "text",
   "where": [
-   "index.html:1218",
+   "index.html:1217",
    "js/app.js:11646"
   ]
  },
@@ -10208,225 +10201,225 @@
   "key": "تنبيه بورد ختمتك في الساعة التي تختارها",
   "kind": "text",
   "where": [
-   "index.html:1218"
+   "index.html:1217"
   ]
  },
  {
   "key": "صوت ورد اليوم",
   "kind": "attr",
   "where": [
-   "index.html:1219"
+   "index.html:1218"
   ]
  },
  {
   "key": "6 صباحاً",
   "kind": "text",
   "where": [
-   "index.html:1220"
+   "index.html:1219"
   ]
  },
  {
   "key": "8 صباحاً",
   "kind": "text",
   "where": [
-   "index.html:1221"
+   "index.html:1220"
   ]
  },
  {
   "key": "12 ظهراً",
   "kind": "text",
   "where": [
-   "index.html:1222"
+   "index.html:1221"
   ]
  },
  {
   "key": "4 عصراً",
   "kind": "text",
   "where": [
-   "index.html:1223"
+   "index.html:1222"
   ]
  },
  {
   "key": "8 مساءً",
   "kind": "text",
   "where": [
-   "index.html:1224"
+   "index.html:1223"
   ]
  },
  {
   "key": "10 مساءً",
   "kind": "text",
   "where": [
-   "index.html:1225"
+   "index.html:1224"
   ]
  },
  {
   "key": "تصلك التنبيهات ما دام التطبيق مفتوحاً أو في الخلفية، وتصل على أوسع نطاق حين يُثبَّت التطبيق على الجهاز.",
   "kind": "text",
   "where": [
-   "index.html:1229"
+   "index.html:1228"
   ]
  },
  {
   "key": "عن سُنّتي",
   "kind": "text",
   "where": [
-   "index.html:1233",
-   "index.html:1266"
+   "index.html:1232",
+   "index.html:1265"
   ]
  },
  {
   "key": "ما الذي يعمل هنا، وكيف",
   "kind": "text",
   "where": [
-   "index.html:1233"
+   "index.html:1232"
   ]
  },
  {
   "key": "شعار سُنّتي: محراب يطل على سماء الغروب وفيه مئذنة وهلال",
   "kind": "attr",
   "where": [
-   "index.html:1235"
+   "index.html:1234"
   ]
  },
  {
   "key": "مصحف ومواقيت وأذكار وسنن في جهازك",
   "kind": "text",
   "where": [
-   "index.html:1236"
+   "index.html:1235"
   ]
  },
  {
   "key": "الشعار محراب يطل على سماء الوقت، وفيه مئذنة على الساحل وهلال فوقها",
   "kind": "text",
   "where": [
-   "index.html:1236"
+   "index.html:1235"
   ]
  },
  {
   "key": "حمّل سُنّتي من متجر آبل",
   "kind": "attr",
   "where": [
-   "index.html:1240"
+   "index.html:1239"
   ]
  },
  {
   "key": "حمّل سُنّتي من Google Play",
   "kind": "attr",
   "where": [
-   "index.html:1241"
+   "index.html:1240"
   ]
  },
  {
   "key": "سُنّتي على متجر آبل وعلى Google Play، فثبّته من متجر جهازك لتصلك تحديثاته منه",
   "kind": "text",
   "where": [
-   "index.html:1243"
+   "index.html:1242"
   ]
  },
  {
   "key": "سُنّتي يعمل كاملاً على جهازك، فالمصحف كله محفوظ معك وأوقات الصلاة تُحسب فلكياً على الجهاز نفسه دون طلب من أي خادم، ثم تبقى الأذكار والقبلة وتتبع السنن متاحة ولو انقطع الإنترنت.",
   "kind": "text",
   "where": [
-   "index.html:1246"
+   "index.html:1245"
   ]
  },
  {
   "key": "ما الذي يحتاج إنترنت",
   "kind": "text",
   "where": [
-   "index.html:1249"
+   "index.html:1248"
   ]
  },
  {
   "key": "تلاوة القارئ والإذاعة والتفسير وحدها تحتاج اتصالاً، وما عدا ذلك يعمل بلا شبكة.",
   "kind": "text",
   "where": [
-   "index.html:1250"
+   "index.html:1249"
   ]
  },
  {
   "key": "المصادر",
   "kind": "text",
   "where": [
-   "index.html:1253"
+   "index.html:1252"
   ]
  },
  {
   "key": "نص المصحف برواية حفص عن عاصم بالرسم العثماني، والأذكار من حصن المسلم، والأحاديث من الأربعين النووية، ثم التلاوات من شبكة القرآن المفتوحة، وخريطة المساجد وبياناتها من",
   "kind": "text",
   "where": [
-   "index.html:1254"
+   "index.html:1253"
   ]
  },
  {
   "key": "أسماء الأماكن من",
   "kind": "text",
   "where": [
-   "index.html:1255"
+   "index.html:1254"
   ]
  },
  {
   "key": "التواصل",
   "kind": "text",
   "where": [
-   "index.html:1259"
+   "index.html:1258"
   ]
  },
  {
   "key": "للاستفسار أو الملاحظات:",
   "kind": "text",
   "where": [
-   "index.html:1260"
+   "index.html:1259"
   ]
  },
  {
   "key": "صدقة جارية",
   "kind": "text",
   "where": [
-   "index.html:1263"
+   "index.html:1262"
   ]
  },
  {
   "key": "التطبيق مجاني بلا إعلانات ولا تتبع، فمن انتفع به فليدع لوالديّ ولمن ساهم فيه.",
   "kind": "text",
   "where": [
-   "index.html:1264"
+   "index.html:1263"
   ]
  },
  {
   "key": "سياسة الخصوصية",
   "kind": "text",
   "where": [
-   "index.html:1266"
+   "index.html:1265"
   ]
  },
  {
   "key": "علي العنزي ·",
   "kind": "text",
   "where": [
-   "index.html:1266"
+   "index.html:1265"
   ]
  },
  {
   "key": "مشغل الصوت",
   "kind": "attr",
   "where": [
-   "index.html:1272"
+   "index.html:1271"
   ]
  },
  {
   "key": "اذهب إلى ما يُتلى",
   "kind": "attr",
   "where": [
-   "index.html:1273"
+   "index.html:1272"
   ]
  },
  {
   "key": "إيقاف مؤقت",
   "kind": "attr",
   "where": [
-   "index.html:1277",
+   "index.html:1276",
    "js/app.js:4252"
   ]
  },
@@ -10434,91 +10427,91 @@
   "key": "الآية السابقة",
   "kind": "attr",
   "where": [
-   "index.html:1278"
+   "index.html:1277"
   ]
  },
  {
   "key": "الآية التالية",
   "kind": "attr",
   "where": [
-   "index.html:1279"
+   "index.html:1278"
   ]
  },
  {
   "key": "إيقاف",
   "kind": "attr",
   "where": [
-   "index.html:1280"
+   "index.html:1279"
   ]
  },
  {
   "key": "التنقل الرئيسي",
   "kind": "attr",
   "where": [
-   "index.html:1282"
+   "index.html:1281"
   ]
  },
  {
   "key": "tab:الرئيسية",
   "kind": "text",
   "where": [
-   "index.html:1283"
+   "index.html:1282"
   ]
  },
  {
   "key": "tab:المصحف",
   "kind": "text",
   "where": [
-   "index.html:1284"
+   "index.html:1283"
   ]
  },
  {
   "key": "tab:المسبحة",
   "kind": "text",
   "where": [
-   "index.html:1285"
+   "index.html:1284"
   ]
  },
  {
   "key": "tab:السنن",
   "kind": "text",
   "where": [
-   "index.html:1286"
+   "index.html:1285"
   ]
  },
  {
   "key": "tab:المزيد",
   "kind": "text",
   "where": [
-   "index.html:1287"
+   "index.html:1286"
   ]
  },
  {
   "key": "إلى أعلى الصفحة",
   "kind": "attr",
   "where": [
-   "index.html:1290"
+   "index.html:1289"
   ]
  },
  {
   "key": "إخفاء",
   "kind": "attr",
   "where": [
-   "index.html:1296"
+   "index.html:1295"
   ]
  },
  {
   "key": "تخطَّ",
   "kind": "text",
   "where": [
-   "index.html:1310"
+   "index.html:1309"
   ]
  },
  {
   "key": "التالي",
   "kind": "text",
   "where": [
-   "index.html:1311",
+   "index.html:1310",
    "js/app.js:8256",
    "js/app.js:12051"
   ]
@@ -10527,21 +10520,21 @@
   "key": "سماء الوقت",
   "kind": "attr",
   "where": [
-   "index.html:1316"
+   "index.html:1315"
   ]
  },
  {
   "key": "المس للعودة",
   "kind": "text",
   "where": [
-   "index.html:1360"
+   "index.html:1359"
   ]
  },
  {
   "key": "إغلاق",
   "kind": "attr",
   "where": [
-   "index.html:1366"
+   "index.html:1365"
   ]
  },
  {

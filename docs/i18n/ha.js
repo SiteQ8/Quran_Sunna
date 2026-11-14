@@ -1202,7 +1202,6 @@ window.I18n && window.I18n.add({
  "حدّث موقعي": "Sabunta wurina",
  "المسبحة": "Carbi",
  "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم": "Kowace latsawa a kan da'irar tasbihi ɗaya ce, kuma ana adana muku jimillar yau",
- "سبّح": "Yi tasbihi",
  "تصفير العدّاد": "Goge ƙidaya",
  "أذكار الصباح والمساء وحصن المسلم كاملاً": "Azkar na safe da yamma, da Hisnul Muslim gaba ɗaya",
  "الإذاعة": "Rediyo",

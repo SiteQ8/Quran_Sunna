@@ -1202,7 +1202,6 @@ window.I18n && window.I18n.add({
  "حدّث موقعي": "Update my location",
  "المسبحة": "Tasbih counter",
  "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم": "Each tap on the circle is one tasbih, and today's total is saved for you",
- "سبّح": "Glorify",
  "تصفير العدّاد": "Reset the counter",
  "أذكار الصباح والمساء وحصن المسلم كاملاً": "Morning and evening adhkar, and Hisn al-Muslim in full",
  "الإذاعة": "Radio",

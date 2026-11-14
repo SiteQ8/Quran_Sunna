@@ -1824,12 +1824,18 @@ html.is-scrolled .reader-bar::before { display: block; }
   box-shadow: var(--shadow);
 }
 .counter-value { font-size: min(4.6rem, 18vw); font-weight: 200; color: var(--accent); direction: ltr; line-height: 1; font-variant-numeric: tabular-nums; }
-.counter-target { font-size: var(--step--1); color: var(--ink-3); }
-.counter-phrase { font-family: var(--naskh); font-size: var(--step-2); margin: var(--s2) 0 var(--s4); }
+.counter-target { font-size: var(--step--1); color: var(--ink-3); margin-bottom: var(--s4); }
+/* The circle carries the dhikr being counted, so the reader presses on the
+   words being said: «سبّح» on every circle read wrong while the count was of
+   الاستغفار. The longer ones, «لا حول ولا قوة إلا بالله», take two lines. */
 .counter-btn {
-  width: min(168px, 44vw); height: min(168px, 44vw); border-radius: 50%; margin: 0 auto;
-  background: var(--accent-solid); color: var(--on-accent); font-size: var(--step-1); font-weight: 600;
+  width: min(184px, 48vw); height: min(184px, 48vw); border-radius: 50%; margin: 0 auto;
+  background: var(--accent-solid); color: var(--on-accent);
   display: grid; place-items: center; box-shadow: var(--shadow-lift); transition: transform .07s;
+}
+.counter-phrase {
+  font-family: var(--naskh); font-size: var(--step-3); font-weight: 700; line-height: 1.45;
+  display: block; max-width: 78%; margin: 0 auto; text-wrap: balance; pointer-events: none;
 }
 .counter-btn:active { transform: scale(.93); }
 /* and a press that lands fast and repeatedly must not select the word on the

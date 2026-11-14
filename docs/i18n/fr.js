@@ -1202,7 +1202,6 @@ window.I18n && window.I18n.add({
  "حدّث موقعي": "Actualiser ma position",
  "المسبحة": "Compteur de tasbih",
  "كل ضغطة على الدائرة تسبيحة، ويُحفظ لك مجموع اليوم": "Chaque pression sur le cercle compte un tasbih, et le total du jour est enregistré",
- "سبّح": "Glorifier",
  "تصفير العدّاد": "Remettre à zéro",
  "أذكار الصباح والمساء وحصن المسلم كاملاً": "Invocations du matin et du soir, et la Citadelle du musulman en entier",
  "الإذاعة": "Radio",
