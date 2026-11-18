@@ -1814,6 +1814,21 @@ html.is-scrolled .reader-bar::before { display: block; }
 .banner-close .icon { width: 18px; height: 18px; }
 @keyframes banner-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .banner { animation: none } }
+/* On a narrow screen, a phone's or a foldable's cover, the action squeezed the
+   words into a column of two or three to a line: it goes under them, the
+   words taking the whole width beside the mark and the close. */
+.banner { container: banner / inline-size; touch-action: pan-y; }
+@container banner (max-width: 26rem) {
+  .banner-text { flex: 1 1 calc(100% - 88px); }
+  .banner-act { order: 3; flex: 1 1 100%; margin-inline-start: 36px; }
+  .banner-close { order: 2; }
+}
+.banner { flex-wrap: wrap; }
+.banner-text { min-width: 0; }
+/* Put away when the reader scrolls on or swipes it: it used to stay over the
+   page whatever was read under it. */
+.banner.is-going { transition: transform .2s ease-in, opacity .2s ease-in; transform: translateY(24px); opacity: 0; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { .banner.is-going { transition: none; } }
 
 /* ---------- counter ---------- */
 

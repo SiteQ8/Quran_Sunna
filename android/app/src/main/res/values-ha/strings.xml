@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">Salati ga Annabi da tunatarwar da kuka nema daga manhajar</string>
     <string name="channelChime">Tunatarwa da sauti mai taushi</string>
     <string name="channelChimeAbout">Tunatarwar da kuka zaɓa musu sauti mai taushi</string>
+    <string name="channelTakbir">Kabbarar iƙama, %1$s</string>
+    <string name="channelTakbirAbout">Tunatarwar iƙama da kabbara, Allahu akbar Allahu akbar, da muryar wannan ladan</string>
+    <string name="takbir_assaf">Yasin Al-Assaf</string>
+    <string name="takbir_jazi">Sheikh Muhammad Al-Jazi</string>
+    <string name="takbir_mujallad">Ahmad Nawaf Al-Mujallad</string>
+    <string name="takbir_bilal">Bilal Mahmud</string>
     <string name="channelQuiet">Tunatarwa shiru</string>
     <string name="channelQuietAbout">Tunatarwar da kuka zaɓa su zo ba sauti</string>
     <string name="channelPlaying">Ana kunnawa yanzu</string>

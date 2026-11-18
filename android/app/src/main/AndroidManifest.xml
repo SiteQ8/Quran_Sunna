@@ -53,8 +53,9 @@
             android:exported="true"
             android:launchMode="singleTask"
             android:screenOrientation="portrait"
+            android:resizeableActivity="true"
             android:windowSoftInputMode="adjustResize"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|density|keyboard|keyboardHidden|navigation"
             android:label="@string/launcherName">
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
             <intent-filter>

@@ -58,6 +58,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        holdUpright(getResources().getConfiguration());
         web = new WebView(this);
         /* the same as the iPhone wrapper, so the two feel alike */
         web.setVerticalScrollBarEnabled(false);
@@ -202,6 +203,29 @@ public class MainActivity extends Activity {
         if (AudioService.ACTION_TOGGLE.equals(action)) tellPage("App.helpers.togglePlay()");
         else if (AudioService.ACTION_CLOSE.equals(action)) tellPage("App.helpers.stopAudio()");
         else tellPage("App.helpers.showDueSheets()");
+    }
+
+    /* A foldable opens to a screen as wide as a tablet's and folds back to a
+       phone's. Unfolding or folding used to rebuild the activity, since the
+       change of the smallest width and of the layout was not declared, and the
+       page reloaded, a recitation stopped and the place in the mushaf was lost.
+       Now the web view only lays itself out again. The page is held upright on
+       a phone, and turns freely on the inner screen, where a portrait lock
+       letterboxes it into a strip. */
+    static boolean wide(Configuration c) {
+        return c != null && c.smallestScreenWidthDp >= 600;
+    }
+
+    private void holdUpright(Configuration c) {
+        int want = wide(c) ? android.content.pm.ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+            : android.content.pm.ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
+        if (getRequestedOrientation() != want) setRequestedOrientation(want);
+    }
+
+    @Override
+    public void onConfigurationChanged(Configuration c) {
+        super.onConfigurationChanged(c);
+        holdUpright(c);
     }
 
     @Override

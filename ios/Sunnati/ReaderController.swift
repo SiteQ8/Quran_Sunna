@@ -680,12 +680,14 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
     else { return [] }
     return rows.compactMap { row in
       guard let ms = row["at"] as? Double else { return nil }
+      let s = row["s"] as? String ?? "device"
       return Reminder(
         at: Date(timeIntervalSince1970: ms / 1000),
         title: row["t"] as? String ?? "سُنّتي",
         text: row["b"] as? String ?? "",
-        chime: Chime(rawValue: row["s"] as? String ?? "device") ?? .device,
-        kind: row["k"] as? String ?? "")
+        chime: Chime(rawValue: s) ?? .device,
+        kind: row["k"] as? String ?? "",
+        sound: Notifier.takbirClip(s))
     }
   }
 

@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">الصلاة على النبي وما تطلبه من التطبيق</string>
     <string name="channelChime">تذكيرات بنغمة هادئة</string>
     <string name="channelChimeAbout">التذكيرات التي اخترت لها النغمة الهادئة</string>
+    <string name="channelTakbir">تكبير الإقامة، %1$s</string>
+    <string name="channelTakbirAbout">تنبيه الإقامة بالتكبير: الله أكبر الله أكبر، بصوت هذا المؤذن</string>
+    <string name="takbir_assaf">ياسين العساف</string>
+    <string name="takbir_jazi">الشيخ محمد الجازي</string>
+    <string name="takbir_mujallad">أحمد نواف المجلاد</string>
+    <string name="takbir_bilal">بلال محمود</string>
     <string name="channelQuiet">تذكيرات صامتة</string>
     <string name="channelQuietAbout">التذكيرات التي اخترت أن تصل بلا صوت</string>
     <string name="channelPlaying">ما يُسمع الآن</string>

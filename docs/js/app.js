@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.147';
+  var VERSION = '8.87.149';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -719,6 +719,9 @@
         name !== 'settings' && name !== 'reminders') stopSpeaking();
     var target = $('v-' + name);
     if (!target) return;
+    /* a list left open on the screen before stayed over the next one, the
+       adhan voices drawn over the duas */
+    closePicker();
     if (skyview.open) closeSkyview(true);
     $$('.view').forEach(function (v) { v.classList.remove('is-open'); });
     target.classList.add('is-open');
@@ -3357,6 +3360,7 @@
     lastTen: 'ramadan',
     fitrZakat: 'ramadan',
     preAdhan: 'home',
+    iqama: 'home',
     /* the widgets that open a screen; the ayah, the khatma and the adhkar
        open their own page, by openFromWidget */
     widgetPrayer: 'home',
@@ -4081,6 +4085,7 @@
        find the app again: the reader asked for this twice. And it is the
        muadhin's own recording, his adhan where he has one and his fajr where
        that is all he has, never another voice standing in for him. */
+    if (Store.get('adhanLength') === 'takbir') { playRecording(takbirUrl(id), 'settings-adhan-try', 'التكبير، ' + adhanName(id)); return; }
     playRecording(adhanOwnUrl(id), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
   }
 
@@ -5631,9 +5636,25 @@
     return 'audio/adhan/' + v.id + (fajr ? '-fajr' : '') + '.mp3';
   }
 
+  /* The opening takbir alone, «الله أكبر الله أكبر», cut from each muadhin's
+     own recording: the same at the fajr as at the rest, since both adhans
+     open alike. */
+  function takbirUrl(id) {
+    var v = adhanVoice(id);
+    return v ? 'audio/adhan/' + v.id + '-takbir.mp3' : '';
+  }
+
+  /* the voice of the takbir at the iqama: the reader's muadhin, or al-Mujallad
+     when the adhan is the phone's tone or silence */
+  function takbirVoice() {
+    var id = adhanChoice();
+    return adhanVoice(id) ? id : 'mujallad';
+  }
+
   function adhanUrl(id, forFajr) {
     var v = adhanVoice(id);
     if (!v) return '';
+    if (Store.get('adhanLength') === 'takbir') return takbirUrl(id);
     if (forFajr) {
       if (v.fajr) return adhanFile(v, true);
       var fajr = ADHAN_VOICES.filter(function (x) { return x.fajr; })[0];
@@ -6001,7 +6022,7 @@
 
   function soundFor(key) {
     var all = Store.get('remindSound') || {};
-    return all[key] || 'device';
+    return all[key] || (key === 'iqama' ? 'takbir' : 'device');
   }
 
   /* The wrapper knows «chime» and «silent» and nothing else; anything else
@@ -6012,6 +6033,9 @@
      reciter heard nothing at all. */
   function channelFor(key) {
     var pick = soundFor(key);
+    /* the takbir is named with its voice, «takbir-mujallad», the file the app
+       carries for it; an app without the files rings its own tone */
+    if (pick === 'takbir') return 'takbir-' + takbirVoice();
     return RECITED_SOUND[key] && pick === 'buhendi' ? 'chime' : pick;
   }
 
@@ -6194,6 +6218,21 @@
           }
         });
       }
+      /* the call at the iqama, at the minutes the reader set for his mosque:
+         a prayer set to none has no call, nor does the jumuah, whose khutbah
+         stands between its adhan and its iqama */
+      if (Store.get('iqamaCall')) {
+        var it = computeTimes(day);
+        IQAMA_KEYS.forEach(function (k) {
+          var after = iqamaAfter(k, day);
+          if (!after || typeof it[k] !== 'number' || !isFinite(it[k])) return;
+          var at = new Date(day.getFullYear(), day.getMonth(), day.getDate(), 0, it[k] + after, 0, 0);
+          if (at.getTime() > Date.now()) {
+            out.push({ at: at.getTime(), t: 'إقامة صلاة ' + prayerName(k, day), b: 'قد قامت الصلاة',
+              s: channelFor('iqama'), k: 'iqama' });
+          }
+        });
+      }
       var rh = Hijri.toHijri(day, Store.get('hijriAdjust'));
       if (rh.m === 9) {
         var rt = computeTimes(day);
@@ -6235,7 +6274,7 @@
   /* a reminder whose title names a prayer, the word before an adhan and the
      call before the jumuah, reads الجمعة as the prayer and not the day */
   function reminderKind(r) {
-    return r.k === 'preAdhan' || r.k === 'jumuahBefore' ? 'prayer' : null;
+    return r.k === 'preAdhan' || r.k === 'jumuahBefore' || r.k === 'iqama' ? 'prayer' : null;
   }
 
   function handRemindersToApp() {
@@ -6317,8 +6356,10 @@
      bells, the reciter, or none */
   function ringReminder(r) {
     var recited = soundFor(r.k) === 'buhendi' && RECITED_SOUND[r.k];
-    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime', reminderKind(r));
-    if (r.s === 'chime') playChime();
+    var takbir = /^takbir-([a-z]+)$/.exec(r.s || '');
+    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime' || !!takbir, reminderKind(r));
+    if (takbir) playRecording(takbirUrl(takbir[1]), document.querySelector('.try-sound[data-try="' + r.k + '"]'), 'التكبير، ' + adhanName(takbir[1]));
+    else if (r.s === 'chime') playChime();
     else if (recited) playRecording('audio/dua/' + recited.f, document.querySelector('.try-sound[data-try="' + r.k + '"]'), recited.n);
   }
 
@@ -7806,6 +7847,20 @@
     }).join('، ');
   }
 
+  /* The row of the call at the iqama: what it rings, and a word when no
+     prayer has its iqama set, since the call follows those minutes. */
+  function renderIqamaCall() {
+    var on = !!Store.get('iqamaCall');
+    if ($('settings-iqama-call')) $('settings-iqama-call').value = on ? '1' : '0';
+    if ($('settings-adhan-length')) $('settings-adhan-length').value = Store.get('adhanLength') === 'takbir' ? 'takbir' : 'full';
+    var note = $('settings-iqama-call-note');
+    if (!note) return;
+    var all = Store.get('iqama') || {};
+    var any = IQAMA_KEYS.some(function (k) { return (+all[k] || 0) > 0; });
+    note.textContent = on && !any ? 'اضبط دقائق الإقامة أولاً، فالتنبيه يتبعها'
+      : 'تكبير بصوت المؤذن عند إقامة كل صلاة، على دقائق مسجدك';
+  }
+
   function iqamaSheet() {
     var all = Store.get('iqama') || {};
     openSheet('الإقامة بعد الأذان', IQAMA_KEYS.map(function (k) {
@@ -7823,6 +7878,8 @@
         next[sel.getAttribute('data-iqama')] = +sel.value || 0;
         Store.set('iqama', next);
         if ($('settings-iqama-note')) $('settings-iqama-note').textContent = iqamaNote();
+        renderIqamaCall();
+        handRemindersToApp();
         tick();
       });
     });
@@ -10315,6 +10372,7 @@
     if ($('settings-suhoor-before')) $('settings-suhoor-before').value = String(+Store.get('suhoorBefore') || 30);
     if ($('settings-pre-adhan')) $('settings-pre-adhan').value = String(+Store.get('preAdhan') || 0);
     if ($('settings-iqama-note')) $('settings-iqama-note').textContent = iqamaNote();
+    renderIqamaCall();
     if ($('settings-sleep-at')) $('settings-sleep-at').value = Store.get('sleepAt') || '22:30';
     document.querySelectorAll('.select-sound').forEach(function (sel) {
       sel.value = soundFor(sel.getAttribute('data-sound'));
@@ -11268,7 +11326,22 @@
       Store.set('adhanVoice', e.target.value);
       stopSpeaking();
       fillAdhanVoices();
+      /* the takbir at the iqama is in the voice of the muadhin */
+      handRemindersToApp();
       if (e.target.value !== 'none' && e.target.value !== 'silent') playAdhanSample();
+    });
+    bind('settings-adhan-length', 'change', function (e) {
+      Store.set('adhanLength', e.target.value === 'takbir' ? 'takbir' : 'full');
+      stopSpeaking();
+      handAdhanSoundToApp();
+      handTimesToApp();
+      if (adhanVoice(adhanChoice())) playAdhanSample();
+    });
+    bind('settings-iqama-call', 'change', function (e) {
+      Store.set('iqamaCall', e.target.value === '1');
+      if (e.target.value === '1') askToRemind();
+      renderIqamaCall();
+      handRemindersToApp();
     });
     bind('settings-adhan-try', 'click', function () {
       if (isSpeaking()) { stopSpeaking(); return; }
@@ -11624,6 +11697,7 @@
           var f = RECITED_SOUND[key];
           if (f) { playRecording('audio/dua/' + f.f, btn, f.n); return; }
         }
+        if (pick === 'takbir') { playRecording(takbirUrl(takbirVoice()), btn, 'التكبير، ' + adhanName(takbirVoice())); return; }
         playChime();
       });
     });
@@ -11750,6 +11824,20 @@
     bind('settings-install', 'click', install);
 
     bind('banner-close', 'click', hideBanner);
+    bindBannerAway();
+    /* An open list is fixed where its control was, so a scroll of the page
+       under it, a turn or a fold of the phone, or the back button left it
+       hanging where its control no longer is. Each of those closes it; a
+       scroll inside the list itself does not. */
+    document.addEventListener('scroll', function (e) {
+      if (!state.pickerFor) return;
+      var el = e.target && e.target.nodeType === 1 ? e.target : null;
+      if (el && el.closest && el.closest('.picker-panel')) return;
+      closePicker();
+    }, { passive: true, capture: true });
+    window.addEventListener('resize', function () { if (state.pickerFor) closePicker(); });
+    window.addEventListener('popstate', function () { if (state.pickerFor) closePicker(); });
+    document.addEventListener('visibilitychange', function () { if (document.hidden && state.pickerFor) closePicker(); });
     bind('sheet-close', 'click', closeSheet);
     bind('sheet', 'click', function (e) { if (e.target && e.target.id === 'sheet') closeSheet(); });
     bindSheetDrag();
@@ -11831,8 +11919,61 @@
 
   function hideBanner() {
     var banner = $('banner');
-    if (banner) banner.hidden = true;
+    if (banner) { banner.hidden = true; banner.classList.remove('is-going'); banner.style.transform = ''; banner.style.opacity = ''; }
     document.documentElement.style.setProperty('--banner-room', '0px');
+  }
+
+  /* The banner slides away rather than vanishing, then is hidden. */
+  function putBannerAway() {
+    var banner = $('banner');
+    if (!banner || banner.hidden || banner.classList.contains('is-going')) return;
+    banner.classList.add('is-going');
+    window.setTimeout(hideBanner, 220);
+  }
+
+  /* It stayed over the page while the reader scrolled on beneath it. Scrolling
+     down a little puts it away, as a swipe to either side or down does; a tap
+     on its action or its close still does what it says. */
+  function bindBannerAway() {
+    var banner = $('banner');
+    if (!banner) return;
+    var marks = typeof WeakMap === 'function' ? new WeakMap() : null;
+    var since = 0;
+    document.addEventListener('scroll', function (e) {
+      if (banner.hidden || !marks) return;
+      var el = e.target && e.target.nodeType === 1 ? e.target : document.scrollingElement || document.documentElement;
+      if (el.closest && el.closest('#sheet')) return;
+      var top = el.scrollTop || 0;
+      if (!marks.has(el)) { marks.set(el, top); return; }
+      var moved = top - marks.get(el);
+      /* a moment after it shows, so the scroll that raised it does not take it */
+      if (moved > 48 && Date.now() - since > 600) putBannerAway();
+      else if (moved < 0) marks.set(el, top);
+    }, { passive: true, capture: true });
+    new MutationObserver(function () {
+      if (!banner.hidden) { since = Date.now(); if (marks) marks = new WeakMap(); }
+    }).observe(banner, { attributes: true, attributeFilter: ['hidden'] });
+    var start = null;
+    banner.addEventListener('touchstart', function (e) {
+      if (e.target.closest('button')) { start = null; return; }
+      var t = e.touches[0];
+      start = { x: t.clientX, y: t.clientY };
+    }, { passive: true });
+    banner.addEventListener('touchmove', function (e) {
+      if (!start) return;
+      var t = e.touches[0];
+      var dx = t.clientX - start.x, dy = Math.max(0, t.clientY - start.y);
+      banner.style.transform = 'translate(' + dx + 'px,' + dy + 'px)';
+      banner.style.opacity = String(Math.max(0.3, 1 - Math.max(Math.abs(dx), dy) / 200));
+    }, { passive: true });
+    banner.addEventListener('touchend', function (e) {
+      if (!start) return;
+      var t = e.changedTouches[0];
+      var dx = t.clientX - start.x, dy = t.clientY - start.y;
+      start = null;
+      if (Math.abs(dx) > 60 || dy > 40) { putBannerAway(); return; }
+      banner.style.transform = ''; banner.style.opacity = '';
+    }, { passive: true });
   }
 
   /* ---------------- the app among others ---------------- */
@@ -12472,6 +12613,7 @@
     render: RENDERERS,
     actions: ACTIONS,
     helpers: {
+      takbirUrl: takbirUrl, takbirVoice: takbirVoice, channelFor: channelFor, soundFor: soundFor,
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       loadMeanings: loadMeanings, meaningOf: meaningOf, meaningsOn: meaningsOn, meaningSource: meaningSource,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,

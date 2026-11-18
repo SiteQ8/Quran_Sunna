@@ -78,6 +78,12 @@
     <string name="channelRemindersAbout">Salawat upon the Prophet and the reminders you ask the app for</string>
     <string name="channelChime">Reminders with a soft tone</string>
     <string name="channelChimeAbout">The reminders you chose the soft tone for</string>
+    <string name="channelTakbir">Iqama takbir, %1$s</string>
+    <string name="channelTakbirAbout">The iqama alert with the takbir, Allahu akbar Allahu akbar, in this muadhin\'s voice</string>
+    <string name="takbir_assaf">Yasin al-Assaf</string>
+    <string name="takbir_jazi">Sheikh Muhammad al-Jazi</string>
+    <string name="takbir_mujallad">Ahmad Nawaf al-Mujallad</string>
+    <string name="takbir_bilal">Bilal Mahmoud</string>
     <string name="channelQuiet">Silent reminders</string>
     <string name="channelQuietAbout">The reminders you chose to arrive without sound</string>
     <string name="channelPlaying">Now playing</string>

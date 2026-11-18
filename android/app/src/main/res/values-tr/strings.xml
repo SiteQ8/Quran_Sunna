@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">Peygamberimize salavat ve uygulamadan istediğiniz hatırlatmalar</string>
     <string name="channelChime">Sakin tonlu hatırlatmalar</string>
     <string name="channelChimeAbout">Sakin tonu seçtiğiniz hatırlatmalar</string>
+    <string name="channelTakbir">Kamet tekbiri, %1$s</string>
+    <string name="channelTakbirAbout">Kamet uyarısı tekbirle, Allahu ekber Allahu ekber, bu müezzinin sesiyle</string>
+    <string name="takbir_assaf">Yasin el-Assâf</string>
+    <string name="takbir_jazi">Şeyh Muhammed el-Câzî</string>
+    <string name="takbir_mujallad">Ahmed Nevvâf el-Mücellâd</string>
+    <string name="takbir_bilal">Bilal Mahmud</string>
     <string name="channelQuiet">Sessiz hatırlatmalar</string>
     <string name="channelQuietAbout">Sessiz gelmesini seçtiğiniz hatırlatmalar</string>
     <string name="channelPlaying">Şimdi çalan</string>

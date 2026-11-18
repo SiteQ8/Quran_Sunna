@@ -78,6 +78,29 @@ def first_lines(text, n=14):
     return '\n'.join(keep[:n])
 
 
+def turn_on_reporting(sa, head, app):
+    """The reporting API is off in a cloud project until someone turns it on,
+    and it answers 403 SERVICE_DISABLED until then. It reads only, so it is
+    turned on here with the same key, when the key may, and waited for."""
+    probe = get(REPORTING + app + '/errorIssues:search?pageSize=1', head)
+    if 'error' not in probe or 'SERVICE_DISABLED' not in probe['error']['text'] and 'has not been used' not in probe['error']['text']:
+        return
+    project = sa.get('project_id', '')
+    cloud = {'Authorization': 'Bearer ' + google_token(sa, 'https://www.googleapis.com/auth/cloud-platform')}
+    done = get('https://serviceusage.googleapis.com/v1/projects/%s/services/playdeveloperreporting.googleapis.com:enable' % project,
+               cloud, body={})
+    if 'error' in done:
+        say('  the reporting API is off in project %s and could not be turned on here: %s %s' % (
+            project, done['error']['code'], done['error']['text'][:200]))
+        return
+    say('  turned on the reporting API in project %s' % project)
+    for _ in range(12):
+        time.sleep(15)
+        probe = get(REPORTING + app + '/errorIssues:search?pageSize=1', head)
+        if 'error' not in probe or probe['error']['code'] != 403 or 'has not been used' not in probe['error']['text']:
+            return
+
+
 def play(days):
     raw = os.environ.get('PLAY_SERVICE_ACCOUNT', '')
     if not raw:
@@ -86,6 +109,7 @@ def play(days):
     sa = json.loads(raw if raw.strip().startswith('{') else base64.b64decode(raw).decode())
     head = {'Authorization': 'Bearer ' + google_token(sa, 'https://www.googleapis.com/auth/playdeveloperreporting')}
     app = 'apps/' + PACKAGE
+    turn_on_reporting(sa, head, app)
     say('## Google Play: crashes and ANRs')
 
     # how often, overall and by device

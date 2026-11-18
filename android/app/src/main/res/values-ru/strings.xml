@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">Салават Пророку и напоминания, о которых вы просите приложение</string>
     <string name="channelChime">Напоминания со спокойной мелодией</string>
     <string name="channelChimeAbout">Напоминания, для которых вы выбрали спокойную мелодию</string>
+    <string name="channelTakbir">Такбир икамы, %1$s</string>
+    <string name="channelTakbirAbout">Оповещение об икаме такбиром «Аллаху акбар, Аллаху акбар» голосом этого муэдзина</string>
+    <string name="takbir_assaf">Ясин аль-Ассаф</string>
+    <string name="takbir_jazi">Шейх Мухаммад аль-Джази</string>
+    <string name="takbir_mujallad">Ахмад Наваф аль-Муджаллад</string>
+    <string name="takbir_bilal">Билал Махмуд</string>
     <string name="channelQuiet">Беззвучные напоминания</string>
     <string name="channelQuietAbout">Напоминания, которые вы решили получать без звука</string>
     <string name="channelPlaying">Сейчас звучит</string>

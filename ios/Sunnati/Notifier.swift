@@ -105,9 +105,25 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
   static func adhanClip(_ address: String) -> String? {
     guard let last = address.split(separator: "/").last, last.hasSuffix(".mp3") else { return nil }
     var id = String(last.dropLast(4))
+    /* the opening takbir alone, «الله أكبر الله أكبر», for the reader who
+       chose the short adhan: its own clip, takbir-<id>.caf */
+    if id.hasSuffix("-takbir") {
+      id = String(id.dropLast(7))
+      guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
+      return "takbir-\(id).caf"
+    }
     if id.hasSuffix("-fajr") { id = String(id.dropLast(5)) }
     guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
     return "adhan-\(id).caf"
+  }
+
+  /* A reminder whose sound is «takbir-<id>», the takbir at the iqama in the
+     muadhin's voice, rings the clip the app carries for it. */
+  static func takbirClip(_ sound: String) -> String? {
+    guard sound.hasPrefix("takbir-") else { return nil }
+    let id = sound.dropFirst(7)
+    guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
+    return "takbir-\(id).caf"
   }
 
   /* iOS hides a notification while its own app is in front, which would mean a

@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">La prière sur le Prophète et les rappels que vous demandez à l\'application</string>
     <string name="channelChime">Rappels avec une tonalité douce</string>
     <string name="channelChimeAbout">Les rappels pour lesquels vous avez choisi la tonalité douce</string>
+    <string name="channelTakbir">Takbir de l\'iqama, %1$s</string>
+    <string name="channelTakbirAbout">L\'alerte de l\'iqama par le takbir, Allahou akbar Allahou akbar, de la voix de ce muezzin</string>
+    <string name="takbir_assaf">Yassine al-Assaf</string>
+    <string name="takbir_jazi">Cheikh Mohamed al-Jazi</string>
+    <string name="takbir_mujallad">Ahmad Nawaf al-Moujallad</string>
+    <string name="takbir_bilal">Bilal Mahmoud</string>
     <string name="channelQuiet">Rappels silencieux</string>
     <string name="channelQuietAbout">Les rappels que vous avez choisi de recevoir sans son</string>
     <string name="channelPlaying">En cours d\'écoute</string>

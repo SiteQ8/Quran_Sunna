@@ -47,9 +47,42 @@ public final class AdhanReceiver extends BroadcastReceiver {
        to opening wherever it last was. */
     private static void note(Context context, String title, String body, String sound, String kind) {
         if (title == null || title.isEmpty()) return;
-        String channel = "chime".equals(sound) ? CHANNEL_CHIME
+        String voice = takbirVoice(sound);
+        String channel = voice != null ? CHANNEL_TAKBIR + voice
+            : "chime".equals(sound) ? CHANNEL_CHIME
             : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
         post(context, title, body, kind == null || kind.isEmpty() ? "note" : kind, channel);
+    }
+
+    /* The takbir at the iqama, «الله أكبر الله أكبر», a channel per muadhin
+       since a channel's sound is fixed when it is made. */
+    static final String CHANNEL_TAKBIR = "reminders_takbir_";
+    static final String[] TAKBIR_VOICES = { "assaf", "jazi", "mujallad", "bilal" };
+
+    /** The muadhin of a «takbir-<id>» sound the app carries, or null. */
+    static String takbirVoice(String sound) {
+        if (sound == null || !sound.startsWith("takbir-")) return null;
+        String id = sound.substring("takbir-".length());
+        for (String one : TAKBIR_VOICES) if (one.equals(id)) return one;
+        return null;
+    }
+
+    private static int takbirRaw(String id) {
+        switch (id) {
+            case "assaf": return R.raw.takbir_assaf;
+            case "jazi": return R.raw.takbir_jazi;
+            case "bilal": return R.raw.takbir_bilal;
+            default: return R.raw.takbir_mujallad;
+        }
+    }
+
+    private static int takbirName(String id) {
+        switch (id) {
+            case "assaf": return R.string.takbir_assaf;
+            case "jazi": return R.string.takbir_jazi;
+            case "bilal": return R.string.takbir_bilal;
+            default: return R.string.takbir_mujallad;
+        }
     }
 
     /** The page's word for a notice, or the Arabic when it gave none. */
@@ -210,6 +243,20 @@ public final class AdhanReceiver extends BroadcastReceiver {
                 .setUsage(android.media.AudioAttributes.USAGE_NOTIFICATION)
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
             manager.createNotificationChannel(channel);
+        }
+        for (String voice : TAKBIR_VOICES) {
+            name = context.getString(R.string.channelTakbir, context.getString(takbirName(voice)));
+            about = context.getString(R.string.channelTakbirAbout);
+            if (missing(manager, CHANNEL_TAKBIR + voice, name, about)) {
+                NotificationChannel channel = new NotificationChannel(CHANNEL_TAKBIR + voice, name, NotificationManager.IMPORTANCE_HIGH);
+                channel.setDescription(about);
+                Uri takbir = Uri.parse("android.resource://" + context.getPackageName() + "/" + takbirRaw(voice));
+                channel.setSound(takbir, new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+                channel.enableVibration(true);
+                manager.createNotificationChannel(channel);
+            }
         }
         name = context.getString(R.string.channelQuiet);
         about = context.getString(R.string.channelQuietAbout);

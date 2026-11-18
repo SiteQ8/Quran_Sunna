@@ -67,6 +67,12 @@
     <string name="channelRemindersAbout">نبی پر درود اور وہ یاد دہانیاں جو آپ ایپ سے چاہتے ہیں</string>
     <string name="channelChime">پرسکون دھن والی یاد دہانیاں</string>
     <string name="channelChimeAbout">وہ یاد دہانیاں جن کے لیے آپ نے پرسکون دھن چنی</string>
+    <string name="channelTakbir">اقامت کی تکبیر، %1$s</string>
+    <string name="channelTakbirAbout">تکبیر کے ساتھ اقامت کی یاد دہانی، اللہ اکبر اللہ اکبر، اس مؤذن کی آواز میں</string>
+    <string name="takbir_assaf">یاسین العساف</string>
+    <string name="takbir_jazi">شیخ محمد الجازی</string>
+    <string name="takbir_mujallad">احمد نواف المجلاد</string>
+    <string name="takbir_bilal">بلال محمود</string>
     <string name="channelQuiet">خاموش یاد دہانیاں</string>
     <string name="channelQuietAbout">وہ یاد دہانیاں جو آپ نے بغیر آواز کے چاہیں</string>
     <string name="channelPlaying">ابھی چل رہا ہے</string>

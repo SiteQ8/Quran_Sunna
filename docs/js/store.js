@@ -52,7 +52,9 @@
     remindSound: { morningAdhkar: 'device', eveningAdhkar: 'device', sleepIstighfar: 'device',
       sleepMulk: 'device', sleepKursi: 'device', duha: 'device', qiyam: 'device', wird: 'device',
       jumuahNight: 'device', fastNote: 'device', jumuahBefore: 'device',
-      suhoor: 'device', iftar: 'device', lastTen: 'device', fitrZakat: 'device', preAdhan: 'device' },
+      suhoor: 'device', iftar: 'device', lastTen: 'device', fitrZakat: 'device', preAdhan: 'device',
+      /* the call at the iqama is a takbir in the muadhin's voice unless changed */
+      iqama: 'takbir' },
     /* minutes from each adhan to its iqama, as most mosques of the gulf keep
        them, for the reader to set to his own mosque; and how long before the
        adhan a word comes, none by default */
@@ -63,6 +65,8 @@
        last reviewed it: { 67: { st: 2, r: '2026-11-06' } } */
     hifz: {},
     preAdhan: 0,
+    /* a call at the iqama of each prayer, at the minutes set for the mosque */
+    iqamaCall: false,
     /* ramadan: the suhur reminder and how long before the fajr it comes, the
        word before the iftar, the odd nights of the last ten, the zakat of the
        fitr, and the card the home screen shows through the month */
@@ -96,6 +100,8 @@
     fastOwed: 0,
     fastDone: 0,
     adhanVoice: 'none',
+    /* the whole adhan, or its opening takbir alone: «الله أكبر الله أكبر» */
+    adhanLength: 'full',
     salawatVoice: 'buhendi',
     voice: 'recording',
     voiceName: '',
