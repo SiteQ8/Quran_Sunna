@@ -11816,6 +11816,9 @@ test('someone who used the app before is not walked through it after an update, 
   assert.strictEqual(a.win.App.helpers.tourState.returning, true);
   assert.strictEqual(a.win.Store.get('tour'), true, 'counted as seen');
   a.win.App.helpers.dismissBootSplash(true);
+  /* not the first walk again, only what is new in this version, once */
+  assert.strictEqual(a.win.App.helpers.maybeStartTour(), 'news');
+  a.win.App.helpers.endTour();
   assert.strictEqual(a.win.App.helpers.maybeStartTour(), false);
   /* the first version kept its own keys */
   const old = memoryStorage();
@@ -12375,6 +12378,43 @@ test('an open list closes when the screen changes or the page scrolls, and the b
   assert.ok(open());
   doc.querySelector('.picker-panel').dispatchEvent(new win.Event('scroll'));
   assert.ok(doc.querySelector('.picker-panel'), 'scrolling the list itself keeps it');
+});
+
+test('after an update the reader is walked through what is new, once, and returned home', async () => {
+  const { win, doc } = boot();
+  const settle = () => new Promise((r) => setTimeout(r, 200));
+  const h = win.App.helpers;
+  win.Store.set('tour', true);
+  win.App.go('home');
+  const splash = doc.getElementById('boot-splash');
+  if (splash) splash.remove();
+  assert.strictEqual(h.maybeStartTour(), 'news', 'a reader who walked the app before sees what is new');
+  assert.strictEqual(doc.getElementById('tour-title').textContent, 'الجديد في سُنّتي');
+  h.stepTour(1);
+  assert.strictEqual(doc.documentElement.getAttribute('data-view'), 'reminders', 'the iqama step opens the reminders, where its row is');
+  assert.ok(doc.querySelector('#v-reminders #settings-iqama-call-row') && doc.querySelector('#v-reminders #settings-adhan-length-row'));
+  await settle();
+  assert.strictEqual(doc.getElementById('tour-title').textContent, 'تنبيه الإقامة');
+  h.stepTour(1); await settle(); h.stepTour(1); await settle();
+  assert.strictEqual(doc.documentElement.getAttribute('data-view'), 'tasbih');
+  h.stepTour(1);
+  assert.strictEqual(doc.documentElement.getAttribute('data-view'), 'home', 'and the walk ends where it began');
+  assert.strictEqual(h.maybeStartTour(), false, 'once only');
+});
+
+test('an older app is told its store has a newer one, once a day', async () => {
+  const { win } = boot();
+  const h = win.App.helpers;
+  assert.ok(h.olderThan('8.87.99', '8.87.145') && !h.olderThan('8.87.145', '8.87.145') && !h.olderThan('8.88.1', '8.87.200'));
+  win.SunnatiApp = Object.assign(win.SunnatiApp || {}, { version: () => '8.87.100', platform: () => 'android' });
+  win.fetch = () => Promise.resolve({ ok: true, json: () => Promise.resolve({ android: '8.87.145' }) });
+  assert.strictEqual(await h.checkAppUpdate(0), true, 'told');
+  assert.ok(/Google Play/.test(win.document.getElementById('banner-text').textContent));
+  win.document.getElementById('banner').hidden = true;
+  assert.strictEqual(await h.checkAppUpdate(0), false, 'not twice in a day');
+  win.Store.set('updateToldOn', '');
+  win.SunnatiApp.version = () => '8.87.145';
+  assert.strictEqual(await h.checkAppUpdate(0), false, 'an app as new as its store is left alone');
 });
 
 test('every muadhin\'s takbir is carried by the page and by both apps', () => {

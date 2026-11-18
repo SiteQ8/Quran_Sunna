@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.149';
+  var VERSION = '8.87.150';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -12091,6 +12091,39 @@
       next: 'ابدأ' }
   ];
 
+  /* What is new in this version, walked through once by whoever had the app
+     before, over the screens where each thing lives: the light falls on the
+     row itself, and the walk returns where it began. A reader new to the app
+     is given the first walk instead, and this one is counted as seen. The id
+     changes with each version that has something to show. */
+  var NEWS = {
+    id: '8.87.149',
+    steps: [
+      { title: 'الجديد في سُنّتي',
+        body: 'وصل تحديث فيه تنبيه للإقامة بتكبير المؤذن، وأذان قصير لمن أراده، وقوائم تُغلق وحدها حين تنتقل أو تمرّر، فهذه جولة قصيرة فيه.',
+        next: 'اعرضه' },
+      { go: 'reminders', at: '#settings-iqama-call-row', round: 16, title: 'تنبيه الإقامة',
+        body: 'تكبير بصوت المؤذن عند إقامة كل صلاة على دقائق مسجدك، فشغّله من هنا بعد ضبط دقائق الإقامة فوقه.' },
+      { go: 'reminders', at: '#settings-adhan-length-row', round: 16, title: 'طول الأذان',
+        body: 'اختر الأذان كاملاً أو التكبير وحده: الله أكبر الله أكبر، بصوت المؤذن الذي اخترته.' },
+      { go: 'tasbih', at: '#tasbih-tap', round: 999, title: 'المسبحة',
+        body: 'تعرض الدائرة الذكر الذي اخترته، فترى ما تسبّح به وأنت تعدّ.', next: 'تم' }
+    ]
+  };
+
+  function tourSteps() { return tour.steps || TOUR; }
+
+  /* a step that lives on another screen opens it, and brings its row into
+     view, before the light is placed */
+  function showTourScreen(step) {
+    if (!step || !step.go) return;
+    if (state.view !== step.go) go(step.go, true);
+    var el = step.at ? document.querySelector(step.at) : null;
+    if (el && el.scrollIntoView) {
+      try { el.scrollIntoView({ block: 'center' }); } catch (e) { el.scrollIntoView(); }
+    }
+  }
+
   /* Whether this phone had the app open before, read before anything of
      today's start is written: someone who has used it for months is not
      walked through it after an update. The iPhone's wrapper writes placeAsked
@@ -12122,7 +12155,10 @@
      over it; while the splash is still up or a sheet is showing it waits a
      little and looks again, and gives up for this opening after a few tries. */
   function maybeStartTour(tries) {
-    if (Store.get('tour') || tour.open) return false;
+    if (tour.open) return false;
+    /* whoever has walked the app before is shown what is new, once */
+    var news = !!Store.get('tour') && Store.get('newsSeen') !== NEWS.id;
+    if (Store.get('tour') && !news) return false;
     var n = tries || 0;
     var busy = document.getElementById('boot-splash') || state.view !== 'home' || skyview.open ||
       ($('sheet') && $('sheet').classList.contains('is-open'));
@@ -12130,15 +12166,19 @@
       if (n < 12) window.setTimeout(function () { maybeStartTour(n + 1); }, 700);
       return false;
     }
+    Store.set('newsSeen', NEWS.id);
+    if (news) return startTour(false, NEWS.steps) ? 'news' : false;
     return startTour(false);
   }
 
-  function startTour(asked) {
+  function startTour(asked, steps) {
     var view = $('tour');
     if (!view || tour.open) return false;
     if (skyview.open) closeSkyview();
     closeSheet();
     Store.set('tour', true);
+    tour.steps = steps || null;
+    tour.from = state.view;
     tour.open = true;
     tour.at = 0;
     tour.back = document.activeElement;
@@ -12171,8 +12211,9 @@
     if (!tour.open) return;
     var to = tour.at + by;
     if (to < 0) return;
-    if (to >= TOUR.length) { endTour(); return; }
+    if (to >= tourSteps().length) { endTour(); return; }
     tour.at = to;
+    showTourScreen(tourSteps()[to]);
     var card = $('tour-card');
     /* the light moves at once, and the words fade out, change and come back
        where the light has gone */
@@ -12186,23 +12227,24 @@
   }
 
   function paintTourStep() {
-    var step = TOUR[tour.at];
+    var all = tourSteps();
+    var step = all[tour.at];
     $('tour-title').textContent = step.title;
     $('tour-body').textContent = step.body;
     $('tour-next').textContent = step.next || 'التالي';
-    $('tour-skip').hidden = tour.at === TOUR.length - 1;
+    $('tour-skip').hidden = tour.at === all.length - 1;
     var dots = $('tour-dots');
-    dots.innerHTML = TOUR.map(function (_, i) {
+    dots.innerHTML = all.map(function (_, i) {
       return '<span class="tour-dot' + (i === tour.at ? ' is-on' : '') + '"></span>';
     }).join('');
-    dots.setAttribute('aria-label', 'الخطوة ' + ar(tour.at + 1) + ' من ' + ar(TOUR.length));
+    dots.setAttribute('aria-label', 'الخطوة ' + ar(tour.at + 1) + ' من ' + ar(all.length));
     placeTour();
   }
 
   /* the box of what the step speaks of, on the screen, or null for the
      welcome, which speaks of everything */
   function tourBox() {
-    var step = TOUR[tour.at];
+    var step = tourSteps()[tour.at];
     var el = step && step.at ? document.querySelector(step.at) : null;
     if (!el) return null;
     var r = el.getBoundingClientRect();
@@ -12220,7 +12262,7 @@
       hole.style.width = box.w + 'px';
       hole.style.height = box.h + 'px';
       hole.style.transform = 'translate(' + box.x + 'px, ' + box.y + 'px)';
-      hole.style.borderRadius = (TOUR[tour.at].round || 16) + 'px';
+      hole.style.borderRadius = (tourSteps()[tour.at].round || 16) + 'px';
     } else {
       hole.classList.add('is-blank');
       hole.style.width = '0px';
@@ -12272,6 +12314,12 @@
         try { window.history.back(); } catch (e) { tour.skipPop = false; }
       }
     }
+    /* a walk that went to other screens returns to the one it began on */
+    var from = tour.from;
+    var walked = !!tour.steps;
+    tour.steps = null;
+    tour.from = null;
+    if (walked && from && state.view !== from) go(from, true);
     var back = tour.back;
     tour.back = null;
     if (back && back.focus && document.contains(back)) {
@@ -12281,6 +12329,61 @@
     /* the offer to read in Arabic waits for the tour, which a phone in another
        language opens on first, rather than for the next opening */
     window.setTimeout(offerArabic, 900);
+  }
+
+  /* ---------------- an older app ---------------- */
+
+  /* True when version a comes before b, read number by number: 8.87.99
+     before 8.87.145. */
+  function olderThan(a, b) {
+    var x = String(a || '').split('.'), y = String(b || '').split('.');
+    for (var i = 0; i < Math.max(x.length, y.length); i++) {
+      var p = parseInt(x[i], 10) || 0, q = parseInt(y[i], 10) || 0;
+      if (p !== q) return p < q;
+    }
+    return false;
+  }
+
+  /* The newest version in the reader's store: the App Store says it for
+     itself, and Google Play has no such answer for a page, so the site keeps
+     the version that is live there in data/store.json. */
+  function latestInStore(ios) {
+    if (typeof fetch !== 'function') return Promise.resolve('');
+    var url = ios ? 'https://itunes.apple.com/lookup?id=6814355836&country=kw&t=' + Date.now()
+      : 'data/store.json?t=' + Date.now();
+    return fetch(url, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : {}; }).then(function (j) {
+      if (ios) return (j && j.results && j.results[0] && j.results[0].version) || '';
+      return (j && j.android) || '';
+    }, function () { return ''; });
+  }
+
+  /* The page is always the newest, but what only the app does, the sounds of
+     its notices and how it sits on a foldable, comes with the app from its
+     store. A reader on an older one is told, once a day at most, over nothing
+     else that is showing, with the store a tap away. */
+  function checkAppUpdate(tries) {
+    var app = bridge();
+    if (!app || !app.version) return Promise.resolve(false);
+    var have = '';
+    try { have = app.version(); } catch (e) { return Promise.resolve(false); }
+    if (!have) return Promise.resolve(false);
+    var today = new Date().toDateString();
+    if (Store.get('updateToldOn') === today) return Promise.resolve(false);
+    var ios = inIosApp();
+    return latestInStore(ios).then(function (latest) {
+      if (!latest || !olderThan(have, latest)) return false;
+      var n = tries || 0;
+      var banner = $('banner');
+      if (tour.open || (banner && !banner.hidden) || ($('sheet') && $('sheet').classList.contains('is-open'))) {
+        if (n < 6) window.setTimeout(function () { checkAppUpdate(n + 1); }, 5000);
+        return false;
+      }
+      Store.set('updateToldOn', today);
+      showBanner(ios ? 'إصدار أحدث من سُنّتي في App Store، فحدّثه لتصلك التنبيهات بأصواتها الجديدة'
+        : 'إصدار أحدث من سُنّتي في Google Play، فحدّثه لتصلك التنبيهات بأصواتها الجديدة',
+        'حدّث', function () { openOutside(ios ? LINKS.apple : LINKS.play); });
+      return true;
+    });
   }
 
   /* An android phone in a browser is offered the app on Google Play rather
@@ -12590,6 +12693,7 @@
     window.setTimeout(maybeStartTour, Math.max(400, 4000 - since));
     window.setTimeout(maybeAskRating, 9000);
     window.setTimeout(offerPlay, 9500);
+    window.setTimeout(function () { checkAppUpdate(0); }, 7000);
     window.setTimeout(offerArabic, 6000);
     /* every select becomes our own menu, once the page is built */
     enhanceSelects();
@@ -12637,6 +12741,7 @@
       shareApp: shareApp, shareWords: shareWords, rateApp: rateApp, storeLink: storeLink, sendFeedback: sendFeedback,
       feedbackUrl: feedbackUrl, openOutside: openOutside, links: LINKS, countDay: countDay, maybeAskRating: maybeAskRating,
       offerPlay: offerPlay, onAndroidWeb: onAndroidWeb, offerArabic: offerArabic,
+      checkAppUpdate: checkAppUpdate, olderThan: olderThan, newsSteps: NEWS,
       cameBefore: cameBefore, firstOpenToday: firstOpenToday, openingState: opening, maybeStartTour: maybeStartTour, startTour: startTour, stepTour: stepTour, endTour: endTour,
       tourSteps: TOUR, tourState: tour
     },

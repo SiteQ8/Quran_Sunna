@@ -251,5 +251,5 @@ test('the walkthrough still waits until the opening has gone', async () => {
   assert.strictEqual(later.win.App.helpers.openingState.full, false);
   await wait(900);
   assert.strictEqual(later.doc.getElementById('boot-splash'), null);
-  assert.strictEqual(later.win.App.helpers.maybeStartTour(), false);
+  assert.notStrictEqual(later.win.App.helpers.maybeStartTour(), 'first', 'not the first walk again');
 });

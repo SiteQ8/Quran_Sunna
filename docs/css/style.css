@@ -1950,6 +1950,8 @@ html:not([lang='ar']) .cal-month::first-letter { text-transform: uppercase; }
    of the niche's star. It moves with the strong ease the sheets use, and the
    words beside it fade out, change and come back where it has gone. */
 html.touring { overflow: hidden; }
+/* a banner waits under the walk rather than showing through it */
+html.touring .banner { visibility: hidden; }
 .tour {
   --tour-dim: rgba(12, 18, 22, .68);
   --tour-ease: cubic-bezier(.23, 1, .32, 1);

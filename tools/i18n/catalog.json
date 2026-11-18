@@ -8580,7 +8580,8 @@
   "kind": "text",
   "where": [
    "index.html:839",
-   "js/app.js:7314"
+   "js/app.js:7314",
+   "js/app.js:12109"
   ]
  },
  {
@@ -9498,7 +9499,8 @@
   "kind": "text",
   "where": [
    "index.html:1108",
-   "index.html:1109"
+   "index.html:1109",
+   "js/app.js:12107"
   ]
  },
  {
@@ -9660,7 +9662,8 @@
   "key": "تنبيه الإقامة",
   "kind": "text",
   "where": [
-   "index.html:1123"
+   "index.html:1123",
+   "js/app.js:12105"
   ]
  },
  {
@@ -10586,7 +10589,7 @@
   "where": [
    "index.html:1320",
    "js/app.js:8313",
-   "js/app.js:12192"
+   "js/app.js:12234"
   ]
  },
  {
@@ -15485,7 +15488,7 @@
    "js/app.js:8213",
    "js/app.js:10447",
    "js/app.js:12041",
-   "js/app.js:12451"
+   "js/app.js:12554"
   ],
   "holes": [
    "ar(VERSION)"
@@ -16653,7 +16656,7 @@
   "kind": "text",
   "where": [
    "js/app.js:10546",
-   "js/store.js:670"
+   "js/store.js:674"
   ]
  },
  {
@@ -17542,107 +17545,177 @@
   ]
  },
  {
+  "key": "الجديد في سُنّتي",
+  "kind": "text",
+  "where": [
+   "js/app.js:12102"
+  ]
+ },
+ {
+  "key": "وصل تحديث فيه تنبيه للإقامة بتكبير المؤذن، وأذان قصير لمن أراده، وقوائم تُغلق وحدها حين تنتقل أو تمرّر، فهذه جولة قصيرة فيه.",
+  "kind": "text",
+  "where": [
+   "js/app.js:12103"
+  ]
+ },
+ {
+  "key": "اعرضه",
+  "kind": "text",
+  "where": [
+   "js/app.js:12104"
+  ]
+ },
+ {
+  "key": "تكبير بصوت المؤذن عند إقامة كل صلاة على دقائق مسجدك، فشغّله من هنا بعد ضبط دقائق الإقامة فوقه.",
+  "kind": "text",
+  "where": [
+   "js/app.js:12106"
+  ]
+ },
+ {
+  "key": "اختر الأذان كاملاً أو التكبير وحده: الله أكبر الله أكبر، بصوت المؤذن الذي اخترته.",
+  "kind": "text",
+  "where": [
+   "js/app.js:12108"
+  ]
+ },
+ {
+  "key": "تعرض الدائرة الذكر الذي اخترته، فترى ما تسبّح به وأنت تعدّ.",
+  "kind": "text",
+  "where": [
+   "js/app.js:12110"
+  ]
+ },
+ {
+  "key": "تم",
+  "kind": "text",
+  "where": [
+   "js/app.js:12110"
+  ]
+ },
+ {
   "key": "الخطوة {#0} من {#1}",
   "kind": "pattern",
   "where": [
-   "js/app.js:12198"
+   "js/app.js:12240"
   ],
   "holes": [
    "ar(tour.at + 1)",
-   "ar(TOUR.length)"
+   "ar(all.length)"
+  ]
+ },
+ {
+  "key": "إصدار أحدث من سُنّتي في App Store، فحدّثه لتصلك التنبيهات بأصواتها الجديدة",
+  "kind": "text",
+  "where": [
+   "js/app.js:12382"
+  ]
+ },
+ {
+  "key": "إصدار أحدث من سُنّتي في Google Play، فحدّثه لتصلك التنبيهات بأصواتها الجديدة",
+  "kind": "text",
+  "where": [
+   "js/app.js:12383"
+  ]
+ },
+ {
+  "key": "حدّث",
+  "kind": "text",
+  "where": [
+   "js/app.js:12384"
   ]
  },
  {
   "key": "سُنّتي على Google Play، وفيه يصلك الأذان والتطبيق مغلق",
   "kind": "text",
   "where": [
-   "js/app.js:12307"
+   "js/app.js:12410"
   ]
  },
  {
   "key": "ثبّته",
   "kind": "text",
   "where": [
-   "js/app.js:12307"
+   "js/app.js:12410"
   ]
  },
  {
   "key": "سُنّتي تطبيق عربي، فاقرأه بالعربية إن شئت",
   "kind": "text",
   "where": [
-   "js/app.js:12334"
+   "js/app.js:12437"
   ]
  },
  {
   "key": "العربية",
   "kind": "text",
   "where": [
-   "js/app.js:12334"
+   "js/app.js:12437"
   ]
  },
  {
   "key": "ثبّت سُنّتي على جهازك ليعمل بلا إنترنت",
   "kind": "text",
   "where": [
-   "js/app.js:12348"
+   "js/app.js:12451"
   ]
  },
  {
   "key": "تثبيت",
   "kind": "text",
   "where": [
-   "js/app.js:12348"
+   "js/app.js:12451"
   ]
  },
  {
   "key": "ثُبّت سُنّتي، وتجده الآن مع تطبيقاتك",
   "kind": "text",
   "where": [
-   "js/app.js:12355"
+   "js/app.js:12458"
   ]
  },
  {
   "key": "من قائمة الخيارات اختر: إضافة إلى الشاشة الرئيسية",
   "kind": "text",
   "where": [
-   "js/app.js:12362"
+   "js/app.js:12465"
   ]
  },
  {
   "key": "جاري التثبيت",
   "kind": "text",
   "where": [
-   "js/app.js:12367"
+   "js/app.js:12470"
   ]
  },
  {
   "key": "لا اتصال الآن، والمصحف والأذكار والمواقيت تعمل كما هي",
   "kind": "text",
   "where": [
-   "js/app.js:12378",
-   "js/app.js:12382"
+   "js/app.js:12481",
+   "js/app.js:12485"
   ]
  },
  {
   "key": "وصل تحديث للتطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:12400"
+   "js/app.js:12503"
   ]
  },
  {
   "key": "حدّث الآن",
   "kind": "text",
   "where": [
-   "js/app.js:12400",
-   "js/app.js:12455"
+   "js/app.js:12503",
+   "js/app.js:12558"
   ]
  },
  {
   "key": "وصل تحديث جديد للتطبيق",
   "kind": "text",
   "where": [
-   "js/app.js:12455"
+   "js/app.js:12558"
   ]
  },
  {
@@ -18173,7 +18246,7 @@
   "key": "هذا الملف ليس نسخة احتياطية من التطبيق",
   "kind": "text",
   "where": [
-   "js/store.js:672"
+   "js/store.js:676"
   ]
  }
 ]

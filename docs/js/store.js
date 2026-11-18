@@ -125,6 +125,10 @@
     lastRead: null,
     /* the walkthrough of the app, shown once to whoever opens it new */
     tour: false,
+    /* the version whose «what's new» the reader has been shown, and the day
+       an older app was last told an update is in its store */
+    newsSeen: '',
+    updateToldOn: '',
     /* the days the app has been opened, each counted once, and whether the
        reader has been asked to rate it, which happens once at most */
     usedDays: 0,

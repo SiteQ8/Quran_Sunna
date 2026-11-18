@@ -1,5 +1,3 @@
-Acara yang anda tambah ke kalendar kini lebih lengkap: puasa berlangsung dari Subuh hingga Maghrib mengikut bandar anda, bersama kelebihannya, sumbernya, serta waktu sahur dan berbuka, peringatan pada malam sebelumnya dan sebelum Subuh untuk bersahur, tanpa menandakan anda sibuk.
+Peringatan kini ada peringatan iqamah: takbir pendek, Allahu akbar Allahu akbar, dengan suara muazin pilihan anda, ketika iqamah setiap solat mengikut minit masjid anda. Anda juga boleh memilih panjang azan, azan penuh atau takbir sahaja.
 
-Jadual bulanan memaparkan nama hari, menandakan Jumaat dan solat seterusnya, serta merumuskan perubahan Subuh, Maghrib dan panjang siang. Jarak di sekitar nombor ayat dalam mushaf kini sekata.
-
-Widget doa kini mengambil daripada semua doa al-Quran, Sunnah dan Hisnul Muslim, setiap satu dengan sumbernya, dan selepas Isyak widget solat menyatakan bahawa ia memaparkan waktu esok.
+Senarai kini tertutup sendiri apabila anda beralih skrin atau menatal, dan sepanduk di bawah hilang apabila anda menatal atau meleretnya. Selepas setiap kemas kini, aplikasi menunjukkan yang baharu dalam lawatan ringkas dan memberitahu anda apabila versi lebih baharu ada di gedung.
