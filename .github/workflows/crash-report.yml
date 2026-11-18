@@ -1,0 +1,41 @@
+# The crashes and freezes the phones report, from Google Play and App Store
+# Connect, read with the same keys the sends use. It reads only and changes
+# nothing in either store.
+name: Crash report
+
+on:
+  workflow_dispatch:
+    inputs:
+      which:
+        description: which store
+        type: choice
+        options: [both, android, ios]
+        default: both
+      days:
+        description: days back
+        default: '28'
+
+permissions:
+  contents: read
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: الأدوات
+        run: python3 -m pip install --quiet --break-system-packages pyjwt cryptography
+      - name: اقرأ الأعطال
+        env:
+          PLAY_SERVICE_ACCOUNT: ${{ secrets.PLAY_SERVICE_ACCOUNT }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: python3 tools/store/crash-report.py --which "${{ inputs.which }}" --days "${{ inputs.days }}"
+      - name: احفظ الإجابات
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: crash-report
+          path: crash-report.json
+          if-no-files-found: ignore
