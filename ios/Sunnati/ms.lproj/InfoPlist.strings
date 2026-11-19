@@ -1,0 +1,2 @@
+/* The reason given when the app asks for the reader's location */
+"NSLocationWhenInUseUsageDescription" = "Untuk mengira waktu solat dan arah kiblat di tempat anda";

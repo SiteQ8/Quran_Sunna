@@ -3,6 +3,9 @@
 <plist version="1.0">
 <dict>
   <key>CFBundleDevelopmentRegion</key><string>ar</string>
+  <!-- every language the app speaks, so the system asks for permissions and
+       labels its own buttons in the reader's language, not in Arabic alone -->
+  <key>CFBundleLocalizations</key><array><string>ar</string><string>en</string><string>id</string><string>ms</string><string>fr</string><string>ha</string><string>tr</string><string>ru</string><string>bn</string><string>ur</string><string>fa</string></array>
   <key>CFBundleDisplayName</key><string>سُنّتي</string>
   <key>CFBundleExecutable</key><string>$(EXECUTABLE_NAME)</string>
   <key>CFBundleIdentifier</key><string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>

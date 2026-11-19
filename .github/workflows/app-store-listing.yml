@@ -23,9 +23,9 @@ on:
   workflow_dispatch:
     inputs:
       what:
-        description: 'status, screenshots, withdraw (take back a version waiting for review, place them, send it again), send (the prepared version sent for review), or replace (a version waiting for review taken back and this build sent instead)'
+        description: 'status, screenshots, withdraw (take back a version waiting for review, place them, send it again), send (the prepared version sent for review), replace (a version waiting for review taken back and this build sent instead), or leave-china (the app taken out of the store of China mainland, which asks a publishing permit for book content)'
         type: choice
-        options: [status, screenshots, withdraw, send, replace]
+        options: [status, screenshots, withdraw, send, replace, leave-china]
         default: status
 
 permissions:
@@ -49,6 +49,7 @@ jobs:
           python3 tools/ios/asc-release.py --status
           V=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
           case "$WHAT" in
+            leave-china) python3 tools/ios/asc-release.py --leave CHN ;;
             screenshots) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" ;;
             withdraw) python3 tools/ios/asc-release.py --shots-only --shots ios/screenshots/6.9-inch --ipad ios/screenshots/ipad-13 --version "$V" --withdraw ;;
             send|replace) B=$(sed -n 's/^ *CURRENT_PROJECT_VERSION: *"\(.*\)"/\1/p' ios/project.yml)

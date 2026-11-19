@@ -595,6 +595,15 @@ final class ReaderController: UIViewController, WKScriptMessageHandler, WKNaviga
 
   func documentInteractionControllerViewControllerForPreview(_ c: UIDocumentInteractionController) -> UIViewController { self }
 
+  /* The qibla compass asks for the phone's motion when the reader opens it.
+     Unanswered, WebKit asks in its own words, naming the site's address
+     rather than the app. The app's own page is granted it here; any other
+     page is still asked. */
+  func webView(_ w: WKWebView, requestDeviceOrientationAndMotionPermissionFor origin: WKSecurityOrigin,
+               initiatedByFrame frame: WKFrameInfo, decisionHandler: @escaping (WKPermissionDecision) -> Void) {
+    decisionHandler(origin.host == "sunnati.3li.info" ? .grant : .prompt)
+  }
+
   /* window.open from the page, which is how it reaches a map or a site: a web
      view with no ui delegate returns null and nothing happens. It opens in
      the phone's own browser or app instead. */

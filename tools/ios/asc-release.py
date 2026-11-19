@@ -843,15 +843,24 @@ def withdraw():
 def send(version_id):
     open_ones = api('GET', '/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW'
                     % APP)['data']
+    # a submission App Review answered with issues stays open, and Apple
+    # takes the fixed version back through it rather than through a new one
+    answered = [] if open_ones else api(
+        'GET', '/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&filter[state]=UNRESOLVED_ISSUES' % APP)['data']
     if open_ones:
         sub = open_ones[0]['id']
         log('using the review submission already open')
+    elif answered:
+        sub = answered[0]['id']
+        log('sending back the submission App Review answered, %s' % sub[:8])
     else:
         sub = api('POST', '/v1/reviewSubmissions', {'data': {
             'type': 'reviewSubmissions', 'attributes': {'platform': 'IOS'},
             'relationships': {'app': {'data': {'type': 'apps', 'id': APP}}}}})['data']['id']
-    items = [] if sub == 'DRY-RUN' else api('GET', '/v1/reviewSubmissions/%s/items' % sub)['data']
-    if not items:
+    items = [] if sub == 'DRY-RUN' else api('GET', '/v1/reviewSubmissions/%s/items?include=appStoreVersion' % sub)['data']
+    holds = any(((i.get('relationships') or {}).get('appStoreVersion') or {}).get('data', {}).get('id') == version_id
+                for i in items)
+    if not items or (answered and not holds):
         api('POST', '/v1/reviewSubmissionItems', {'data': {
             'type': 'reviewSubmissionItems',
             'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sub}},
@@ -861,10 +870,41 @@ def send(version_id):
     log('sent for review')
 
 
+# ------------------------------------------------------------------ where it is sold
+
+def leave_territories(codes):
+    """Take the app out of the stores of these territories, by their three
+    letter codes, CHN for China mainland, where an app with the text of a book
+    needs a publishing permit of the state. Everywhere else is left as it is."""
+    whole = api('GET', '/v1/apps/%s/appAvailabilityV2' % APP)['data']
+    url = '/v2/appAvailabilities/%s/territoryAvailabilities?include=territory&limit=200' % whole['id']
+    found = {}
+    while url:
+        page = api('GET', url)
+        for t in page['data']:
+            code = ((t.get('relationships') or {}).get('territory') or {}).get('data', {}).get('id')
+            found[code] = t
+        url = (page.get('links') or {}).get('next')
+    for code in codes:
+        t = found.get(code)
+        if not t:
+            log('%s is not among the territories' % code)
+            continue
+        if not t['attributes'].get('available'):
+            log('%s: already not sold there' % code)
+            continue
+        api('PATCH', '/v1/territoryAvailabilities/' + t['id'], {'data': {
+            'type': 'territoryAvailabilities', 'id': t['id'], 'attributes': {'available': False}}})
+        log('%s: no longer sold there' % code)
+    log('sold in %d territories' % sum(1 for t in found.values() if t['attributes'].get('available') and
+                                         (t['relationships']['territory']['data']['id'] not in codes)))
+
+
 def main():
     global DRY
     p = argparse.ArgumentParser()
     p.add_argument('--version')
+    p.add_argument('--leave', help='three letter territory codes, by commas, the app is taken out of: CHN')
     p.add_argument('--status', action='store_true', help='read the versions, the review and the sets, change nothing')
     p.add_argument('--shots', help='a folder of 6.9 inch screenshots to replace the set with, in the order of their names')
     p.add_argument('--shots-only', action='store_true', help='place --shots in the version being prepared and nothing else')
@@ -886,6 +926,10 @@ def main():
     a = p.parse_args()
     DRY = a.dry_run
 
+    if a.leave:
+        leave_territories([c.strip().upper() for c in a.leave.split(',') if c.strip()])
+        if not a.version:
+            return
     if a.status:
         status()
         return

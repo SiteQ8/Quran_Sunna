@@ -5732,7 +5732,7 @@ test('production gets what the testers ran, and the App Store gets the version p
   assert.ok(tool.indexOf('if a.promote_from == a.track:') !== -1);
   /* the App Store version a build run prepared is sent as it is */
   const listing = fs.readFileSync(path.join(__dirname, '..', '.github/workflows/app-store-listing.yml'), 'utf8');
-  assert.ok(/options: \[status, screenshots, withdraw, send, replace\]\s*default: status/.test(listing), 'sending is asked for, never the default');
+  assert.ok(/options: \[status, screenshots, withdraw, send, replace, leave-china\]\s*default: status/.test(listing), 'sending is asked for, never the default');
   assert.ok(/send\|replace\) B=\$\(sed -n 's\/\^ \*CURRENT_PROJECT_VERSION: \*"\\\(\.\*\\\)"\/\\1\/p' ios\/project\.yml\)/.test(listing),
     'the build is the one the repository says');
   assert.ok(listing.indexOf('$([ "$WHAT" = replace ] && echo --replace) ;;') !== -1, 'and a version is taken back only when replace is asked');
@@ -12415,6 +12415,32 @@ test('an older app is told its store has a newer one, once a day', async () => {
   win.Store.set('updateToldOn', '');
   win.SunnatiApp.version = () => '8.87.145';
   assert.strictEqual(await h.checkAppUpdate(0), false, 'an app as new as its store is left alone');
+});
+
+test('the iPhone app asks for each permission in the reader\'s own language', () => {
+  /* App Review refused 8.87.150 under guideline 4: the location request was in
+     Arabic alone while the app spoke the reader's language, and with no
+     language declared the system wrote its own buttons in Arabic too */
+  const ios = path.join(__dirname, '..', 'ios', 'Sunnati');
+  const plist = fs.readFileSync(path.join(ios, 'Info.plist'), 'utf8');
+  const langs = ['ar', 'en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn', 'ur', 'fa'];
+  const declared = /<key>CFBundleLocalizations<\/key><array>(.*?)<\/array>/.exec(plist);
+  assert.ok(declared, 'the app names its languages');
+  langs.forEach((l) => {
+    assert.ok(declared[1].includes('<string>' + l + '</string>'), l + ' declared');
+    const strings = fs.readFileSync(path.join(ios, l + '.lproj', 'InfoPlist.strings'), 'utf8');
+    const m = /"NSLocationWhenInUseUsageDescription" = "([^"]+)";/.exec(strings);
+    assert.ok(m && m[1].length > 20, l + ' gives the reason for the location');
+    if (l !== 'ar' && l !== 'ur' && l !== 'fa') assert.ok(!/[؀-ۿ]/.test(m[1]), l + ' is not in Arabic letters');
+  });
+  /* every key the plist asks with has its words in every language */
+  const asks = plist.match(/<key>NS\w+UsageDescription<\/key>/g) || [];
+  asks.forEach((k) => {
+    const name = /<key>(\w+)<\/key>/.exec(k)[1];
+    langs.forEach((l) => assert.ok(fs.readFileSync(path.join(ios, l + '.lproj', 'InfoPlist.strings'), 'utf8').includes('"' + name + '"'), name + ' in ' + l));
+  });
+  const reader = fs.readFileSync(path.join(ios, 'ReaderController.swift'), 'utf8');
+  assert.ok(/requestDeviceOrientationAndMotionPermissionFor/.test(reader), 'the compass is not asked for in the site\'s name');
 });
 
 test('every muadhin\'s takbir is carried by the page and by both apps', () => {

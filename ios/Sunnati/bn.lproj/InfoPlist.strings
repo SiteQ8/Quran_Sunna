@@ -1,0 +1,2 @@
+/* The reason given when the app asks for the reader's location */
+"NSLocationWhenInUseUsageDescription" = "আপনি যেখানে আছেন সেখানকার নামাজের সময় ও কিবলার দিক হিসাব করতে";
