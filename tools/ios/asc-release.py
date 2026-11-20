@@ -944,6 +944,13 @@ def send(version_id):
             'type': 'reviewSubmissionItems',
             'relationships': {'reviewSubmission': {'data': {'type': 'reviewSubmissions', 'id': sub}},
                               'appStoreVersion': {'data': {'type': 'appStoreVersions', 'id': version_id}}}}})
+    # an item App Review rejected stays rejected until it is marked resolved,
+    # and until then Apple answers only that the version is not ready
+    for i in items if answered else []:
+        if i['attributes'].get('state') == 'REJECTED' and not i['attributes'].get('resolved'):
+            api('PATCH', '/v1/reviewSubmissionItems/' + i['id'], {'data': {
+                'type': 'reviewSubmissionItems', 'id': i['id'], 'attributes': {'resolved': True}}})
+            log('the rejected item marked resolved')
     api('PATCH', '/v1/reviewSubmissions/' + sub, {'data': {
         'type': 'reviewSubmissions', 'id': sub, 'attributes': {'submitted': True}}})
     log('sent for review')
