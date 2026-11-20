@@ -12715,6 +12715,22 @@ test('the phones say their own words in the reader\'s language: channels, the ad
   assert.ok(/^حان وقت /.test(rows[0].title));
 });
 
+test('the notice of the next prayer writes its time as the app does, not as the phone does', () => {
+  /* it read «11:34 AM» to a reader of Arabic on a phone set to English */
+  const { win } = boot();
+  const w = win.App.helpers.widgetData().words;
+  assert.strictEqual(w.am, 'ص');
+  assert.strictEqual(w.pm, 'م');
+  assert.strictEqual(w.h24, '');
+  win.Store.set('clock', '24');
+  assert.strictEqual(win.App.helpers.widgetData().words.h24, '1', 'twenty four hours when chosen');
+  const store = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/WidgetStore.java'), 'utf8');
+  const clock = /static String clock\(Context context, long at\) \{([\s\S]*?)\n    \}/.exec(store)[1];
+  assert.ok(/word\(all, "am"/.test(clock) && /word\(all, "pm"/.test(clock) && /figures\(all,/.test(clock), 'the app writes the page\'s marks in the page\'s figures');
+  const next = fs.readFileSync(path.join(__dirname, '..', 'android/app/src/main/java/com/eworldq8/sunnati/NextNotice.java'), 'utf8');
+  assert.ok(/WidgetStore\.clock\(context, at\)/.test(next), 'and the notice takes its time from there');
+});
+
 test('after the isha the five prayers of the widget say they are tomorrow\'s', () => {
   const { win } = boot();
   const d = win.App.helpers.widgetData();

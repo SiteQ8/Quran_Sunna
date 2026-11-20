@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.153';
+  var VERSION = '8.87.154';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -7314,6 +7314,18 @@
        set it before the day. */
     var lang = window.I18n && window.I18n.lang ? window.I18n.lang : 'ar';
     w.tomorrow = tongue('غداً') + (/^(ar|ur|fa)/.test(lang) ? '،' : ',');
+    /* how a time is written in the app, not in the phone: the notice of the
+       next prayer said «11:34 AM» to a reader of Arabic on a phone set to
+       English. The mark after the figures is read from the page's own clock,
+       in the reader's language, and the twelve or twenty four hours with it. */
+    var mark = function (minutes) {
+      var t = String(tongue(clockText(minutes)) || '');
+      var m = /^[\d٠-٩۰-۹:.]+\s+(.+)$/.exec(t) || /^(.+?)\s+[\d٠-٩۰-۹:.]+$/.exec(t);
+      return m ? m[1] : '';
+    };
+    w.h24 = Store.get('clock') === '24' ? '1' : '';
+    w.am = mark(9 * 60);
+    w.pm = mark(21 * 60);
     return w;
   }
 

@@ -564,6 +564,8 @@ test('the widgets speak English too: tomorrow with its own comma, and each du\'a
   const { win } = boot({ languages: ['en-US'], file: 'en', storage: { 'sunnati.lang': 'en' } });
   const data = win.App.helpers.widgetData();
   assert.strictEqual(data.words.tomorrow, 'Tomorrow,');
+  assert.strictEqual(data.words.am, 'AM', 'the time\'s marks in English');
+  assert.strictEqual(data.words.pm, 'PM');
   const pool = win.App.helpers.duaPool();
   const run = pool.find((d) => d.i === 1026083);
   assert.ok(run, 'the run of al-Shu\'ara is there');

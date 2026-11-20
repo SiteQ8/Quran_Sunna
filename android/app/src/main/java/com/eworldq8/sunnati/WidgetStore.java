@@ -271,7 +271,22 @@ final class WidgetStore {
         return PendingIntent.getBroadcast(context, request, next, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
+    /** A time as the app writes it: in the reader's language and on twelve
+     *  or twenty four hours as chosen in the app, «11:34 ص» to a reader of
+     *  Arabic on a phone set to English, which used to read «11:34 AM».
+     *  Before the page has handed its marks, the phone's own way stands. */
     static String clock(Context context, long at) {
-        return android.text.format.DateFormat.getTimeFormat(context).format(new java.util.Date(at));
+        JSONObject all = all(context);
+        String am = word(all, "am", ""), pm = word(all, "pm", "");
+        boolean h24 = "1".equals(word(all, "h24", ""));
+        if (all == null || (!h24 && (am.isEmpty() || pm.isEmpty()))) {
+            return android.text.format.DateFormat.getTimeFormat(context).format(new java.util.Date(at));
+        }
+        Calendar c = Calendar.getInstance();
+        c.setTimeInMillis(at);
+        int h = c.get(Calendar.HOUR_OF_DAY), m = c.get(Calendar.MINUTE);
+        if (h24) return figures(all, String.format(Locale.ROOT, "%02d:%02d", h, m));
+        int twelve = h % 12 == 0 ? 12 : h % 12;
+        return figures(all, String.format(Locale.ROOT, "%d:%02d", twelve, m)) + " " + (h < 12 ? am : pm);
     }
 }
