@@ -12715,6 +12715,33 @@ test('the phones say their own words in the reader\'s language: channels, the ad
   assert.ok(/^حان وقت /.test(rows[0].title));
 });
 
+test('each muadhin is heard in his own voice when picked, even with the takbir alone chosen', () => {
+  /* with the takbir alone chosen, every muadhin of the list sounded the one
+     takbir, so the reader heard the same sound whichever he picked */
+  const { win, doc } = boot();
+  const heard = [];
+  win.Audio = function () { const a = { play: () => Promise.resolve(), pause() {}, load() {}, removeAttribute() {} };
+    Object.defineProperty(a, 'src', { set(v) { heard.push(String(v)); }, get() { return heard[heard.length - 1]; } }); return a; };
+  win.Store.set('adhanLength', 'takbir');
+  win.App.go('reminders');
+  const sel = doc.getElementById('settings-adhan-voice');
+  ['assaf', 'jazi', 'mujallad'].forEach((id) => {
+    sel.value = id;
+    sel.dispatchEvent(new win.Event('change', { bubbles: true }));
+  });
+  const voices = heard.filter((u) => /audio\/adhan\//.test(u));
+  assert.strictEqual(voices.length, 3, 'one sample for each pick: ' + heard.join(' '));
+  assert.ok(voices.every((u) => !/takbir/.test(u)), 'each his own adhan, not the shared takbir: ' + voices.join(' '));
+  assert.strictEqual(new Set(voices).size, 3, 'three different voices');
+  assert.ok(/تسجيل واحد لكل المؤذنين/.test(doc.getElementById('settings-adhan-note').textContent), 'and the row says the takbir is one recording');
+  /* the length row's sample is the takbir itself */
+  heard.length = 0;
+  const len = doc.getElementById('settings-adhan-length');
+  len.value = 'takbir';
+  len.dispatchEvent(new win.Event('change', { bubbles: true }));
+  assert.ok(heard.some((u) => /takbir\.mp3/.test(u)), 'choosing the takbir alone lets it be heard');
+});
+
 test('the notice of the next prayer writes its time as the app does, not as the phone does', () => {
   /* it read «11:34 AM» to a reader of Arabic on a phone set to English */
   const { win } = boot();

@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.154';
+  var VERSION = '8.87.155';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4077,6 +4077,10 @@
     return 'سُنّتي';
   }
 
+  /* What the reader hears beside the list of muadhins is the muadhin chosen,
+     in his own voice, whatever the length. With the takbir alone chosen,
+     every muadhin used to sound the one takbir, and the reader heard the same
+     sound whichever he picked. */
   function playAdhanSample() {
     var id = adhanChoice();
     if (id === 'none') { chime(); return; }
@@ -4085,8 +4089,13 @@
        find the app again: the reader asked for this twice. And it is the
        muadhin's own recording, his adhan where he has one and his fajr where
        that is all he has, never another voice standing in for him. */
-    if (Store.get('adhanLength') === 'takbir') { playRecording(takbirUrl(), 'settings-adhan-try', 'التكبير'); return; }
     playRecording(adhanOwnUrl(id), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
+  }
+
+  /* the length row's own sample: the takbir alone when that is chosen */
+  function playLengthSample() {
+    if (Store.get('adhanLength') === 'takbir') { playRecording(takbirUrl(), 'settings-adhan-try', 'التكبير'); return; }
+    playAdhanSample();
   }
 
   /* At the prayer, with the app open, the adhan is heard in its voice. The
@@ -5690,7 +5699,9 @@
       var pick = adhanChoice();
       note.textContent = pick === 'silent' ? 'يصل التنبيه بلا صوت'
         : pick === 'none' ? 'نغمة التنبيه المعتادة في هاتفك'
-        : 'يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم';
+        : Store.get('adhanLength') === 'takbir'
+          ? 'صوته للأذان كاملاً، أما التكبير فقط فتسجيل واحد لكل المؤذنين'
+          : 'يُسمع عند دخول الوقت، وللفجر أذانه الذي فيه الصلاة خير من النوم';
     }
     handAdhanSoundToApp();
   }
@@ -11339,7 +11350,8 @@
       stopSpeaking();
       handAdhanSoundToApp();
       handTimesToApp();
-      if (adhanVoice(adhanChoice())) playAdhanSample();
+      fillAdhanVoices();
+      if (adhanVoice(adhanChoice())) playLengthSample();
     });
     bind('settings-iqama-call', 'change', function (e) {
       Store.set('iqamaCall', e.target.value === '1');
