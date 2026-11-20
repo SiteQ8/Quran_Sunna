@@ -894,7 +894,32 @@ def withdraw():
 
 # ------------------------------------------------------------------ review
 
+def answer_new_descriptors():
+    """Apple added two questions to the age rating on 16 November 2026, and
+    an update is not taken for review while they are unanswered: App Store
+    Connect only says the version is not ready. The app answers no to both,
+    and the answers are given only where none was given before:
+      sharedLocation          the place is used on the phone for the prayer
+                              times and the qibla, never shared with anyone
+      datingAndRelationships  nothing of the kind in the app"""
+    facts = {'sharedLocation': False, 'datingAndRelationships': False}
+    for info in api('GET', '/v1/apps/%s/appInfos' % APP)['data']:
+        state = info['attributes'].get('appStoreState') or info['attributes'].get('state')
+        if state in ('READY_FOR_SALE', 'REPLACED_WITH_NEW_VERSION'):
+            continue
+        age = api('GET', '/v1/appInfos/%s/ageRatingDeclaration' % info['id']).get('data')
+        if not age:
+            continue
+        missing = {k: v for k, v in facts.items() if age['attributes'].get(k) is None}
+        if not missing:
+            continue
+        api('PATCH', '/v1/ageRatingDeclarations/' + age['id'], {'data': {
+            'type': 'ageRatingDeclarations', 'id': age['id'], 'attributes': missing}})
+        log('age rating answered: %s' % ', '.join('%s no' % k for k in missing))
+
+
 def send(version_id):
+    answer_new_descriptors()
     open_ones = api('GET', '/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&filter[state]=READY_FOR_REVIEW'
                     % APP)['data']
     # a submission App Review answered with issues stays open, and Apple
