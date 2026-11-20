@@ -105,25 +105,19 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
   static func adhanClip(_ address: String) -> String? {
     guard let last = address.split(separator: "/").last, last.hasSuffix(".mp3") else { return nil }
     var id = String(last.dropLast(4))
-    /* the opening takbir alone, «الله أكبر الله أكبر», for the reader who
-       chose the short adhan: its own clip, takbir-<id>.caf */
-    if id.hasSuffix("-takbir") {
-      id = String(id.dropLast(7))
-      guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
-      return "takbir-\(id).caf"
-    }
+    /* the takbir alone, «الله أكبر الله أكبر», for the reader who chose the
+       short adhan: the one clear recording, takbir.caf, whatever the address
+       an older page gave it */
+    if id == "takbir" || id.hasSuffix("-takbir") { return "takbir.caf" }
     if id.hasSuffix("-fajr") { id = String(id.dropLast(5)) }
     guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
     return "adhan-\(id).caf"
   }
 
-  /* A reminder whose sound is «takbir-<id>», the takbir at the iqama in the
-     muadhin's voice, rings the clip the app carries for it. */
+  /* A reminder whose sound is «takbir», the takbir at the iqama, rings the
+     one recording the app carries; «takbir-<id>» from an older page too. */
   static func takbirClip(_ sound: String) -> String? {
-    guard sound.hasPrefix("takbir-") else { return nil }
-    let id = sound.dropFirst(7)
-    guard !id.isEmpty, id.allSatisfy({ $0.isLetter }) else { return nil }
-    return "takbir-\(id).caf"
+    return sound == "takbir" || sound.hasPrefix("takbir-") ? "takbir.caf" : nil
   }
 
   /* iOS hides a notification while its own app is in front, which would mean a

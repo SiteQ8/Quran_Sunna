@@ -47,42 +47,22 @@ public final class AdhanReceiver extends BroadcastReceiver {
        to opening wherever it last was. */
     private static void note(Context context, String title, String body, String sound, String kind) {
         if (title == null || title.isEmpty()) return;
-        String voice = takbirVoice(sound);
-        String channel = voice != null ? CHANNEL_TAKBIR + voice
+        String channel = isTakbir(sound) ? CHANNEL_TAKBIR
             : "chime".equals(sound) ? CHANNEL_CHIME
             : "silent".equals(sound) ? CHANNEL_QUIET : CHANNEL_REMINDERS;
         post(context, title, body, kind == null || kind.isEmpty() ? "note" : kind, channel);
     }
 
-    /* The takbir at the iqama, «الله أكبر الله أكبر», a channel per muadhin
-       since a channel's sound is fixed when it is made. */
-    static final String CHANNEL_TAKBIR = "reminders_takbir_";
-    static final String[] TAKBIR_VOICES = { "assaf", "jazi", "mujallad", "bilal" };
+    /* The takbir at the iqama, «الله أكبر الله أكبر», one clear recording for
+       every reader. The page names it «takbir»; an older page named one per
+       muadhin, «takbir-mujallad», and those ring this one too. */
+    static final String CHANNEL_TAKBIR = "reminders_takbir";
+    /* the channels of the muadhins' takbirs, which are no longer heard */
+    static final String[] OLD_TAKBIR_CHANNELS = {
+        "reminders_takbir_assaf", "reminders_takbir_jazi", "reminders_takbir_mujallad", "reminders_takbir_bilal" };
 
-    /** The muadhin of a «takbir-<id>» sound the app carries, or null. */
-    static String takbirVoice(String sound) {
-        if (sound == null || !sound.startsWith("takbir-")) return null;
-        String id = sound.substring("takbir-".length());
-        for (String one : TAKBIR_VOICES) if (one.equals(id)) return one;
-        return null;
-    }
-
-    private static int takbirRaw(String id) {
-        switch (id) {
-            case "assaf": return R.raw.takbir_assaf;
-            case "jazi": return R.raw.takbir_jazi;
-            case "bilal": return R.raw.takbir_bilal;
-            default: return R.raw.takbir_mujallad;
-        }
-    }
-
-    private static int takbirName(String id) {
-        switch (id) {
-            case "assaf": return R.string.takbir_assaf;
-            case "jazi": return R.string.takbir_jazi;
-            case "bilal": return R.string.takbir_bilal;
-            default: return R.string.takbir_mujallad;
-        }
+    static boolean isTakbir(String sound) {
+        return sound != null && (sound.equals("takbir") || sound.startsWith("takbir-"));
     }
 
     /** The page's word for a notice, or the Arabic when it gave none. */
@@ -244,19 +224,20 @@ public final class AdhanReceiver extends BroadcastReceiver {
                 .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
             manager.createNotificationChannel(channel);
         }
-        for (String voice : TAKBIR_VOICES) {
-            name = context.getString(R.string.channelTakbir, context.getString(takbirName(voice)));
-            about = context.getString(R.string.channelTakbirAbout);
-            if (missing(manager, CHANNEL_TAKBIR + voice, name, about)) {
-                NotificationChannel channel = new NotificationChannel(CHANNEL_TAKBIR + voice, name, NotificationManager.IMPORTANCE_HIGH);
-                channel.setDescription(about);
-                Uri takbir = Uri.parse("android.resource://" + context.getPackageName() + "/" + takbirRaw(voice));
-                channel.setSound(takbir, new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_NOTIFICATION)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-                channel.enableVibration(true);
-                manager.createNotificationChannel(channel);
-            }
+        for (String old : OLD_TAKBIR_CHANNELS) {
+            if (manager.getNotificationChannel(old) != null) manager.deleteNotificationChannel(old);
+        }
+        name = context.getString(R.string.channelTakbir);
+        about = context.getString(R.string.channelTakbirAbout);
+        if (missing(manager, CHANNEL_TAKBIR, name, about)) {
+            NotificationChannel channel = new NotificationChannel(CHANNEL_TAKBIR, name, NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(about);
+            Uri takbir = Uri.parse("android.resource://" + context.getPackageName() + "/" + R.raw.takbir);
+            channel.setSound(takbir, new AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+            channel.enableVibration(true);
+            manager.createNotificationChannel(channel);
         }
         name = context.getString(R.string.channelQuiet);
         about = context.getString(R.string.channelQuietAbout);

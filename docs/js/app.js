@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.152';
+  var VERSION = '8.87.153';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -4085,7 +4085,7 @@
        find the app again: the reader asked for this twice. And it is the
        muadhin's own recording, his adhan where he has one and his fajr where
        that is all he has, never another voice standing in for him. */
-    if (Store.get('adhanLength') === 'takbir') { playRecording(takbirUrl(id), 'settings-adhan-try', 'التكبير، ' + adhanName(id)); return; }
+    if (Store.get('adhanLength') === 'takbir') { playRecording(takbirUrl(), 'settings-adhan-try', 'التكبير'); return; }
     playRecording(adhanOwnUrl(id), 'settings-adhan-try', 'الأذان، ' + adhanName(id));
   }
 
@@ -5636,25 +5636,17 @@
     return 'audio/adhan/' + v.id + (fajr ? '-fajr' : '') + '.mp3';
   }
 
-  /* The opening takbir alone, «الله أكبر الله أكبر», cut from each muadhin's
-     own recording: the same at the fajr as at the rest, since both adhans
-     open alike. */
-  function takbirUrl(id) {
-    var v = adhanVoice(id);
-    return v ? 'audio/adhan/' + v.id + '-takbir.mp3' : '';
-  }
-
-  /* the voice of the takbir at the iqama: the reader's muadhin, or al-Mujallad
-     when the adhan is the phone's tone or silence */
-  function takbirVoice() {
-    var id = adhanChoice();
-    return adhanVoice(id) ? id : 'mujallad';
-  }
+  /* The takbir alone, «الله أكبر الله أكبر»: one clear studio recording for
+     every reader, at the iqama and as the short adhan alike. The muadhins'
+     own takbirs were cut from recordings too dull to stand alone, and are not
+     used at all. */
+  var TAKBIR_URL = 'audio/adhan/takbir.mp3';
+  function takbirUrl() { return TAKBIR_URL; }
 
   function adhanUrl(id, forFajr) {
     var v = adhanVoice(id);
     if (!v) return '';
-    if (Store.get('adhanLength') === 'takbir') return takbirUrl(id);
+    if (Store.get('adhanLength') === 'takbir') return takbirUrl();
     if (forFajr) {
       if (v.fajr) return adhanFile(v, true);
       var fajr = ADHAN_VOICES.filter(function (x) { return x.fajr; })[0];
@@ -6033,9 +6025,10 @@
      reciter heard nothing at all. */
   function channelFor(key) {
     var pick = soundFor(key);
-    /* the takbir is named with its voice, «takbir-mujallad», the file the app
-       carries for it; an app without the files rings its own tone */
-    if (pick === 'takbir') return 'takbir-' + takbirVoice();
+    /* «takbir», the one recording the app carries. The muadhins' clips were
+       named «takbir-mujallad» and the like; an app that has only those rings
+       its own tone for this name, so the old clips are never heard again */
+    if (pick === 'takbir') return 'takbir';
     return RECITED_SOUND[key] && pick === 'buhendi' ? 'chime' : pick;
   }
 
@@ -6356,9 +6349,9 @@
      bells, the reciter, or none */
   function ringReminder(r) {
     var recited = soundFor(r.k) === 'buhendi' && RECITED_SOUND[r.k];
-    var takbir = /^takbir-([a-z]+)$/.exec(r.s || '');
-    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime' || !!takbir, reminderKind(r));
-    if (takbir) playRecording(takbirUrl(takbir[1]), document.querySelector('.try-sound[data-try="' + r.k + '"]'), 'التكبير، ' + adhanName(takbir[1]));
+    var takbir = /^takbir(-[a-z]+)?$/.test(r.s || '');
+    notify(r.t, r.b, r.k + ':' + r.at, r.s === 'silent' || r.s === 'chime' || takbir, reminderKind(r));
+    if (takbir) playRecording(takbirUrl(), document.querySelector('.try-sound[data-try="' + r.k + '"]'), 'التكبير');
     else if (r.s === 'chime') playChime();
     else if (recited) playRecording('audio/dua/' + recited.f, document.querySelector('.try-sound[data-try="' + r.k + '"]'), recited.n);
   }
@@ -7858,7 +7851,7 @@
     var all = Store.get('iqama') || {};
     var any = IQAMA_KEYS.some(function (k) { return (+all[k] || 0) > 0; });
     note.textContent = on && !any ? 'اضبط دقائق الإقامة أولاً، فالتنبيه يتبعها'
-      : 'تكبير بصوت المؤذن عند إقامة كل صلاة، على دقائق مسجدك';
+      : 'تكبير قصير عند إقامة كل صلاة، على دقائق مسجدك';
   }
 
   function iqamaSheet() {
@@ -11326,7 +11319,6 @@
       Store.set('adhanVoice', e.target.value);
       stopSpeaking();
       fillAdhanVoices();
-      /* the takbir at the iqama is in the voice of the muadhin */
       handRemindersToApp();
       if (e.target.value !== 'none' && e.target.value !== 'silent') playAdhanSample();
     });
@@ -11697,7 +11689,7 @@
           var f = RECITED_SOUND[key];
           if (f) { playRecording('audio/dua/' + f.f, btn, f.n); return; }
         }
-        if (pick === 'takbir') { playRecording(takbirUrl(takbirVoice()), btn, 'التكبير، ' + adhanName(takbirVoice())); return; }
+        if (pick === 'takbir') { playRecording(takbirUrl(), btn, 'التكبير'); return; }
         playChime();
       });
     });
@@ -12100,12 +12092,12 @@
     id: '8.87.149',
     steps: [
       { title: 'الجديد في سُنّتي',
-        body: 'وصل تحديث فيه تنبيه للإقامة بتكبير المؤذن، وأذان قصير لمن أراده، وقوائم تُغلق وحدها حين تنتقل أو تمرّر، فهذه جولة قصيرة فيه.',
+        body: 'وصل تحديث فيه تنبيه للإقامة بتكبير قصير، وأذان قصير لمن أراده، وقوائم تُغلق وحدها حين تنتقل أو تمرّر، فهذه جولة قصيرة فيه.',
         next: 'اعرضه' },
       { go: 'reminders', at: '#settings-iqama-call-row', round: 16, title: 'تنبيه الإقامة',
-        body: 'تكبير بصوت المؤذن عند إقامة كل صلاة على دقائق مسجدك، فشغّله من هنا بعد ضبط دقائق الإقامة فوقه.' },
+        body: 'تكبير قصير عند إقامة كل صلاة على دقائق مسجدك، فشغّله من هنا بعد ضبط دقائق الإقامة فوقه.' },
       { go: 'reminders', at: '#settings-adhan-length-row', round: 16, title: 'طول الأذان',
-        body: 'اختر الأذان كاملاً أو التكبير وحده: الله أكبر الله أكبر، بصوت المؤذن الذي اخترته.' },
+        body: 'اختر الأذان كاملاً أو التكبير وحده: الله أكبر الله أكبر، بتسجيل نقيّ واضح.' },
       { go: 'tasbih', at: '#tasbih-tap', round: 999, title: 'المسبحة',
         body: 'تعرض الدائرة الذكر الذي اخترته، فترى ما تسبّح به وأنت تعدّ.', next: 'تم' }
     ]
@@ -12717,7 +12709,7 @@
     render: RENDERERS,
     actions: ACTIONS,
     helpers: {
-      takbirUrl: takbirUrl, takbirVoice: takbirVoice, channelFor: channelFor, soundFor: soundFor,
+      takbirUrl: takbirUrl, channelFor: channelFor, soundFor: soundFor,
       openMosques: openMosques, shareTimes: shareTimes, timesCard: timesCard,
       loadMeanings: loadMeanings, meaningOf: meaningOf, meaningsOn: meaningsOn, meaningSource: meaningSource,
       eidToday: eidToday, maybeEidSheet: maybeEidSheet, nightMarks: nightMarks, renderNightLine: renderNightLine,

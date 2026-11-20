@@ -67,12 +67,8 @@
     <string name="channelRemindersAbout">درود بر پیامبر و یادآوری‌هایی که از برنامه می‌خواهید</string>
     <string name="channelChime">یادآوری‌ها با آوای آرام</string>
     <string name="channelChimeAbout">یادآوری‌هایی که برایشان آوای آرام را برگزیدید</string>
-    <string name="channelTakbir">تکبیر اقامه، %1$s</string>
-    <string name="channelTakbirAbout">یادآوری اقامه با تکبیر، الله اکبر الله اکبر، با صدای این مؤذن</string>
-    <string name="takbir_assaf">یاسین العساف</string>
-    <string name="takbir_jazi">شیخ محمد الجازی</string>
-    <string name="takbir_mujallad">احمد نواف المجلاد</string>
-    <string name="takbir_bilal">بلال محمود</string>
+    <string name="channelTakbir">تکبیر اقامه</string>
+    <string name="channelTakbirAbout">یادآوری اقامه با تکبیری کوتاه، الله اکبر الله اکبر</string>
     <string name="channelQuiet">یادآوری‌های بی‌صدا</string>
     <string name="channelQuietAbout">یادآوری‌هایی که خواستید بی‌صدا برسند</string>
     <string name="channelPlaying">در حال پخش</string>

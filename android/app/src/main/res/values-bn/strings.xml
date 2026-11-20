@@ -67,12 +67,8 @@
     <string name="channelRemindersAbout">নবীর উপর দরুদ এবং অ্যাপের কাছে আপনার চাওয়া রিমাইন্ডার</string>
     <string name="channelChime">শান্ত সুরের রিমাইন্ডার</string>
     <string name="channelChimeAbout">যে রিমাইন্ডারগুলোর জন্য আপনি শান্ত সুর বেছে নিয়েছেন</string>
-    <string name="channelTakbir">ইকামতের তাকবির, %1$s</string>
-    <string name="channelTakbirAbout">তাকবির দিয়ে ইকামতের সতর্কবার্তা, আল্লাহু আকবার আল্লাহু আকবার, এই মুয়াজ্জিনের কণ্ঠে</string>
-    <string name="takbir_assaf">ইয়াসিন আল-আসসাফ</string>
-    <string name="takbir_jazi">শায়খ মুহাম্মাদ আল-জাযি</string>
-    <string name="takbir_mujallad">আহমাদ নাওয়াফ আল-মুজাল্লাদ</string>
-    <string name="takbir_bilal">বিলাল মাহমুদ</string>
+    <string name="channelTakbir">ইকামতের তাকবির</string>
+    <string name="channelTakbirAbout">ছোট তাকবির দিয়ে ইকামতের সতর্কবার্তা, আল্লাহু আকবার আল্লাহু আকবার</string>
     <string name="channelQuiet">নীরব রিমাইন্ডার</string>
     <string name="channelQuietAbout">যে রিমাইন্ডারগুলো আপনি শব্দ ছাড়া পেতে চেয়েছেন</string>
     <string name="channelPlaying">এখন বাজছে</string>

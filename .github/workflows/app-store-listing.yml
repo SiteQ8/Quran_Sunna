@@ -46,7 +46,7 @@ jobs:
           ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
           WHAT: ${{ inputs.what }}
         run: |
-          python3 tools/ios/asc-release.py --status
+          python3 tools/ios/asc-release.py --status $([ "$WHAT" = status ] && echo --why)
           V=$(sed -n 's/^ *MARKETING_VERSION: *"\(.*\)"/\1/p' ios/project.yml)
           case "$WHAT" in
             leave-china) python3 tools/ios/asc-release.py --leave CHN ;;

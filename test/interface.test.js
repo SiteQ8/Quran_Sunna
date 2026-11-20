@@ -12320,7 +12320,7 @@ test('iqama: between the adhan and the iqama the clock counts to the iqama, and 
   pre.forEach(function (r) { assert.ok(/^أذان .+ بعد عشر دقائق$/.test(r.t), r.t); });
 });
 
-test('the iqama call rings a takbir in the muadhin\'s voice, and the adhan can be the takbir alone', () => {
+test('the iqama call rings the one clear takbir, and the adhan can be the takbir alone', () => {
   const { win, doc } = boot({ now: new Date(2026, 10, 3, 5, 0) });
   const h = win.App.helpers;
   /* off until asked for, and nothing rings for a prayer with no iqama set */
@@ -12332,7 +12332,7 @@ test('the iqama call rings a takbir in the muadhin\'s voice, and the adhan can b
   calls.forEach((r) => {
     assert.ok(/^إقامة صلاة /.test(r.t), r.t);
     assert.strictEqual(r.b, 'قد قامت الصلاة');
-    assert.strictEqual(r.s, 'takbir-mujallad', 'al-Mujallad when no muadhin is chosen');
+    assert.strictEqual(r.s, 'takbir', 'the one recording, whatever the adhan');
   });
   assert.ok(!calls.some((r) => /العصر/.test(r.t)), 'the asr, set to none, has no call');
   /* each call sits at the adhan plus the minutes of its iqama */
@@ -12342,15 +12342,16 @@ test('the iqama call rings a takbir in the muadhin\'s voice, and the adhan can b
   if (fajr && new Date(fajr.at).getDate() === 3) {
     assert.strictEqual(fajr.at, new Date(2026, 10, 3, 0, t.fajr + 20, 0, 0).getTime());
   }
-  /* the voice follows the muadhin */
+  /* the same takbir whoever the muadhin: the muadhins' own were never good
+     enough to stand alone, and are not used */
   win.Store.set('adhanVoice', 'assaf');
-  assert.strictEqual(h.channelFor('iqama'), 'takbir-assaf');
-  assert.strictEqual(h.takbirUrl('assaf'), 'audio/adhan/assaf-takbir.mp3');
+  assert.strictEqual(h.channelFor('iqama'), 'takbir');
+  assert.strictEqual(h.takbirUrl(), 'audio/adhan/takbir.mp3');
   /* the adhan, full or the takbir alone */
   assert.ok(!/takbir/.test(h.adhanUrl('assaf')), 'the full adhan by default');
   win.Store.set('adhanLength', 'takbir');
-  assert.strictEqual(h.adhanUrl('assaf'), 'audio/adhan/assaf-takbir.mp3');
-  assert.strictEqual(h.adhanUrl('bilal', true), 'audio/adhan/bilal-takbir.mp3', 'the fajr opens the same way');
+  assert.strictEqual(h.adhanUrl('assaf'), 'audio/adhan/takbir.mp3');
+  assert.strictEqual(h.adhanUrl('bilal', true), 'audio/adhan/takbir.mp3', 'the fajr opens the same way');
   /* the settings rows */
   win.App.go('settings');
   assert.ok(doc.getElementById('settings-adhan-length'), 'the length row');
@@ -12443,17 +12444,34 @@ test('the iPhone app asks for each permission in the reader\'s own language', ()
   assert.ok(/requestDeviceOrientationAndMotionPermissionFor/.test(reader), 'the compass is not asked for in the site\'s name');
 });
 
-test('every muadhin\'s takbir is carried by the page and by both apps', () => {
+test('the one takbir is carried by the page and by both apps, and the old ones by none', () => {
   const root = path.join(__dirname, '..');
+  assert.ok(fs.statSync(path.join(root, 'docs', 'audio', 'adhan', 'takbir.mp3')).size > 100000, 'mp3');
+  assert.ok(fs.statSync(path.join(root, 'ios', 'Sunnati', 'takbir.caf')).size > 100000, 'caf');
+  assert.ok(fs.statSync(path.join(root, 'android', 'app', 'src', 'main', 'res', 'raw', 'takbir.ogg')).size > 100000, 'ogg');
   ['assaf', 'jazi', 'mujallad', 'bilal'].forEach((id) => {
-    assert.ok(fs.statSync(path.join(root, 'docs', 'audio', 'adhan', id + '-takbir.mp3')).size > 10000, id + ' mp3');
-    assert.ok(fs.statSync(path.join(root, 'ios', 'Sunnati', 'takbir-' + id + '.caf')).size > 10000, id + ' caf');
-    assert.ok(fs.statSync(path.join(root, 'android', 'app', 'src', 'main', 'res', 'raw', 'takbir_' + id + '.ogg')).size > 10000, id + ' ogg');
+    assert.ok(!fs.existsSync(path.join(root, 'docs', 'audio', 'adhan', id + '-takbir.mp3')), id + ' mp3 gone');
+    assert.ok(!fs.existsSync(path.join(root, 'ios', 'Sunnati', 'takbir-' + id + '.caf')), id + ' caf gone');
+    assert.ok(!fs.existsSync(path.join(root, 'android', 'app', 'src', 'main', 'res', 'raw', 'takbir_' + id + '.ogg')), id + ' ogg gone');
   });
   const receiver = fs.readFileSync(path.join(root, 'android', 'app', 'src', 'main', 'java', 'com', 'eworldq8', 'sunnati', 'AdhanReceiver.java'), 'utf8');
-  assert.ok(/CHANNEL_TAKBIR \+ voice/.test(receiver) && /R\.raw\.takbir_bilal/.test(receiver), 'android rings it on a channel per muadhin');
+  assert.ok(/R\.raw\.takbir\b/.test(receiver) && /deleteNotificationChannel\(old\)/.test(receiver), 'android rings the one, and drops the muadhins\' channels');
   const notifier = fs.readFileSync(path.join(root, 'ios', 'Sunnati', 'Notifier.swift'), 'utf8');
-  assert.ok(/takbirClip/.test(notifier) && /-takbir/.test(notifier), 'ios names the clip');
+  assert.ok(/"takbir\.caf"/.test(notifier) && !/takbir-\\\(id\)/.test(notifier), 'ios rings the one');
+});
+
+test('a play button that is playing shows its pause, the ear buttons of the settings too', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  /* the id rule gave the button a white ground over .btn.is-playing, and the
+     white pause on it could not be seen: the button looked empty */
+  assert.ok(/#settings-adhan-try\.is-playing, #settings-voice-try\.is-playing \{[^}]*background: var\(--accent-solid\)/.test(css));
+});
+
+test('the banner of an update keeps its one compact line on a phone', () => {
+  const css = fs.readFileSync(path.join(DOCS, 'css', 'style.css'), 'utf8');
+  const q = /@container banner \(max-width: ([\d.]+)rem\) \{([^}]*\}[^}]*\}[^}]*\})/.exec(css);
+  assert.ok(q && +q[1] <= 21, 'only a screen narrower than a phone\'s sends the action under the words');
+  assert.ok(!/flex: 1 1 100%/.test(q[2]), 'and never as a bar the width of the banner');
 });
 
 test('zakat: what reaches the nisab pays a quarter of a tenth, each carat weighed for its pure gold', () => {

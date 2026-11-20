@@ -788,6 +788,60 @@ def place_ipad_shots(loc_id, sets, files):
             upload(set_id, os.path.basename(path), f.read())
 
 
+def readiness():
+    """Why App Store Connect will not take the open version for review: every
+    part it asks before a submission, read and nothing changed, with whatever
+    is empty or not yet done named on its own line."""
+    def get(path):
+        try:
+            return api('GET', path)
+        except SystemExit as e:
+            log('  could not read %s: %s' % (path, str(e)[:300]))
+            return {}
+
+    def empty(attrs, skip=()):
+        return sorted(k for k, v in (attrs or {}).items() if k not in skip and (v is None or v == ''))
+
+    vs = [v for v in versions() if v['attributes']['appStoreState'] not in
+          ('READY_FOR_SALE', 'REPLACED_WITH_NEW_VERSION', 'REMOVED_FROM_SALE')]
+    for v in vs:
+        at = v['attributes']
+        log('open version %s: %s' % (at['versionString'], at['appStoreState']))
+        b = get('/v1/appStoreVersions/%s/build' % v['id']).get('data')
+        if not b:
+            log('  NO BUILD attached')
+        else:
+            ba = b['attributes']
+            log('  build %s: %s, expired %s, encryption answered %s' % (
+                ba.get('version'), ba.get('processingState'), ba.get('expired'), ba.get('usesNonExemptEncryption')))
+        rd = get('/v1/appStoreVersions/%s/appStoreReviewDetail' % v['id']).get('data')
+        if not rd:
+            log('  NO review details (contact for App Review)')
+        else:
+            log('  review details, empty: %s' % (empty(rd['attributes'], ('demoAccountName', 'demoAccountPassword', 'notes')) or 'none'))
+        for loc in localizations(v['id']):
+            la = loc['attributes']
+            gaps = [k for k in ('description', 'keywords', 'supportUrl', 'whatsNew') if not la.get(k)]
+            sets = sets_of(loc['id'])
+            log('  %s: %s; screenshot sets %d' % (la['locale'], ('missing ' + ', '.join(gaps)) if gaps else 'complete', len(sets)))
+    for info in get('/v1/apps/%s/appInfos' % APP).get('data', []):
+        ia = info['attributes']
+        log('app info %s: %s' % (info['id'][:8], ia.get('appStoreState') or ia.get('state')))
+        age = get('/v1/appInfos/%s/ageRatingDeclaration' % info['id']).get('data')
+        if age:
+            log('  age rating, unanswered: %s' % (empty(age['attributes']) or 'none'))
+        for il in get('/v1/appInfos/%s/appInfoLocalizations' % info['id']).get('data', []):
+            if not il['attributes'].get('privacyPolicyUrl'):
+                log('  %s: no privacy policy address' % il['attributes'].get('locale'))
+        cats = get('/v1/appInfos/%s/primaryCategory' % info['id']).get('data')
+        log('  primary category: %s' % ((cats or {}).get('id') or 'NONE'))
+    app = get('/v1/apps/%s' % APP).get('data') or {}
+    log('content rights: %s' % ((app.get('attributes') or {}).get('contentRightsDeclaration') or 'NOT ANSWERED'))
+    for sub in get('/v1/reviewSubmissions?filter[app]=%s&filter[platform]=IOS&filter[state]=UNRESOLVED_ISSUES' % APP).get('data', []):
+        for it in get('/v1/reviewSubmissions/%s/items' % sub['id']).get('data', []):
+            log('answered submission %s, item %s: %s' % (sub['id'][:8], it['id'][:8], it['attributes'].get('state')))
+
+
 def status():
     """What is where, read and nothing changed."""
     vs = versions()
@@ -906,6 +960,7 @@ def main():
     p.add_argument('--version')
     p.add_argument('--leave', help='three letter territory codes, by commas, the app is taken out of: CHN')
     p.add_argument('--status', action='store_true', help='read the versions, the review and the sets, change nothing')
+    p.add_argument('--why', action='store_true', help='read every part App Review asks before a submission, change nothing')
     p.add_argument('--shots', help='a folder of 6.9 inch screenshots to replace the set with, in the order of their names')
     p.add_argument('--shots-only', action='store_true', help='place --shots in the version being prepared and nothing else')
     p.add_argument('--ipad', help='a folder of 13 inch iPad screenshots to replace that set with: ios/screenshots/ipad-13')
@@ -932,6 +987,8 @@ def main():
             return
     if a.status:
         status()
+        if a.why:
+            readiness()
         return
     if not a.version:
         p.error('--version is needed')

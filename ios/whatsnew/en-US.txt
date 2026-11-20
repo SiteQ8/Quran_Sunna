@@ -1,3 +1,3 @@
-Reminders now include an iqama alert: a short takbir, Allahu akbar Allahu akbar, in the muadhin you chose, at the iqama of each prayer on your mosque's minutes. You can also choose the adhan's length, the full adhan or the takbir alone.
+Reminders now include an iqama alert: a short takbir, Allahu akbar Allahu akbar, in a clear studio recording, at the iqama of each prayer on your mosque's minutes. You can also choose the adhan's length, the full adhan or the takbir alone.
 
 Lists now close by themselves when you move to another screen or scroll, and the banner at the bottom goes away when you scroll or swipe it. After each update the app shows what is new in a short tour, and it tells you when a newer version is in the store.

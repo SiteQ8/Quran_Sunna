@@ -67,12 +67,8 @@
     <string name="channelRemindersAbout">Selawat ke atas Nabi dan peringatan yang anda minta daripada aplikasi</string>
     <string name="channelChime">Peringatan dengan nada lembut</string>
     <string name="channelChimeAbout">Peringatan yang anda pilih nada lembut untuknya</string>
-    <string name="channelTakbir">Takbir iqamah, %1$s</string>
-    <string name="channelTakbirAbout">Peringatan iqamah dengan takbir, Allahu akbar Allahu akbar, dengan suara muazin ini</string>
-    <string name="takbir_assaf">Yasin al-Assaf</string>
-    <string name="takbir_jazi">Syeikh Muhammad al-Jazi</string>
-    <string name="takbir_mujallad">Ahmad Nawaf al-Mujallad</string>
-    <string name="takbir_bilal">Bilal Mahmud</string>
+    <string name="channelTakbir">Takbir iqamah</string>
+    <string name="channelTakbirAbout">Peringatan iqamah dengan takbir pendek, Allahu akbar Allahu akbar</string>
     <string name="channelQuiet">Peringatan senyap</string>
     <string name="channelQuietAbout">Peringatan yang anda pilih untuk tiba tanpa bunyi</string>
     <string name="channelPlaying">Sedang dimainkan</string>

@@ -242,18 +242,15 @@ test('each adhan recording is named for what it is, and the first fajr is al-Muj
   /* the voice listed as حاج سليمان مختار was a recording of al-Mujallad */
   assert.ok(voices.indexOf('mukhtar') === -1);
   const files = fs.readdirSync(path.join(DOCS, 'audio', 'adhan')).sort();
-  assert.deepStrictEqual(files, ['assaf-takbir.mp3', 'assaf.mp3', 'bilal-fajr.mp3', 'bilal-takbir.mp3', 'jazi-takbir.mp3',
-    'jazi.mp3', 'mujallad-fajr.mp3', 'mujallad-takbir.mp3', 'mujallad.mp3'],
-    'every recording is named for what it is, and nothing else lies there');
+  assert.deepStrictEqual(files, ['assaf.mp3', 'bilal-fajr.mp3', 'jazi.mp3', 'mujallad-fajr.mp3', 'mujallad.mp3', 'takbir.mp3'],
+    'every recording is named for what it is, and nothing else lies there: the muadhins\' takbirs are gone');
   assert.strictEqual(win.ADHAN_VOICES.filter((v) => v.fajr)[0].id, 'mujallad',
     'the fajr that stands in for a voice with none is al-Mujallad\'s real fajr');
 
   const at = (f) => mp3Seconds(path.join(DOCS, 'audio', 'adhan', f));
-  /* the takbir alone is the opening «الله أكبر الله أكبر», a few seconds and no more */
-  ['assaf', 'jazi', 'mujallad', 'bilal'].forEach(function (id) {
-    const s = at(id + '-takbir.mp3');
-    assert.ok(s > 3 && s < 18, id + ' takbir runs ' + s.toFixed(1) + ' s');
-  });
+  /* the takbir alone is «الله أكبر الله أكبر», a few seconds and no more */
+  const tk = at('takbir.mp3');
+  assert.ok(tk > 6 && tk < 14, 'the takbir runs ' + tk.toFixed(1) + ' s');
   /* one performance: the fajr is the ordinary adhan with its two phrases more */
   const extra = at('mujallad-fajr.mp3') - at('mujallad.mp3');
   assert.ok(extra > 20 && extra < 30, 'the fajr runs the two phrases longer, found ' + extra.toFixed(1) + ' s');

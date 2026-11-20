@@ -435,6 +435,11 @@ html:not([lang='ar']) .place-line.is-stacked .place-where { min-height: 44px; }
   width: 48px; height: 48px; min-height: 48px; flex: none; padding: 0;
   border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--raised);
 }
+/* while it plays: the id above outweighed .btn.is-playing, so the pause was
+   drawn white on the white of the button and the button looked empty */
+#settings-adhan-try.is-playing, #settings-voice-try.is-playing {
+  background: var(--accent-solid); color: var(--on-accent); border-color: transparent;
+}
 .voice-pick .select { flex: 1; min-width: 0; max-width: 100%; }
 .voice-plain { color: var(--ink-2); font-weight: 600; padding-inline: 4px; white-space: nowrap; }
 .btn.is-playing { background: var(--accent-solid); color: var(--on-accent); border-color: transparent; }
@@ -1814,13 +1819,14 @@ html.is-scrolled .reader-bar::before { display: block; }
 .banner-close .icon { width: 18px; height: 18px; }
 @keyframes banner-rise { from { transform: translateY(12px); opacity: 0 } to { transform: none; opacity: 1 } }
 @media (prefers-reduced-motion: reduce) { .banner { animation: none } }
-/* On a narrow screen, a phone's or a foldable's cover, the action squeezed the
-   words into a column of two or three to a line: it goes under them, the
-   words taking the whole width beside the mark and the close. */
+/* On a phone the banner keeps its one compact line, the action beside the
+   words. Only a screen narrower than any phone's, a foldable's cover, sends
+   the action under them, still a small pill at the end of the line: a full
+   width bar there made the notice of an update twice its height. */
 .banner { container: banner / inline-size; touch-action: pan-y; }
-@container banner (max-width: 26rem) {
+@container banner (max-width: 21rem) {
   .banner-text { flex: 1 1 calc(100% - 88px); }
-  .banner-act { order: 3; flex: 1 1 100%; margin-inline-start: 36px; }
+  .banner-act { order: 3; flex: 0 0 auto; margin-inline-start: auto; min-height: 40px; }
   .banner-close { order: 2; }
 }
 .banner { flex-wrap: wrap; }

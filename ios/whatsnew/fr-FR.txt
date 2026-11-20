@@ -1,3 +1,3 @@
-Les rappels proposent désormais une alerte d'iqama : un court takbir, Allahou akbar Allahou akbar, de la voix du muezzin choisi, à l'iqama de chaque prière selon les minutes de votre mosquée. Vous pouvez aussi choisir la durée de l'adhan, complet ou le takbir seul.
+Les rappels proposent désormais une alerte d'iqama : un court takbir, Allahou akbar Allahou akbar, dans un enregistrement clair, à l'iqama de chaque prière selon les minutes de votre mosquée. Vous pouvez aussi choisir la durée de l'adhan, complet ou le takbir seul.
 
 Les listes se ferment seules quand vous changez d'écran ou faites défiler, et le bandeau du bas s'en va quand vous faites défiler ou le balayez. Après chaque mise à jour, l'application montre ses nouveautés en une courte visite et vous prévient quand une version plus récente est dans la boutique.
