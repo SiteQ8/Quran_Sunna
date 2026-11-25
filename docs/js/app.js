@@ -7,7 +7,7 @@
 (function (window, document) {
   'use strict';
 
-  var VERSION = '8.87.155';
+  var VERSION = '8.87.156';
   var DEFAULT_PLACE = { n: 'الكويت', lat: 29.3759, lng: 47.9774, tz: 3, z: 'Asia/Kuwait', method: 'Kuwait' };
   var ARC_LENGTH = 314.16;
   var TOTAL_PAGES = 604;
@@ -3029,11 +3029,22 @@
      so an old tick of it is not taken for the hundred. */
   var OLD_CARD = { 'now:asr:3': ['sunnah:13:7'] };
 
+  /* The rows of three cards as they stood before each card was given every
+     row of its own section on the page of the sunan: an old tick kept under a
+     card's number is read by the card it was made on, since the rows after an
+     added one moved down. */
+  var CARD_BEFORE = {
+    fajr: { t: [['sunnah:0:0', 'sunnah:0:1'], ['sunnah:2:0', 'sunnah:2:1'], 'sunnah:2:2', 'sunnah:2:3', 'sunnah:2:4', 'sunnah:2:8', 'wird:morning'] },
+    dhuhr: { t: [['sunnah:6:0', 'sunnah:6:1'], 'sunnah:6:1', ['sunnah:4:0', 'sunnah:4:1', 'sunnah:4:2', 'sunnah:4:3', 'sunnah:4:4'], 'sunnah:6:2'] },
+    isha: { t: [['sunnah:9:1', 'wird:witr'], 'sunnah:9:2', ['sunnah:9:3', 'sunnah:9:4'], ['sunnah:9:5', 'sunnah:9:6'], 'sunnah:9:7',
+      ['sunnah:9:8', 'sunnah:9:9', 'wird:sleep'], ['sunnah:9:10', 'sunnah:9:11']] }
+  };
+
   function movedTicks(id) {
     if (OLD_CARD[id]) return OLD_CARD[id].slice();
     var m = /^now:(fajr|duha|dhuhr|asr|maghrib|isha):(\d+)$/.exec(id);
     if (m) {
-      var block = typeof CURRENT_SUNNAH !== 'undefined' ? CURRENT_SUNNAH[m[1]] : null;
+      var block = CARD_BEFORE[m[1]] || (typeof CURRENT_SUNNAH !== 'undefined' ? CURRENT_SUNNAH[m[1]] : null);
       var to = block ? rowTicks(m[1], block, +m[2]) : [];
       return to.length ? to : null;
     }

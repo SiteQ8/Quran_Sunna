@@ -1337,6 +1337,46 @@ test('the friday card ticks are kept apart from the weekday ones', () => {
   });
 });
 
+test('every sunnah of the hour card ticked leaves the prayer\'s own sections of the list all ticked', () => {
+  /* the reader ticked every row of the card after a prayer and found at least
+     one row unticked on the page of the sunan: the card left out rows of its
+     own section there, «الإبراد بالظهر» and «التسبيح بالأصابع» after the
+     dhuhr among them */
+  const own = { fajr: ['الفجر والأذان والمسجد'], duha: ['الضحى'], dhuhr: ['الظهر', 'بعد الصلاة'],
+    asr: ['العصر والمساء'], maghrib: ['المغرب'], isha: ['العشاء والنوم'] };
+  /* a tuesday, an hour inside each window */
+  const at = { fajr: [5, 10], duha: [8, 30], dhuhr: [12, 30], asr: [15, 30], maghrib: [18, 0], isha: [20, 30] };
+  Object.keys(own).forEach((key) => {
+    const { win, doc } = boot({ now: new Date(2026, 9, 6, at[key][0], at[key][1], 0) });
+    assert.strictEqual(win.App.clockState().windowKey === 'sunrise' ? 'duha' : win.App.clockState().windowKey, key, 'the window at that hour');
+    /* a tick draws the card again, so each row is looked up afresh */
+    const count = doc.querySelectorAll('#now-list [data-check]').length;
+    for (let i = 0; i < count; i++) {
+      const b = doc.querySelectorAll('#now-list [data-check]')[i];
+      if (b.getAttribute('aria-checked') !== 'true') b.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    }
+    assert.ok([...doc.querySelectorAll('#now-list [data-check]')].every((b) => b.getAttribute('aria-checked') === 'true'), key + ': the card is all ticked');
+    const rec = win.Store.day(win.App.helpers.sunnahDay());
+    const sections = win.App.helpers.sunnahSections().filter((s) => own[key].indexOf(s.title) !== -1);
+    assert.strictEqual(sections.length, own[key].length, key + ': its sections are on the list');
+    sections.forEach((s) => s.rows.forEach((row) => {
+      assert.ok(row.ticks.every((id) => rec.sunnah[id]), key + ': «' + s.title + '» has an unticked row: ' + row.label);
+    }));
+  });
+});
+
+test('a tick kept under an old number of a card keeps its meaning after rows were added', () => {
+  /* now:dhuhr:2 was «أذكار ما بعد الصلاة» before «الإبراد» took its place */
+  const storage = memoryStorage();
+  storage.setItem('sunnati.day.2026-10-06', JSON.stringify({ sunnah: { 'now:dhuhr:2': true, 'now:isha:0': true } }));
+  const { win } = boot({ storage: storage, now: new Date(2026, 9, 6, 12, 0, 0) });
+  win.App.helpers.settleTicks();
+  const rec = win.Store.day(new Date(2026, 9, 6, 12));
+  assert.ok(rec.sunnah['sunnah:4:0'] && rec.sunnah['sunnah:4:4'], 'the dhikr after the prayer, as it was ticked');
+  assert.ok(!rec.sunnah['sunnah:6:3'], 'not the row that now stands at that number');
+  assert.ok(rec.sunnah['sunnah:9:1'] && !rec.sunnah['sunnah:9:0'], 'the isha\'s first row as it was');
+});
+
 test('a full day of ticks never reads more done than there is to do', () => {
   const { win, doc } = boot();
   const total = win.App.helpers.totalSunnahCount();
@@ -1420,20 +1460,22 @@ test('every row of the hour card ticks the rows of the list it says again', () =
     fajr: [{ 'sunnah:0:0': 'السواك عند الاستيقاظ', 'sunnah:0:1': 'أحيانا بعد ما أماتنا' },
       { 'sunnah:2:0': 'متابعة المؤذن', 'sunnah:2:1': 'دعاء الوسيلة' },
       { 'sunnah:2:2': 'بين الأذان والإقامة' }, { 'sunnah:2:3': 'تخفيف ركعتي الفجر' }, { 'sunnah:2:4': 'الاضطجاع' },
+      { 'sunnah:2:5': 'التبكير إلى المسجد' }, { 'sunnah:2:6': 'المشي بسكينة' }, { 'sunnah:2:7': 'تحية المسجد' },
       { 'sunnah:2:8': 'حتى تطلع الشمس' }, { 'wird:morning': 'أذكار الصباح' }],
     duha: [{ 'sunnah:5:0': 'صلاة الضحى' }, { 'sunnah:5:0': 'صلاة الضحى', 'sunnah:5:1': 'ترمض الفصال' }, { 'sunnah:5:2': 'أذكار الصباح' },
       { 'sunnah:1:7': 'ركعتان بعد كل وضوء' }],
     dhuhr: [{ 'sunnah:6:0': 'أربع ركعات قبل الظهر وأربع بعدها', 'sunnah:6:1': 'الراتبة' }, { 'sunnah:6:1': 'الراتبة' },
-      { 'sunnah:4:0': 'اللهم أنت السلام', 'sunnah:4:1': 'لا إله إلا الله وحده لا شريك له', 'sunnah:4:2': 'التسبيح', 'sunnah:4:3': 'آية الكرسي', 'sunnah:4:4': 'المعوذات' },
+      { 'sunnah:6:3': 'الإبراد بالظهر' },
+      { 'sunnah:4:0': 'اللهم أنت السلام', 'sunnah:4:1': 'لا إله إلا الله وحده لا شريك له', 'sunnah:4:2': 'التسبيح', 'sunnah:4:3': 'آية الكرسي', 'sunnah:4:4': 'المعوذات', 'sunnah:4:5': 'بالأصابع' },
       { 'sunnah:6:2': 'القيلولة' }],
     asr: [{ 'sunnah:7:2': 'أذكار المساء' }, { 'sunnah:7:1': 'المحافظة على صلاة العصر' }, { 'sunnah:7:0': 'التطوع قبل العصر' },
       { 'sunnah:13:6': 'الاستغفار مئة مرة', 'sunnah:13:7': 'سبحان الله وبحمده مئة مرة' }],
     maghrib: [{ 'sunnah:8:0': 'ركعتان قبل المغرب' }, { 'sunnah:8:1': 'كفّ الصبيان' }, { 'sunnah:8:2': 'إغلاق الأبواب' },
       { 'sunnah:8:3': 'ركعتان بعد المغرب' }, { 'wird:evening': 'أذكار المساء' }, { 'sunnah:8:4': 'ترك النوم قبل العشاء' }],
-    isha: [{ 'sunnah:9:1': 'ركعتان بعد العشاء', 'wird:witr': 'الوتر' }, { 'sunnah:9:2': 'ترك الحديث بعد العشاء' },
+    isha: [{ 'sunnah:9:1': 'ركعتان بعد العشاء', 'wird:witr': 'الوتر' }, { 'sunnah:9:0': 'تأخير العشاء' }, { 'sunnah:9:2': 'ترك الحديث بعد العشاء' },
       { 'sunnah:9:3': 'إغلاق الأبواب', 'sunnah:9:4': 'تغطية الإناء' }, { 'sunnah:9:5': 'الوضوء قبل النوم', 'sunnah:9:6': 'نفض الفراش' },
       { 'sunnah:9:7': 'النوم على الشق الأيمن' }, { 'sunnah:9:8': 'آية الكرسي وخواتيم البقرة', 'sunnah:9:9': 'المعوذات مع النفث', 'wird:sleep': 'آية الكرسي وخواتيم البقرة والمعوذات' },
-      { 'sunnah:9:10': 'باسمك اللهم أموت وأحيا', 'sunnah:9:11': 'سبحان الله ثلاثاً وثلاثين' }]
+      { 'sunnah:9:10': 'باسمك اللهم أموت وأحيا', 'sunnah:9:11': 'سبحان الله ثلاثاً وثلاثين' }, { 'sunnah:9:12': 'رؤيا يحبها' }]
   };
   function rowText(id) {
     let m = /^sunnah:(\d+):(\d+)$/.exec(id);
@@ -7776,7 +7818,9 @@ test('an occasion can be put in the reader\'s own calendar, and no longer repeat
   /* whatever heads the list, the fast or a hijri occasion, the button hands
      over that row's own name and day */
   const title = row.querySelector('.row-title').textContent;
-  assert.strictEqual(handed[0].t, title);
+  /* a fast is entered as «صيام الأيام البيض», its row reads «الأيام البيض»:
+     the entry carries the row's name, with the fast before it */
+  assert.ok(handed[0].t === title || handed[0].t === 'صيام ' + title, handed[0].t + ' for ' + title);
   assert.ok(handed[0].s > 0 && handed[0].e > handed[0].s, 'a real day is handed over');
   /* in a browser it becomes a file every calendar understands */
   const app = fs.readFileSync(path.join(DOCS, 'js', 'app.js'), 'utf8');
