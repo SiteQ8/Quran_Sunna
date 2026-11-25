@@ -591,3 +591,15 @@ test('every du\'a a widget can show names its topic and source in the reader\'s 
     assert.ok(/,$/.test(w.tomorrow) && !/[ء-ي]/.test(w.tomorrow), lang + ' tomorrow: ' + w.tomorrow);
   });
 });
+
+test('the hadith of the languages written in Latin or their own letters carry no Arabic honorific in their sentences', () => {
+  /* the Malay narrations read «Daripada Abdullah bin Mas‘ud رضي الله عنه», an
+     Arabic phrase in the middle of a Malay sentence; it reads «radhiallahu
+     ‘anhu» there, as the rest of the Malay text writes it */
+  const dir = path.join(__dirname, '..', 'docs', 'data', 'meanings');
+  ['en', 'id', 'ms', 'fr', 'ha', 'tr', 'ru', 'bn'].forEach((l) => {
+    const f = path.join(dir, 'hadith-' + l + '.json');
+    if (!fs.existsSync(f)) return;
+    assert.ok(!/رضي الله عن/.test(fs.readFileSync(f, 'utf8')), l + ' writes the honorific in its own words');
+  });
+});
